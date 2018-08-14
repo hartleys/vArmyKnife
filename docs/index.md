@@ -1,4 +1,3 @@
-# vArmyKnife: Variant Army Knife
 v2.1.83
 Revised 
 
@@ -11,7 +10,8 @@ For more information visit the [vArmyKnife project page](http://hartleys.github.
 
 ## Download and Installation:
 
-[You can download the most recent version of vArmyKnife here](https://github.com/hartleys/QoRTs/releases). 
+[You can download the most recent stable version of vArmyKnife here](https://github.com/hartleys/vArmyKnife/releases), 
+or you can use the [most recent experimental build here](https://github.com/hartleys/vArmyKnife/tarball/master).
 
 Simply download the vArmyKnife.tar.gz file and extract it to your preferred location.
 
@@ -21,9 +21,11 @@ If you are running either Linux or OSX, you can install the software onto your P
 
     export PATH=/my/install/directory/:$PATH
 
-Then you can test vArmyKnife and see the basic syntax using the command:
+Then you can test vArmyKnife and see the basic syntax using either of the commands:
 
     varmyknife help
+       or
+    java -jar /my/install/directory/vArmyKnife.jar help
 
 ## Documentation:
 
