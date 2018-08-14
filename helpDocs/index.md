@@ -1,0 +1,50 @@
+# vArmyKnife: Variant Army Knife
+v2.1.82
+Revised Tue Aug 14 12:33:15 EDT 2018
+
+The [vArmyKnife software package](http://hartleys.github.io/vArmyKnife/) is a fast, efficient, and portable 
+multifunction toolkit designed to assist in
+the analysis, quality control, and data management of whole-genome and whole-exome variant datasets. 
+
+The entire vArmyKnife toolkit can be used in almost any operating system that supports java.
+For more information visit the [vArmyKnife project page](http://hartleys.github.io/vArmyKnife/index.html). 
+
+## Download and Installation:
+
+You can download the most recent version of vArmyKnife here (https://github.com/hartleys/QoRTs/releases). 
+Simply download the vArmyKnife.zip or .tar.gz file and extract it to your preferred location.
+
+    tar xvzf varmyknife.tar.gz /my/install/directory/
+
+If you are running either Linux or OSX, you can install the software onto your PATH using the command:
+
+    export PATH=/my/install/directory/bin/:$PATH
+
+## Documentation:
+
+The full set of command-line tools included in vArmyKnife are listed [here](help/index.html)
+
+Almost all the functions have been folded into the walkVcf command. Full documentation on this command can be found [here](help/walkVcf.html)
+
+##LEGAL:
+This software is "United States Government Work" under the terms of the United 
+States Copyright Act. It was written as part of the authors' official duties 
+for the United States Government and thus QoRT Package User Manual cannot be 
+copyrighted. This software is freely available to the public for use without a 
+copyright notice. Restrictions cannot be placed on its present or future use.
+
+Although all reasonable efforts have been taken to ensure the accuracy and 
+reliability of the software and data, the National Human Genome Research 
+Institute (NHGRI) and the U.S. Government does not and cannot warrant the 
+performance or results that may be obtained by using this software or data. 
+NHGRI and the U.S. Government disclaims all warranties as to performance, 
+merchantability or fitness for any particular purpose.
+
+In any work or product derived from this material, proper attribution of the 
+authors as the source of the software or data should be made, using "NHGRI 
+Genome Technology Branch" as the citation.
+
+NOTE: The scala package includes (internally) the sam-JDK library 
+(sam-1.113.jar), from picard tools, which is covered under the MIT license. 
+The MIT license and copyright information can be accessed using the command:
+java -jar /path/to/jarfile/QoRTs.jar --man samjdkinfo
