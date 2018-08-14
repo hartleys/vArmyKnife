@@ -144,15 +144,15 @@ chmod a+x ${OUTDIR}/bin/*
 
 if [ "$MAKEDOCS" == "1" ]; then
   cd ${INITDIR}
-  rm -rf helpDocs
-  mkdir -p helpDocs
-  cd ${INITDIR}/helpDocs
+  rm -rf docs
+  mkdir -p docs
+  cd ${INITDIR}/docs
   mkdir -p docs
   mkdir -p md
   cat $INITDIR/buildScripts/README-TEMPLATE.txt | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > $INITDIR/README.md
   
-  cp -R $INITDIR/buildScripts/docs/stylesheets $INITDIR/helpDocs/docs/stylesheets
-  cd ${INITDIR}/helpDocs/md
+  cp -R $INITDIR/buildScripts/docs/stylesheets $INITDIR/docs/docs/stylesheets
+  cd ${INITDIR}/docs/md
   java -Xmx1G -jar $VARMYKNIFE_JAR --help generateMarkdownPages
   if [ "$?" -eq "0" ]; then
     echo "docs written successfully"
@@ -174,10 +174,10 @@ if [ "$MAKEDOCS" == "1" ]; then
   echo "done with html docs"
   
   echo "creating html pages..."
-  cd ${INITDIR}/helpDocs
+  cd ${INITDIR}/docs
   cat ${INITDIR}/buildScripts/index.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > index.md
   cat ${INITDIR}/buildScripts/faq.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > faq.md
-  cat ${INITDIR}/buildScripts/pipelineUserManual.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > manual.md
+  cat ${INITDIR}/buildScripts/manual.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > manual.md
 
   for line in index faq manual
   do
@@ -191,9 +191,9 @@ if [ "$MAKEDOCS" == "1" ]; then
   
   echo "copying docs"
   cd $OUTDIR
-  cp ${INITDIR}/helpDocs/*.* $OUTDIR/
-  cp -R ${INITDIR}/helpDocs/docs $OUTDIR/
-  cp -R ${INITDIR}/helpDocs/md $OUTDIR/
+  cp ${INITDIR}/docs/*.* $OUTDIR/
+  cp -R ${INITDIR}/docs/docs $OUTDIR/
+  cp -R ${INITDIR}/docs/md $OUTDIR/
     
   cd $INITDIR
 else
@@ -205,7 +205,7 @@ echo "------------------------------------------------------------------"
 
 
 cd $INITDIR
-tar -zcvf vArmyKnife.${VERSION}.tar.gz varmyknife LICENSE README vArmyKnife.jar src helpDocs > /dev/null
+tar -zcvf vArmyKnife.${VERSION}.tar.gz varmyknife LICENSE README.md vArmyKnife.jar src docs > /dev/null
 
 
 ##########################

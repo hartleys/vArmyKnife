@@ -11,20 +11,25 @@ For more information visit the [vArmyKnife project page](http://hartleys.github.
 
 ## Download and Installation:
 
-You can download the most recent version of vArmyKnife here (https://github.com/hartleys/QoRTs/releases). 
-Simply download the vArmyKnife.zip or .tar.gz file and extract it to your preferred location.
+[You can download the most recent version of vArmyKnife here](https://github.com/hartleys/QoRTs/releases). 
+
+Simply download the vArmyKnife.tar.gz file and extract it to your preferred location.
 
     tar xvzf varmyknife.tar.gz /my/install/directory/
 
 If you are running either Linux or OSX, you can install the software onto your PATH using the command:
 
-    export PATH=/my/install/directory/bin/:$PATH
+    export PATH=/my/install/directory/:$PATH
+
+Then you can test vArmyKnife and see the basic syntax using the command:
+
+    varmyknife help
 
 ## Documentation:
 
-The full set of command-line tools included in vArmyKnife are listed [here](help/index.html)
+[The full set of command-line tools included in vArmyKnife are listed here](docs/index.html)
 
-Almost all the functions have been folded into the walkVcf command. Full documentation on this command can be found [here](help/walkVcf.html)
+Almost all the functions have been folded into the walkVcf command. [See the full documentation for this command](docs/walkVcf.html)
 
 ##LEGAL:
 
