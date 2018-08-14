@@ -1,0 +1,975 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+		<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<title>vArmyKnife: Variant Army Knife Toolkit</title>
+
+		<link rel="stylesheet" href="stylesheets/styles.2.css">
+		<link rel="stylesheet" href="stylesheets/pygment_trac.css">
+		<script src="javascripts/scale.fix.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+		<!--[if lt IE 9]>
+		<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+<div class="wrapper">
+
+
+<header>
+			<h1><a href="index.html">vArmyKnife</a></h1>
+			<p>Variant Army Knife</p>
+</header>
+
+
+<section>
+<h1>vArmyKnife</h1>
+
+<blockquote>
+  <p>Version 2.1.83 (Updated Tue Aug 14 14:00:27 EDT 2018)</p>
+
+<p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
+</blockquote>
+
+</section> <h2>Help for java command "walkVcf"</h2> <section>
+
+<p>ALIASES: multiStepPipeline</p>
+
+</section> <h2>USAGE:</h2> <section>
+
+<pre><code>varmyknife [java options] walkVcf [options] variants.vcf outfile.vcf.gz
+  or 
+java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.vcf.gz
+</code></pre>
+
+</section> <h2>DESCRIPTION:</h2> <section>
+
+<p>This utility performs a series of transformations on an input VCF file and adds an array of informative tags.WARNING: THIS UTILITY IS AN UNTESTED BETA, AND MAY CONTAIN MAJOR FLAWS. NOT FOR PRODUCTION USE! USE AT YOUR OWN RISK!</p>
+
+</section> <h2>REQUIRED ARGUMENTS:</h2> <section>
+
+<h4>variants.vcf:</h4>
+
+<blockquote>
+  <p>input VCF file. Can be gzipped or in plaintext. (String)</p>
+</blockquote>
+
+<h4>outfile.vcf.gz:</h4>
+
+<blockquote>
+  <p>The output file. Can be gzipped or in plaintext. (String)</p>
+</blockquote>
+
+</section> <h2>OPTIONAL ARGUMENTS:</h2> <section>
+
+<h3>Input Parameters:</h3>
+
+<h4>--infileList:</h4>
+
+<blockquote>
+  <p>If this option is set, then the input file is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. Multiple VCF files will be concatenated and used as input. Note that only the first file's headers will be used, and if any of the subsequent files have tags or fields that are not present in the first VCF file then errors may occur. Also note that if the VCF file includes sample genotypes then the samples MUST be in the same order. (flag)</p>
+</blockquote>
+
+<h4>--infileListInfix infileList.txt:</h4>
+
+<blockquote>
+  <p>If this command is included, then all input files are treated very differently. The input VCF file path (or multiple VCFs, if you are running a VCF merge of some sort) must contain a BAR character. The file path string will be split at the bar character and the string infixes from the supplied infileList.txt infix file will be inserted into the break point. This can be very useful for merging multiple chromosomes or genomic-region-split VCFs. (String)</p>
+</blockquote>
+
+<h4>--numLinesRead N:</h4>
+
+<blockquote>
+  <p>If this parameter is set, then the utility will stop after reading in N variant lines. (Int)</p>
+</blockquote>
+
+<h3>Universal Parameters:</h3>
+
+<h4>--genomeFA genome.fa.gz:</h4>
+
+<blockquote>
+  <p>The genome fasta file. Can be gzipped or in plaintext. (String)</p>
+</blockquote>
+
+<h3>Preprocessing:</h3>
+
+<h4>--splitMultiAllelics:</h4>
+
+<blockquote>
+  <p>If this flag is used, multiallelic variants will be split into multiple separate VCF lines. (flag)</p>
+</blockquote>
+
+<h4>--convertROAOtoAD:</h4>
+
+<blockquote>
+  <p>If this flag is used, then the RO/AO FORMAT fields used by certain callers (freebayes) will be copied over into a new AD tag. (flag)</p>
+</blockquote>
+
+<h4>--nonNullVariantsOnly:</h4>
+
+<blockquote>
+  <p>If this flag is used, only write variants that have non-null alt alleles. (flag)</p>
+</blockquote>
+
+<h4>--rmDup:</h4>
+
+<blockquote>
+  <p>If this flag is used, duplicate lines will be dropped. VCF must be sorted. (flag)</p>
+</blockquote>
+
+<h4>--chromList chr1,chr2,...:</h4>
+
+<blockquote>
+  <p>List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--leftAlignAndTrim:</h4>
+
+<blockquote>
+  <p>Left align and trim the primary input VCF using a modified and ported version of the GATK v1.8-2 LeftAlignAndTrim walker. (flag)</p>
+</blockquote>
+
+<h4>--leftAlignAndTrimSecondarys:</h4>
+
+<blockquote>
+  <p>Left align and trim any secondary input VCFs using a modified and ported version of the GATK v1.8-2 LeftAlignAndTrim walker. (flag)</p>
+</blockquote>
+
+<h4>--fixDotAltIndels:</h4>
+
+<blockquote>
+  <p>Some callers return variant lines that use a dot or dashin the alt column, especially if the VCFs were converted over from ANNOVAR files. technically per the VCF spec this should be interpreted as the absence of any variant alleles (an allele list of length 0). But some tools seem to sometimes use this encoding when they actually mean to indicate an indel. If you use this parameter, then dot-alt indels will be converted to proper form before any other processing. Note: the genomeFA parameter is required in order to use this option, as we need to be able to find the reference sequence for the previous base. (flag)</p>
+</blockquote>
+
+<h4>--unPhaseAndSortGenotypes GT,GT_PREFILT,etc:</h4>
+
+<blockquote>
+  <p>Replace phased genotypes with unphased and reorder genotypes so that heterozygote alleles are always written in ascending order. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--dropSymbolicAlleleLines:</h4>
+
+<blockquote>
+  <p>Drop all variant lines that contain symbolic alleles. If this flag is used with splitMultiAllelic, then the non-symbolic alleles of mixed-type variants will be preserved. (flag)</p>
+</blockquote>
+
+<h4>--inputKeepSamples samp1,samp2,...:</h4>
+
+<blockquote>
+  <p>If this parameter is set, all samples other than the listed samples will be removed PRIOR to processing. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--inputKeepInfoTags tag1,tag2,...:</h4>
+
+<blockquote>
+  <p>List of tags to keep from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--inputDropInfoTags tag1,tag2,...:</h4>
+
+<blockquote>
+  <p>List of tags to DROP from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--inputChromDecoder chromDecoder.txt:</h4>
+
+<blockquote>
+  <p>Assigns a chromosome name decoder file. All chromosomes will be renamed based on this decoder. By default, the first column will be the FROM column and the second column will be the TO column. The FROM and TO column numbers can be changed with the --inputChromDecoderFromCol and --inputChromDecoderToCol parameters. These parameters can be used to translate chromosome names between the chr1,chr2,... and 1,2,... style chromosome name conventions. Any chrom names not found in this file will be left as is, throwing a warning. Note: the translation will take place BEFORE any other processing. (String)</p>
+</blockquote>
+
+<h4>--inputChromDecoderFromCol val:</h4>
+
+<blockquote>
+  <p>Define the column in the chromDecoder text file that contains the chrom names found in the original input VCF. (Int)</p>
+</blockquote>
+
+<h4>--inputChromDecoderToCol val:</h4>
+
+<blockquote>
+  <p>Define the column in the chromDecoder text file that contains the chrom names that are to be used in the new output VCF. (Int)</p>
+</blockquote>
+
+<h3>Annotation:</h3>
+
+<h4>--addLocalGcInfo tagPrefix,windowsize1|ws2|...,numDigits:</h4>
+
+<blockquote>
+  <p>Will add VCF INFO tags that indicate the GC fraction of flanking bases. Requires an indexed genome fasta to be set with the --genomeFA option. The parameter must be formatted in 3 comma-delimited parts: first the prefix to append to the INFO tags, then a bar-delimited list of window sizes, and then the number of digits to include in the output. (repeatable String)</p>
+</blockquote>
+
+<h4>--snpSiftAnnotate ...:</h4>
+
+<blockquote>
+  <p>Options for a SnpSift annotate run. Provide all the options for the standard run.  Do not include the annotate command itself or the input VCF. This will call the internal SnpSift annotate commands, not merely run an external instance of SnpSift.  (repeatable String)</p>
+</blockquote>
+
+<h4>--snpSiftDbnsfp ...:</h4>
+
+<blockquote>
+  <p>Options for a SnpSift Dbnsfp run. Provide all the options for the standard run. Do not include the Dbnsfp command itself or the input VCF. This will call the internal SnpSift annotate commands, not merely run an external instance of SnpSift.  (repeatable String)</p>
+</blockquote>
+
+<h4>--addBedTags TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...:</h4>
+
+<blockquote>
+  <p>List of tags and bed files that define said tags. For each tag, the variant will have a tag value of 1 iff the variant appears on the bed file region, and 0 otherwise. This should be a comma-delimited list consisting of one or more colon-delimited lists. Each element in the comma delimited list must have 4 colon-delimited sub-elements: the tag title (ie, the tag that will be added to the VCF file, the buffer distance, the tag description (for the VCF header), and the bedfile path. Bed files may be gzipped or zipped. (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--addVariantPosInfo tagPrefix:</h4>
+
+<blockquote>
+  <p>Copies the chrom, start, ref, and alt columns into an info field. This can be useful for keeping track of variants before and after variant transformations such as leftAlignAndTrim or multiallelic splits. (String)</p>
+</blockquote>
+
+<h4>--addInfoVcfs vcfTitle:vcfFilename:List|of|tags:</h4>
+
+<blockquote>
+  <p>A comma delimited list with each element containing 3 colon-delimited parts consisting of the title, filename, and the desired tags for a secondary VCF file. The indicated tags from each VCF file will be copied over. (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--addVariantIdx tag:</h4>
+
+<blockquote>
+  <p>. (String)</p>
+</blockquote>
+
+<h4>--tagVariantsExpression vcfLineFilterExpression:</h4>
+
+<blockquote>
+  <p>If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--ctrlAlleFreqKeys ...:</h4>
+
+<blockquote>
+  <p>A comma-delimited list of field IDs to use to calculate the maximum of several included allele frequency fields. Optionally, the list can be preceded by the output tag ID, followed by a colon. Can be specified more than once with different parameters and a different output tag ID. (repeatable String)</p>
+</blockquote>
+
+<h3>Sample Stats:</h3>
+
+<h4>--noGroupStats:</h4>
+
+<blockquote>
+  <p>Do NOT calculate group stats. Normally if you specify sample groups then group stats will automatically be calculated. (flag)</p>
+</blockquote>
+
+<h4>--groupFile groups.txt:</h4>
+
+<blockquote>
+  <p>File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID. (String)</p>
+</blockquote>
+
+<h4>--superGroupList sup1,grpA,grpB,...;sup2,grpC,grpD,...:</h4>
+
+<blockquote>
+  <p>A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)</p>
+</blockquote>
+
+<h4>--addSampTag N:</h4>
+
+<blockquote>
+  <p>If this parameter is set, then a tags will be added with sample IDs that possess alt genotypes. Samples will only be printed if the number of samples that possess a given genotype are less than N.  (String)</p>
+</blockquote>
+
+<h4>--calcStatGtTag GT:</h4>
+
+<blockquote>
+  <p>The genotype tag used to calculate stats like het count, Het-AD-balance, etc. (String)</p>
+</blockquote>
+
+<h3>Transcript Annotation:</h3>
+
+<h4>--inputSavedTxFile txdata.data.txt.gz:</h4>
+
+<blockquote>
+  <p>Loads a saved TXdata file in order to add transcript annotation. To generate TX annotation, either this parameter OR the --genomeFA parameter must be set. Using this file will be much faster than regenerating the tx data from the gtf/fasta. this TXdata file must be generated using the GenerateTranscriptAnnotation command (String)</p>
+</blockquote>
+
+<h4>--txTypes protein_coding,...:</h4>
+
+<blockquote>
+  <p>List of transcript biotypes to include. Only works if biotype info is available in the TX annotation. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--gtfFile gtfFile.gtf.gz:</h4>
+
+<blockquote>
+  <p>A gene annotation GTF file. Can be gzipped or in plaintext. (String)</p>
+</blockquote>
+
+<h4>--addCanonicalTags knownCanonical.txt:</h4>
+
+<blockquote>
+  <p>Supply a list of canonical transcripts, add tags that indicate canonical-transcript-only variant info. (String)</p>
+</blockquote>
+
+<h4>--txToGeneFile txToGene.txt:</h4>
+
+<blockquote>
+  <p>File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line. (String)</p>
+</blockquote>
+
+<h3>Filtering, Genotype-Level:</h3>
+
+<h4>--genoFilter :</h4>
+
+<blockquote>
+  <p>A genotype filter expression. See the help section on genotype filtering expressions, below. (String)</p>
+</blockquote>
+
+<h4>--filterTag :</h4>
+
+<blockquote>
+  <p>This sets the field ID for a new FORMAT field that will be 0 when the --genoFilter PASSES and 1 otherwise. (String)</p>
+</blockquote>
+
+<h4>--filterInputGtTag :</h4>
+
+<blockquote>
+  <p>Requires that --genoFilter be set. This parameter indicates which FORMAT (genotype) field should be used as the raw genotype for the purposes of genotype filtering via --genoFilter. By default the genotype filter will take the GT field and copy it to GT_PREFILT and then replace GT with the post-filtering version. (String)</p>
+</blockquote>
+
+<h4>--filterOutputGtTag :</h4>
+
+<blockquote>
+  <p>Requires that --genoFilter be set. This parameter indicates which FORMAT field should be used to store the post-filtered genotypes. Note that genotypes that fail the --genoFilter filters will be set to missing. By default the GT field will be overwritten with post-filtered genotypes. (String)</p>
+</blockquote>
+
+<h4>--unfilteredGtTag :</h4>
+
+<blockquote>
+  <p>This parameter indicates where the raw genotypes should be copied before filtering the genotypes with the --genoFilter expression. (String)</p>
+</blockquote>
+
+<h3>Filtering, Variant-Level:</h3>
+
+<h4>--keepVariantsExpression vcfLineFilterExpression:</h4>
+
+<blockquote>
+  <p>If this parameter is set, then VCF lines will be dropped if and only if they FAIL the provided vcf line filter expression. See the section on VCF line filtering below.  (String)</p>
+</blockquote>
+
+<h3>Merge Multicaller VCFs:</h3>
+
+<h4>--runEnsembleMerger:</h4>
+
+<blockquote>
+  <p>If this parameter is raised, then the input VCF should instead be formatted as a comma delimited list of N VCF files. Each of the N files will be run through an initial subset of the final VCF walkers including any of the following that are indicated by the other options: addVariantIdx,nonVariantFilter,chromosome converter,inputTag filters,addVariantPosInfo,splitMultiAllelics,leftAlignAndTrim, and convertROtoAD The variant data output stream from these walkers will be merged and final GT, AD, and GQ fields will be added if the requisite information is available. Final genotypes will be assigned by plurality rule if any genotype has a simple plurality of all nonmissing caller calls, and if no genotype has a plurality then the genotype will be chosen from the highest priority caller, chosen in the order they are named in the  (flag)</p>
+</blockquote>
+
+<h4>--singleCallerVcfNames :</h4>
+
+<blockquote>
+  <p>This parameter should be a comma delimited list of names, with the same length as --singleCallerVcfs. These names will be used in the folder-over VCF tags. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--singleCallerPriority :</h4>
+
+<blockquote>
+  <p>This parameter should be a comma delimited list composed of a subset of the VCF names from the --singleCallerVcfNames parameter. Single callers can be left off this list and their calls will not be used to determine genotype, allele depth, and genotype quality information. Genotype calls are assigned using the most common call across all callers. Ties are broken using the priority list above, in order of highest priority (most trusted) to lowest priority (least trusted). (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h3>Postprocessing:</h3>
+
+<h4>--alphebetizeHeader:</h4>
+
+<blockquote>
+  <p>Alphebetizes the INFO and FORMAT header lines. (flag)</p>
+</blockquote>
+
+<h4>--convertToStandardVcf:</h4>
+
+<blockquote>
+  <p>Final output file will be a standard VCF that does not use the asterisk to indicate multiallelic variants. Some utilities do not implement the full VCF standard and may have trouble with asterisk alleles. (flag)</p>
+</blockquote>
+
+<h4>--dropGenotypeData:</h4>
+
+<blockquote>
+  <p>If this flag is included, then ALL sample-level columns will be stripped from the output VCF. This greatly reduces the file size, and can be useful for making portable variant set VCFs. (flag)</p>
+</blockquote>
+
+<h4>--outputKeepInfoTags tag1,tag2,...:</h4>
+
+<blockquote>
+  <p>List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--outputDropInfoTags tag1,tag2,...:</h4>
+
+<blockquote>
+  <p>List of tags to drop from the final output (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--outputKeepGenoTags tag1,tag2,...:</h4>
+
+<blockquote>
+  <p>List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--outputDropGenoTags tag1,tag2,...:</h4>
+
+<blockquote>
+  <p>List of tags to drop from the final output (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--outputKeepSamples samp1,samp2,...:</h4>
+
+<blockquote>
+  <p>List of samples to include in the final output (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h3>OTHER OPTIONS:</h3>
+
+<h4>--verbose:</h4>
+
+<blockquote>
+  <p>Flag to indicate that debugging information and extra progress information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--quiet:</h4>
+
+<blockquote>
+  <p>Flag to indicate that only errors and warnings should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--paramFile paramFile.txt:</h4>
+
+<blockquote>
+  <p>A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)</p>
+</blockquote>
+
+<h4>--debugMode:</h4>
+
+<blockquote>
+  <p>Flag to indicate that much more debugging information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--createRunningFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create when this utility starts, to be deleted on a clean exit. The file WILL be deleted even if errors are caught. It will only remain if uncaught errors are thrown or if the process is killed externally. (String)</p>
+</blockquote>
+
+<h4>--successfulCompletionFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create if and when this utility successfully completes without fatal errors. (String)</p>
+</blockquote>
+
+</section> <h2>VCF Line Filter Expressions</h2> <section>
+
+<h3>BASIC SYNTAX:</h3>
+
+<p>Filtering expressions are parsed as a series of logical filters 
+connected with AND, OR, NOT, and parentheses. All expressions must 
+be separated with whitespace, though it does not matter how much 
+whitespace or what kind. Alternatively, expressions can be read 
+directly from file by setting the expression to 
+EXPRESSIONFILE:filepath.</p>
+
+<p>Logical filters are all of the format 
+FILTERNAME:PARAM1:PARAM2:etc. Some filters have no parameters, 
+other filters can accept a variable number of parameters. All 
+filters return TRUE or FALSE. Filters can be inverted using the 
+NOT operator before the filter (with whitespace in between). 
+Unless indicated otherwise, elements are dropped when the full 
+expression returns FALSE.</p>
+
+<h3>Filter Functions:</h3>
+
+<h4>ALT.eq:k</h4>
+
+<blockquote>
+  <p>PASS iff the first ALT allele equals k.</p>
+</blockquote>
+
+<h4>ALT.isOneOf:k1:k2:...</h4>
+
+<blockquote>
+  <p>PASS iff the first ALT allele is one of k1,k2,...</p>
+</blockquote>
+
+<h4>ALT.len.eq:k</h4>
+
+<blockquote>
+  <p>PASS iff the first ALT allele is of length k.</p>
+</blockquote>
+
+<h4>ALT.len.gt:k</h4>
+
+<blockquote>
+  <p>PASS iff the first ALT allele is of length gt k.</p>
+</blockquote>
+
+<h4>AnyGtNonRef:gtTag</h4>
+
+<blockquote>
+  
+</blockquote>
+
+<h4>AnyGtPass:simpleGtFiltExpression:k1:...</h4>
+
+<blockquote>
+  <p>PASS iff any one of the samples pass the supplied GT filter.</p>
+</blockquote>
+
+<h4>FALSE:</h4>
+
+<blockquote>
+  <p>Never pass</p>
+</blockquote>
+
+<h4>FILTER.eq:k</h4>
+
+<blockquote>
+  <p>PASS iff the FILTER column is equal to k.</p>
+</blockquote>
+
+<h4>FILTER.ne:k</h4>
+
+<blockquote>
+  <p>PASS iff the FILTER column is not equal to k.</p>
+</blockquote>
+
+<h4>GENO.MAFgt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is greater than k.</p>
+</blockquote>
+
+<h4>GENO.MAFlt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is less than k.</p>
+</blockquote>
+
+<h4>GENO.hasTagPairGtStyleMismatch:t1:t2</h4>
+
+<blockquote>
+  <p>PASS iff the genotype-field t1 and t2 are both found on a given line and have at least 1 sample where both tags are not set to missing but they do not have the same value.</p>
+</blockquote>
+
+<h4>GENO.hasTagPairMismatch:t1:t2</h4>
+
+<blockquote>
+  <p>PASS iff the genotype-field t1 and t2 are both found on a given line but are not always equal for all samples.</p>
+</blockquote>
+
+<h4>INFO.any.gt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and less than or equal to k.</p>
+</blockquote>
+
+<h4>INFO.any.lt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and less than or equal to k.</p>
+</blockquote>
+
+<h4>INFO.eq:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and equal to k.</p>
+</blockquote>
+
+<h4>INFO.ge:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and greater than or equal to k.</p>
+</blockquote>
+
+<h4>INFO.gem:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing or greater than or equal to k.</p>
+</blockquote>
+
+<h4>INFO.gt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and greater than k.</p>
+</blockquote>
+
+<h4>INFO.gtm:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing or greater than k.</p>
+</blockquote>
+
+<h4>INFO.in:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is a comma delimited list that contains string k.</p>
+</blockquote>
+
+<h4>INFO.inAny:t:k</h4>
+
+<blockquote>
+  <p>PASS if INFO field t is a list delimited with commas and bars, and contains string k.</p>
+</blockquote>
+
+<h4>INFO.inAnyOf:t:k1:k2:...</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is a list delimited with commas and bars, and contains any of the parameters k1,k2,...</p>
+</blockquote>
+
+<h4>INFO.inAnyOfN:t:k1:k2:...</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is a list delimited with commas, bars, slashes, OR COLONS, and contains any of the parameters k1,k2,...</p>
+</blockquote>
+
+<h4>INFO.inAnyOfND:t:k1:k2:...</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is a list delimited with commas, bars, slashes, colons, or dashes, and contains any of the parameters k1,k2,...</p>
+</blockquote>
+
+<h4>INFO.le:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and less than or equal to k.</p>
+</blockquote>
+
+<h4>INFO.lem:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing or less than or equal to k</p>
+</blockquote>
+
+<h4>INFO.len.eq:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and has length equal to k.</p>
+</blockquote>
+
+<h4>INFO.len.gt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and has length greater than k.</p>
+</blockquote>
+
+<h4>INFO.len.lt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and has length less than k.</p>
+</blockquote>
+
+<h4>INFO.lt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing and less than k.</p>
+</blockquote>
+
+<h4>INFO.ltm:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing or less than k.</p>
+</blockquote>
+
+<h4>INFO.m:t</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing.</p>
+</blockquote>
+
+<h4>INFO.mempty:t</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing or less than or equal to k</p>
+</blockquote>
+
+<h4>INFO.ne:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is either missing or not equal to k.</p>
+</blockquote>
+
+<h4>INFO.nm:t</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is nonmissing.</p>
+</blockquote>
+
+<h4>INFO.notIn:t:k</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is missing or is a comma delimited list that does NOT contain string k.</p>
+</blockquote>
+
+<h4>INFO.notInAny:t:k</h4>
+
+<blockquote>
+  <p>PASS if INFO field t is a list delimited with commas and bars, and does not contain string k.</p>
+</blockquote>
+
+<h4>INFO.subsetOf:t:k1:k2:...</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is a comma delimited list and is a subset of k1,k2,etc</p>
+</blockquote>
+
+<h4>INFO.subsetOfFileList:t:f</h4>
+
+<blockquote>
+  <p>PASS iff INFO field t is a comma delimited list and is a subset of the list contained in file f</p>
+</blockquote>
+
+<h4>INFO.tagsMismatch:t1:t2</h4>
+
+<blockquote>
+  <p>PASS iff the INFO-field t1 and t2 are both found on a given line but are not equal.</p>
+</blockquote>
+
+<h4>REF.eq:k</h4>
+
+<blockquote>
+  <p>PASS iff the REF allele equals k.</p>
+</blockquote>
+
+<h4>REF.isOneOf:k1:k2:...</h4>
+
+<blockquote>
+  <p>PASS iff the REF allele is one of k1,k2,...</p>
+</blockquote>
+
+<h4>REF.len.eq:k</h4>
+
+<blockquote>
+  <p>PASS iff the REF allele is of length k.</p>
+</blockquote>
+
+<h4>REF.len.gt:k</h4>
+
+<blockquote>
+  <p>PASS iff the REF allele is of length gt k.</p>
+</blockquote>
+
+<h4>TRUE:</h4>
+
+<blockquote>
+  <p>Always pass</p>
+</blockquote>
+
+<h4>isSNV:</h4>
+
+<blockquote>
+  <p>PASS iff the variant is an SNV.</p>
+</blockquote>
+
+</section> <h2>Genotype Filter Expressions</h2> <section>
+
+<h3>BASIC SYNTAX:</h3>
+
+<p>Filtering expressions are parsed as a series of logical filters 
+connected with AND, OR, NOT, and parentheses. All expressions must 
+be separated with whitespace, though it does not matter how much 
+whitespace or what kind. Alternatively, expressions can be read 
+directly from file by setting the expression to 
+EXPRESSIONFILE:filepath.</p>
+
+<p>Logical filters are all of the format 
+FILTERNAME:PARAM1:PARAM2:etc. Some filters have no parameters, 
+other filters can accept a variable number of parameters. All 
+filters return TRUE or FALSE. Filters can be inverted using the 
+NOT operator before the filter (with whitespace in between). 
+Unless indicated otherwise, elements are dropped when the full 
+expression returns FALSE.</p>
+
+<h3>Filter Functions:</h3>
+
+<h4>FALSE:</h4>
+
+<blockquote>
+  <p>Never pass</p>
+</blockquote>
+
+<h4>GTAG.SC.altDepth.gt:splitIdxTag:t:v</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
+</blockquote>
+
+<h4>GTAG.SC.altDepth.lt:splitIdxTag:t:v</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
+</blockquote>
+
+<h4>GTAG.SC.altProportion.gt:splitIdxTag:t:v</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
+</blockquote>
+
+<h4>GTAG.SC.altProportion.lt:splitIdxTag:t:v</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
+</blockquote>
+
+<h4>GTAG.altDepthForAlle.gt:gt:ad:v</h4>
+
+<blockquote>
+  <p>PASS iff for AD-style tag ad and GT-style tag gt, the sample is called as having an allele K while having less than v reads covering said allele.</p>
+</blockquote>
+
+<h4>GTAG.altProportion.gt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
+</blockquote>
+
+<h4>GTAG.altProportion.lt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency less than k.</p>
+</blockquote>
+
+<h4>GTAG.eq:t:s</h4>
+
+<blockquote>
+  <p>PASS iff GT field t equals the string s. DROP if tag t is not present or set to missing.</p>
+</blockquote>
+
+<h4>GTAG.ge:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is present and not set to missing, and is a number greater than or equal to k.</p>
+</blockquote>
+
+<h4>GTAG.gem:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is either not present, set to missing, or a number greater than or equal to k.</p>
+</blockquote>
+
+<h4>GTAG.gt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is present and not set to missing, and is a number greater than k.</p>
+</blockquote>
+
+<h4>GTAG.gtm:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is either not present, set to missing, or a number greater than k.</p>
+</blockquote>
+
+<h4>GTAG.isAnyAlt:t</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and contains the alt allele.</p>
+</blockquote>
+
+<h4>GTAG.isCleanHet:t</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous between the alt and reference allele.</p>
+</blockquote>
+
+<h4>GTAG.isHet:t</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous.</p>
+</blockquote>
+
+<h4>GTAG.isHomAlt:t</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-alt.</p>
+</blockquote>
+
+<h4>GTAG.isHomRef:t</h4>
+
+<blockquote>
+  <p>PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-reference.</p>
+</blockquote>
+
+<h4>GTAG.le:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is present and not set to missing, and is a number less than or equal to k.</p>
+</blockquote>
+
+<h4>GTAG.lem:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is either not present, set to missing, or a number less than or equal to k.</p>
+</blockquote>
+
+<h4>GTAG.lt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is present and not set to missing, and is a number less than k.</p>
+</blockquote>
+
+<h4>GTAG.ltm:t:k</h4>
+
+<blockquote>
+  <p>PASS iff tag t is either not present, set to missing, or a number less than k.</p>
+</blockquote>
+
+<h4>GTAG.m:t:k</h4>
+
+<blockquote>
+  <p>PASS iff the GT field t is is not present or set to missing.</p>
+</blockquote>
+
+<h4>GTAG.ne:t:k</h4>
+
+<blockquote>
+  <p>PASS iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.</p>
+</blockquote>
+
+<h4>GTAG.nm:t</h4>
+
+<blockquote>
+  <p>PASS iff the GT field t is present and not set to missing.</p>
+</blockquote>
+
+<h4>GTAGARRAY.gt:t:i:k</h4>
+
+<blockquote>
+  <p>PASS iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is greater than k.</p>
+</blockquote>
+
+<h4>GTAGARRAYSUM.gt:t:k</h4>
+
+<blockquote>
+  <p>PASS iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.</p>
+</blockquote>
+
+<h4>SAMPGRP.in:g</h4>
+
+<blockquote>
+  <p>PASS iff the sample is a member of group g.</p>
+</blockquote>
+
+<h4>TAGPAIR.match:t1:t2</h4>
+
+<blockquote>
+  <p>PASS iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another.</p>
+</blockquote>
+
+<h4>TRUE:</h4>
+
+<blockquote>
+  <p>Always pass</p>
+</blockquote>
+
+</section> <h2>AUTHORS:</h2> <section>
+
+<p>Stephen W. Hartley, Ph.D. stephen.hartley (at nih dot gov)</p>
+
+</section> <h2>LEGAL:</h2> <section>
+
+<p>This software is "United States Government Work" under the terms of the United States Copyright  Act.  It was written as part of the authors' official duties for the United States Government and  thus cannot be copyrighted.  This software is freely available to the public for use without a  copyright notice.  Restrictions cannot be placed on its present or future use.  Although all reasonable efforts have been taken to ensure the accuracy and reliability of the  software and data, the National Cancer Institute (NCI) and the U.S. Government  does not and cannot warrant the performance or results that may be obtained by using this software  or data.  NCI and the U.S. Government disclaims all warranties as to performance, merchantability  or fitness for any particular purpose.  In any work or product derived from this material, proper attribution of the authors as the source  of the software or data should be made, using "NCI, Division of Cancer Epidemiology and Genetics, Human Genetics Program" as the citation.  NOTE: This package USES, but is not derived from, several externally-developed libraries licensed under various licenses.  For more information on the licenses of the contained libraries, use the command:   java -jar thisjarfile.jar help LICENSES</p>
+
+</div></body></html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+		<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<title>vArmyKnife: Variant Army Knife Toolkit</title>
+
+		<link rel="stylesheet" href="stylesheets/styles.2.css">
+		<link rel="stylesheet" href="stylesheets/pygment_trac.css">
+		<script src="javascripts/scale.fix.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+		<!--[if lt IE 9]>
+		<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+<div class="wrapper">
+
+
+<header>
+			<h1><a href="index.html">vArmyKnife</a></h1>
+			<p>Variant Army Knife</p>
+</header>
+
+
+<section>
+<h1>vArmyKnife</h1>
+
+<blockquote>
+  <p>Version 2.1.83 (Updated Tue Aug 14 14:00:27 EDT 2018)</p>
+
+<p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
+</blockquote>
+
+</section> <h2>Help for java command "CmdAssessACMG"</h2> <section>
+
+</section> <h2>USAGE:</h2> <section>
+
+<pre><code>varmyknife [java options] CmdAssessACMG [options] variants.vcf outvcf
+  or 
+java -jar vArmyKnife.jar [java options] CmdAssessACMG [options] variants.vcf outvcf
+</code></pre>
+
+</section> <h2>DESCRIPTION:</h2> <section>
+
+<p>BETA: This function consolidates information from a wide variety of different input files and attempts to calculate a subset of the ACMG guidelines criteria. It then attempts to assign pathogenicity scores. WARNING: THIS UTILITY IS AN UNTESTED BETA, AND MAY CONTAIN MAJOR FLAWS. NOT FOR PRODUCTION USE! USE AT YOUR OWN RISK!</p>
+
+</section> <h2>REQUIRED ARGUMENTS:</h2> <section>
+
+<h4>variants.vcf:</h4>
+
+<blockquote>
+  <p>input VCF file. This file must have been processed by  (String)</p>
+</blockquote>
+
+<h4>outvcf:</h4>
+
+<blockquote>
+  <p>The output vcf file. (String)</p>
+</blockquote>
+
+</section> <h2>OPTIONAL ARGUMENTS:</h2> <section>
+
+<h4>--chromList chr1,chr2,...:</h4>
+
+<blockquote>
+  <p>List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--clinVarVcf clinVarVcf.vcf:</h4>
+
+<blockquote>
+  <p>Processed clinvar variant vcf file. This file must have been processed by the addTxInfoToVCF command. (String)</p>
+</blockquote>
+
+<h4>--txToGeneFile txToGene.txt:</h4>
+
+<blockquote>
+  <p>File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line. (String)</p>
+</blockquote>
+
+<h4>--canonicalTxFile knownCanonical.txt:</h4>
+
+<blockquote>
+  <p>A file containing a list of canonical transcript IDs. It must have a header line with a column labelled "transcript". The header line may begin with a #, or not. It can be compressed or in plaintext. (String)</p>
+</blockquote>
+
+<h4>--rmskFile rmsk.txt.gz:</h4>
+
+<blockquote>
+  <p>rmsk.txt.gz file, from UCSC. The only columns that matter are the 6th through 8th columns, which specify the chromosome, starts, and ends of each repetitive region (counting from 0, upper bound exclusive) (String)</p>
+</blockquote>
+
+<h4>--toleranceFile toleranceFile.txt:</h4>
+
+<blockquote>
+  <p>This file must contain three columns (labelled in a header line): geneID (gene symbol), LOFtolerant, and MIStolerant. Genes that are not included in this list will be assumed to be non-tolerant. (String)</p>
+</blockquote>
+
+<h4>--domainFile domainFile.txt:</h4>
+
+<blockquote>
+  <p>This file must contain at least four columns (labelled in a header line): chrom, start, end, and domainID. (String)</p>
+</blockquote>
+
+<h4>--pseudoGeneGTF pseudoGeneGTF.gtf.gz:</h4>
+
+<blockquote>
+  <p>Simple GTF file containing a list of pseudogenes. (String)</p>
+</blockquote>
+
+<h4>--inSilicoKeys dbNSFP_MetaSVM_pred:D:T:</h4>
+
+<blockquote>
+  <p>This must be a comma-delimited list (no spaces). Each element in the list must consist of 3 parts, seperated by colons (":"). The first part is the INFO key referring to the stored results of an in silico prediction algorithm. The 2nd is an operator, which can be either "eq", "ge", or "le". For "eq", the third and fourth columns can be "|"-delimited lists of values that will be interpreted as "damaging" or "benign" respectively. For the other two functions, the third and fourth columns are values referring to the thresholds for counting the variant as "damaging" or "benign" respectively. Higher is assumed to mean more damaging for "ge", and lower is more damaging for "le". This utility will calculate a "summary" statistic for each specified algorithm which lists the variant as either damaging, ambiguous, benign, or unknown. Variants listed as both damaging as benign will be listed as ambiguous, and variants that are listed as both damaging and unknown will be listed as damaging, and similar for benign. (String)</p>
+</blockquote>
+
+<h4>--hgmdPathogenicClasses DM,DM?:</h4>
+
+<blockquote>
+  <p>(CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--inSilicoMergeMethod smart:</h4>
+
+<blockquote>
+  <p>Currently the only legal value is the default, "smart", or "intersection" (String)</p>
+</blockquote>
+
+<h4>--conservedElementFile conservedElementFile.txt:</h4>
+
+<blockquote>
+  <p>This file contains the spans for the conserved element regions found by GERP. This file must contain 3 columns (no header line): chrom, start end. (String)</p>
+</blockquote>
+
+<h4>--lowMapBed lowMapBed.bed.gz:</h4>
+
+<blockquote>
+  <p>This simple bed file should contain all spans with mappability less than 1. (String)</p>
+</blockquote>
+
+<h4>--ctrlAlleFreqKeys key1,key2,...:</h4>
+
+<blockquote>
+  <p>List of VCF INFO tags tcontaining the allele frequencies for the control datasets. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--BA1_AF val:</h4>
+
+<blockquote>
+  <p>The allele frequency cutoff to assign BA1 (benign) status. (Double)</p>
+</blockquote>
+
+<h4>--PM2_AF val:</h4>
+
+<blockquote>
+  <p>The allele frequency cutoff to assign PM2 (moderate pathogenic) status. (Double)</p>
+</blockquote>
+
+<h4>--groupFile groups.txt:</h4>
+
+<blockquote>
+  <p>File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID. (String)</p>
+</blockquote>
+
+<h4>--hgmdVarVcf HGMD.vcf.gz:</h4>
+
+<blockquote>
+  <p>File containing HGMD variants All variants will be assumed to be likely pathogenic. (String)</p>
+</blockquote>
+
+<h4>--superGroupList sup1,grpA,grpB,...;sup2,grpC,grpD,...:</h4>
+
+<blockquote>
+  <p>A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)</p>
+</blockquote>
+
+<h4>--summaryOutputFile summaryOutputFile.txt:</h4>
+
+<blockquote>
+  <p>Optional summary output file. (String)</p>
+</blockquote>
+
+<h4>--infileList:</h4>
+
+<blockquote>
+  <p>Use this option if you want to provide input file(s) containing a list of input files rather than a single input file (flag)</p>
+</blockquote>
+
+<h4>--infileListInfix infileList.txt:</h4>
+
+<blockquote>
+  <p>(String)</p>
+</blockquote>
+
+<h4>--newParser:</h4>
+
+<blockquote>
+  <p>The default parser. Adding this parameter has no effect but is available for backwards compatibility with previous versions. (flag)</p>
+</blockquote>
+
+<h4>--oldParser:</h4>
+
+<blockquote>
+  <p>Deprecated, may not support all features. Included for testing purposes. (flag)</p>
+</blockquote>
+
+<h4>--verbose:</h4>
+
+<blockquote>
+  <p>Flag to indicate that debugging information and extra progress information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--quiet:</h4>
+
+<blockquote>
+  <p>Flag to indicate that only errors and warnings should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--paramFile paramFile.txt:</h4>
+
+<blockquote>
+  <p>A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)</p>
+</blockquote>
+
+<h4>--debugMode:</h4>
+
+<blockquote>
+  <p>Flag to indicate that much more debugging information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--createRunningFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create when this utility starts, to be deleted on a clean exit. The file WILL be deleted even if errors are caught. It will only remain if uncaught errors are thrown or if the process is killed externally. (String)</p>
+</blockquote>
+
+<h4>--successfulCompletionFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create if and when this utility successfully completes without fatal errors. (String)</p>
+</blockquote>
+
+</section> <h2>AUTHORS:</h2> <section>
+
+<p>Stephen W. Hartley, Ph.D. stephen.hartley (at nih dot gov)</p>
+
+</section> <h2>LEGAL:</h2> <section>
+
+<p>This software is "United States Government Work" under the terms of the United States Copyright  Act.  It was written as part of the authors' official duties for the United States Government and  thus cannot be copyrighted.  This software is freely available to the public for use without a  copyright notice.  Restrictions cannot be placed on its present or future use.  Although all reasonable efforts have been taken to ensure the accuracy and reliability of the  software and data, the National Cancer Institute (NCI) and the U.S. Government  does not and cannot warrant the performance or results that may be obtained by using this software  or data.  NCI and the U.S. Government disclaims all warranties as to performance, merchantability  or fitness for any particular purpose.  In any work or product derived from this material, proper attribution of the authors as the source  of the software or data should be made, using "NCI, Division of Cancer Epidemiology and Genetics, Human Genetics Program" as the citation.  NOTE: This package USES, but is not derived from, several externally-developed libraries licensed under various licenses.  For more information on the licenses of the contained libraries, use the command:   java -jar thisjarfile.jar help LICENSES</p>
+
+</div></body></html>
