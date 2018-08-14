@@ -110,6 +110,8 @@ fi
 mkdir -p $OUTDIR;
 mkdir -p $OUTDIR/build
 
+source buildScripts/env.build.txt
+
 echo "------------------------------------------------------------------"
 
 cp buildScripts/env.*.txt $OUTDIR/build/
@@ -178,8 +180,9 @@ if [ "$MAKEDOCS" == "1" ]; then
   cat ${INITDIR}/buildScripts/index.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > index.md
   cat ${INITDIR}/buildScripts/faq.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > faq.md
   cat ${INITDIR}/buildScripts/manual.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > manual.md
+  cat ${INITDIR}/buildScripts/manual.DCEG.md | sed "s/CURRENT_PIPELINE_VERSION_NUMBER/$VERSION/g" | sed "s/CURRENT_PIPELINE_VERSION_FULLDATE/$FULLDATE/g" > manual.DCEG.md
 
-  for line in index faq manual
+  for line in index faq manual "manual.DCEG"
   do
      perl /home/hartleys/software/markdown/Markdown.pl $line.md > nocss.$line.html
      cat $INITDIR/buildScripts/docs/stylesheets/template.start.html nocss.$line.html $INITDIR/buildScripts/docs/stylesheets/template.end.html > $line.html

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html>
+		<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<title>vArmyKnife: Variant Army Knife Toolkit</title>
+
+		<link rel="stylesheet" href="docs/stylesheets/styles.css">
+		<link rel="stylesheet" href="docs/stylesheets/pygment_trac.css">
+		<script src="javascripts/scale.fix.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+		<!--[if lt IE 9]>
+		<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+<div class="wrapper">
+
+
+<header>
+			<h1><a href="index.html">vArmyKnife</a></h1>
+			<p>Variant Army Knife</p>
+			<p class="view"><a href="https://github.com/hartleys/vArmyKnife">View the Project on GitHub <small>Stephen Hartley</small></a></p>
+			<ul>
+				<li><a href="https://github.com/hartleys/vArmyKnife/releases/latest">Latest <strong>Release</strong></a></li>
+				<li><a href="https://github.com/hartleys/vArmyKnife/zipball/master">Download <strong>ZIP File</strong></a></li>
+				<li><a href="https://github.com/hartleys/vArmyKnife/tarball/master">Download <strong>TAR Ball</strong></a></li>
+				<li><a href="https://github.com/hartleys/vArmyKnife">View On <strong>GitHub</strong></a></li>
+			</ul>
+</header>
+
+
+<section><h1>User Manual for vArmyKnife</h1>
+
+<blockquote>
+  <p>v2.1.84   \
+Compiled Tue Aug 14 15:42:38 EDT 2018</p>
+</blockquote>
+
+<p>TODO: write more!</p>
+
+<p>The creator and maintainer of this package can be contacted at stephen.hartley (at) nih.gov</p>
+
+</section> <h2>QUICK START:</h2> <section>
+
+<p>The pipeline is already installed on HELIX and CCAD.</p>
+
+<p>The following script will load all recommended utility modules on either CCAD or HELIX/BIOWULF:</p>
+
+<pre><code>#on CCAD:
+source &lt;( /mnt/nfs/gigantor/ifs/Shared/hartleys/software/shareMisc/getCurrentLocation -m -s -d )
+
+#on HELIX:
+source &lt;( /data/hartleys/pub/software/shareMisc/getCurrentLocation -m -s -d )
+</code></pre>
+
+<p>We also recommend using a few additional java options, which prevent certain (rare) java errors:</p>
+
+<pre><code>export _JAVA_OPTIONS="-Xms1g -XX:ParallelGCThreads=1 -Xss512m -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
+export MALLOC_ARENA_MAX=1
+</code></pre>
+
+</section> <h2>Loading the pipeline manually:</h2> <section>
+
+<p>The pipeline is already installed on HELIX and CCAD.</p>
+
+<p>This tool is loaded using modules. If for some bizarre reason module isn't active on your console, 
+you may need to use the following command before doing anything:</p>
+
+<pre><code>source /etc/profile.d/modules.sh
+</code></pre>
+
+<p>You will also need to load java version 1.8.0_50 or higher. Fortunetely CCAD, Helix, and
+TREK all have java preinstalled:</p>
+
+<pre><code>#On CCAD:
+module load jdk/1.8.0_111
+#On Helix:
+module load java/1.8.0_92
+#On TREK:
+module load lang/Java/1.8.0_60
+</code></pre>
+
+<p>Then you can load vArmyKnife itself using the commands:</p>
+
+<pre><code>#On CCAD:
+module use /mnt/nfs/gigantor/ifs/Shared/hartleys/modules 
+#On Helix, use:
+module use /data/hartleys/pub/modules
+#Then:
+module load vArmyKnife
+</code></pre>
+
+<p>You can test the installation using the command:</p>
+
+<pre><code>varmyknife help
+</code></pre>
+
+<p>You can also load and use the BETA version of vArmyKnife, which may have additional new features but has not 
+finished undergoing testing. The beta version is more likely to contain undiscovered bugs. The beta version
+can be found here:</p>
+
+<pre><code>#On CCAD:
+module use /mnt/nfs/gigantor/ifs/Shared/hartleys/modulesBeta
+module load vArmyKnifeBeta
+
+#On Helix:
+module use /data/hartleys/pub/modulesBeta/
+module load vArmyKnifeBeta
+</code></pre>
+
+</section> <h2>RECOMMENDED ENVIRONMENT AND JAVA OPTIONS:</h2> <section>
+
+<p>It is recommended that you also use the following environment variables whenever you 
+use vArmyKnife. On some of the clusters I use this seems to prevent certain rare errors.</p>
+
+<pre><code>export _JAVA_OPTIONS="-Xms1g -XX:ParallelGCThreads=1 -Xss512m -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
+export MALLOC_ARENA_MAX=1
+</code></pre>
+
+<p>Also, you're usually going to want to set the maximum memory. How much memory is required 
+will depend on the type of job. The more large annotation files that need to be loaded,
+the more memory will be required. Note however that if you restrict to only one chromosome,
+most of the annotation files will only be loaded for that chromosome, greatly reducing the
+memory footprint.</p>
+
+<p>You can set the memory usage by adding "-Xmx4g" just after "varmyknife" when you invoke vArmyKnife,
+changing "4g" to however many gigabytes you think you will need. Note that if java starts to 
+run low on memory it will slow down considerably as it tries to conserve. It's usually best 
+to allocate some extra memory as needed.</p>
+
+</section>
+
+
+
+</div>
+
+		<footer> <small>
+		<p>Project maintained by <a href="https://github.com/hartleys/QoRTs">Stephen Hartley</a></p>
+		<p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a> (modified)</p>
+		</small> </footer>
+
+</body></html>

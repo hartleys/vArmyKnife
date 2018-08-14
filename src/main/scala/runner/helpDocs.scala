@@ -71,15 +71,15 @@ object helpDocs {
         val licenseArg = filtArgs.lift(2).headOption.getOrElse("base");
         if(licenseArg == "LGPLv3"){
           ( new java.io.BufferedReader( new java.io.InputStreamReader( this.getClass().getClassLoader().getResourceAsStream("LGPLv3.txt") )) ).lines().iterator().asScala.foreach{ line => {
-            reportln(line+"\n","output");
+            report(line,"output");
           }}
         } else if(licenseArg == "LGPLv2.1"){
           ( new java.io.BufferedReader( new java.io.InputStreamReader( this.getClass().getClassLoader().getResourceAsStream("LGPLv2.1.txt") )) ).lines().iterator().asScala.foreach{ line => {
-            reportln(line+"\n","output");
+            report(line,"output");
           }}
         } else {
           ( new java.io.BufferedReader( new java.io.InputStreamReader( this.getClass().getClassLoader().getResourceAsStream("library.LICENSES.txt") )) ).lines().iterator().asScala.foreach{ line => {
-            reportln(line+"\n","output");
+            report(line,"output");
           }}
         }
     } else {

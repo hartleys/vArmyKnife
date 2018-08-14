@@ -36,7 +36,7 @@ object Reporter {
     def report(str : String, verb : String){
       if(isWorthy(verb)){
         report_basefunction(str);
-        isMidline = str.last != '\n';
+        isMidline = str.length > 0 && str.last != '\n';
       }
     }
     
