@@ -215,7 +215,6 @@ if [ "$MAKEPUBLIC" == "1" ]; then
   echo "making public version..."  
   
   OUTDIR2="${INSTDIR2}/$VERSION"
-  cp ${INITDIR}/vArmyKnife.${VERSION}.tar.gz ${OUTDIR2}/
   
   echo "INSTDIR2=$INSTDIR2"
   echo "OUTDIR2=$OUTDIR2"
@@ -231,6 +230,7 @@ set ModulesVersion $VERSION" > ${MODULEDIR2}/.version
   cp -R ${OUTDIR}/build ${OUTDIR2}
   cp -R ${OUTDIR}/bin ${OUTDIR2}
 
+  cp ${INITDIR}/vArmyKnife.${VERSION}.tar.gz ${OUTDIR2}/
   cp $OUTDIR/src.tar.gz ${OUTDIR2}
   cp $OUTDIR/*.jar ${OUTDIR2}
   
