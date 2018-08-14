@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 v2.1.82
-Revised Tue Aug 14 12:33:15 EDT 2018
+Revised 
 
 ## What if none of these answers solve my problem?
 

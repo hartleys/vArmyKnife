@@ -1,27 +1,25 @@
 
-Written 2017 by Stephen Hartley, PhD
+Written 2017 by Stephen Hartley, PhD 
 
-vArmyKnife is "United States Government Work" under the terms of the United 
-States Copyright Act. It was written as part of the authors' official duties 
-for the United States Government and thus QoRT Package User Manual cannot be 
-copyrighted. This software is freely available to the public for use without a 
-copyright notice. Restrictions cannot be placed on its present or future use.
+National Cancer Institute (NCI) 
 
-Although all reasonable efforts have been taken to ensure the accuracy and 
-reliability of the software and data, the National Human Genome Research 
-Institute (NHGRI) and the U.S. Government does not and cannot warrant the 
-performance or results that may be obtained by using this software or data. 
-NHGRI and the U.S. Government disclaims all warranties as to performance, 
-merchantability or fitness for any particular purpose.
+Division of Cancer Epidemiology and Genetics 
 
-In any work or product derived from this material, proper attribution of the 
-authors as the source of the software or data should be made, using "NCI, Division 
-of Cancer Epidemiology and Genetics, Human Genetics Program" as the citation.
+Human Genetics Program
 
-This package USES, but is not derived from, several externally-developed libraries
-licensed under various licenses.
+vArmyKnife and all relevant documentation is "United States Government Work" under he terms of the United States Copyright Act. It was written as part of the authors' fficial duties for the United States Government and thus vArmyKnife cannot be opyrighted. This software is freely available to the public for use without a opyright notice. Restrictions cannot be placed on its present or future use.
 
-For more information on the licenses of the contained libraries, use the command: 
+Although all reasonable efforts have been taken to ensure the accuracy and eliability of the software and data, the National Human Genome Research nstitute (NHGRI), the National Cancer Institute (NCI) and the U.S. Government oes not and cannot warrant the performance or results that may be obtained y using this software or data. NHGRI, NCI and the U.S. Government disclaims ll warranties as to performance, merchantability or fitness for any articular purpose.
 
-    java -jar thisjarfile.jar help LICENSES
+In any work or product derived from this material, proper attribution of the uthors as the source of the software or data should be made, using "NCI Division f Cancer Epidemiology and Genetics, Human Genetics Program" as the citation.
+
+This package uses (but is not derived from) several externally-developed, open-source libraries which have been distributed under various open-source licenses. vArmyKnife is distributed packaged with these libraries included.
+
+Additional License information can be accessed using the command:
+
+    vArmyKnife help LICENSES
+
+And can also found in the distributed source code in:
+
+    src/main/resources/
 
