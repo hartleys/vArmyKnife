@@ -58,7 +58,8 @@ case class ClinVarAssertInfo(
    ){
      def getSimpleString(delim : String = "|") : String = {
        Seq(accessionID,date,orgID,orgType,orgName,recordStatus,origins,methods,interpretation,interpretationDate,disease.mkString("/"),
-           alleID,varID,hapID,isMultiVarHaplo+"").map{x => {
+           alleID,varID,hapID,isMultiVarHaplo+"",
+              diseaseLookup.padTo(1,".").mkString("/"), diseaseMEDGEN.padTo(1,".").mkString("/")).map{x => {
          cleanForInfoLevel3(x)
        }}.mkString(delim);
      }
@@ -241,7 +242,6 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
     def walkerParams : Seq[(String,String)] = Seq[(String,String)]();
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
 
-
       val outHeader = vcfHeader.copyHeader
       
       subsetFuncs.foreach{ case (ssName,ssDesc,ssFunc) => {
@@ -255,7 +255,6 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
 
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"num",Number="1",Type="Integer",      desc=ssDesc+" Num reports."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"originSet",Number=".",Type="String", desc=ssDesc+" Set of all observed reported origins."));
-        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseSet",Number=".",Type="String", desc=ssDesc+" Set of all observed reported diseases."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertSet",Number=".",Type="String", desc=ssDesc+" The set of all observed pathogenicity assertion levels."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"isPerfAgree",Number="1",Type="Integer", desc=ssDesc+" Equal to 1 iff all non-misc reports have the exact same asserted status."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"perfAgree",Number="1",Type="String", desc=ssDesc+" Equal to the agreed-upon assertion level iff all non-misc reports have the exact same asserted status. Otherwise set to missing."));
@@ -282,9 +281,17 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
 
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"mostRecentCall",Number="1",Type="String",ssDesc + " the most recently updated ClinAssert with a legal non-misc call."))
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"mostRecentDate",Number="1",Type="String",ssDesc + " the date of the most recently updated ClinAssert with a legal non-misc call."))
+        
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseSet",Number=".",Type="String", desc=ssDesc+" Set of all observed reported diseases, when disease is listed by name."))
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseMedgen",Number=".",Type="String", desc=ssDesc+" Set of all observed reported disease MedGen IDs."))
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseCrossref",Number=".",Type="String", desc=ssDesc+" Set of all observed reported disease listings, when listed by cross-reference."))
+
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseSetPLP",Number=".",Type="String", desc=ssDesc+" Set of all observed reported diseases, when disease is listed by name in reports labelled Pathogenic or Likely Pathogenic."))
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseMedgenPLP",Number=".",Type="String", desc=ssDesc+" Set of all observed reported disease MedGen IDs, in reports labelled Pathogenic or Likely Pathogenic."))
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"diseaseCrossrefPLP",Number=".",Type="String", desc=ssDesc+" Set of all observed reported disease listings, when listed by cross-reference in reports labelled Pathogenic or Likely Pathogenic."))
+
       }}
 
-      
       def getAssertLevel(a : ClinVarAssertInfo) : String = {
         if(a.interpretation == "UNCERTAIN_SIGNIFICANCE"){ "VUS";
         } else if(a.interpretation == "BENIGN"){ "B";
@@ -294,7 +301,6 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
         } else { "MISC";
         }
       }
-      
       
       (vcMap(vcIter){ v => {
         val vc  = v.getOutputLine();
@@ -321,6 +327,7 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
               val bad = assertData.count{ p => ! LEGAL_CLINASSERT_SET.contains(p.interpretation) }
               val assertsSortedByDate = assertData.sortBy( a => a.date ).map{a => getAssertLevel(a)}
               val assertsSortedByDateWithDate = assertData.sortBy( a => a.date ).map{a => (getAssertLevel(a),a.date)}
+              val assertsPLP = assertData.filter{p => p.interpretation == "PATHOGENIC" || p.interpretation == "LIKELY_PATHOGENIC"} 
               
               val interpCts = Seq(us,b,lb,p,lp)
               val interpSeq = Seq(us,b,lb,p,lp).zip(Seq("VUS","B","LB","P","LP"));
@@ -337,14 +344,20 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
               vc.addInfo(tagPrefix+ssName+"numMalformat",""+bad);
 
               vc.addInfo(tagPrefix+ssName+"num",""+assertData.length);
-              vc.addInfo(tagPrefix+ssName+"diseaseSet", assertData.toSet.flatMap{ (p : ClinVarAssertInfo) => p.disease.toSet }.toVector.sorted.padTo(1,".").mkString(","));
               vc.addInfo(tagPrefix+ssName+"originSet",  assertData.map{_.origins}.toVector.distinct.sorted.padTo(1,".").mkString(","));
               val assertSet = interpSeq.filter{case (ct,lvl) => ct > 0}.map{_._2}.toSet
               vc.addInfo(tagPrefix+ssName+"assertSet",  assertSet.toVector.sorted.padTo(1,".").mkString(","));
               val badSet = assertData.map{p => p.interpretation}.filter{ p => ! LEGAL_CLINASSERT_SET.contains(p) }.toVector.distinct.sorted;
               vc.addInfo(tagPrefix+ssName+"warn_malformatSet",  badSet.padTo(1,".").mkString(","));
               
+              vc.addInfo(tagPrefix+ssName+"diseaseSet",         assertData.toSet.flatMap{ (p : ClinVarAssertInfo) => p.disease.toSet       }.filter{aa => ! ( aa == "" || aa == ".")}.toVector.sorted.padTo(1,".").mkString(","));
+              vc.addInfo(tagPrefix+ssName+"diseaseMedGen",      assertData.toSet.flatMap{ (p : ClinVarAssertInfo) => p.diseaseMEDGEN.toSet }.filter{aa => ! ( aa == "" || aa == ".")}.toVector.sorted.padTo(1,".").mkString(","));
+              vc.addInfo(tagPrefix+ssName+"diseaseCrossref",    assertData.toSet.flatMap{ (p : ClinVarAssertInfo) => p.diseaseLookup.toSet }.filter{aa => ! ( aa == "" || aa == ".")}.toVector.sorted.padTo(1,".").mkString(","));
               
+              vc.addInfo(tagPrefix+ssName+"diseaseSetPLP",      assertsPLP.toSet.flatMap{ (p : ClinVarAssertInfo) => p.disease.toSet       }.filter{aa => ! ( aa == "" || aa == ".")}.toVector.sorted.padTo(1,".").mkString(","));
+              vc.addInfo(tagPrefix+ssName+"diseaseMedGenPLP",   assertsPLP.toSet.flatMap{ (p : ClinVarAssertInfo) => p.diseaseMEDGEN.toSet }.filter{aa => ! ( aa == "" || aa == ".")}.toVector.sorted.padTo(1,".").mkString(","));
+              vc.addInfo(tagPrefix+ssName+"diseaseCrossrefPLP", assertsPLP.toSet.flatMap{ (p : ClinVarAssertInfo) => p.diseaseLookup.toSet }.filter{aa => ! ( aa == "" || aa == ".")}.toVector.sorted.padTo(1,".").mkString(","));
+
               vc.addInfo(tagPrefix+ssName+"isPerfAgree", (if(assertSet.size == 1) "1" else "0") );
               vc.addInfo(tagPrefix+ssName+"perfAgree", (if(assertSet.size == 1) assertSet.head else ".") );
               vc.addInfo(tagPrefix+ssName+"warn_majorConflict", (if(plp > 0 && blb > 0) "1" else "0") );
@@ -406,11 +419,8 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
                                                                  } else {
                                                                    "ERROR"
                                                                  })
-              
               //assertsSortedByDateWithDate
               vc.addInfo(tagPrefix+ssName+"TBbD_call", tbbdCall);
-              
-              
           }}
           
         }

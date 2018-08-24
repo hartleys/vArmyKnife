@@ -44,7 +44,7 @@ object VcfAnnotateTX {
                             (("C","T"),("G","A")),
                             (("C","G"),("G","C"))
                           );
-  
+   
   class CmdMultiStepPipeline extends CommandLineRunUtil {
      override def priority = 1;
      
@@ -178,12 +178,19 @@ object VcfAnnotateTX {
                                          arg = List("--addCanonicalTags"), // name of value
                                          valueName = "knownCanonical.txt",
                                          argDesc = "Supply a list of canonical transcripts, add tags that indicate canonical-transcript-only variant info."+
-                                                   "" // description
+                                                   ""// description
                                        ).meta(false,"Transcript Annotation") ::
                     new UnaryArgument( name = "splitMultiAllelics",
                                          arg = List("--splitMultiAllelics"), // name of value
-                                         argDesc = "If this flag is used, multiallelic variants will be split into multiple separate VCF lines."+
-                                                   "" // description
+                                         argDesc = "If this flag is used, multiallelic variants will be split into multiple separate VCF lines. "+
+                                                   "In order to preserve cross-allele genotypes and multiallelic FORMAT fields, the star allele will be "+
+                                                   "used to indicate a different alt allele on a different variant line. The star-allele encoding can be "+
+                                                   "deactivated using the --splitMultiAllelicsNoStarAllele option instead." // description
+                                       ).meta(false,"Preprocessing") ::
+                    new UnaryArgument( name = "splitMultiAllelicsNoStarAlle",
+                                         arg = List("--splitMultiAllelicsNoStarAlle"), // name of value
+                                         argDesc = "If this flag is used, multiallelic variants will be split into multiple separate VCF lines. "+
+                                                   "Two copies of the AD tag will be created, AD and AD_multAlle." // description
                                        ).meta(false,"Preprocessing") ::
                     new UnaryArgument( name = "convertROAOtoAD",
                                          arg = List("--convertROAOtoAD"), // name of value
@@ -327,12 +334,19 @@ object VcfAnnotateTX {
                                         
                     new UnaryArgument( name = "leftAlignAndTrim",
                                          arg = List("--leftAlignAndTrim"), // name of value
-                                         argDesc = "Left align and trim the primary input VCF using a modified and ported version of the GATK v1.8-2 LeftAlignAndTrim walker."+
+                                         argDesc = "Left align and trim the primary input VCF using a modified and ported version of the GATK v3.8-2 LeftAlignAndTrim walker."+
                                                    "" +
                                                    ""+
                                                    ""// description
                                        ).meta(false,"Preprocessing") ::
-                                       
+                    new BinaryOptionArgument[Int]( name = "leftAlignAndTrimWindow",
+                                         arg = List("--leftAlignAndTrimWindow"), // name of value\
+                                         valueName = "N",
+                                         argDesc = "Set the window size used for left align and trim. Indels larger than this will not be left aligned."+
+                                                   "" +
+                                                   ""+
+                                                   ""// description
+                                       ).meta(false,"Preprocessing") ::
 
                     new UnaryArgument( name = "leftAlignAndTrimSecondarys",
                                          arg = List("--leftAlignAndTrimSecondarys"), // name of value
@@ -982,7 +996,7 @@ object VcfAnnotateTX {
                        txToGeneFile = parser.get[Option[String]]("txToGeneFile"),
                        groupFile = parser.get[Option[String]]("groupFile"),
                        superGroupList = parser.get[Option[String]]("superGroupList"),
-                       splitMultiAllelics = parser.get[Boolean]("splitMultiAllelics"),
+                       splitMultiAllelics = parser.get[Boolean]("splitMultiAllelics") || parser.get[Boolean]("splitMultiAllelicsNoStarAlle"),
                        addSummaryCLNSIG = parser.get[Boolean]("addSummaryCLNSIG"),
                        addCanonicalTags = parser.get[Option[String]]("addCanonicalTags"),
                        geneVariantsOnly = parser.get[Boolean]("geneVariantsOnly"),
@@ -1046,6 +1060,7 @@ object VcfAnnotateTX {
                 addVariantIdx = parser.get[Option[String]]("addVariantIdx"),
                 addVariantPosInfo = parser.get[Option[String]]("addVariantPosInfo"),
                 leftAlignAndTrim = parser.get[Boolean]("leftAlignAndTrim"),
+                leftAlignAndTrimWindow = parser.get[Option[Int]]("leftAlignAndTrimWindow"),
                 runEnsembleMerger = parser.get[Boolean]("runEnsembleMerger"),
                 convertROAOtoAD = parser.get[Boolean]("convertROAOtoAD"),
                 snpSiftAnnotate = parser.get[List[String]]("snpSiftAnnotate"),
@@ -1089,7 +1104,8 @@ object VcfAnnotateTX {
                 copyQualToInfo = parser.get[Option[String]]("copyQualToInfo"),
                 copyFilterToInfo = parser.get[Option[String]]("copyFilterToInfo"),
                 copyIdToInfo  = parser.get[Option[String]]("copyIdToInfo"),
-                noGroupStats  = parser.get[Boolean]("noGroupStats")
+                noGroupStats  = parser.get[Boolean]("noGroupStats"),
+                splitMultiAllelicsNoStarAlle = parser.get[Boolean]("splitMultiAllelicsNoStarAlle")
              )
        }
      }
@@ -1179,6 +1195,7 @@ object VcfAnnotateTX {
                 addVariantPosInfo : Option[String] = None,
                 
                 leftAlignAndTrim : Boolean = false,
+                leftAlignAndTrimWindow : Option[Int] = None,
                 
                 runEnsembleMerger : Boolean = false,
                 convertROAOtoAD : Boolean = false,
@@ -1225,7 +1242,8 @@ object VcfAnnotateTX {
                 copyFilterToInfo : Option[String] = None,
                 copyIdToInfo : Option[String] = None,
                 
-                noGroupStats : Boolean = false
+                noGroupStats : Boolean = false,
+                splitMultiAllelicsNoStarAlle : Boolean = false
                 ){
                 /* addSampTag = parser.get[Option[Int]]("addSampTag"),
                        addDepthStats = parser.get[Option[String]]("addDepthStats")
@@ -1370,7 +1388,8 @@ object VcfAnnotateTX {
                 error("ERROR: in order to left align and trim, you MUST specify a genome fasta file with the --genomeFA parameter");
               }
               Seq[SVcfWalker](
-                    internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA.get,windowSize = 200)
+                    //internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)),
+                    internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200), useGatkLibCall = leftAlignAndTrimWindow.isEmpty)
               );
             } else {
               Seq[SVcfWalker]();
@@ -1886,9 +1905,15 @@ object VcfAnnotateTX {
               case None => Seq[SVcfWalker]()
             }
             
+            
         ) ++ (
             if(convertToStandardVcf){
                 Seq[SVcfWalker](new StdVcfConverter())
+            } else if( splitMultiAllelicsNoStarAlle) {
+                Seq[SVcfWalker](new StdVcfConverter(cleanHeaderLines = false, 
+                        cleanInfoFields  = false, 
+                        cleanMetaData  = false,
+                        collapseStarAllele  = true))
             } else {
                 Seq[SVcfWalker]()
             }
@@ -2625,7 +2650,7 @@ object VcfAnnotateTX {
                                       gtTag : String = "GT",
                                       sectionBy : String = "sampGroup"
                                       ) extends SVcfWalker {
-    def walkerName : String = "AddVariantPosWalker"
+    def walkerName : String = "CreateVariantSampleTable"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("sampleDecoder",sampleDecoder),
         ("geneList",geneList.mkString("|"))
@@ -2839,7 +2864,318 @@ object VcfAnnotateTX {
   }
   
   
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  case class CreateVariantAFTable_OLD(
+                                      var keepVariantExpressions : List[String],
+                                      var kveNames : List[String],
+                                      var kveGeneTag : List[String],
+                                      var kveSubtractGeneTags : List[String],
+                                      
+                                      geneList : Seq[String],
+                                      countColumns : Seq[String],
+                                      countColumnNames : Option[Seq[String]],
+                                      
+                                      outfilePrefix : String,
+                                      sectionBy : String = "sampGroup"
+                                      ) extends SVcfWalker {
+    def walkerName : String = "CreateVariantAFTable"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("geneList",geneList.mkString("|"))
+    );
+    
+    if( kveNames.length != keepVariantExpressions.length ){
+      warning("kveNames.length != kve.length. Creating default names!","kve_warn",-1)
+      kveNames = keepVariantExpressions.zipWithIndex.map{ case (kve,i) => "EXPR_"+i }
+    }
+    if( kveGeneTag.length != keepVariantExpressions.length ){
+      if(kveGeneTag.length == 1){
+        kveGeneTag = keepVariantExpressions.map{ kve => kveGeneTag.head }
+      } else {
+        error("Error: kveGeneTag.length != kve.length. You must set the same number of keepVariantExpressions as there are kveGeneTags, OR set only one kveGeneTag!")
+      }
+    }
+    if( kveSubtractGeneTags.length != keepVariantExpressions.length ){
+      if(kveSubtractGeneTags.length == 0){
+        kveSubtractGeneTags = keepVariantExpressions.map{ kve => "." }
+      } else if(kveSubtractGeneTags.length == 1){
+        kveSubtractGeneTags = keepVariantExpressions.map{ kve => kveSubtractGeneTags.head }
+      } else {
+        error("Error: kveSubtractGeneTags.length != kve.length and kveSubtractGeneTags.length != 1. You must set the same number of keepVariantExpressions as there are kveGeneTags, OR set only one kveGeneTag!")
+      }
+    }
+    
+    val fullGeneList =  Seq( geneList.mkString(":") ) ++ geneList
+    val geneNames = Seq("allGenes") ++ geneList
+    
+    case class KVE( exprString : String, name : String, geneTagString : String, subGeneTagString : String ) {
+      
+      lazy val varFcn = internalUtils.VcfTool.sVcfFilterLogicParser.parseString(exprString);
+      lazy val geneTag : Seq[String] = geneTagString.split(",").toSeq;
+      lazy val subtractGeneTags : Seq[String] = if(subtractGeneTags == ".") {
+        Seq[String]()
+      } else {
+        subGeneTagString.split(",").toSeq
+      }
+      
+      lazy val varOnGeneFcn  : Seq[SFilterLogic[SVcfVariantLine]] = fullGeneList.map{ g => {
+        val kve : String = (
+            Seq[String]( "("+
+                   geneTag.map{ tt => {
+                     "INFO.inAnyOf:"+tt+":"+g
+                   }}.mkString(" OR ") + 
+                ")"
+            ) ++ 
+            subtractGeneTags.map{ subTag => {
+              " ( NOT INFO.inAnyOf:"+subTag+":"+g+" ) "
+            }}
+          ).mkString(" AND ")
+  
+        internalUtils.VcfTool.sVcfFilterLogicParser.parseString(kve);
+      }}
+      
+    }
+    
+    val kves : Seq[KVE] = keepVariantExpressions.zip(kveNames).zip(kveGeneTag).zip(kveSubtractGeneTags).map{ case (((kveString,kveName),kveGT),kveSGT) => {
+      KVE(exprString = kveString, name = kveName, geneTagString = kveGT, subGeneTagString = kveSGT);
+    }}
+    
+    val keepVarFcn : Seq[SFilterLogic[SVcfVariantLine]] = keepVariantExpressions.map{ kve => {
+          internalUtils.VcfTool.sVcfFilterLogicParser.parseString(kve);
+    }}
+    
+    //val decoderLines = getLinesSmartUnzip(sampleDecoder)
+    //val titleLine = decoderLines.next.split("\t");
+    //val decoderArray = decoderLines.toArray.map{ line => line.split("\t")};
+    /*val sampLists : Seq[(String,Set[String])] = decoderColumns.zip{ decoderColumnNames.getOrElse(decoderColumns) }.flatMap{ case (colName,colTitle) => {
+      val colIdx = titleLine.indexOf(colName);
+      if(colIdx == -1){
+        error("Column not found in decoder file: \""+colName+"\"\n Found columns: [\""+titleLine.mkString("\",\"")+"\"]\n"+"\n in file: "+sampleDecoder);
+      }
+      val valueList = decoderArray.map{cells => {
+        cells(colIdx)
+      }}.toSet.filter{ c => c != "0" }
+      
+      valueList.toVector.sorted.map{ xx => {
+        val outName = if(xx == "1"){
+          ""
+        } else {
+          "_"+xx
+        }
+        (colTitle+outName,decoderArray.withFilter{cells => {
+          cells(colIdx) == xx
+        }}.map{_.head}.toSet)
+      }}
+    }}*/
+    
+    
+    //countColumns : Seq[String],
+    //countColumnNames : Option[Seq[String]],
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      //val samps = vcfHeader.titleLine.sampleList;
+      //val sampGroups = sampLists.unzip._1;
+      
+      val varCtArray       = Array.fill[Int](countColumns.length,keepVariantExpressions.length,fullGeneList.length)(0);
+      val varSumArray      = Array.fill[Int](countColumns.length,keepVariantExpressions.length,fullGeneList.length)(0);
+      //val varSampCtArrayHom   = Array.fill[Int](countColumns.length,keepVariantExpressions.length,fullGeneList.length)(0);
+      //val varSampBoolArray = Array.fill[Boolean](countColumns.length,keepVariantExpressions.length,fullGeneList.length, samps.length)(false);
+      
+      //val sampFlags : Seq[Array[Boolean]] = sampLists.map{ case (setName, subsamps) => {
+      //  samps.toArray.map{ s => subsamps.contains(s) }
+      //}}
+
+      (addIteratorCloseAction( vcMap(vcIter){ v => {
+        //DO STUFF
+        
+        kves.zipWithIndex.foreach{ case (kve,j) => {
+          
+          val onGene = kve.varOnGeneFcn.map{ gFcn => gFcn.keep(v) }.zipWithIndex.filter{ case (kv,j) => kv }.map{ _._2 }
+          //val keepVar = keepVarFcn.map{ kFcn => kFcn.keep(v) }.zipWithIndex.filter{ case (kv,j) => kv }.map{ _._2 }
+          
+          if(kve.varFcn.keep(v) && onGene.nonEmpty){
+            Range(0,countColumns.length).foreach{ i => {
+              val ct = v.info.get(countColumns(i)).getOrElse(None).flatMap{ xx => if(xx == ".") None else Some(xx.toInt) }.getOrElse(0)
+              if(ct > 0){
+                onGene.foreach{ k => {
+                  varCtArray(i)(j)(k) += 1;
+                  varSumArray(i)(j)(k) += ct;
+                }}
+              }
+            }}
+          }
+          
+        }}
+        v
+      }}, closeAction = (() => {
+        //do nothing
+        //if(sectionBy == "sampGroup"){
+          countColumns.zip(countColumnNames).zipWithIndex.foreach{ case ((grp,grpName),i) => {
+            val writer = openWriter(outfilePrefix + grpName + ".table.txt");
+            
+            writer.write("geneID\t"+kves.zipWithIndex.map{ case (kve,j) => {
+                ""+kve.name+"\t"+kve.name+"\t"+kve.name
+            }}.mkString("\t") + "\n")
+            writer.write("geneID\t"+kves.zipWithIndex.flatMap{ case (kve,j) => {
+                Seq("varCt","varSum")
+            }}.mkString("\t") + "\n")
+            writer.write("geneID\t"+kves.zipWithIndex.flatMap{ case (kve,j) => {
+                Seq(kve.name + "_varCt",kve.name + "_varSum")
+            }}.mkString("\t") + "\n")
+              
+            fullGeneList.zip(geneNames).zipWithIndex.foreach{ case ((gExpr,g),k) => {
+              writer.write(
+                  g + "\t"+  kves.zipWithIndex.map{ case (kve,j) => {
+                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                        varSumArray(i)(j)(k)
+                  }}.mkString("\t") + 
+                  "\n"
+              );
+            }}
+            
+            writer.close();
+          }}
+
+                                    //  keepVarExprNames : Option[Seq[String]],
+      })),vcfHeader)
+    }
+
+  }
+
+
+  case class CreateVariantAFTable(keepVariantExpressions : List[String],
+                                      geneList : List[String],
+                                      keepVarExprNames : List[String],
+                                      countColumns : List[String],
+                                      countColumnNames : List[String],
+                                      outfilePrefix : String,
+                                      geneTag : List[String] = List[String]("SWH_ANNO_geneList_LOF"),
+                                      sectionBy : String = "sampGroup",
+                                      subtractGeneTags : Option[List[String]] = None
+                                      ) extends SVcfWalker {
+    def walkerName : String = "CreateVariantSampleTable"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("geneList",geneList.mkString("|"))
+    );
+    
+    val keepVarFcn : Seq[SFilterLogic[SVcfVariantLine]] = keepVariantExpressions.map{ kve => {
+          internalUtils.VcfTool.sVcfFilterLogicParser.parseString(kve);
+    }}
+    val fullGeneList =  Seq( geneList.toVector.map{ gg => {
+      gg.split("[|]").last
+    }}.distinct.mkString(":") ) ++ geneList.toVector.map{ gg => {
+      gg.split("[|]").last
+    }}
+    val geneNames = Seq("allGenes") ++ geneList.toVector.map{ gg => {
+      gg.split("[|]").head
+    }}
+    
+    //"INFO.inAnyOf:"+geneTag+":"+g
+    val varOnGeneFcn : Seq[SFilterLogic[SVcfVariantLine]] = fullGeneList.map{ g => {
+      val kve : String = (
+          Seq[String]( "("+
+                 geneTag.map{ tt => {
+                   "INFO.inAnyOf:"+tt+":"+g
+                 }}.mkString(" OR ") + 
+              ")"
+          ) ++ 
+          subtractGeneTags.getOrElse(List[String]()).map{ subTag => {
+            " ( NOT INFO.inAnyOf:"+subTag+":"+g+" ) "
+          }}
+        ).mkString(" AND ")
+
+      internalUtils.VcfTool.sVcfFilterLogicParser.parseString(kve);
+    }}
+    val geneListColons = fullGeneList.mkString(":")
+    
+    val varOnAnyGeneFcn : SFilterLogic[SVcfVariantLine] = {
+     // val kve = "INFO.inAnyOf:"+geneTag+":"+geneList.mkString(":")
+      val kve : String = (
+          Seq[String]( "("+
+                 geneTag.map{ tt => {
+                   "INFO.inAnyOf:"+tt+":"+geneListColons
+                 }}.mkString(" OR ") + 
+              ")"
+          ) ++ 
+          subtractGeneTags.getOrElse(List[String]()).map{ subTag => {
+            " ( NOT INFO.inAnyOf:"+subTag+":"+geneListColons+" ) "
+          }}
+        ).mkString(" AND ")
+
+      internalUtils.VcfTool.sVcfFilterLogicParser.parseString(kve)
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val varCtArray       = Array.fill[Int](countColumns.length,keepVariantExpressions.length,fullGeneList.length)(0);
+      val varSumArray      = Array.fill[Int](countColumns.length,keepVariantExpressions.length,fullGeneList.length)(0);
+
+      (addIteratorCloseAction( vcMap(vcIter){ v => {
+        //DO STUFF
+        val onGene = varOnGeneFcn.map{ gFcn => gFcn.keep(v) }.zipWithIndex.filter{ case (kv,j) => kv }.map{ _._2 }
+        val keepVar = keepVarFcn.map{ kFcn => kFcn.keep(v) }.zipWithIndex.filter{ case (kv,j) => kv }.map{ _._2 }
+        if( onGene.nonEmpty && keepVar.nonEmpty ){
+          Range(0,countColumns.length).foreach{ i => {
+            val ct = v.info.get(countColumns(i)).getOrElse(None).flatMap{ xx => if(xx == ".") None else Some(xx.toInt) }.getOrElse(0)
+
+            if(ct > 0){
+              keepVar.foreach{ j => {
+                onGene.foreach{ k => {
+                  varCtArray(i)(j)(k) += 1;
+                  varSumArray(i)(j)(k) += ct
+                }}
+              }}
+            }
+          }} 
+        }
+        
+        /*Range(0,decoderColumns.length).foreach{ i => {
+          
+        }}*/
+        v
+      }}, closeAction = (() => {
+        if(sectionBy == "sampGroup"){
+          countColumns.zip(countColumnNames).zipWithIndex.foreach{ case ((cc,cname),i) => {
+            val writer = openWriter(outfilePrefix + cname + ".table.txt");
+            
+            writer.write("geneID\t"+keepVarExprNames.zipWithIndex.map{ case (kv,j) => {
+                ""+kv+"\t"+kv
+            }}.mkString("\t") + "\n")
+            writer.write("geneID\t"+keepVarExprNames.zipWithIndex.flatMap{ case (kv,j) => {
+                Seq(kv + "_varCt",kv + "_varSum")
+            }}.mkString("\t") + "\n")
+              
+            geneNames.zipWithIndex.foreach{ case (g,k) => {
+              writer.write(
+                  g + "\t"+  keepVarExprNames.zipWithIndex.map{ case (kv,j) => {
+                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                        varSumArray(i)(j)(k)
+                  }}.mkString("\t") + 
+                  "\n"
+              );
+            }}
+            
+            writer.close();
+          }}
+        } else if(sectionBy == "varGroup"){
+          
+        }
+                                    //  keepVarExprNames : Option[Seq[String]],
+      })),vcfHeader)
+    }
+
+  }
+  
+  
   class CmdCreateVariantSampleTable extends CommandLineRunUtil {
      override def priority = 1;
      val parser : CommandLineArgParser = 
@@ -2856,7 +3192,13 @@ object VcfAnnotateTX {
                                          argDesc =  ""
                                         ) ::
                                         
-                                        
+                    new BinaryOptionArgument[List[String]]( name = "calcViaAlleleCountField",
+                                         arg = List("--calcViaAlleleCountField"), // name of value
+                                         valueName = "ctField1,ctField2,...",
+                                         argDesc = ""+
+                                                   "" // description
+                                         
+                                       ) ::
 
                     new BinaryMonoToListArgument[String](
                                          name = "keepVariantExpressions", 
@@ -2948,31 +3290,73 @@ object VcfAnnotateTX {
      def run(args : Array[String]) {
        val out = parser.parseArguments(args.toList.tail);
        if(out){
-         new CreateVariantSampleTable_OLD(
-                       sampleDecoder = parser.get[Option[String]]("sampleDecoder").get, 
-                        keepVariantExpressions = parser.get[List[String]]("keepVariantExpressions"),
-                        geneList = parser.get[Option[List[String]]]("geneList").get,
-                        decoderColumns = parser.get[Option[List[String]]]("decoderColumns").get,
-                        decoderColumnNames = parser.get[Option[List[String]]]("decoderColumnNames"),
-                        //keepVarExprNames : Option[Seq[String]],
-                        keepVarExprNames = parser.get[Option[List[String]]]("keepVarExprNames").get,
-                        outfilePrefix = parser.get[Option[String]]("outfilePrefix").get,
-                        geneTag = parser.get[Option[List[String]]]("geneTag").getOrElse(List[String]("SWH_ANNO_geneList_LOF")),
-                        gtTag  =  parser.get[Option[String]]("gtTag").getOrElse("GT"),
-                        sectionBy  = parser.get[Option[String]]("sectionBy").getOrElse("sampGroup"),
-                        subtractGeneTags  = parser.get[Option[List[String]]]("subtractGeneTags")
-         ).walkVCFFiles(
-             infiles = parser.get[String]("infile"),
-             outfile = parser.get[String]("outfile"),
-             chromList = parser.get[Option[List[String]]]("chromList"),
-             numLinesRead = None,
-             inputFileList = parser.get[Boolean]("inputFileList"),
-             dropGenotypes = false
-         )
+         
+         parser.get[Option[List[String]]]("calcViaAlleleCountField") match {
+           case Some(alleCtFields) => {
+             
+             /*
+              * keepVariantExpressions : List[String],
+                                      geneList : List[String],
+                                      keepVarExprNames : List[String],
+                                      countColumns : List[String],
+                                      countColumnNames : List[String],
+                                      outfilePrefix : String,
+                                      geneTag : List[String] = List[String]("SWH_ANNO_geneList_LOF"),
+                                      sectionBy : String = "sampGroup",
+                                      subtractGeneTags : Option[List[String]] = None
+                                      
+              */
+             
+              val cvat = CreateVariantAFTable( keepVariantExpressions = parser.get[List[String]]("keepVariantExpressions"),
+                  geneList = parser.get[Option[List[String]]]("geneList").get,
+                  keepVarExprNames = parser.get[Option[List[String]]]("keepVarExprNames").get,
+                  countColumns = alleCtFields,
+                  countColumnNames = alleCtFields,
+                  outfilePrefix = parser.get[Option[String]]("outfilePrefix").get,
+                  geneTag = parser.get[Option[List[String]]]("geneTag").getOrElse(List[String]("SWH_ANNO_geneList_LOF")),
+                  sectionBy = parser.get[Option[String]]("sectionBy").getOrElse("sampGroup"),
+                  subtractGeneTags = parser.get[Option[List[String]]]("subtractGeneTags")
+              )
+             
+              cvat.walkVCFFiles(
+                 infiles = parser.get[String]("infile"),
+                 outfile = parser.get[String]("outfile"),
+                 chromList = parser.get[Option[List[String]]]("chromList"),
+                 numLinesRead = None,
+                 inputFileList = parser.get[Boolean]("inputFileList"),
+                 dropGenotypes = false
+             )
+           }
+           case None => {
+             new CreateVariantSampleTable_OLD(
+                           sampleDecoder = parser.get[Option[String]]("sampleDecoder").get, 
+                            keepVariantExpressions = parser.get[List[String]]("keepVariantExpressions"),
+                            geneList = parser.get[Option[List[String]]]("geneList").get,
+                            decoderColumns = parser.get[Option[List[String]]]("decoderColumns").get,
+                            decoderColumnNames = parser.get[Option[List[String]]]("decoderColumnNames"),
+                            //keepVarExprNames : Option[Seq[String]],
+                            keepVarExprNames = parser.get[Option[List[String]]]("keepVarExprNames").get,
+                            outfilePrefix = parser.get[Option[String]]("outfilePrefix").get,
+                            geneTag = parser.get[Option[List[String]]]("geneTag").getOrElse(List[String]("SWH_ANNO_geneList_LOF")),
+                            gtTag  =  parser.get[Option[String]]("gtTag").getOrElse("GT"),
+                            sectionBy  = parser.get[Option[String]]("sectionBy").getOrElse("sampGroup"),
+                            subtractGeneTags  = parser.get[Option[List[String]]]("subtractGeneTags")
+             ).walkVCFFiles(
+                 infiles = parser.get[String]("infile"),
+                 outfile = parser.get[String]("outfile"),
+                 chromList = parser.get[Option[List[String]]]("chromList"),
+                 numLinesRead = None,
+                 inputFileList = parser.get[Boolean]("inputFileList"),
+                 dropGenotypes = false
+             )
+           }
+         }
        }
      }
     
   }
+  
+
   
   case class CreateVariantSampleTable_OLD(sampleDecoder : String, 
                                       keepVariantExpressions : Seq[String],
@@ -2987,7 +3371,7 @@ object VcfAnnotateTX {
                                       sectionBy : String = "sampGroup",
                                       subtractGeneTags : Option[List[String]] = None
                                       ) extends SVcfWalker {
-    def walkerName : String = "AddVariantPosWalker"
+    def walkerName : String = "CreateVariantSampleTable"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("sampleDecoder",sampleDecoder),
         ("geneList",geneList.mkString("|"))
@@ -3714,7 +4098,8 @@ object VcfAnnotateTX {
                           snpEffBiotypeKeepList : Option[List[String]] = None,
                           snpEffEffectKeepList : Option[List[String]] = None,
                           snpEffWarningDropList : Option[List[String]] = None,
-                          snpEffKeepIdx : Option[List[String]] = None
+                          snpEffKeepIdx : Option[List[String]] = None,
+                          geneListName : Option[String] = None
                           ) extends internalUtils.VcfTool.SVcfWalker { 
     
     
@@ -3743,6 +4128,8 @@ object VcfAnnotateTX {
     val annidxCpos = 11
     val annidxWarn=15
     
+
+    
     val snpEffBiotypeKeepSet : Option[Set[String]] = snpEffBiotypeKeepList.map{_.toSet}
     val snpEffEffectKeepSet : Option[Set[String]] = snpEffEffectKeepList.map{_.toSet}
     val snpEffWarningDropSet : Option[Set[String]] = snpEffWarningDropList.map{_.toSet}
@@ -3752,18 +4139,45 @@ object VcfAnnotateTX {
       ki.map(string2int(_)).toSet
     }}.getOrElse( Range(0,16).toSet )
     
+    val snpEffIdxDesc =  Seq("allele","effect","impact","geneName","geneID","txType","txID","txBiotype","rank","HGVS.c","HGVS.p","cDNAposition","cdsPosition","proteinPosition","distToFeature","warnings","errors");
+    val snpEffFmtDescString = "A comma delimited list with bar-delimited entries in the format: "+keepIdx.map{i => snpEffIdxDesc(i)}.mkString("|") +"."
+    val bioTypeDesc = snpEffBiotypeKeepList.map{ blist => {
+      "Limited to the following biotypes: "+blist.mkString(",")+". "
+    }}.getOrElse("all biotypes. ")
+    val effectListDesc = snpEffEffectKeepList.map{ blist => {
+      "Limited to the following effect types: "+blist.mkString(", ")+". "
+    }}.getOrElse("all effect types. ")
+    val warnListDesc = snpEffWarningDropList.map{ blist => {
+      "Ignoring entries with any of the following warnings: "+blist.mkString(", ")+". "
+    }}.getOrElse("Ignoring all warnings. ")
+    val geneListDesc = geneList.map{ glist => {
+      "Limited to the "+glist.length+" genes on the "+geneListName.getOrElse("user-specified")+" gene list. "
+    }}.getOrElse("Ignoring all warnings. ")
+    
+    val annFmtDesc = snpEffFmtDescString + bioTypeDesc + effectListDesc + warnListDesc
+    
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", "Extracted from ANN, high only.")).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"MODERATE", ".", "String", "Extract from ANN, moderate only.")).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"LOW", ".", "String", "Extract from ANN, LOW only.")).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", "Shortened info extracted from ANN, high only. "+annFmtDesc)).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"MODERATE", ".", "String", "Extract from ANN, moderate only. "+annFmtDesc)).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"LOW", ".", "String", "Extract from ANN, LOW only. "+annFmtDesc)).addWalker(this))
+      
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_LOW", ".", "String", "Gene list with LOW effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      
       
       geneList.foreach{ gl => {
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_HIGH", ".", "String", "Extracted from ANN, high only.")).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_MODERATE", ".", "String", "Extracted from ANN, high only.")).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_LOW", ".", "String", "Extracted from ANN, high only.")).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_HIGH", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_MODERATE", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_LOW", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
+
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_GENES_LOW", ".", "String", "Gene list with LOW effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      
       }}
       
       val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
@@ -3782,6 +4196,13 @@ object VcfAnnotateTX {
         var annMdG = Vector[Array[String]]();
         var annLoG = Vector[Array[String]]();
         
+        var gHi = Vector[String]();
+        var gMd = Vector[String]();
+        var gLo = Vector[String]();
+        var gHiG = Vector[String]();
+        var gMdG = Vector[String]();
+        var gLoG = Vector[String]();
+        
         v.info.get(tagID).getOrElse(None).foreach{ ann => {
           val annCells = ann.split(",").map{ aa => aa.split("[|]",-1) }
           annCells.foreach{ cells => {
@@ -3795,23 +4216,29 @@ object VcfAnnotateTX {
             val keepGene = geneSet.map{ gg =>  gg.contains(geneid) }.getOrElse(true)
             val dropWarn = snpEffWarningDropSet.map{ kk => kk.intersect(warnings).nonEmpty }.getOrElse(false);
             val keepbt = snpEffBiotypeKeepList.map{ kk => kk.contains(biotype) }.getOrElse(true);
-                        
+            val geneName = cells.lift(annidxGeneName).getOrElse(".")
             if( keepEffect && ( ! dropWarn) && keepbt ){
               val outCells = cells.zipWithIndex.filter{ case (c,i) => keepIdx.contains(i) }.map{_._1}
               if(impact == "HIGH"){
                 annHi = annHi :+ outCells
+                gHi = gHi :+ geneName
               } else if(impact == "MODERATE"){
                 annMd = annMd :+ outCells
+                gMd = gMd :+ geneName
               } else if(impact == "LOW"){
                 annLo = annLo :+ outCells
+                gLo = gLo :+ geneName
               }
               if(keepGene){
                 if(impact == "HIGH"){
                   annHiG = annHiG :+ outCells
+                  gHiG = gHiG :+ geneName
                 } else if(impact == "MODERATE"){
                   annMdG = annMdG :+ outCells
+                  gMdG = gMdG :+ geneName
                 } else if(impact == "LOW"){
                   annLoG = annLoG :+ outCells
+                  gLoG = gLoG :+ geneName
                 }
               }
             }
@@ -3823,6 +4250,13 @@ object VcfAnnotateTX {
           vc.addInfo( tagPrefix+"OnList_HIGH",     annHiG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
           vc.addInfo( tagPrefix+"OnList_MODERATE", annMdG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
           vc.addInfo( tagPrefix+"OnList_LOW",      annLoG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+          
+          vc.addInfo( tagPrefix+"_GENES_HIGH",     gHi.padTo(1,".").mkString(","));
+          vc.addInfo( tagPrefix+"_GENES_MODERATE", gMd.padTo(1,".").mkString(","));
+          vc.addInfo( tagPrefix+"_GENES_LOW",      gLo.padTo(1,".").mkString(","));
+          vc.addInfo( tagPrefix+"_GENES_OnList_HIGH",     gHiG.padTo(1,".").mkString(","));
+          vc.addInfo( tagPrefix+"_GENES_OnList_MODERATE", gMdG.padTo(1,".").mkString(","));
+          vc.addInfo( tagPrefix+"_GENES_OnList_LOW",      gLoG.padTo(1,".").mkString(","));
 
         }}
         vc
@@ -3837,7 +4271,8 @@ object VcfAnnotateTX {
   class DropSpanIndels() extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "DropSpanIndels"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
-    def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
+    
+    
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
       
@@ -3857,7 +4292,98 @@ object VcfAnnotateTX {
     }
   }
   
-  
+  class MergeSpanIndels() extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "MergeSpanIndels"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      val samps = outHeader.getSampleList
+      
+      val fixList = Seq("GL","PL","QA","AO","AD");
+      
+      val multAlleIdx : Int = Stream.from(1).find{ xx => {
+        val xs = if(xx == 1) "" else xx.toString;
+        (Seq("GT") ++ fixList).forall{ gg => {
+          ! vcfHeader.formatLines.exists{ fl => fl.ID == gg + "_multAlle" + xs }
+        }}
+      }}.get
+      val multAlleSuffix = if(multAlleIdx == 1) "" else multAlleIdx.toString()
+      
+      val oldFmtLines = outHeader.formatLines.filter{ fl => fixList.contains(fl.ID) && Set("R","A","G").contains(fl.Number)  };
+      oldFmtLines.foreach{ fl => {
+        outHeader.addFormatLine(
+          new SVcfCompoundHeaderLine("FORMAT" ,ID = fl.ID + multAlleSuffix, ".", fl.Type, "(For multiallelic variants, an additional value is included in this version to indicate the value for the other alt alleles) "+fl.desc)
+        )
+      }}
+      outHeader.addFormatLine(
+          new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT" + multAlleSuffix, "1", "String", "Raw GT tag, prior to conversion to universally readable VCF")
+      )
+      
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        if(v.genotypes.genotypeValues.length > 0){
+          if(v.alt.length == 2 && v.alt.last == (internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING)){
+            oldFmtLines.foreach( fl => {
+              val fmtIdx = v.format.indexOf(fl.ID);
+              if(fmtIdx == -1){
+                //do nothing
+              } else {
+                val expectedCt = if(fl.Number == "G"){ 3 } else if(fl.Number == "A"){ 1 } else { 2 }
+                val gv = v.genotypes.genotypeValues(fmtIdx).map{g => { g.split(",") }}
+                if(gv.exists{ g => {
+                  g.length > expectedCt
+                }}){
+                  vc.genotypes.fmt = vc.genotypes.fmt.updated(fmtIdx,fl.ID + multAlleSuffix)
+                  if(fl.Number == "A"){
+                    vc.genotypes.addGenotypeArray(fl.ID, gv.map{ gg => {
+                      gg.head
+                    }})
+                  } else if(fl.Number == "R"){
+                    vc.genotypes.addGenotypeArray(fl.ID, gv.map{ gg => {
+                      gg.take(2).padTo(1,".").mkString(",")
+                    }})
+                  }
+                } else {
+                  vc.genotypes.addGenotypeArray( fl.ID + multAlleSuffix, v.genotypes.genotypeValues(fmtIdx).clone() );
+                }
+                /*v.genotypes.genotypeValues(fmtIdx).zipWithIndex.foreach{ case (g,i) => {
+                  val gc = g.split(",");
+                  if(gc.length > expectedCt){
+                    
+                  }
+                }}*/
+              }
+            })
+            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
+            v.genotypes.genotypeValues(0).map{g => (g.split("[/\\|]"),g.contains('|'))}.zipWithIndex.foreach{ case ((g,isPhased),i) => {
+              vc.genotypes.genotypeValues(0)(i) = g.map{ a => if(a == ".") "." else {
+                val aint = string2int(a);
+                if(aint == 1) "1" else "0";
+              }}.mkString((if(isPhased) "|" else "/"));
+            }}
+          }  else {
+            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
+            oldFmtLines.foreach{ fl => {
+              val fmtIdx = v.format.indexOf(fl.ID);
+              if(fmtIdx == -1){
+                //do nothing
+              } else {
+                vc.genotypes.addGenotypeArray( fl.ID +multAlleSuffix, v.genotypes.genotypeValues(fmtIdx).clone() );
+              }
+            }}
+          }
+        }
+        vc;
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+  }
 
   
   object StdVcfConverter extends SVcfWalkerInfo {
@@ -3870,7 +4396,10 @@ object VcfAnnotateTX {
     //def walkerInfo : SVcfWalkerInfo = StdVcfConverter
   }
   
-  class StdVcfConverter(cleanHeaderLines : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
+  class StdVcfConverter(cleanHeaderLines : Boolean = true, 
+                        cleanInfoFields : Boolean = true, 
+                        cleanMetaData : Boolean = true,
+                        collapseStarAllele : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "StdVcfConverter"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
       ("cleanHeaderLines",cleanHeaderLines.toString())
@@ -3893,16 +4422,24 @@ object VcfAnnotateTX {
         }}
       }}.get
       val multAlleSuffix = if(multAlleIdx == 1) "" else multAlleIdx.toString()
-      
       val oldFmtLines = outHeader.formatLines.filter{ fl => fixList.contains(fl.ID) && Set("R","A","G").contains(fl.Number)  };
-      oldFmtLines.foreach{ fl => {
+      
+      if(collapseStarAllele){
+        oldFmtLines.foreach{ fl => {
+          outHeader.addFormatLine(
+            new SVcfCompoundHeaderLine("FORMAT" ,ID = fl.ID + multAlleSuffix, ".", fl.Type, "(For multiallelic variants, an additional value is included in this version to indicate the value for the other alt alleles) "+fl.desc)
+          )
+        }}
         outHeader.addFormatLine(
-          new SVcfCompoundHeaderLine("FORMAT" ,ID = fl.ID + multAlleSuffix, ".", fl.Type, "(For multiallelic variants, an additional value is included in this version to indicate the value for the other alt alleles) "+fl.desc)
+            new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT" + multAlleSuffix, "1", "String", "Raw GT tag, prior to lossy conversion to universally readable VCF. Note that for split multiallelics there will be three possible alleles, 0, 1, and 2, where 2 represents any or all other alt alleles. FOR MOST PURPOSES, THIS IS THE GT TAG THAT SHOULD BE USED.")
         )
-      }}
-      outHeader.addFormatLine(
-          new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT" + multAlleSuffix, "1", "String", "Raw GT tag, prior to conversion to universally readable VCF")
-      )
+        
+        vcfHeader.infoLines.find{ info => info.ID == "GT" }.foreach{ oldGt => {
+            new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT", "1", "String", "Collapsed GT tag, for back-compatibility with software tools that cannot parse VCF v4.2. For split multiallelic variants the third allele will be collapsed with the ref allele. WARNING: It is NOT recommended that this GT tag be used for most purposes, as multiallelic alt alleles have been simplified. It is preferable to use the "+"GT" + multAlleSuffix+" tag, which may contain 3 possible alleles.")
+        }}
+        
+        outHeader.addStatBool("isSplitMultAlleStar",false)
+      }
       
       if(cleanHeaderLines){
         outHeader.formatLines.foreach{ fl => {
@@ -3935,33 +4472,39 @@ object VcfAnnotateTX {
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
-        val vc = SVcfOutputVariantLine(
-           in_chrom = v.chrom,
-           in_pos = v.pos,
-           in_id = v.id,
-           in_ref = v.ref,
-           in_alt = v.alt.take(1),
-           in_qual = v.qual,
-           in_filter = v.filter, 
-           in_info = v.info,
-           in_format = v.format,
-           in_genotypes = v.genotypes//,
-           //in_header = header
-        )
+        val vc = if(cleanMetaData) { 
+            SVcfOutputVariantLine(
+             in_chrom = v.chrom,
+             in_pos = v.pos,
+             in_id = v.id,
+             in_ref = v.ref,
+             in_alt = v.alt.take(1),
+             in_qual = v.qual,
+             in_filter = v.filter, 
+             in_info = v.info,
+             in_format = v.format,
+             in_genotypes = v.genotypes//,
+             //in_header = header
+          )
+        } else {
+          v.getOutputLine();
+        }
         //vc.info.withFilter{ case (key,info) => info.getOrElse("miss") == "" }.foreach{ case (tag,info) => {
         //  vc.addInfo(tag,".");
         //}}
-        vc.info.foreach{ case (tag,info) => {
-          info.foreach{ infoString => {
-            if(infoString == ""){
-              vc.addInfo(tag,".");
-            } else if(infoString.contains('=') || infoString.contains(';') || infoString.contains(' ')){
-              vc.addInfo(tag,infoString.replaceAll("[=]","%3D").replaceAll("[ ]","_").replaceAll("[;]",","));
-            } 
+        if(cleanInfoFields){
+          vc.info.foreach{ case (tag,info) => {
+            info.foreach{ infoString => {
+              if(infoString == ""){
+                vc.addInfo(tag,".");
+              } else if(infoString.contains('=') || infoString.contains(';') || infoString.contains(' ')){
+                vc.addInfo(tag,infoString.replaceAll("[=]","%3D").replaceAll("[ ]","_").replaceAll("[;]",","));
+              } 
+            }}
           }}
-        }}
-        if(v.genotypes.genotypeValues.length > 0){
-          if(v.alt.contains(internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING)){
+        }
+        if(v.genotypes.genotypeValues.length > 0 && collapseStarAllele){
+          if(v.alt.length == 2 && v.alt.last == (internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING)){
             oldFmtLines.foreach( fl => {
               val fmtIdx = v.format.indexOf(fl.ID);
               if(fmtIdx == -1){
@@ -8932,8 +9475,16 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
     val ss = new org.snpsift.SnpSift(finalArgs);
     val ssa = ss.cmd();
     
+    //HACK HACK HACK:
+    //      SnpSiftCmdAnnotate requires an instance of its special entry iterator class.
     val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
     ssa.annotateInit(dummyIter);
+    
+    //HACK HACK HACK: 
+    //      Force SnpSift to process the header so I can access the header info.
+    //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
+    val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummyIter,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
+    ssa.annotate(initilizerExampleVariant)
     
     reportln("    SnpSiftAnno: snpSiftHeader has the following info fields: [\""+dummyIter.getVcfHeader().getVcfHeaderInfo().asScala.map{h => h.getId()}.toVector.padTo(1,".").mkString("\",\"")+"\"]","debug");
     
@@ -9031,6 +9582,11 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
     //ssa.init()
     val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
     ssa.annotateInit(dummyIter);
+    //HACK HACK HACK: 
+    //      Force SnpSift to process the header so I can access the header info.
+    //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
+    val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummyIter,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
+    ssa.annotate(initilizerExampleVariant)
     
     reportln("    SnpSiftAnno: snpSiftHeader has the following info fields: [\""+dummyIter.getVcfHeader().getVcfHeaderInfo().asScala.map{h => h.getId()}.toVector.padTo(1,".").mkString("\",\"")+"\"]","debug");
     
@@ -9141,11 +9697,10 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       
-      if(vcfHeader.infoLines.contains(vcfCodes.splitIdx_TAG)){
+      if( vcfHeader.infoLines.contains(vcfCodes.splitIdx_TAG) || vcfHeader.isSplitMA ){
         warning("Multiallelics appear to have already been split in this file!","ALLELES_ALREADY_SPLIT",-1);
-
       }
-      if(vcfHeader.walkLines.exists(walkline => walkline.ID == "SSplitMultiAllelics")){
+      if(vcfHeader.walkLines.exists(walkline => walkline.ID == "SSplitMultiAllelics") || vcfHeader.isSplitMA ){
           warning("Splitmultiallelic walker found in this VCF file's header. Skipping multiallelic split!","ALLELES_ALREADY_SPLIT",-1);
           //if(! forceSplit){
             return((vcIter,vcfHeader));
@@ -9153,7 +9708,8 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
       }
       val newHeader =vcfHeader.copyHeader
 
-      
+      newHeader.addStatBool("isSplitMultAlle",true)
+      newHeader.addStatBool("isSplitMultAlleStar",true)
       
       val newHeaderLines = List[SVcfCompoundHeaderLine](
           //new VCFInfoHeaderLine(vcfCodes.isSplitMulti_TAG, 0, VCFHeaderLineType.Flag,    "Indicates that this line was split apart from a multiallelic VCF line."),
@@ -9293,7 +9849,6 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
       
       val infoRrev = newHeader.infoLines.withFilter(hl => hl.Number == "R" && hl.subType.getOrElse("") == "refAlleLast").map(_.ID).toSet
       val infoAtruncate = newHeader.infoLines.withFilter(hl => hl.Number == "A" && hl.subType.getOrElse("") == "truncateOtherAlts").map(_.ID).toSet
-
       
       val tagWarningMap = new scala.collection.mutable.AnyRefMap[String,Int](tag => 0);
       /*

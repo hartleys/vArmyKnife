@@ -1002,7 +1002,22 @@ object VcfTool {
     
   }*/
   
-  
+  /*
+   * ,//##SVCFSTATS='
+   * 
+    def getBool(s : String) : Option[Boolean] = {
+      stats.get(s).map{b => b == "TRUE"}
+    }
+    def get(s : String) : Option[String] = {
+      stats.get(s)
+    }
+    
+    def add(a : String, b : String) : SVcfSStatLine = {
+      SVcfSStatLine(stats = stats.updated(a,b))
+    }
+   * 
+                        var svcfStatLine :
+   */
   
   case class SVcfHeader(var infoLines : Seq[SVcfCompoundHeaderLine], 
                         var formatLines : Seq[SVcfCompoundHeaderLine], 
@@ -1010,9 +1025,28 @@ object VcfTool {
                         var walkLines : Seq[SVcfWalkHeaderLine],
                         var titleLine : SVcfTitleLine,
                         var addedInfos : Set[String] = Set[String](),
-                        var addedFmts : Set[String] = Set[String]()){
-    def getVcfLines : Seq[String] = (otherHeaderLines  ++ walkLines ++ infoLines ++ formatLines :+ titleLine).map(_.getVcfString);
+                        var addedFmts : Set[String] = Set[String](),
+                        var sStatLine : Option[SVcfSStatLine] = None){
+    def getVcfLines : Seq[String] = (otherHeaderLines ++ sStatLine ++ walkLines ++ infoLines ++ formatLines :+ titleLine).map(_.getVcfString);
     
+    def addStat(statID : String, statVal : String){
+      sStatLine = Some(sStatLine.getOrElse( SVcfSStatLine() ).add( statID, statVal ))
+    }
+    def addStatBool(statID : String, statVal : Boolean){
+      sStatLine = Some(sStatLine.getOrElse( SVcfSStatLine() ).add( statID, statVal.toString() ))
+    }
+    def getStat(statID : String) : Option[String] = {
+      sStatLine.getOrElse( SVcfSStatLine() ).get( statID )
+    }
+    def getStatBool(statID : String) : Option[Boolean] = {
+      sStatLine.getOrElse( SVcfSStatLine() ).get( statID ).map{ ss => ss == "true" }
+    }
+    def isSplitMA : Boolean = {
+      sStatLine.getOrElse( SVcfSStatLine() ).get( "isSplitMultAlle" ).map{ ss => ss == "true" }.getOrElse(false)
+    }
+    def isSplitStarMA : Boolean = {
+      sStatLine.getOrElse( SVcfSStatLine() ).get( "isSplitMultAlleStar" ).map{ ss => ss == "true" }.getOrElse(false)
+    }
     
     /*def addFormatLine(line : SVcfCompoundHeaderLine, walker : Option[SVcfWalker] = None){
       val idx = formatLines.indexWhere{(p : SVcfCompoundHeaderLine) => {p.ID == line.ID}}
@@ -1083,7 +1117,8 @@ object VcfTool {
                  formatLines = formatLines,
                  otherHeaderLines = otherHeaderLines,
                  walkLines = walkLines,
-                 titleLine = titleLine);
+                 titleLine = titleLine,
+                 sStatLine = sStatLine);
     }
     
     def addWalk(walker : SVcfWalker){
@@ -1127,6 +1162,52 @@ object VcfTool {
       } else {
         None;
       }
+    }
+  }
+  //##SVCFSTATS=
+  def parseSStatLine(s : String) : SVcfSStatLine = {
+    var currString = s;
+    if(! currString.startsWith("##")){
+      error("SVcfSStatLine must be a header line. Impossible state!")
+    }
+    currString = currString.drop(2).trim;
+    if(! currString.startsWith("SVCFSTATS")){
+      error("SVcfSStatLine must start with SVCFSTATS. Impossible state!")
+    }
+    currString = currString.drop("SVCFSTATS".length).trim;
+    if(! currString.startsWith("=")){
+      error("Impossible state! Malformed SStatLine");
+    }
+    currString = currString.drop("=".length).trim;
+    if(! currString.startsWith("<")){
+      error("Impossible state! Malformed SStatLine");
+    }
+    currString = currString.drop("<".length).trim;
+    if(! (currString.last == '>')){
+      error("Impossible state! Malformed SStatLine");
+    }
+    currString = currString.dropRight(1);
+    
+    SVcfSStatLine(currString.split(",").map{ ss => ss.trim.split("=").map{sss => sss.trim} }.map{ ssc => (ssc(0),ssc(1)) }.toMap )
+
+  }
+  
+  case class SVcfSStatLine(stats : Map[String,String] = Map[String,String]()) extends SVcfHeaderLine("SVCFSTATS", 
+                                                                                        Seq("<",
+                                                                                            (stats.map{ case (a,b) => a +"="+b }).mkString(","),
+                                                                                        ">").mkString("")){
+    lazy val isLAT : Option[Boolean] = stats.get("isLAT").map{b => b == "TRUE"}
+    lazy val isMultAlleSplit : Option[Boolean] = stats.get("isMultAlleSplit").map{b => b == "TRUE"}
+    lazy val isStarMultAlleSplit : Option[Boolean] = stats.get("isStarMultAlleSplit").map{b => b == "TRUE"}
+    def getBool(s : String) : Option[Boolean] = {
+      stats.get(s).map{b => b == "TRUE"}
+    }
+    def get(s : String) : Option[String] = {
+      stats.get(s)
+    }
+    
+    def add(a : String, b : String) : SVcfSStatLine = {
+      SVcfSStatLine(stats = stats.updated(a,b))
     }
   }
   case class SVcfTitleLine(sampleList : Seq[String]) extends SVcfLine {
@@ -2711,6 +2792,13 @@ object VcfTool {
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             a.ref.length == 1 && a.alt.head.length == 1;
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="simpleSNV",numParam=0,desc="PASS iff the variant is a biallelic SNV.",paramNames=Seq(),
+                        (params : Seq[String]) => {
+                          (a : SVcfVariantLine) => {
+                            a.ref.length == 1 && a.alt.length == 1 && a.alt.head.length == 1
                           }
                         }
                       ),

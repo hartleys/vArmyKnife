@@ -626,7 +626,72 @@ object GatkPublicCopy {
       
     }
   }
-  
+
+  case class FixFirstBaseMismatch(genomeFa : String, windowSize : Int = 200, changeTag : Option[String] = Some("GATK_LAT_FIRSTBASEMM")) extends SVcfWalker {
+    def walkerName : String = "FixFirstBaseMismatch"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa));
+    
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      //  def bufferedResorting[A](iter : Iterator[A], bufferSize : Int)(f : (A => Int)) : Iterator[A] = {
+      val newHeader = vcfHeader.copyHeader;
+      changeTag.foreach{ tag => {
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tag,Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the original VCF line contained an indel in which the first bases dont match up. Some tools do not accept variants in this form.").addWalker(this));
+      }}
+      newHeader.addWalk(this);
+      var noticeShownA = true;
+      (vcMap(vcIter){ vc => {
+        val vb = vc.getOutputLine();
+        if( vc.alt.head != VcfTool.MISSING_VALUE_STRING && (vc.ref.length > 1 || vc.alt.head.length > 1) && (vc.ref.head != vc.alt.head.head)){
+          changeTag.foreach{ tag => {
+            vb.addInfo(tag,"1");
+          }}
+          vb.in_pos = vb.in_pos - 1;
+          val prevBase = getBaseAtPos(vc.chrom,vc.pos-1);
+          vb.in_ref = prevBase + vc.ref;
+          vb.in_alt = vc.alt.map{a => {
+            if(a == VcfTool.UNKNOWN_ALT_TAG_STRING){
+              a
+            } else if(a == VcfTool.MISSING_VALUE_STRING){
+              prevBase;
+            } else {
+              prevBase + a;
+            }
+          }}
+          if(noticeShownA){
+            reportln("Fixed malformed VCF line: found an indel with mismatching first bases.",
+                     "debug");
+            noticeShownA = false;
+          }
+
+          notice("Fixed malformed VCF line: found a '.' alt allele\n"+
+                 "   old line: "+vc.getSimpleVcfString()+"\n"+
+                 "   new line: "+vb.getSimpleVcfString()+"\n",
+                 "Fixed_malformed_vcf_indel_firstBaseMM",1);
+          vb.getOutputLine();
+        } else {
+          changeTag.foreach{ tag => {
+            vb.addInfo(tag,"0");
+          }}
+          vb;
+        }
+      }},newHeader);
+      
+    }
+  }
   
 
   def rightAlignIndel(ref : String, alt : String, pos : Int, flankingSeq : String) : (Int,String,String) = {
@@ -694,14 +759,26 @@ object GatkPublicCopy {
         refSeqFile.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
       }
     }
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
   }
   
-  case class LeftAlignAndTrimWalker(genomeFa : String, windowSize : Int = 200, tagPrefix : Option[String] = Some("GATK_LAT_")) extends SVcfWalker {
+  case class LeftAlignAndTrimWalker(genomeFa : String, windowSize : Int = 200, tagPrefix : Option[String] = Some("GATK_LAT_"),
+                                    useGatkLibCall : Boolean = true) extends SVcfWalker {
     def walkerName : String = "LeftAlignAndTrim"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa),("windowSize",""+windowSize));
     
     
-    
+    val latMethod = if(useGatkLibCall){
+      "GATKcall"
+    } else {
+      "GATKcode"
+    }
     //def walkerInfo : SVcfWalkerInfo;
     val refFile = new File(genomeFa)
     val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
@@ -745,16 +822,19 @@ object GatkPublicCopy {
       new ReferenceContext( genLocParser, genomeLoc, window, refseq.getBases());
     }
     
+    val rft = refFastaTool(genomeFa = genomeFa)
+    
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       //  def bufferedResorting[A](iter : Iterator[A], bufferSize : Int)(f : (A => Int)) : Iterator[A] = {
       val newHeader = vcfHeader.copyHeader;
       newHeader.addWalk(this);
       tagPrefix.foreach{ tp => {
-        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tp+"OFFSET",Number="1",Type="String",desc="The left alignment offset."),walker=Some(this));
-        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tp+"LAT",Number="1",Type="Integer",desc="Equals 1 iff the leftAlignAndTrim changed the variant encoding."),walker=Some(this));
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tp+"OFFSET",Number="1",Type="String",desc="The left alignment offset.").addExtraField("latWindow",windowSize.toString).addExtraField("latMethod",latMethod),walker=Some(this));
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tp+"LAT",Number="1",Type="Integer",desc="Equals 1 iff the leftAlignAndTrim changed the variant encoding.").addExtraField("latWindow",windowSize.toString).addExtraField("latMethod",latMethod),walker=Some(this));
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tp+"TRIMBP",Number="1",Type="Integer",desc="The number of bases trimmed from both ref and alt by the trim function, prior to left aligning.").addExtraField("latWindow",windowSize.toString).addExtraField("latMethod",latMethod),walker=Some(this));
       }}
       
-      ((addIteratorCloseAction(bufferedGroupedResorting(vcIter.map{ vc => {
+      ((addIteratorCloseAction(bufferedGroupedResorting(vcMap(vcIter){ vc => {
         if(vc.alt.length == 2){
           if(vc.alt.last != "*"){
             error("ERROR: Cannot have multiallelic variants in leftAlignAndTrim. \n   Offending Variant:\n   "+vc.getSimpleVcfString());
@@ -763,7 +843,11 @@ object GatkPublicCopy {
           error("ERROR: Cannot have multiallelic variants in leftAlignAndTrim. \n   Offending Variant:\n   "+vc.getSimpleVcfString());
         }
         val rc = getReferenceContext(vc.chrom,vc.start,vc.end);
-        trimAlign(vc,rc,tagPrefix)._1;
+        if(useGatkLibCall){
+          trimAlign(vc,rc,tagPrefix)._1;
+        } else {
+          trimAlignNoLib(vc,rc,tagPrefix,windowSize)._1;
+        }
       }},windowSize * 4){vc => vc.pos}{vc => vc.chrom}{vc => (vc.pos,vc.ref,vc.alt.head)}, closeAction = (() => {
         reportln("Trimmed "+trimCt+" lines and leftAligned "+leftAlignCt+" lines.","note");
       }))
@@ -781,16 +865,19 @@ object GatkPublicCopy {
   var leftAlignCt = 0;
   var trimCt = 0;
   
-  def trimAlign(v : SVcfVariantLine, ref : ReferenceContext, tagPrefix : Option[String] = None) : (SVcfVariantLine,Int) = {
+  def trimAlignNoLib(v : SVcfVariantLine, ref : ReferenceContext, tagPrefix : Option[String] = None, windowSize : Int = 200) : (SVcfVariantLine,Int) = {
+
+    
     val vc = makeSimpleVariantContext(v);
     //val (latVC,diff) = trimAlignVC(vc,ref);
     val tvc = GATKVariantContextUtils.trimAlleles(vc, true, true)
+    val trimBP = vc.getReference().getBaseString().length - tvc.getReference().getBaseString().length;
     if(tvc.getReference().getBaseString() != vc.getReference().getBaseString()){
       trimCt += 1;
     }
-    val latVCpair =  org.broadinstitute.gatk.tools.walkers.variantutils.LeftAlignAndTrimVariants.alignAndWrite(tvc,ref);
+    val (latVC,diff) =  alignVC(tvc,ref,windowSize = windowSize);
     //alignAndWrite(final VariantContext vc, final ReferenceContext ref)
-    val (latVC,diff) = (latVCpair.first,latVCpair.second)
+    //val (latVC,diff) = (latVCpair.first,latVCpair.second)
     if(diff != 0){
       leftAlignCt += 1;
     }
@@ -803,19 +890,148 @@ object GatkPublicCopy {
     tagPrefix.foreach{ tp => {
       outV.addInfo(tp+"OFFSET",""+diff);
       outV.addInfo(tp+"LAT",isChanged);
+      outV.addInfo(tp+"TRIMBP",""+trimBP);
     }}
     (outV,diff);
   }
   
-  def trimAlignVC(vc : VariantContext, ref : ReferenceContext, 
-         numBiallelics: Int = 0,
-         dontTrimAlleles : Boolean = false,
-         splitMultiallelics  : Boolean = false,
-         referenceWindowStop : Int = 200
+  def trimAlign(v : SVcfVariantLine, ref : ReferenceContext, tagPrefix : Option[String] = None) : (SVcfVariantLine,Int) = {
+    val vc = makeSimpleVariantContext(v);
+    //val (latVC,diff) = trimAlignVC(vc,ref);
+    val tvc = GATKVariantContextUtils.trimAlleles(vc, true, true)
+    val trimBP = vc.getReference().getBaseString().length - tvc.getReference().getBaseString().length;
+    if(tvc.getReference().getBaseString() != vc.getReference().getBaseString()){
+      trimCt += 1;
+    }
+    val latVCpair =  org.broadinstitute.gatk.tools.walkers.variantutils.LeftAlignAndTrimVariants.alignAndWrite(tvc,ref);
+    //alignAndWrite(final VariantContext vc, final ReferenceContext ref)
+    val (latVC,diff) = (latVCpair.first,latVCpair.second)
+    if(diff != 0){
+      leftAlignCt += 1;
+    }
+    val outV = makeSimpleSVcfLine(latVC,Some(v));
+    val isChanged : String = if( v.pos != outV.pos || v.ref != outV.ref || v.alt.head != outV.alt.head){
+      "1"
+    } else {
+      "0"
+    }
+    tagPrefix.foreach{ tp => {
+      outV.addInfo(tp+"OFFSET",""+diff);
+      outV.addInfo(tp+"TRIMBP",""+trimBP);
+      outV.addInfo(tp+"LAT",isChanged);
+    }}
+    (outV,diff);
+  }
+  
+  /*def leftAlign_translated(vc : VariantContext, ref : ReferenceContext, windowSize : Int) : (VariantContext,Int) = {
+        if (!vc.isIndel() || vc.isComplexIndel() ) {
+            return (vc,0);
+        }
+        val indelLength = if ( vc.isSimpleDeletion() ){
+            vc.getReference().length() - 1;
+        } else { 
+            vc.getAlternateAllele(0).length() - 1;
+        }
+        if(indelLength > windowSize){
+           return (vc,0)
+        }
+        if (vc.getReference().getBases().head != vc.getAlternateAllele(0).getBases().head){
+          return (vc,0)
+        }
+        
+          
+  }*/
+  
+
+  def alignVC(tvc : VariantContext, ref : ReferenceContext, 
+        //numBiallelics: Int = 0,
+         //dontTrimAlleles : Boolean = false,
+         //splitMultiallelics  : Boolean = false,
+         windowSize : Int = 200
       ) : (VariantContext, Int) = {
-    val MAX_INDEL_LENGTH = referenceWindowStop;
+    val MAX_INDEL_LENGTH = windowSize;
+
+    val refAlle = tvc.getReference()
+    val refAlleStr = tvc.getReference().getBaseString()
+    val altAlle = tvc.getAlternateAlleles().asScala.head
+    val alt = altAlle.getBaseString();
+    
+    if(refAlleStr.length != 1 || alt.length != 1){
+        // get the indel length
+        val indelLength = if ( tvc.isSimpleDeletion() ){  tvc.getReference().length() - 1;
+                           } else { tvc.getAlternateAllele(0).length() - 1 }
+        if ( indelLength > MAX_INDEL_LENGTH ){
+          return (tvc,0)
+        }
+        if(refAlleStr.head != alt.head){
+          return (tvc,0)
+        }
+        val refSeq = ref.getBases();
+        val originalIndex = tvc.getStart() - ref.getWindow().getStart() + 1;
+        if(originalIndex < 0 || originalIndex >= ref.getBases().length){
+          return (tvc,0)
+        }
+        try{
+          
+        val  originalIndel = makeHaplotype(tvc, refSeq, originalIndex, indelLength);
+
+        var elements = new java.util.ArrayList[CigarElement]();
+        elements.add(new CigarElement(originalIndex, CigarOperator.M));
+        val op = if(tvc.isSimpleDeletion()){CigarOperator.D} else {CigarOperator.I}
+        elements.add(new CigarElement(indelLength, op));
+        elements.add(new CigarElement(refSeq.length - originalIndex, CigarOperator.M));
+        val originalCigar = new Cigar(elements);
+        val newCigar = AlignmentUtils.leftAlignIndel(originalCigar, refSeq, originalIndel, 0, 0, true);
+        if ( !newCigar.equals(originalCigar) && newCigar.numCigarElements() > 1 ) {
+          val difference = originalIndex - newCigar.getCigarElement(0).getLength();
+          
+          val nvc = new VariantContextBuilder(tvc).start(tvc.getStart()-difference).stop(tvc.getEnd()-difference).make();
+          val indelIndex = originalIndex-difference;
+          val newBases = Array.ofDim[Byte](indelLength + 1);
+          newBases(0) = refSeq(indelIndex-1);
+          val rr = if(tvc.isSimpleDeletion()) refSeq else originalIndel
+          System.arraycopy(rr, indelIndex, newBases, 1, indelLength);
+          val newAllele = Allele.create(newBases, tvc.isSimpleDeletion());
+          val newAlles = if(tvc.isSimpleDeletion()){
+            List( newAllele, Allele.create(newAllele.getBases()(0),false) )
+          } else {
+            List( Allele.create(newAllele.getBases()(0), true), newAllele )
+          }
+          var newVC = new VariantContextBuilder(nvc).alleles(newAlles.asJava).make()
+          //var newVC = new VariantContextBuilder(tvc).start(tvc.getStart()-difference).stop(tvc.getEnd()-difference).alleles(newAlles.asJava).make();
+          //newVC = updateAllele(newVC, newAllele);
+          return (newVC,1);
+        } else {
+          return (tvc,0);
+        }
+        } catch {
+          case e : Throwable => {
+            reportln("caught error:","note")
+            reportln("tvc("+tvc.getContig()+":"+tvc.getStart()+":"+tvc.getReference().getBaseString()+">"+altAlle.getBaseString(),"note");
+            reportln("refSeq.length = "+refSeq.length,"note");
+            reportln("originalIndex="+originalIndex,"note")
+            reportln("indelLength="+indelLength,"note")
+            reportln("","note")
+            reportln("","note")
+            throw e;
+          }
+        }
+        return (tvc,0);
+    } else {
+      return (tvc,0);
+    }
+    
+  }
+  
+  def trimAlignVC(vc : VariantContext, ref : ReferenceContext, 
+        //numBiallelics: Int = 0,
+         //dontTrimAlleles : Boolean = false,
+         //splitMultiallelics  : Boolean = false,
+         windowSize : Int = 200
+      ) : (VariantContext, Int) = {
+    val MAX_INDEL_LENGTH = windowSize;
     val refLength = vc.getReference().length();
-    if ( refLength > MAX_INDEL_LENGTH && refLength > referenceWindowStop ) {
+    if ( refLength > MAX_INDEL_LENGTH ) {
             notice(REFERENCE_ALLELE_TOO_LONG_MSG+" ("+refLength+") at position "+vc.getContig()+":"+vc.getStart()+"; skipping that record.","REFALLE_TOO_LONG",10);
             return (vc,0);
     }
@@ -894,9 +1110,27 @@ object GatkPublicCopy {
             currentPos += indelLength;
         }
 
+        
+        try{
         // add the bases after the indel
-        System.arraycopy(ref, indexOfRefVar, hap, currentPos, ref.length - indexOfRef);
-
+           System.arraycopy(ref, indexOfRefVar, hap, currentPos, ref.length - indexOfRefVar);
+        } catch {
+          case e : Throwable => {
+            reportln("caught error:","note")
+            reportln("tvc("+vc.getContig()+":"+vc.getStart()+":"+vc.getReference().getBaseString()+">"+vc.getAlternateAlleles().asScala.head.getBaseString(),"note");
+            reportln("ref.length = "+ref.length,"note");
+            reportln("indexOfRef="+indexOfRef,"note")
+            reportln("indelLength="+indelLength,"note")
+            reportln("indexOfRefVar="+indexOfRefVar,"note")
+            reportln("currentPos="+currentPos,"note")
+            reportln("hap.length="+hap.length,"note")
+            reportln("","note")
+            reportln("","note")
+            throw e;
+          }
+        }
+        
+        
         return hap;
     }
 }
