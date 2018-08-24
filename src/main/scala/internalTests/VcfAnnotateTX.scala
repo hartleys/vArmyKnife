@@ -332,13 +332,36 @@ object VcfAnnotateTX {
                                                     "chromosomes or genomic-region-split VCFs."
                                         ).meta(false,"Input Parameters") ::
                                         
-                    new UnaryArgument( name = "leftAlignAndTrim",
-                                         arg = List("--leftAlignAndTrim"), // name of value
-                                         argDesc = "Left align and trim the primary input VCF using a modified and ported version of the GATK v3.8-2 LeftAlignAndTrim walker."+
-                                                   "" +
-                                                   ""+
+                                        
+                    new UnaryArgument( name = "splitOutputByChrom",
+                                         arg = List("--splitOutputByChrom"), // name of value
+                                         argDesc = "If this option is set, the output will be split up into parts by chromosome. "+
+                                                   "NOTE: The outfile parameter must be either a file prefix (rather than a full filename), "+
+                                                   "or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being " +
+                                                   "'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'. "+
+                                                   ""// description
+                                       ).meta(false,"Output Parameters", 110) ::
+                    new BinaryOptionArgument[String]( name = "splitOutputByBed",
+                                         arg = List("--splitOutputByBed"), // name of value\
+                                         valueName = "intervalBedFile.bed",
+                                         argDesc = "If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. "+
+                                                   "An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, "+
+                                                   "and if this 'name' column contains a unique name with no special characters then this name column will be used as the "+
+                                                   "infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then "+
+                                                   "the files will simply be numbered. "+
+                                                   "NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), "+
+                                                   "or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being " +
+                                                   "'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'. "+
                                                    ""// description
                                        ).meta(false,"Preprocessing") ::
+                                       
+                    new UnaryArgument(
+                                         name = "leftAlignAndTrim", 
+                                         arg = List("--leftAlignAndTrim"),
+                                         argDesc =  "Left align and trim the primary input VCF using a modified "+
+                                                    "and ported version of the GATK v3.8-2 LeftAlignAndTrim walker."
+                                        ).meta(true,"Preprocessing")  :: 
+                                       
                     new BinaryOptionArgument[Int]( name = "leftAlignAndTrimWindow",
                                          arg = List("--leftAlignAndTrimWindow"), // name of value\
                                          valueName = "N",
@@ -365,11 +388,6 @@ object VcfAnnotateTX {
                                                    "processing. Note: the genomeFA parameter is required in order to use this option, as we need to be able to find the reference sequence for the previous base."
                                        ).meta(false,"Preprocessing") ::
 
-                    new UnaryArgument( name = "splitOutputByChrom",
-                                         arg = List("--splitOutputByChrom"), // name of value
-                                         argDesc = "Split the output into separate files by chromosome."+
-                                                   "" // description
-                                       ).meta(true,"UNIMPLEMENTED") ::
                     new BinaryOptionArgument[List[String]]( name = "unPhaseAndSortGenotypes",
                                          arg = List("--unPhaseAndSortGenotypes"), // name of value
                                          valueName = "GT,GT_PREFILT,etc",
@@ -592,6 +610,8 @@ object VcfAnnotateTX {
                                          argDesc =  ""+
                                                     ""
                                         ).meta(true,"ZZ ALPHA PARAMS, not for general use")  :: 
+                                        
+                                        
                     new BinaryOptionArgument[String](
                                          name = "calcRunInfix", 
                                          arg = List("--calcRunInfix"),
@@ -926,6 +946,8 @@ object VcfAnnotateTX {
                                          argDesc =  ""
                                         ).meta(true,"INCOMPLETE") ::
 
+
+                                        
                     new FinalArgument[String](
                                          name = "infile",
                                          valueName = "variants.vcf",
@@ -1024,7 +1046,6 @@ object VcfAnnotateTX {
                        convertToStandardVcf = parser.get[Boolean]("convertToStandardVcf"),
                        addSampTag = parser.get[Option[String]]("addSampTag"),
                        addDepthStats = parser.get[Option[String]]("addDepthStats"),
-                       splitOutputByChrom = parser.get[Boolean]("splitOutputByChrom"),
                        splitAlleleGroupCounts = parser.get[Boolean]("splitAlleleGroupCounts"),
                        BA1_AF = parser.get[Double]("BA1_AF"),
                        PM2_AF = parser.get[Double]("PM2_AF"),
@@ -1105,7 +1126,10 @@ object VcfAnnotateTX {
                 copyFilterToInfo = parser.get[Option[String]]("copyFilterToInfo"),
                 copyIdToInfo  = parser.get[Option[String]]("copyIdToInfo"),
                 noGroupStats  = parser.get[Boolean]("noGroupStats"),
-                splitMultiAllelicsNoStarAlle = parser.get[Boolean]("splitMultiAllelicsNoStarAlle")
+                splitMultiAllelicsNoStarAlle = parser.get[Boolean]("splitMultiAllelicsNoStarAlle"),
+                
+                splitOutputByChrom = parser.get[Boolean]("splitOutputByChrom"),
+                splitOutputByBed = parser.get[Option[String]]("splitOutputByBed")
              )
        }
      }
@@ -1154,7 +1178,6 @@ object VcfAnnotateTX {
                 convertToStandardVcf : Boolean = false,
                 addSampTag : Option[String] = None,
                 addDepthStats : Option[String] = None,
-                splitOutputByChrom : Boolean = false,
                 splitAlleleGroupCounts : Boolean = false,
                 BA1_AF : Double = 0.0,
                 PM2_AF : Double = 0.0,
@@ -1243,7 +1266,10 @@ object VcfAnnotateTX {
                 copyIdToInfo : Option[String] = None,
                 
                 noGroupStats : Boolean = false,
-                splitMultiAllelicsNoStarAlle : Boolean = false
+                splitMultiAllelicsNoStarAlle : Boolean = false,
+                
+                splitOutputByChrom : Boolean = false,
+                splitOutputByBed : Option[String] = None
                 ){
                 /* addSampTag = parser.get[Option[Int]]("addSampTag"),
                        addDepthStats = parser.get[Option[String]]("addDepthStats")
@@ -2030,6 +2056,65 @@ object VcfAnnotateTX {
       addProgressReportFunction(f = (i) => {
         getWarningAndNoticeTallies("   ").mkString("\n      ")
       })
+
+      val validStringRegex = java.util.regex.Pattern.compile("[^a-zA-Z0-9_ .+-]");
+      
+      val splitFuncOpt : Option[(String,Int) => Option[String]] = splitOutputByBed.map{ f => {
+              val arr : internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String] = internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String](false);
+              reportln("   Beginning bed file read: "+f+" ("+getDateAndTimeString+")","debug");
+              val lines = getLinesSmartUnzip(f);
+              var cells = lines.map{line => line.split("\t")}.toVector.map{cells => {
+                (cells(0),string2int(cells(1)),string2int(cells(2)),cells.lift(3))
+              }}
+              var names = cells.map{ case (chrom,start,end,nameOpt) => {
+                nameOpt.getOrElse(".")
+              }}
+              val namesValid = names.forall{ name => {
+                val nameValid = validStringRegex.matcher(name).find();
+                if(! nameValid){
+                  notice("","IntervalNameNotValid",1)
+                }
+                nameValid;
+              }}
+              val namesUnique = names.distinct.length == names.length
+              if(! (namesValid && namesUnique) ){
+                val spanNumCharLen = String.valueOf( names.length ).length();
+                names = names.indices.map{ i => {
+                  "part"+zeroPad(i,spanNumCharLen)
+                }}.toVector
+              }
+              val cellsFinal = cells.zip(names).map{ case ((chrom,start,end,nameOpt),name) => {
+                (chrom,start,end,name)
+              }}
+              cellsFinal.foreach{ case (chrom,start,end,name) => {
+                  if(start != end){ 
+                    arr.addSpan(internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', start,end),name);
+                  }
+              }}
+              arr.finalizeStepVectors;
+              val outFunc : ((String,Int) => Option[String]) = ((c : String, p : Int) => {
+                val currIvNames = arr.findIntersectingSteps(internalUtils.commonSeqUtils.GenomicInterval(c, '.', p,p+1)).foldLeft(Set[String]()){ case (soFar,(iv,currSet)) => {
+                  soFar ++ currSet
+                }}.toList.sorted
+                if(currIvNames.size > 1){
+                  warning("Warning: Variant spans multiple intervals in the split interval BED file.","VariantSpansMultipleSplitterIVs",100)
+                }// else if(currIvNames.size == 0){
+                //  warning("Warning: variant found on span that is not covered by any interval in the span interval split bed! This variant will be DROPPED!","VariantSpandsNoneSplitterIVs",100);
+                //}
+                currIvNames.headOption
+              })
+          Some(outFunc)
+      }}.getOrElse({
+        if(splitOutputByChrom){
+          Some((
+              ((c : String, p : Int) => {
+                Some(c);
+              })
+          ))
+        } else {
+          None
+        }
+      })
       
     if(runEnsembleMerger){
       val preWalker : SVcfWalker = chainSVcfWalkers(initWalkers);
@@ -2037,8 +2122,6 @@ object VcfAnnotateTX {
       if( ! vcffile.contains(';') ) error("Error: runEnsembleMerger is set, the infile parameter must contain semicolons (\";\")");
       val vcfList = vcffile.split(";");
       val (iterSeq,headerSeq) = vcfList.toSeq.zipWithIndex.map{ case (vf,idx) => {
-        
-          
           val (infiles,infixes) : (String,Vector[String]) = infileListInfix match {
             case Some(ili) => {
               val (infilePrefix,infileSuffix) = (vf.split("\\|").head,vf.split("\\|")(1));
@@ -2072,14 +2155,12 @@ object VcfAnnotateTX {
                                     decision : String = "majority_firstOnTies") */
       ) ++ postWalkers);
       
-      finalWalker.walkToFile(outfile,ensIter,ensHeader);
+      finalWalker.walkToFileSplit(outfile,ensIter,ensHeader, splitFuncOpt = splitFuncOpt);
       
     } else {
         
       val allWalkers : Seq[SVcfWalker] = initWalkers ++ postWalkers;
       val finalWalker : SVcfWalker = chainSVcfWalkers(allWalkers)
-      //
-
       
       reportln("All VCF Walkers initialized! "+getDateAndTimeString,"debug");
       infileListInfix match {
@@ -2088,10 +2169,10 @@ object VcfAnnotateTX {
           
           val (infilePrefix,infileSuffix) = (vcffile.split("\\|").head,vcffile.split("\\|")(1));
           val infiles = getLinesSmartUnzip(ili).map{ infix => infilePrefix+infix+infileSuffix }.mkString(",")
-          finalWalker.walkVCFFiles(infiles,outfile, chromList, numLinesRead = numLinesRead, inputFileList = false, dropGenotypes = false);
+          finalWalker.walkVCFFiles(infiles,outfile, chromList, numLinesRead = numLinesRead, inputFileList = false, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
         }
         case None => {
-          finalWalker.walkVCFFiles(vcffile,outfile, chromList, numLinesRead = numLinesRead, inputFileList = infileList, dropGenotypes = false);
+          finalWalker.walkVCFFiles(vcffile,outfile, chromList, numLinesRead = numLinesRead, inputFileList = infileList, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
         }
       }
     }

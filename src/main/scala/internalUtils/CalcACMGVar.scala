@@ -367,16 +367,22 @@ object CalcACMGVar {
     }
     
     val typeSubsets : Seq[(String,String,TXUtil.pVariantInfo => Boolean,Seq[SVcfCompoundHeaderLine])] = Seq[(String,String,TXUtil.pVariantInfo => Boolean)](
-        ("spliceModify", "", ((info : TXUtil.pVariantInfo) => {
+        ("mis", "missense AA swap", ((info : TXUtil.pVariantInfo) => {
+                     info.subType == "swapAA"
+        })),
+        ("LOF", "Loss of function (start loss, stop loss, frameshift, stop-gain, exon deletion, whole gene deletion, splice junction change or splice junction loss)", ((info : TXUtil.pVariantInfo) => {
+                     info.severityType == "LLOF" || info.severityType == "PLOF"
+        })),
+        ("spliceModify", "Splice change (Indel that spans a splice junction or any base change to the 2bp region adjacent to a splice junction.)", ((info : TXUtil.pVariantInfo) => {
                      info.subType.startsWith("splice")
         })),
-        ("startLoss", "", ((info : TXUtil.pVariantInfo) => {
+        ("startLoss", "Start loss (any change that results in the loss of the AUG codon at the start of the transcript)", ((info : TXUtil.pVariantInfo) => {
                      info.subType == "START-LOSS" || info.subType == "startIndel"
         })),
-        ("weirdVarType", "", ((info : TXUtil.pVariantInfo) => {
+        ("weirdVarType", "Misc/Other (Unusual variant that cannot be easily categorized. Usually large-span indels.)", ((info : TXUtil.pVariantInfo) => {
                      info.subType == "???" || info.subType == "FullIntronIndel" || info.subType == "FullExonIndel"
         })),
-        ("stopLoss", "", ((info : TXUtil.pVariantInfo) => {
+        ("stopLoss", "Stop loss (any change that results in ", ((info : TXUtil.pVariantInfo) => {
                      info.subType == "STOP-LOSS"
         })),
         ("fs", "", ((info : TXUtil.pVariantInfo) => {
@@ -387,9 +393,9 @@ object CalcACMGVar {
         }))
     ).map{ case (typeSubsetName,typeSubsetDesc,infoFunc) => {
       val infoLines : Seq[SVcfCompoundHeaderLine] = Seq[SVcfCompoundHeaderLine](
-          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName,Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this),
-          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName+"_CANON",Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this),
-          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_txList_"+typeSubsetName,Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this)
+          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName,Number=".",Type="String",desc="The list of gene names for which this variant is of type: "+typeSubsetDesc).addWalker(this),
+          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName+"_CANON",Number=".",Type="String",desc="(For canonical TX only) the list of gene names for which this variant is of type: "+typeSubsetDesc).addWalker(this),
+          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_txList_"+typeSubsetName,Number=".",Type="String",desc="The list of transcript IDs for which this variant is of type: "+typeSubsetDesc).addWalker(this)
       );
       (typeSubsetName,typeSubsetDesc,infoFunc,infoLines)
     }}
@@ -399,19 +405,19 @@ object CalcACMGVar {
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_WARNINGS,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_ACMG_numGenes,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_ACMG_numGenes_CANON,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneList,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneTxList,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_refSeqKnown,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_LofGenes,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_LofTX,Number=".",Type="String",desc="No description yet..").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_MisGenes,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_MisTX,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneMisTxRatio ,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneLofTxRatio,Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_LofGenes+"_CANON",Number=".",Type="String",desc="No description yet.").addWalker(this));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_MisGenes+"_CANON",Number=".",Type="String",desc="No description yet.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_ACMG_numGenes,Number=".",Type="String",desc="Number of genes that this variant is on or near.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_ACMG_numGenes_CANON,Number=".",Type="String",desc="Number of genes for which this variant is on or near the canonical transcript.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneList,Number=".",Type="String",desc="Number of genes that this variant is on or near.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneTxList,Number=".",Type="String",desc="List of all transcripts for the genes that this variant is on or near. Note that this includes transcripts that are not near this variant, for reference.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_refSeqKnown,Number=".",Type="String",desc="Indicates whether the canonical transcript is known for each gene near this variant.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_LofGenes,Number=".",Type="String",desc="List of genes for which this variant appears LOF, based on vArmyKnife method.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_LofTX,Number=".",Type="String",desc="List of tx for which this variant appears to be a missense SNV, based on vArmyKnife method.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_MisGenes,Number=".",Type="String",desc="List of genes for which this variant appears to be a missense SNV based on vArmyKnife method.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_MisTX,Number=".",Type="String",desc="List of tx for which this variant appears to change the protein, based on vArmyKnife method.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneMisTxRatio ,Number=".",Type="String",desc="For each gene, the ratio of transcripts that this variant appears to change, non LOF, based on vArmyKnife method.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_geneLofTxRatio,Number=".",Type="String",desc="For each gene, the ratio of transcripts that this variant appears to be LOF, based on vArmyKnife method.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_LofGenes+"_CANON",Number=".",Type="String",desc="List of genes where this variant is LOF for the canonical TX.").addWalker(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_MisGenes+"_CANON",Number=".",Type="String",desc="List of genes where this variant causes a coding change in the canonical TX.").addWalker(this));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_NonsynonGenes,Number=".",Type="String",desc="No description yet.").addWalker(this));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_NonsynonTX,Number=".",Type="String",desc="No description yet.").addWalker(this));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",vcfCodes.assess_NonsynonGenes+"_CANON",Number="No description yet.",Type="String",desc=".").addWalker(this));

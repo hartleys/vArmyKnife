@@ -2051,10 +2051,14 @@ object VcfTool {
     
     //
     
-    def walkVCFFiles(infiles : String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int], inputFileList : Boolean, dropGenotypes : Boolean = false, infixes : Vector[String] = Vector()){
+    def walkVCFFiles(infiles : String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int], inputFileList : Boolean, 
+                    dropGenotypes : Boolean = false, infixes : Vector[String] = Vector(),
+                    splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       val (vcIterRaw, vcfHeader) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = inputFileList, infixes = infixes);
       val (newIter,newHeader) = walkVCF(vcIterRaw,vcfHeader);
-      val writer = openWriterSmart(outfile,true);
+      walkToFileSplit(outfile=outfile, vcIter = newIter, vcfHeader = newHeader, dropGenotypes = dropGenotypes, splitFuncOpt = splitFuncOpt);
+      
+      /*val writer = openWriterSmart(outfile,true);
       newHeader.getVcfLines.foreach{line => {
         writer.write(line+"\n");
       }}
@@ -2067,7 +2071,7 @@ object VcfTool {
           writer.write(line.getVcfString+"\n");
         }}
       }
-      writer.close();
+      writer.close();*/
     }
     
     def walkToFile(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false){
@@ -2086,6 +2090,79 @@ object VcfTool {
         }}
       }
       writer.close();
+    }
+    
+    def walkToFileSplit(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false, splitFuncOpt : Option[(String,Int) => Option[String]] = None){
+      splitFuncOpt match {
+        case None => {
+          walkToFile(outfile=outfile,vcIter = vcIter, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes)
+        }
+        case Some(splitFunc) => {
+          val bufIter = vcIter.buffered;
+          
+          def splitFuncVc(vc : SVcfVariantLine) : Option[String] = {
+            splitFunc(vc.chrom, vc.pos);
+          }
+          
+          val (outPrefix,outSuffix) : (String,String) = if(outfile.split("[|]").length == 2){
+            (outfile.split("[|]")(0), outfile.split("[|]")(1))
+          } else {
+            (outfile,".vcf.gz")
+          }
+          
+          def outFileName(s : String) = {
+            outPrefix + s + outSuffix;
+          }
+          var currOutFileInfix = splitFuncVc(bufIter.head);
+          var currOut : Option[WriterUtil] = None
+          val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+          def setOutfile(vc : SVcfVariantLine){
+            val newInfix = splitFuncVc(vc);
+            if(newInfix.isEmpty && currOut.isDefined){
+              currOut.foreach(out => {
+                reportln("Finished with file: "+outPrefix+currOutFileInfix+outSuffix+"." ,"progress");
+                out.close()
+              })
+              currOut = None;
+            } else if(newInfix.get != currOutFileInfix){
+              currOut.foreach(out => {
+                reportln("Finished with file: "+outPrefix+currOutFileInfix+outSuffix+"." ,"progress");
+                out.close()
+              })
+              currOutFileInfix = newInfix
+              reportln("Starting new file: "+outPrefix+currOutFileInfix+outSuffix,"progress")
+              currOut = Some( openWriterSmart(outPrefix+currOutFileInfix+outSuffix) )
+              currOut.foreach(out => {
+                newHeader.getVcfLines.foreach{ line => {
+                  out.write(line+"\n")
+                }}
+              })
+            }
+          }
+          
+          if(dropGenotypes){
+            newIter.foreach{ line => {
+              setOutfile(line);
+              currOut.foreach{ writer => {
+                writer.write(line.getVcfStringNoGenotypes+"\n");
+              }}
+            }}
+          } else {
+            newIter.foreach{ line => {
+              setOutfile(line);
+              currOut.foreach{ writer => {
+                writer.write(line.getVcfString+"\n");
+              }}
+            }}
+          }
+          currOut.foreach(out => {
+            reportln("Finished with file: "+outPrefix+currOutFileInfix+outSuffix+"." ,"progress");
+            out.close()
+          })
+        }
+      }
+      
+
     }
     
     
@@ -3038,6 +3115,8 @@ object VcfTool {
                           }
                         }
                       ),
+                      
+                      
                       
         FilterFunction(funcName="GTAGARRAY.gt",numParam=3,desc="PASS iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is greater than k.",paramNames=Seq("t","i","k"),
                         (params : Seq[String]) => {

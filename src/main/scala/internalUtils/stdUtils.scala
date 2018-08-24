@@ -522,13 +522,13 @@ object stdUtils {
     val itr = iter.buffered;
 
     return new Iterator[A] {
-      var buffer = new scala.collection.immutable.TreeMap[Int,Set[A]]();
+      var buffer = new scala.collection.immutable.TreeMap[Int,Vector[A]]();
       var subBuffer : Iterator[A] = Iterator[A]();
       def addPair(k : Int, v : A){
         if(buffer.contains(k)){
-          buffer = buffer + ((k,buffer(k) + (v)))
+          buffer = buffer + ((k,buffer(k) :+ (v)))
         } else {
-          buffer = buffer + ((k,Set[A](v)))
+          buffer = buffer + ((k,Vector[A](v)))
         }
       }
       //var currPos : Int = buffer.head._1;
