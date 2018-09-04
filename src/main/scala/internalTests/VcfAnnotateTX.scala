@@ -104,6 +104,16 @@ object VcfAnnotateTX {
           synopsis = "", 
           description = "This utility performs a series of transformations on an input VCF file and adds an array of informative tags."+BETA_WARNING,
           argList = 
+                    new UnaryArgument( name = "tableInput",
+                                         arg = List("--tableInput"), // name of value
+                                         argDesc = "todo write desc"+
+                                                   "" // description
+                                       ).meta(true,"ZZ ALPHA PARAMS, not for general use", 9000) ::
+                    new UnaryArgument( name = "tableOutput",
+                                         arg = List("--tableOutput"), // name of value
+                                         argDesc = "todo write desc"+
+                                                   "" // description
+                                       ).meta(true,"ZZ ALPHA PARAMS, not for general use", 9000) ::
                     new BinaryOptionArgument[String](
                                          name = "inputSavedTxFile", 
                                          arg = List("--inputSavedTxFile"), 
@@ -567,15 +577,26 @@ object VcfAnnotateTX {
                                          valueName = "vcfLineFilterExpression",
                                          argDesc =  "OPTION REMOVED, DO NOT USE."
                                         ).meta(true,"DEPRECATED") :: 
+                                        
+
+                                        
                     new BinaryOptionListArgument[String](
                                          name = "tagVariantsExpression", 
                                          arg = List("--tagVariantsExpression"),
-                                         valueName = "vcfLineFilterExpression",
+                                         valueName = "newTagID|desc|variantExpression",
                                          argDesc =  "If this parameter is set, then additional tags will be generated based on the given expression(s). "+
                                                     "The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with "+
                                                     "the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. "+
                                                     "The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below."
                                         ).meta(false,"Annotation") :: 
+                                        
+                    new BinaryMonoToListArgument[String](
+                                         name = "tagVariantsFunction", 
+                                         arg = List("--tagVariantsFunction"),
+                                         valueName = "newTagID|desc|funcName|param1,param2,...",
+                                         argDesc =  ""
+                                        ).meta(false,"Annotation") :: 
+                                        
                     new BinaryMonoToListArgument[String](
                                          name = "mergeBooleanTags", 
                                          arg = List("--mergeBooleanTags"),
@@ -879,6 +900,8 @@ object VcfAnnotateTX {
                                          argDesc =  "todo desc"
                         ).meta(true,"SnpEff Annotation Processing") ::
 
+                        
+                        
                     new BinaryMonoToListArgument[String](
                                          name = "varMatchDbName", 
                                          arg = List("--varMatchDbName"), 
@@ -921,6 +944,8 @@ object VcfAnnotateTX {
                                          valueName = "...",  
                                          argDesc =  "For advanced users only. Seriously don't mess with this unless you've talked to the author."
                                         ).meta(true,"INCOMPLETE") ::
+                                        
+                                        
 
                     new BinaryMonoToListArgument[String](
                                          name = "addHeaderLineSubtype", 
@@ -1129,7 +1154,12 @@ object VcfAnnotateTX {
                 splitMultiAllelicsNoStarAlle = parser.get[Boolean]("splitMultiAllelicsNoStarAlle"),
                 
                 splitOutputByChrom = parser.get[Boolean]("splitOutputByChrom"),
-                splitOutputByBed = parser.get[Option[String]]("splitOutputByBed")
+                splitOutputByBed = parser.get[Option[String]]("splitOutputByBed"),
+                
+                tagVariantsFunction = parser.get[List[String]]("tagVariantsFunction"),
+                
+                tableInput = parser.get[Boolean]("tableInput"),
+                tableOutput = parser.get[Boolean]("tableOutput")
              )
        }
      }
@@ -1269,19 +1299,16 @@ object VcfAnnotateTX {
                 splitMultiAllelicsNoStarAlle : Boolean = false,
                 
                 splitOutputByChrom : Boolean = false,
-                splitOutputByBed : Option[String] = None
+                splitOutputByBed : Option[String] = None,
+                
+                tagVariantsFunction : List[String] = List[String](),
+                
+                tableInput : Boolean = false,
+                tableOutput : Boolean = false
                 ){
-                /* addSampTag = parser.get[Option[Int]]("addSampTag"),
-                       addDepthStats = parser.get[Option[String]]("addDepthStats")
-                       ChromosomeConverter(chromDecoder : String, fromCol : Int = 0, toCol : Int = 1, quiet : Boolean = false)
-                       
-                              /* 
-               --varMatchDbName
-               --varMatchDbFile
-               --varMatchPathoExpression
-               --varMatchBenignExpression
-               --varMatchMetadataList
-               */
+                /*
+                 * 
+               AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None )
                 */
     
     /*val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfFilesIter(infile = vcffile, 
@@ -1963,6 +1990,19 @@ object VcfAnnotateTX {
               Seq[SVcfWalker]()
             }
         ) ++ (
+            //AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None )
+            tagVariantsFunction.map{ ftString => {
+              val cells = ftString.split("[|]")
+              val tagID = cells(0);
+              val desc  = cells(1);
+              val funcString = cells(2);
+              val paramTags = cells.lift(3).map{_.split(",").toSeq}.getOrElse(Seq[String]());
+              val outDigits = cells.lift(4).map{ _.toInt }
+              
+              new AddFuncTag(func = funcString, newTag=tagID, paramTags=paramTags, digits = outDigits, desc = Some(desc));
+            }}
+            
+        ) ++ (
             tagVariantsExpression match {
               case Some(dve) => {
                 dve.toSeq.map{ exprStringRaw => exprStringRaw.split("\\|").toVector.map{s => s.trim()}}.map{ cells => {
@@ -2172,7 +2212,39 @@ object VcfAnnotateTX {
           finalWalker.walkVCFFiles(infiles,outfile, chromList, numLinesRead = numLinesRead, inputFileList = false, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
         }
         case None => {
-          finalWalker.walkVCFFiles(vcffile,outfile, chromList, numLinesRead = numLinesRead, inputFileList = infileList, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
+          if( (! tableInput) && (! tableOutput)){
+            reportln("No table input and no table output. Reading/writing in VCF format.","debug")
+            finalWalker.walkVCFFiles(vcffile,outfile, chromList, numLinesRead = numLinesRead, inputFileList = infileList, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
+          } else {
+            val (vcIterRaw, vcfHeader) = if(!tableInput){
+              reportln("No --tableInput param set. Reading in VCF format.","debug")
+              getSVcfIterators(infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList);
+            } else {
+              reportln("PARAM --tableInput set. Reading in TABLE format.","debug")
+              getSVcfIteratorsFromTable(infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList);
+            }
+            val (newIter,newHeader) = finalWalker.walkVCF(vcIterRaw,vcfHeader);
+            if(tableOutput){
+              reportln("PARAM --tableOutput set. Writing in TABLE format.","debug")
+              if(splitFuncOpt.isDefined){
+                warning("Cannot write to file and split!","CANNOT_SPLIT_TABLES",-1); //note, move this check up and add more compatibility checks!
+              }
+              finalWalker.writeToTableFile(outfile = outfile, vcIter = newIter,vcfHeader = newHeader)
+            } else {
+              reportln("PARAM --tableOutput NOT set. Writing in VCF format.","debug")
+              finalWalker.writeToFileSplit(outfile=outfile, vcIter = newIter, vcfHeader = newHeader, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
+            }
+          }
+          
+          /*
+           
+          val (vcIterRaw, vcfHeader) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = inputFileList, infixes = infixes);
+          val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+          writeToFileSplit(outfile=outfile,vcIter=newIter,vcfHeader=newHeader,dropGenotypes=dropGenotypes, splitFuncOpt=splitFuncOpt);
+          
+          walkToFileSplit(outfile=outfile, vcIter = vcIterRaw, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes, splitFuncOpt = splitFuncOpt);
+       
+           */
         }
       }
     }
@@ -3888,6 +3960,170 @@ object VcfAnnotateTX {
   }
   
 
+
+  class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "AddFuncTag."+newTag
+    val f : String = func.toUpperCase;
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("newTag",newTag),
+        ("func",func),
+        ("paramTags",paramTags.mkString("|"))
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+
+      val paramTypes = paramTags.map{ param => {
+        vcfHeader.infoLines.find(infoline => infoline.ID == param) match {
+          case Some(paramLine) => {
+            paramLine.Type
+          }
+          case None => {
+            error("ERROR: cannot find tag: "+param)
+            "?"
+          }
+        }
+      }}
+      val outType = if(! Set("SUM","MIN","MAX","DIFF").contains(f)){
+        "String"
+      } else if(paramTypes.forall(pt => pt == "Integer")){
+        "Integer"
+      } else {
+        "Float"
+      }
+      val outNum = if(f.startsWith("SETS.")){
+        "."
+      } else {
+        "1"
+      }
+      reportln("TAG: "+newTag+" will be of type: "+outType + " and length: "+outNum,"note");
+      if(f == "DIFF" && paramTags.length != 2){
+        error("ERROR: function DIFF requires exactly 2 params");
+      }
+      
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number=outNum,Type=outType,desc=desc.getOrElse("Result of performing function "+func+" on tags: "+paramTags.mkString(",")+".")));
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      
+      
+      //def getInfo(vv : SVcfVariantLine, tt : String) : Option[
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        vc.dropInfo(overwriteInfos);
+        if(f == "SUM"){
+          if(outType == "Integer"){
+            val paramVals : Seq[Int] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toInt
+            }}
+            if(paramVals.nonEmpty){
+              vc.addInfo(newTag, ""+paramVals.sum);
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          } else {
+            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toDouble
+            }}
+            if(paramVals.nonEmpty){
+              digits match {
+                case Some(dd) => {
+                  vc.addInfo(newTag, ("%."+dd+"f").format(paramVals.sum) );
+                }
+                case None => {
+                  vc.addInfo(newTag, ""+paramVals.sum);
+                }
+              }
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          }
+        } else if(f == "DIFF"){
+          if(outType == "Integer"){
+            val paramVals : Seq[Int] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toInt
+            }}
+            if(paramVals.length == 2){
+              vc.addInfo(newTag, ""+ (paramVals(0) - paramVals(1)));
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          } else {
+            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toDouble
+            }}
+            if(paramVals.length == 2){
+              digits match {
+                case Some(dd) => {
+                  vc.addInfo(newTag, ("%."+dd+"f").format(paramVals(0) - paramVals(1)) );
+                }
+                case None => {
+                  vc.addInfo(newTag, ""+(paramVals(0) - paramVals(1)));
+                }
+              }
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          }
+        } else if(f == "SETS.DIFF"){
+            val paramVals : Seq[Set[String]] = paramTags.map{ param => {
+              v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            }}
+            vc.addInfo(newTag, (paramVals(0) -- paramVals(1)).toVector.sorted.mkString(","));
+        } else if(f == "SETS.UNION"){
+            val paramVals : Set[String] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            }}.toSet
+            vc.addInfo(newTag, (paramVals).toVector.sorted.mkString(","));
+        } else if(f == "SETS.INTERSECT"){
+            val paramVals : Seq[Set[String]] = paramTags.map{ param => {
+              v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            }}
+            val intersect = paramTags.tail.foldLeft(paramTags.head){ case (soFar,curr) => { soFar.intersect(curr) }}
+            vc.addInfo(newTag, (intersect).toVector.sorted.mkString(","));
+        } else if(f == "MIN"){
+          error("MIN function not yet implemented")
+        } else if(f == "MAX"){
+          error("MAX function not yet implemented")
+        } else {
+          error("Unrecognized function: " +f);
+        }
+        
+        /*v.info.getOrElse(nTag,None).foreach{ nStr => {
+          v.info.getOrElse(dTag,None).foreach{ dStr => {
+            if(nStr == "." || dStr == "."){
+              vc.addInfo(newTag, "0");
+            } else {
+              val (n,d) = (string2float(nStr),string2float(dStr));
+              val ratio = n/d
+              vc.addInfo(newTag, ("%."+digits+"f").format(ratio));
+            }
+
+          }}
+        }}*/
+         
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
+  
+  
   class AddRatioTag(newTag : String, nTag : String, dTag : String, digits : Int = 4, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "AddRatioTag."+newTag
     
@@ -3903,9 +4139,14 @@ object VcfAnnotateTX {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number="1",Type="Float",desc=desc.getOrElse("Simple ratio between fields "+nTag+" and "+dTag+".")));
-
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
+        vc.dropInfo(overwriteInfos);
         v.info.getOrElse(nTag,None).foreach{ nStr => {
           v.info.getOrElse(dTag,None).foreach{ dStr => {
             if(nStr == "." || dStr == "."){
@@ -4194,7 +4435,6 @@ object VcfAnnotateTX {
     );
     def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
     
-    
     val annidxAllele = 0
     val annidxEffect = 1
     val annidxImpact = 2
@@ -4208,8 +4448,6 @@ object VcfAnnotateTX {
     val annidxPdot=10
     val annidxCpos = 11
     val annidxWarn=15
-    
-
     
     val snpEffBiotypeKeepSet : Option[Set[String]] = snpEffBiotypeKeepList.map{_.toSet}
     val snpEffEffectKeepSet : Option[Set[String]] = snpEffEffectKeepList.map{_.toSet}
@@ -4328,17 +4566,21 @@ object VcfAnnotateTX {
           vc.addInfo( tagPrefix+"HIGH",     annHi.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
           vc.addInfo( tagPrefix+"MODERATE", annMd.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
           vc.addInfo( tagPrefix+"LOW",      annLo.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"OnList_HIGH",     annHiG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"OnList_MODERATE", annMdG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"OnList_LOW",      annLoG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
           
-          vc.addInfo( tagPrefix+"_GENES_HIGH",     gHi.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"_GENES_MODERATE", gMd.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"_GENES_LOW",      gLo.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"_GENES_OnList_HIGH",     gHiG.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"_GENES_OnList_MODERATE", gMdG.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"_GENES_OnList_LOW",      gLoG.padTo(1,".").mkString(","));
-
+          
+          vc.addInfo( tagPrefix+"GENES_HIGH",     gHi.padTo(1,".").distinct.sorted.mkString(","));
+          vc.addInfo( tagPrefix+"GENES_MODERATE", gMd.padTo(1,".").distinct.sorted.mkString(","));
+          vc.addInfo( tagPrefix+"GENES_LOW",      gLo.padTo(1,".").distinct.sorted.mkString(","));
+          
+          geneList.foreach{ gl => {
+            vc.addInfo( tagPrefix+"OnList_HIGH",     annHiG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+            vc.addInfo( tagPrefix+"OnList_MODERATE", annMdG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+            vc.addInfo( tagPrefix+"OnList_LOW",      annLoG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+            vc.addInfo( tagPrefix+"GENES_OnList_HIGH",     gHiG.padTo(1,".").distinct.sorted.mkString(","));
+            vc.addInfo( tagPrefix+"GENES_OnList_MODERATE", gMdG.padTo(1,".").distinct.sorted.mkString(","));
+            vc.addInfo( tagPrefix+"GENES_OnList_LOW",      gLoG.padTo(1,".").distinct.sorted.mkString(","));
+          }}
+          
         }}
         vc
       }}, closeAction = (() => {
@@ -4480,7 +4722,8 @@ object VcfAnnotateTX {
   class StdVcfConverter(cleanHeaderLines : Boolean = true, 
                         cleanInfoFields : Boolean = true, 
                         cleanMetaData : Boolean = true,
-                        collapseStarAllele : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
+                        collapseStarAllele : Boolean = true,
+                        deleteUnannotatedFields : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "StdVcfConverter"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
       ("cleanHeaderLines",cleanHeaderLines.toString())
@@ -4576,11 +4819,13 @@ object VcfAnnotateTX {
         if(cleanInfoFields){
           vc.info.foreach{ case (tag,info) => {
             info.foreach{ infoString => {
-              if(infoString == ""){
-                vc.addInfo(tag,".");
-              } else if(infoString.contains('=') || infoString.contains(';') || infoString.contains(' ')){
-                vc.addInfo(tag,infoString.replaceAll("[=]","%3D").replaceAll("[ ]","_").replaceAll("[;]",","));
-              } 
+              if((! deleteUnannotatedFields) || vcfHeader.infoLines.exists{ infoLine => infoLine.ID == tag }){
+                if(infoString == ""){
+                  vc.addInfo(tag,".");
+                } else if(infoString.contains('=') || infoString.contains(';') || infoString.contains(' ')){
+                  vc.addInfo(tag,infoString.replaceAll("[=]","%3D").replaceAll("[ ]","_").replaceAll("[;]",","));
+                } 
+              }
             }}
           }}
         }
@@ -9787,37 +10032,7 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
             return((vcIter,vcfHeader));
           //}
       }
-      val newHeader =vcfHeader.copyHeader
-
-      newHeader.addStatBool("isSplitMultAlle",true)
-      newHeader.addStatBool("isSplitMultAlleStar",true)
-      
-      val newHeaderLines = List[SVcfCompoundHeaderLine](
-          //new VCFInfoHeaderLine(vcfCodes.isSplitMulti_TAG, 0, VCFHeaderLineType.Flag,    "Indicates that this line was split apart from a multiallelic VCF line."),
-          new SVcfCompoundHeaderLine("INFO",vcfCodes.splitIdx_TAG, "1", "Integer", "Indicates the index of this biallelic line in the set of biallelic lines extracted from the same multiallelic VCF line."),
-          new SVcfCompoundHeaderLine("INFO",vcfCodes.numSplit_TAG,     "1", "Integer", "Indicates the number of biallelic lines extracted from the same multiallelic VCF line as this line."),
-          new SVcfCompoundHeaderLine("INFO",vcfCodes.splitAlle_TAG,     ".", "String", "The original set of alternative alleles."),
-           new SVcfCompoundHeaderLine("INFO",vcfCodes.splitAlleWARN_TAG,     ".", "String", "Warnings produced by the multiallelic allele split. These may occur when certain tags have the wrong number of values.")
-      ) ++ (if(clinVarVariants){
-        List[SVcfCompoundHeaderLine](
-            new SVcfCompoundHeaderLine("INFO","CLNPROBLEM",     "1", "Integer", "Indicates whether the splitting of the Clinvar CLN tags was successful. 1=yes, 0=no.")
-        ) ++ infoCLN.map(key => {
-            new SVcfCompoundHeaderLine("INFO","ORIG"+key,     ".", "String", "")
-        })
-      } else {List[SVcfCompoundHeaderLine]()}) ++ (
-          singleCallerAlleFieldId match {
-            case Some(scafi) => {
-              scafi.toSeq.zip(singleCallerFmtKeySumIntAlts).map{ case (alleField,adField) => {
-                val adFieldHeader = vcfHeader.infoLines.filter{ i => i.ID == adField }
-                if(adFieldHeader.length != 1) error("Error in header: could not find unique INFO ID = "+adField);
-                val desc = adFieldHeader.head.desc;
-                new SVcfCompoundHeaderLine("INFO",singleCallerAlleFixPrefix+adField, ".", "Integer", "(After allele splitting) "+desc);
-              }}
-            }
-            case None => Seq();
-          }
-      )
-      
+       
       //if(vcfHeader.titleLine.sampleList.length > 0){
         vcfHeader.formatLines.find(fline => fline.ID == "GT").foreach{ fline => {
           val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "1","String", fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
@@ -9855,12 +10070,43 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
           vcfHeader.addFormatLine(nl,walker=Some(this));
         }}}
       
+      val newHeader =vcfHeader.copyHeader
+
+      newHeader.addStatBool("isSplitMultAlle",true)
+      newHeader.addStatBool("isSplitMultAlleStar",true)
+      
+      val newHeaderLines = List[SVcfCompoundHeaderLine](
+          //new VCFInfoHeaderLine(vcfCodes.isSplitMulti_TAG, 0, VCFHeaderLineType.Flag,    "Indicates that this line was split apart from a multiallelic VCF line."),
+          new SVcfCompoundHeaderLine("INFO",vcfCodes.splitIdx_TAG, "1", "Integer", "Indicates the index of this biallelic line in the set of biallelic lines extracted from the same multiallelic VCF line."),
+          new SVcfCompoundHeaderLine("INFO",vcfCodes.numSplit_TAG,     "1", "Integer", "Indicates the number of biallelic lines extracted from the same multiallelic VCF line as this line."),
+          new SVcfCompoundHeaderLine("INFO",vcfCodes.splitAlle_TAG,     ".", "String", "The original set of alternative alleles."),
+           new SVcfCompoundHeaderLine("INFO",vcfCodes.splitAlleWARN_TAG,     ".", "String", "Warnings produced by the multiallelic allele split. These may occur when certain tags have the wrong number of values.")
+      ) ++ (if(clinVarVariants){
+        List[SVcfCompoundHeaderLine](
+            new SVcfCompoundHeaderLine("INFO","CLNPROBLEM",     "1", "Integer", "Indicates whether the splitting of the Clinvar CLN tags was successful. 1=yes, 0=no.")
+        ) ++ infoCLN.map(key => {
+            new SVcfCompoundHeaderLine("INFO","ORIG"+key,     ".", "String", "")
+        })
+      } else {List[SVcfCompoundHeaderLine]()}) ++ (
+          singleCallerAlleFieldId match {
+            case Some(scafi) => {
+              scafi.toSeq.zip(singleCallerFmtKeySumIntAlts).map{ case (alleField,adField) => {
+                val adFieldHeader = vcfHeader.infoLines.filter{ i => i.ID == adField }
+                if(adFieldHeader.length != 1) error("Error in header: could not find unique INFO ID = "+adField);
+                val desc = adFieldHeader.head.desc;
+                new SVcfCompoundHeaderLine("INFO",singleCallerAlleFixPrefix+adField, ".", "Integer", "(After allele splitting) "+desc);
+              }}
+            }
+            case None => Seq();
+          }
+      )
+        
       val gtSplitLines : Seq[(String,String,SVcfCompoundHeaderLine,SVcfCompoundHeaderLine)] = vcfHeader.formatLines.flatMap{ fline => {
         fline.subType match {
           case Some(st) => {
             if(st == VcfTool.subtype_GtStyleUnsplit){
               reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
-              val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID, Number=fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCounts))
+              val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID, Number=fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle))
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit",  Number="1", Type="String", desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
               reportln("    ol:"+ol.getVcfString,"note");
               reportln("    nl:"+nl.getVcfString,"note");
@@ -12083,7 +12329,7 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
       
       val newHeader = vcfHeader.copyHeader;
       newHeader.addWalk(this);
-      newHeader.addFormatLine(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = adTag, Number = "R", Type = "Integer", desc = desc.padTo(1,'.')).addWalker(this));
+      newHeader.addFormatLine(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = adTag, Number = "R", Type = "Integer", desc = desc.padTo(1,'.'), subType = Some(VcfTool.subtype_AlleleCountsUnsplit)).addWalker(this));
       
       
       ((vcMap(vcIter){v => {

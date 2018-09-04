@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.1.85 (Updated Tue Aug 14 15:52:28 EDT 2018)
+> Version 2.2.13 (Updated Tue Sep  4 09:51:52 EDT 2018)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -52,7 +52,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### Preprocessing:
 #### --splitMultiAllelics:
 
-> If this flag is used, multiallelic variants will be split into multiple separate VCF lines. (flag)
+> If this flag is used, multiallelic variants will be split into multiple separate VCF lines. In order to preserve cross-allele genotypes and multiallelic FORMAT fields, the star allele will be used to indicate a different alt allele on a different variant line. The star-allele encoding can be deactivated using the --splitMultiAllelicsNoStarAllele option instead. (flag)
+
+#### --splitMultiAllelicsNoStarAlle:
+
+> If this flag is used, multiallelic variants will be split into multiple separate VCF lines. Two copies of the AD tag will be created, AD and AD\_multAlle. (flag)
 
 #### --convertROAOtoAD:
 
@@ -70,9 +74,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)
 
-#### --leftAlignAndTrim:
+#### --splitOutputByBed intervalBedFile.bed:
 
-> Left align and trim the primary input VCF using a modified and ported version of the GATK v1.8-2 LeftAlignAndTrim walker. (flag)
+> If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)
+
+#### --leftAlignAndTrimWindow N:
+
+> Set the window size used for left align and trim. Indels larger than this will not be left aligned. (Int)
 
 #### --leftAlignAndTrimSecondarys:
 
@@ -143,9 +151,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > . (String)
 
-#### --tagVariantsExpression vcfLineFilterExpression:
+#### --tagVariantsExpression newTagID|desc|variantExpression:
 
 > If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable CommaDelimitedListOfStrings)
+
+#### --tagVariantsFunction newTagID|desc|funcName|param1,param2,...:
+
+>  (repeatable String)
 
 #### --ctrlAlleFreqKeys ...:
 
@@ -264,6 +276,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --outputKeepSamples samp1,samp2,...:
 
 > List of samples to include in the final output (repeatable CommaDelimitedListOfStrings)
+
+### Output Parameters:
+#### --splitOutputByChrom:
+
+> If this option is set, the output will be split up into parts by chromosome. NOTE: The outfile parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (flag)
 
 ### OTHER OPTIONS:
 #### --verbose:
@@ -499,6 +516,10 @@ expression returns FALSE\.
 #### isSNV:
 
 > PASS iff the variant is an SNV\.
+
+#### simpleSNV:
+
+> PASS iff the variant is a biallelic SNV\.
 
 ## Genotype Filter Expressions
 

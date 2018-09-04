@@ -892,6 +892,33 @@ object VcfTool {
       (header,variantLines);
     }
     
+    def readTableToVcf(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
+      val bufLines = lines.buffered;
+      if(! bufLines.head.startsWith("#CHROM\tPOS\tID\tREF\tALT\t")){
+        error("Error: table must begin with string: \"#CHROM\tPOS\tID\tREF\tALT\t\"");
+      }
+      val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      val header = readTableHeader(allRawHeaderLines.head);
+      val headerColumns = allRawHeaderLines.head.split("\t").toSeq.drop(5)
+      
+      val variantLines = if(withProgress){
+                         internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfVariantLine](
+                           //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
+                           bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns)), 
+                           internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfVariantLine](
+                                elementTitle = "lines", lineSec = 60,
+                                reportFunction  = ((vc : SVcfVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                           )
+                         )
+      
+      } else {
+        //rawVariantLines.map(line => SVcfInputVariantLine(line,header))
+        bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns))
+      }
+      
+      (header,variantLines);
+    }
+    
     def readVcf(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfInputVariantLine]) = {
       val bufLines = lines.buffered;
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
@@ -914,7 +941,25 @@ object VcfTool {
       (header,variantLines);
     }
     
+    
+    /*
+    SVcfCompoundHeaderLine(val in_tag : String, val ID : String, val Number : String, val Type : String, val desc : String, 
+                               val vakUtil : Option[String] = None, val vakStepNum : Option[String] = None, val vakVer : Option[String] = None,val subType : Option[String] = None,
+                               val extraFields : Map[String,String] = Map[String,String]())
+     */
     //Read Header Lines:
+    def readTableHeader( line : String ) : SVcfHeader = {
+      var infoLines = line.split("\t").drop(5).toSeq.map{ ss => {
+        new SVcfCompoundHeaderLine(in_tag = "INFO",ID=ss,Number = ".", Type = "String",desc = "No desc available");
+      }}
+      var formatLines = Seq[SVcfCompoundHeaderLine]();
+      var otherHeaderLines = Seq[SVcfHeaderLine]();
+      var walkLines = Seq[SVcfWalkHeaderLine]();
+      var titleLine = SVcfTitleLine(Seq[String]())
+      
+      SVcfHeader(infoLines, formatLines, otherHeaderLines,walkLines, titleLine);
+    }
+    
     def readVcfHeader(lines : Seq[String]) : SVcfHeader = {
       var infoLines = Seq[SVcfCompoundHeaderLine]();
       var formatLines = Seq[SVcfCompoundHeaderLine]();
@@ -1528,6 +1573,12 @@ object VcfTool {
                                     case None => t
                                   }
                                 }}.mkString(";");
+                                
+    def getTableString( vcfHeader : SVcfHeader ) : String = {
+      chrom + "\t"+pos+"\t"+id+"\t"+ref+"\t"+alt.mkString(",")+"\t"+vcfHeader.infoLines.map{ infoLine => {
+        info.get(infoLine.ID).getOrElse(None).getOrElse(".")
+      }}.mkString("\t")
+    }
 
     def getOutputLine() : SVcfOutputVariantLine = {
       SVcfOutputVariantLine(
@@ -1612,6 +1663,46 @@ object VcfTool {
     def makeGatkVariantContext() : htsjdk.variant.variantcontext.VariantContext = {
       internalUtils.GatkPublicCopy.makeSimpleVariantContext(this);
     }
+  }
+  
+  case class SVcfInputTableVariantLine(inputLine : String, headerColumns : Seq[String]) extends SVcfVariantLine {
+    lazy val cells : Array[String] = inputLine.split("\t");
+    lazy val lzy_chrom : String = cells(0);
+    lazy val lzy_pos : Int = string2int(cells(1));
+    lazy val lzy_id : String = cells(2);
+    lazy val lzy_ref : String = cells(3);
+    lazy val lzy_alt : Array[String] = cells(4).split(",");
+    lazy val lzy_qual : String  = if(headerColumns.contains("QUAL")){
+      cells( headerColumns.indexOf("QUAL") )
+    } else {
+      "0"
+    }
+    lazy val lzy_filter : String = if(headerColumns.contains("FILTER")){
+      cells( headerColumns.indexOf("FILTER") )
+    } else {
+      "0"
+    }
+    lazy val lzy_info : Map[String,Option[String]] = headerColumns.zip(cells.drop(5)).map{ case (colName,colVal) => {
+      if(colVal == ""){
+        (colName,Some("."))
+      } else {
+        (colName,Some(colVal))
+      }
+    }}.toMap
+    
+    def chrom = lzy_chrom;
+    def pos = lzy_pos;
+    def id = lzy_id;
+    def ref = lzy_ref;
+    def alt = lzy_alt;
+    def qual = lzy_qual;
+    def filter = lzy_filter;
+    def info = lzy_info;
+    def format = Array[String]()
+    lazy val lzy_genotypeStrings = Array[String]()
+    lazy val lzy_genotypes = SVcfGenotypeSet.getGenotypeSet(lzy_genotypeStrings, format);
+    def genotypes = lzy_genotypes;
+    
   }
   
   case class SVcfInputVariantLine(inputLine : String) extends SVcfVariantLine {
@@ -1891,6 +1982,50 @@ object VcfTool {
       (vcIter2,vcfHeader);
   }
   
+  
+  def getSVcfIteratorsFromTable(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, infixes : Vector[String] = Vector()) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val indata = if(inputFileList){
+        val (infilePeek,infiles) = peekIterator(getLinesSmartUnzip(infileString),1000);
+        val denominator = if(infilePeek.length < 1000) infilePeek.length.toString else "???";
+        val headerLines = extractWhile(getLinesSmartUnzip(infilePeek.head).buffered)( a => a.startsWith("#") )
+        val allInputLines = flattenIterators(infiles.zipWithIndex.map{case (inf,idx) => addIteratorCloseAction(iter =getLinesSmartUnzip(inf), closeAction = (() => {reportln("finished reading file: "+inf + "("+getDateAndTimeString+")" + "("+(idx+1)+"/"+denominator+")","note")}))}).buffered
+        //val headerLines = extractWhile(allInputLines)( a => a.startsWith("#"));
+        val remainderLines = allInputLines.filter( a => ! a.startsWith("#"));
+        headerLines.iterator ++ remainderLines;
+      } else if(infileString.contains(',')){
+        val infiles = infileString.split(",");
+        val denominator = infiles.length.toString;
+        val headerLines = extractWhile(getLinesSmartUnzip(infiles.head).buffered)( a => a.startsWith("#") )
+        val allInputLines = flattenIterators(infiles.iterator.zipWithIndex.map{case (inf,idx) => addIteratorCloseAction(iter =getLinesSmartUnzip(inf), closeAction = (() => {reportln("finished reading file: "+inf + "("+getDateAndTimeString+")"+  "("+(idx+1)+"/"+denominator+")","note")}))}).buffered
+        //val headerLines = extractWhile(allInputLines)( a => a.startsWith("#"));
+        val remainderLines = allInputLines.filter( a => ! a.startsWith("#"));
+        headerLines.iterator ++ remainderLines;
+      } else {
+        getLinesSmartUnzip(infileString)
+      }
+    
+    val (vcfHeader,vcIter) = if(chromList.isEmpty){
+        SVcfLine.readTableToVcf(indata,withProgress = withProgress)
+      } else if(chromList.get.length == 1){
+        val chrom = chromList.get.head;
+        SVcfLine.readTableToVcf(indata.filter{line => {
+          line.startsWith(chrom+"\t") || line.startsWith("#")
+        }},withProgress = withProgress)
+      } else {
+        val chromSet = chromList.get.toSet;
+        val (vh,vi) = SVcfLine.readTableToVcf(indata,withProgress = withProgress)
+        (vh,vi.filter(line => { chromSet.contains(line.chrom) }))
+      }
+      
+      val vcIter2 = if(numLinesRead.isDefined){
+        vcIter.take(numLinesRead.get);
+      } else {
+        vcIter
+      }
+      (vcIter2,vcfHeader);
+  }
+  
+  
 
   object chainSVcfWalkersDEFAULT extends SVcfWalkerInfo {
     def walkerName : String = "ChainedWalker"
@@ -2055,8 +2190,8 @@ object VcfTool {
                     dropGenotypes : Boolean = false, infixes : Vector[String] = Vector(),
                     splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       val (vcIterRaw, vcfHeader) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = inputFileList, infixes = infixes);
-      val (newIter,newHeader) = walkVCF(vcIterRaw,vcfHeader);
-      walkToFileSplit(outfile=outfile, vcIter = newIter, vcfHeader = newHeader, dropGenotypes = dropGenotypes, splitFuncOpt = splitFuncOpt);
+      //val (newIter,newHeader) = walkVCF(vcIterRaw,vcfHeader);
+      walkToFileSplit(outfile=outfile, vcIter = vcIterRaw, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes, splitFuncOpt = splitFuncOpt);
       
       /*val writer = openWriterSmart(outfile,true);
       newHeader.getVcfLines.foreach{line => {
@@ -2076,29 +2211,51 @@ object VcfTool {
     
     def walkToFile(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false){
       val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+      writeToFile(outfile=outfile,vcIter=newIter,vcfHeader=newHeader,dropGenotypes=dropGenotypes);
+    }
+    def walkToFileSplit(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false, splitFuncOpt : Option[(String,Int) => Option[String]] = None){
+      val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+      writeToFileSplit(outfile=outfile,vcIter=newIter,vcfHeader=newHeader,dropGenotypes=dropGenotypes, splitFuncOpt=splitFuncOpt);
+    }
+    
+
+    def writeToTableFile(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader){
       val writer = openWriterSmart(outfile,true);
-      newHeader.getVcfLines.foreach{line => {
+      vcfHeader.getVcfLines.foreach{line => {
+        writer.write(line+"\n");
+      }}
+      writer.write("#CHROM\tPOS\tID\tREF\tALT\t"+vcfHeader.infoLines.map{ vv => vv.ID}+"\n")
+        vcIter.foreach{ line => {
+          writer.write(line.getTableString(vcfHeader)+"\n");
+        }}
+      writer.close();
+    }
+    
+    def writeToFile(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false){
+      val writer = openWriterSmart(outfile,true);
+      vcfHeader.getVcfLines.foreach{line => {
         writer.write(line+"\n");
       }}
       if(dropGenotypes){
-        newIter.foreach{ line => {
+        vcIter.foreach{ line => {
           writer.write(line.getVcfStringNoGenotypes+"\n");
         }}
       } else {
-        newIter.foreach{ line => {
+        vcIter.foreach{ line => {
           writer.write(line.getVcfString+"\n");
         }}
       }
       writer.close();
     }
-    
-    def walkToFileSplit(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false, splitFuncOpt : Option[(String,Int) => Option[String]] = None){
+    def writeToFileSplit(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false, splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       splitFuncOpt match {
         case None => {
-          walkToFile(outfile=outfile,vcIter = vcIter, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes)
+          reportln("No output file split. Outputting to file: "+outfile,"note")
+          writeToFile(outfile=outfile,vcIter = vcIter, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes)
         }
         case Some(splitFunc) => {
-          val bufIter = vcIter.buffered;
+          reportln("Splitting output files. ("+outfile+")","note")
+          //val bufIter = vcIter.buffered;
           
           def splitFuncVc(vc : SVcfVariantLine) : Option[String] = {
             splitFunc(vc.chrom, vc.pos);
@@ -2113,7 +2270,7 @@ object VcfTool {
           def outFileName(s : String) = {
             outPrefix + s + outSuffix;
           }
-          var currOutFileInfix = splitFuncVc(bufIter.head);
+          var currOutFileInfix : Option[String] = None //splitFuncVc(bufIter.head);
           var currOut : Option[WriterUtil] = None
           val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
           def setOutfile(vc : SVcfVariantLine){
@@ -2124,9 +2281,9 @@ object VcfTool {
                 out.close()
               })
               currOut = None;
-            } else if(newInfix.get != currOutFileInfix){
+            } else if(newInfix.isDefined && ( currOutFileInfix.isEmpty || newInfix.get != currOutFileInfix.get )){
               currOut.foreach(out => {
-                reportln("Finished with file: "+outPrefix+currOutFileInfix+outSuffix+"." ,"progress");
+                reportln("Finished with file: "+outPrefix+currOutFileInfix.get+outSuffix+"." ,"progress");
                 out.close()
               })
               currOutFileInfix = newInfix
@@ -2306,6 +2463,32 @@ object VcfTool {
       idx;
   }
   
+  class FunctionExpression(args : Seq[String])
+  /*
+  case class ExpressionFunction[A,B](funcName : String, numParam : Int, desc : String, paramNames : Seq[String]){
+    def getFunctionInfo() : String = {
+      funcName+"\t"+numParam+"\t"+desc;
+    }
+    //def getReadyFunc
+  }
+  case class ReadyExpressionFunction[A,B](exprFunc : ExpressionFunction[A,B],
+                                          params : Vector[ReadyExpressionFunction[A,B]],
+  */
+  //object FunctionExpressionParser {
+    //ExpressionFunction[A,B](funcName : String, numParam : Int, desc : String, paramNames : Seq[String], metaFunc : ((SVcfVariantLine,Seq[ExpressionFunction[SVcfVariantLine,String]]) => ((SVcfVariantLine) => String)))
+    
+    /*
+    val exprFuncSet : Vector[ExpressionFunction[SVcfVariantLine,String]]] = Vector[ExpressionFunction[SVcfVariantLine,String]]](
+        ExpressionFunction[SVcfVariantLine,String]("AND",numParam=-1,desc = "", paramNames = c("expr1","expr2","..."),
+            metaFunc = { (paramSeq : Seq[ExpressionFunction[SVcfVariantLine,String]]) => {
+               ((vc : SVcfVariantLine) => {
+                 paramSeq.forAll( subexpr => subexpr
+               })
+            }}
+        )
+    )*/
+  //}
+  
   abstract class SFilterLogicParser[A](){
     def filterManualTitle() : String
     def filterManualDesc() : String
@@ -2375,6 +2558,13 @@ object VcfTool {
        
        
     def parseString(str : String) : SFilterLogic[A] = {
+      if( str.count( cc => cc == '(') != str.count(cc => cc == ')')){
+        error("ERROR parsing logical expression: different number of open and closed perentheses!\n"+
+              "      Found "+str.count( cc => cc == '(')+" open perens and " + str.count(cc => cc == ')') + " closed perens in string:"+
+              "      \""+str+"\""
+            );
+      }
+      
       parseStringArray(str.trim().replaceAll("\\("," \\( ").replaceAll("\\)"," \\) ").trim().split("\\s+").toSeq);
     }
   
