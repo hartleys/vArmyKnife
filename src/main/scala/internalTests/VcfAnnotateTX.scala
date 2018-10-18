@@ -4492,7 +4492,7 @@ object VcfAnnotateTX {
     def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
     
     val annidxAllele = 0
-    val annidxEffect = 1
+    val annidxEffect = 1 
     val annidxImpact = 2
     val annidxGeneName = 3
     val annidxGeneID  = 4
@@ -6137,7 +6137,12 @@ object VcfAnnotateTX {
                         renameInfoTags : Option[List[String]] = None,
                         renameGenoTags : Option[List[String]] = None,
                         sampleRenameFile : Option[String] = None,
-                        unPhaseAndSortGenotypes : Option[List[String]] = None
+                        unPhaseAndSortGenotypes : Option[List[String]] = None,
+                        
+                        keepInfoRegex : Option[List[String]] = None,
+                        dropInfoRegex : Option[List[String]] = None,
+                        keepGenoRegex : Option[List[String]] = None,
+                        dropGenoRegex : Option[List[String]] = None
                         ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "FilterTags"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](("keepGenotypeTags",fmtOptionList(keepGenotypeTags)),
@@ -6170,22 +6175,36 @@ object VcfAnnotateTX {
       //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
       val samps = outHeader.getSampleList
       
+      def makeRegexFunc(h : Option[List[String]], d: Boolean) : (String => Boolean) ={
+        h.map{k => {
+          val rx = k.map{ kk => java.util.regex.Pattern.compile(kk) }
+          ((s : String) => {
+            rx.exists( rr => rr.matcher(s).matches() )
+          })
+        }}.getOrElse( (s : String) => d )
+      }
+      
+      val kirFunc = makeRegexFunc(keepInfoRegex,true)
+      val dirFunc = makeRegexFunc(dropInfoRegex,false)
+      val kgrFunc = makeRegexFunc(keepGenoRegex,true)
+      val dgrFunc = makeRegexFunc(dropGenoRegex,false)
+      
       val infoTags = vcfHeader.infoLines.map{infoline => infoline.ID}.toSet;
       val keepInfoSet = keepInfoTags match {
         case Some(kit) => {
-          infoTags.filter{ i => kit.contains(i) && (! dropInfoTags.contains(i))}.toSet
+          infoTags.filter{ i => (kit.contains(i) || (kirFunc(i) && (! dirFunc(i))) ) && (! (dropInfoTags.contains(i)))}.toSet
         }
         case None => {
-          infoTags.filter{ i => ! dropInfoTags.contains(i)}.toSet
+          infoTags.filter{ i => ((kirFunc(i) && (! dirFunc(i))) ) && (! (dropInfoTags.contains(i)))}.toSet
         }
       }
       val genoTags = vcfHeader.formatLines.map{infoline => infoline.ID}.toSet;
       val keepGenoSet = keepGenotypeTags match {
         case Some(kit) => {
-          genoTags.filter{ i => kit.contains(i) && (! dropGenotypeTags.contains(i))}.toSet
+          genoTags.filter{ i => (kit.contains(i) || (kgrFunc(i) && (! dgrFunc(i))) ) && (! dropGenotypeTags.contains(i))}.toSet
         }
         case None => {
-          genoTags.filter{ i => ! dropGenotypeTags.contains(i)}.toSet
+          genoTags.filter{ i => (                   (kgrFunc(i) && (! dgrFunc(i))) ) && (! dropGenotypeTags.contains(i))}.toSet
         }
       }
       val keepSampIndices = keepSamples match {
@@ -11240,6 +11259,9 @@ vcfCodes.vMutLVL_TAG+"_alnRgt", "A", "String", "Right aligned version. See "+vcf
             vb.genotypes.genotypeValues(newGtIdx)(i) = missingGeno;
             vb.genotypes.genotypeValues(ftIdx)(i) = "1";
         }}
+        if(internalUtils.optionHolder.OPTION_DEBUGMODE){
+          tally("NUM_GT_FILTERED",vb.genotypes.genotypeValues(ftIdx).count{x => x == "1"})
+        }
         vb;
       }}
       
@@ -14118,7 +14140,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     } else {
       "Float"
     }
-    if(!Set("CT","PCT","FRAC").contains(style)){
+    if(!Set("CT","PCT","FRAC","GTTAG").contains(style)){
       error("Unrecognized/invalid gt expression style: \""+style+"\"")
     }
     
@@ -14135,21 +14157,37 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
        val sampList = vcfHeader.titleLine.sampleList.toList
        val sampCt   = vcfHeader.sampleCt;
        val outHeader = vcfHeader.copyHeader;
-       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type=styleType,desc=tagDesc).addWalker(this));
+       if(style == "GTTAG"){
+         outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number = "1", Type="Integer",desc=tagDesc).addWalker(this));
+       } else {
+         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type=styleType,desc=tagDesc).addWalker(this));
+       }
        outHeader.addWalk(this);
        (vcMap(vcIter){ vc => {
              vc.genotypes.sampList = sampList;
              vc.genotypes.sampGrp = Some(sampleToGroupMap);
              val vb = vc.getOutputLine();
-             val ct = Range(0,vcfHeader.sampleCt).count{ii => {
-               filter.keep((vc,ii))
-             }}
-             if(style == "CT"){
-               vb.addInfo(tagID,"" + ct);
-             } else if(style == "PCT"){
-               vb.addInfo(tagID,"" + (100.toDouble * ct.toDouble / vcfHeader.sampleCt.toDouble));
-             } else if(style == "FRAC"){
-               vb.addInfo(tagID,"" + (ct.toDouble / vcfHeader.sampleCt.toDouble));
+             if(style == "GTTAG"){
+               val gttag = Range(0,vcfHeader.sampleCt).map{ii => {
+                 if(filter.keep((vc,ii))){
+                   "1"
+                 } else {
+                   "0"
+                 }
+               }}.toArray
+               vb.genotypes.addGenotypeArray(tagID,gttag);
+             } else {
+               val ct = Range(0,vcfHeader.sampleCt).count{ii => {
+                 filter.keep((vc,ii))
+               }}
+               tally(""+tagID+"",ct)
+               if(style == "CT"){
+                 vb.addInfo(tagID,"" + ct);
+               } else if(style == "PCT"){
+                 vb.addInfo(tagID,"" + (100.toDouble * ct.toDouble / vcfHeader.sampleCt.toDouble));
+               } else if(style == "FRAC"){
+                 vb.addInfo(tagID,"" + (ct.toDouble / vcfHeader.sampleCt.toDouble));
+               }
              }
              
              vb

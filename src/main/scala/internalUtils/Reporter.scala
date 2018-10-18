@@ -322,6 +322,11 @@ object Reporter {
     noticeCount(warnType) += 1;
   }
   
+  val tallies = scala.collection.mutable.Map[String,Int]().withDefault((x : String) => 0);
+  def tally(str : String,v : Int){
+    tallies.update(str,tallies(str)+v);
+  }
+  
   def error(str : String){
     reportln("<====== FATAL ERROR! ======>","error");
     reportln("----------------------------","error");
@@ -353,6 +358,12 @@ object Reporter {
       warningCount.keySet.toSeq.sorted.map(x => indent+subIndent+warningCount(x)+": "+x) ++ 
     Seq[String](indent+"Notices So Far:")++
       noticeCount.keySet.toSeq.sorted.map(x => indent+subIndent+noticeCount(x)+": "+x)++
+    (if(tallies.size > 0){
+      Seq[String](indent+"Counts:")++
+      tallies.keySet.toSeq.sorted.map(x => indent+subIndent+tallies(x)+": "+x)
+    } else {
+       Seq[String]()
+    }) ++
     Seq[String](indent+"---------------")
   }
   
