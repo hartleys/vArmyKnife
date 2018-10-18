@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version2.2.13 (Updated Tue Sep  4 09:51:52 EDT 2018)
+> Version2.2.34 (Updated Tue Oct 16 15:16:25 EDT 2018)
 
 > ([back to help base](../index.html))
 

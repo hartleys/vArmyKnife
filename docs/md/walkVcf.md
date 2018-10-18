@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.13 (Updated Tue Sep  4 09:51:52 EDT 2018)
+> Version 2.2.34 (Updated Tue Oct 16 15:16:25 EDT 2018)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -57,6 +57,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --splitMultiAllelicsNoStarAlle:
 
 > If this flag is used, multiallelic variants will be split into multiple separate VCF lines. Two copies of the AD tag will be created, AD and AD\_multAlle. (flag)
+
+#### --dropSpanIndels:
+
+> Requires splitMultiAllelic. Drops spanning indels, which are marked with an asterisk allele. (flag)
 
 #### --convertROAOtoAD:
 
@@ -147,13 +151,21 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > A comma delimited list with each element containing 3 colon-delimited parts consisting of the title, filename, and the desired tags for a secondary VCF file. The indicated tags from each VCF file will be copied over. (repeatable CommaDelimitedListOfStrings)
 
+#### --thirdAlleleChar tag:
+
+> For multiallelic-split variants, this defines the character used for the 'other' allele. If this is used, the original version will be copied as a backup. (String)
+
 #### --addVariantIdx tag:
 
 > . (String)
 
 #### --tagVariantsExpression newTagID|desc|variantExpression:
 
-> If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable CommaDelimitedListOfStrings)
+> If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable String)
+
+#### --tagVariantsGtCountExpression newTagID|desc|genotypeExpression[|type]:
+
+> If this parameter is set, then additional tags will be generated based on the given GENOTYPE expression(s). Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the genotype expression. The expressions are always booleans, and follow the same rules for VCF genotype-level filtering. See the section on VCF genotype filtering, below. Optionally, a fourth element in the list can define the type which can be either FRAC, PCT, or CT, which defines the output as either a fraction, a percentage, or a count. (repeatable String)
 
 #### --tagVariantsFunction newTagID|desc|funcName|param1,param2,...:
 
