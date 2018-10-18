@@ -594,7 +594,7 @@ object GatkPublicCopy {
                  "   old line: "+vc.getSimpleVcfString()+"\n"+
                  "   new line: "+vb.getSimpleVcfString()+"\n",
                  "Fixed_malformed_vcf_dot_refAllele",1);
-        } else if(vb.alt.contains(VcfTool.MISSING_VALUE_STRING)){
+        } else if(vb.alt.head == VcfTool.MISSING_VALUE_STRING || vb.alt.head == "-"){
           vb.addInfo(tag,"1");
           vb.in_pos = vb.in_pos - 1;
           val prevBase = getBaseAtPos(vc.chrom,vc.pos-1);
@@ -602,7 +602,7 @@ object GatkPublicCopy {
           vb.in_alt = vc.alt.map{a => {
             if(a == VcfTool.UNKNOWN_ALT_TAG_STRING){
               a
-            } else if(a == VcfTool.MISSING_VALUE_STRING){
+            } else if(a == VcfTool.MISSING_VALUE_STRING | a == "-"){
               prevBase;
             } else {
               prevBase + a;

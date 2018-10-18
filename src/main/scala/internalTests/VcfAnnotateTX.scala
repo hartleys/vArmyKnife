@@ -4025,13 +4025,15 @@ object VcfAnnotateTX {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
 
-      val paramTypes = paramTags.map{ param => {
+      val paramTypes = paramTags.zipWithIndex.map{ case (param,pidx) => {
         vcfHeader.infoLines.find(infoline => infoline.ID == param) match {
           case Some(paramLine) => {
             paramLine.Type
           }
           case None => {
-            error("ERROR: cannot find tag: "+param)
+            if(! (Set("STATICSET.INTERSECT").contains(func) && pidx > 0)){
+              warning("WARN: cannot find tag: "+param)
+            }
             "?"
           }
         }
@@ -4043,7 +4045,7 @@ object VcfAnnotateTX {
       } else {
         "Float"
       }
-      val outNum = if(f.startsWith("SETS.")){
+      val outNum = if(f.startsWith("SETS.") || f.startsWith("STATICSET.")){
         "."
       } else {
         "1"
@@ -4127,22 +4129,27 @@ object VcfAnnotateTX {
               vc.addInfo(newTag, ".");
             }
           }
+        } else if(f == "STATICSET.INTERSECT"){
+          val param = paramTags.head;
+          val staticSet = paramTags.tail.toSet;
+          val paramVal =  v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+          vc.addInfo(newTag, (paramVal.intersect(staticSet)).toVector.sorted.padTo(1,".").mkString(","));
         } else if(f == "SETS.DIFF"){
             val paramVals : Seq[Set[String]] = paramTags.map{ param => {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
             }}
-            vc.addInfo(newTag, (paramVals(0) -- paramVals(1)).toVector.sorted.mkString(","));
+            vc.addInfo(newTag, (paramVals(0) -- paramVals(1)).toVector.sorted.padTo(1,".").mkString(","));
         } else if(f == "SETS.UNION"){
             val paramVals : Set[String] = paramTags.flatMap{ param => {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
             }}.toSet
-            vc.addInfo(newTag, (paramVals).toVector.sorted.mkString(","));
+            vc.addInfo(newTag, (paramVals).toVector.sorted.padTo(1,".").mkString(","));
         } else if(f == "SETS.INTERSECT"){
             val paramVals : Seq[Set[String]] = paramTags.map{ param => {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
             }}
             val intersect = paramTags.tail.foldLeft(paramTags.head){ case (soFar,curr) => { soFar.intersect(curr) }}
-            vc.addInfo(newTag, (intersect).toVector.sorted.mkString(","));
+            vc.addInfo(newTag, (intersect).toVector.sorted.padTo(1,".").mkString(","));
         } else if(f == "MIN"){
           error("MIN function not yet implemented")
         } else if(f == "MAX"){
