@@ -1898,6 +1898,17 @@ object VcfTool {
         return genotypeValues.length - 1;
       }
     }
+    
+    def addGenotypeValue(fmtid : String,sampIdx : Int, gval : String) : Int = {
+      val idx = fmt.indexWhere((p : String) => { p == fmtid });
+      if(idx == -1){
+        fmt = fmt :+ fmtid
+        genotypeValues = genotypeValues :+ Array.fill[String](genotypeValues.head.length)(".");
+      } else {
+        genotypeValues(idx)(sampIdx) = gval;
+      }
+      return idx;
+    }
     /*
     case class SVcfEmptyGenotypeSet() extends SVcfGenotypeSet(fmt = Seq[String](), genotypeValues = Array[Array[String]]()){
       override def getGenotypeStrings : Seq[String] = Seq[String]();

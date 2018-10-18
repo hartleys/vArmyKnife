@@ -660,6 +660,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                  pathoExpression : Option[String] = None,
                  benExpression: Option[String] = None,
                  txSet : Option[Set[String]] = None,
+                 //dbMeta : Seq[String] = Seq[String](),
                  soFar : Option[(scala.collection.mutable.Map[String,TXUtil.KnownVarHolder],scala.collection.mutable.Map[String,Set[internalUtils.TXUtil.pVariantInfo]])] = None
                 ) : (scala.collection.mutable.Map[String,TXUtil.KnownVarHolder],scala.collection.mutable.Map[String,Set[internalUtils.TXUtil.pVariantInfo]]) = {
     //val hgmdPathogenicClassSet = hgmdPathogenicClasses.toSet
@@ -718,7 +719,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
            );
       val metaMap = kvh.metaMap;
       val metadata = new scala.collection.mutable.AnyRefMap[String,String]();
-      metaMap(dbName) = metadata; 
+      metaMap.update(dbName, metadata); 
       kvh.isPatho = kvh.isPatho :+ (patho);
       kvh.isBen = kvh.isBen :+ (ben);
       kvh.sourceList = kvh.sourceList :+ (dbName);
@@ -726,7 +727,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
       
       keepInfo.foreach{itag => {
         v.info.get(itag).getOrElse(None).foreach{ii => {
-          metadata += ((itag,ii));
+          metadata.update(itag,ii);
         }}
       }}
       val txList = v.getInfoList(vcfCodes.txList_TAG);
@@ -828,6 +829,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
     
     reportln("Reading dbVarMap,dbTxVarMap... ["+stdUtils.getDateAndTimeString+"]","debug");
     val dbList : Seq[String] = dbdata.map{ case (dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags) => dbName }.toSeq;
+    val dbMeta : Seq[Seq[String]] = dbdata.map{ case (dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags) => metaDataTags }.toSeq;
     val (dbVarMap,dbTxVarMap) = dbdata.foldLeft[Option[(scala.collection.mutable.Map[String,TXUtil.KnownVarHolder],scala.collection.mutable.Map[String,Set[internalUtils.TXUtil.pVariantInfo]])]](None){ 
       case (soFar,(dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags)) => {
             Some(getDbMappers(infile =dbFile, chromList =chromList, vcfCodes = vcfCodes,
@@ -886,14 +888,14 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
     }
     
     val dbIterationSet = Seq(
-           ("","","variants from any DB",((kvh : KnownVarHolder) => true)),
-           ("_PTH","","variants with any pathogenic reports from any DB",((info : KnownVarHolder) => info.isPatho.exists{x => x})),
-           ("_BEN","","variants with any pathogenic reports from any DB",((info : KnownVarHolder) => info.isBen.exists{x => x}))
-        ) ++ dbList.flatMap{ dbName => {
+           ("","","variants from any DB",((kvh : KnownVarHolder) => true),Seq[String]()),
+           ("_PTH","","variants with any pathogenic reports from any DB",((info : KnownVarHolder) => info.isPatho.exists{x => x}),Seq[String]()),
+           ("_BEN","","variants with any pathogenic reports from any DB",((info : KnownVarHolder) => info.isBen.exists{x => x}),Seq[String]())
+        ) ++ dbList.zip(dbMeta).flatMap{ case (dbName,meta) => {
           Seq(
-           ("_"+dbName,dbName,"variants from any "+dbName,((info : KnownVarHolder) => info.sourceList.contains(dbName))),
-           ("_"+dbName+"_PTH",dbName,"variants with any pathogenic reports from "+dbName,((info : KnownVarHolder) => info.isPatho.zip(info.sourceList).exists{ case (p,src) => src == dbName && p})),
-           ("_"+dbName+"_BEN",dbName,"variants with any pathogenic reports from "+dbName,((info : KnownVarHolder) => info.isBen.zip(info.sourceList).exists{ case (p,src) => src == dbName && p}))
+           ("_"+dbName,dbName,"variants from any "+dbName,((info : KnownVarHolder) => info.sourceList.contains(dbName)),meta),
+           ("_"+dbName+"_PTH",dbName,"variants with any pathogenic reports from "+dbName,((info : KnownVarHolder) => info.isPatho.zip(info.sourceList).exists{ case (p,src) => src == dbName && p}),meta),
+           ("_"+dbName+"_BEN",dbName,"variants with any pathogenic reports from "+dbName,((info : KnownVarHolder) => info.isBen.zip(info.sourceList).exists{ case (p,src) => src == dbName && p}),meta)
           );
         }}
     val txSetIterationSet = Seq(
@@ -918,28 +920,36 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                   //tpre+dbInfix+txSetInfix+"_ID_downstreamLOF_sameType"
                   //tpre+dbInfix+txSetInfix+"_CT_downstreamLOF_sameType"
     
-    val infoList = dbIterationSet.flatMap{ case (dbInfix,dbName,dbDesc,dbFunc) => {
+    val matchGroupingList = Seq("aaMatch","aaMatch_diffBP","sameCodon","sameCodon_diffAA","downstreamLOF","downstreamLOF_sameType")
+    
+    val infoList = dbIterationSet.flatMap{ case (dbInfix,dbName,dbDesc,dbFunc,meta) => {
       Seq(
-        (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+"_ID_bpMatch",Number=".",Type="String",desc="exact base-pair match "+dbDesc)).addWalker(this),
-        (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+"_CT_bpMatch",Number="1",Type="Integer",desc="Num exact base-pair match "+dbDesc)).addWalker(this)
+        (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+"_bpMatch_ID",Number=".",Type="String",desc="exact base-pair match "+dbDesc)).addWalker(this),
+        (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+"_bpMatch_CT",Number="1",Type="Integer",desc="Num exact base-pair match "+dbDesc)).addWalker(this)
       ) ++ txSetIterationSet.flatMap{ case (txSetInfix,txSetDesc,txSetFunc) => {
         Seq(
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_CT_aaMatch",Number="1",Type="Integer",desc="Num amino-acid-matching "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_ID_aaMatch",Number=".",Type="String",desc="Amino acid match "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_ID_aaMatch_diffBP",Number=".",Type="String",desc="Different bp but same amino acid match "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_CT_aaMatch_diffBP",Number="1",Type="Integer",desc="Num matching "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_ID_sameCodon",Number=".",Type="String",desc="Same codon pos match "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_CT_sameCodon",Number="1",Type="Integer",desc="Num same codon pos match "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_ID_sameCodon_diffAA",Number=".",Type="String",desc="Same codon pos but different aa "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_CT_sameCodon_diffAA",Number="1",Type="Integer",desc="Num same codon pos but different aa"+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_ID_downstreamLOF",Number=".",Type="String",desc="Downstream LOF "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_CT_downstreamLOF",Number="1",Type="Integer",desc="Num downstream LOF "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_ID_downstreamLOF_sameType",Number=".",Type="String",desc="Downstream same-type LOF "+dbDesc)).addWalker(this),
-          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_CT_downstreamLOF_sameType",Number="1",Type="Integer",desc="Num downstream same-type LOF"+dbDesc)).addWalker(this)
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_aaMatch_CT",Number="1",Type="Integer",desc="Num amino-acid-matching "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_aaMatch_ID",Number=".",Type="String",desc="Amino acid match "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_aaMatch_diffBP_CT",Number=".",Type="String",desc="Different bp but same amino acid match "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_aaMatch_diffBP_ID",Number="1",Type="Integer",desc="Num matching "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_sameCodon_CT",Number=".",Type="String",desc="Same codon pos match "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_sameCodon_ID",Number="1",Type="Integer",desc="Num same codon pos match "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_sameCodon_diffAA_CT",Number=".",Type="String",desc="Same codon pos but different aa "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_sameCodon_diffAA_ID",Number="1",Type="Integer",desc="Num same codon pos but different aa"+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_downstreamLOF_CT",Number=".",Type="String",desc="Downstream LOF "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_downstreamLOF_ID",Number="1",Type="Integer",desc="Num downstream LOF "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_downstreamLOF_sameType_CT",Number=".",Type="String",desc="Downstream same-type LOF "+dbDesc)).addWalker(this),
+          (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_downstreamLOF_sameType_ID",Number="1",Type="Integer",desc="Num downstream same-type LOF"+dbDesc)).addWalker(this)
           
-        )
+        ) ++ matchGroupingList.flatMap{ mg => {
+          meta.map{ mm => {
+            (new SVcfCompoundHeaderLine("INFO",ID=tpre+dbInfix+txSetInfix+"_aaMatch_"+mm,Number="1",Type="Integer",desc="Num amino-acid-matching "+dbDesc)).addWalker(this)
+          }}
+        }}
       }}
     }}
+    
+    
     
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -982,6 +992,19 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                    }
                  }
               }
+              def addMetaData(kvhSeq : Seq[KnownVarHolder], dbName : String, dbInfix : String, meta : Seq[String], vb : SVcfOutputVariantLine, matchType : String){
+                      if(dbName != "" && meta.length > 0){
+                        meta.foreach{ md => {
+                          val iiSeq = kvhSeq.map{ kvh => {
+                            kvh.metaMap.get(dbName).flatMap{ dd => {
+                              dd.get(md)
+                            }}.getOrElse(".")
+                          }}
+                          vb.addInfo(tpre+dbInfix+"_"+matchType+"_"+md, iiSeq.mkString(","));
+                        }}
+                      }
+              }
+              
               
     def kvhStringDesc( kvh : KnownVarHolder) : String = {
       "["+kvh.idlist.mkString(",")+"],["+kvh.sourceList.mkString(",")+"],["+kvh.isPatho.map{b => if(b) "1" else "0"}.mkString(",")+"],["+kvh.isBen.map{b => if(b) "1" else "0"}.mkString(",")+"]"
@@ -1096,20 +1119,23 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                     notice("Found AMINO variants: ["+g+","+tx+","+info.ID+"]:"+varset.take(3).map{ vv => vv.ID+"/"+vv.cType+"/"+vv.severityType+"/"+vv.pType+"/"+vv.subType+"/"+vv.pvar+"/"+vv.dbInfo.map{kvh => kvhStringDesc(kvh)}.getOrElse(".")}.mkString(","),"AMINO_EXAMPLE",5);
                   }}
               
-              
               //tpre+txSetInfix+dbInfix+"_CT_aaMatch"
               
-              dbIterationSet.foreach{ case (dbInfix, dbName,dbSetDesc, dbSetFunc) => {
+
+                  
+              dbIterationSet.foreach{ case (dbInfix, dbName,dbSetDesc, dbSetFunc, meta) => {
                 val exm = exactMatch.flatMap{ em => {
                   if(dbSetFunc(em)){
-                    vb.addInfo(tpre+dbInfix+"_CT_bpMatch","1");
-                    if(dbName != ""){
+                    vb.addInfo(tpre+dbInfix+"_bpMatch_CT","1");
+                    //if(dbName != ""){
                       val id = getId(em, dbName);
-                      vb.addInfo(tpre+dbInfix+"_ID_bpMatch",id.getOrElse("."));
-                    }
+                      vb.addInfo(tpre+dbInfix+"_bpMatch_ID",id.getOrElse("."));
+                    //}
+                    //addMetaData(kvh : KnownVariantHolder, dbName : String, meta : Seq[String], vb : SVcfVariantOutputLine)
+                      addMetaData(Seq(em),dbName,dbInfix,meta,vb,"bpMatch");
                     Some(em);
                   } else {
-                    vb.addInfo(tpre+dbInfix+"_CT_bpMatch","0");
+                    vb.addInfo(tpre+dbInfix+"_bpMatch_CT","0");
                     None
                   }
                 }}.toSet
@@ -1119,58 +1145,69 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                     txSetFunc(tx)
                   }}.flatMap{ case (g,tx,info,varset) => {
                     varset.map{mInfo => mInfo.dbInfo.get}.filter{kvh => dbSetFunc(kvh)}
-                  }}.toSet
+                  }}.toSeq
                   val aaIds = aam.flatMap{ kvh => {
                     getId(kvh, dbName)
                   }}
-                  val aamDiff = (aam -- exm)
+                  val aamDiff = (aam.toSet -- exm.toSet).toSeq
                   val aamDiffIds = aamDiff.flatMap{getId(_,dbName)}
                   
+                  //if(dbName != "") 
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_aaMatch_ID",aaIds.toVector.sorted.padTo(1,".").mkString(","));
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_aaMatch_CT",""+aam.size);
+                  addMetaData(aam,dbName,dbInfix,meta,vb,"aaMatch");
+                  //addMetaData(em,dbName,meta,vb,"bpMatch");
+                  //if(dbName != "") 
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_aaMatch_diffBP_ID",""+aamDiffIds.toVector.sorted.padTo(1,".").mkString(","));
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_aaMatch_diffBP_CT",""+aamDiff.size);
+                  addMetaData(aamDiff,dbName,dbInfix,meta,vb,"aaMatch_diffBP");
                   
-
-                  if(dbName != "") vb.addInfo(tpre+dbInfix+txSetInfix+"_ID_aaMatch",aaIds.toVector.sorted.padTo(1,".").mkString(","));
-                  vb.addInfo(tpre+dbInfix+txSetInfix+"_CT_aaMatch",""+aam.size);
-                  if(dbName != "") vb.addInfo(tpre+dbInfix+txSetInfix+"_ID_aaMatch_diffBP",""+aamDiffIds.toVector.sorted.padTo(1,".").mkString(","));
-                  vb.addInfo(tpre+dbInfix+txSetInfix+"_CT_aaMatch_diffBP",""+aamDiff.size);
-
                   val cdm = dbCodonStrict.withFilter{ case (g,tx,info,varset) => {
                     txSetFunc(tx)
                   }}.flatMap{ case (g,tx,info,varset) => {
                     varset.map{mInfo => mInfo.dbInfo.get}.filter{kvh => dbSetFunc(kvh)}
-                  }}.toSet
+                  }}.toSeq
                   val cdIds = cdm.flatMap{ kvh => {
                     getId(kvh, dbName)
                   }}
-                  val cdmDiff = (cdm -- aam -- exm)
+                  val cdmDiff = (cdm.toSet -- aam.toSet -- exm).toSeq
                   val cdmDiffIds = cdmDiff.flatMap{getId(_,dbName)}
                   
-                  if(dbName != "") vb.addInfo(tpre+dbInfix+txSetInfix+"_ID_sameCodon",cdIds.toVector.sorted.padTo(1,".").mkString(","));
-                  vb.addInfo(tpre+dbInfix+txSetInfix+"_CT_sameCodon",""+cdm.size);
-                  if(dbName != "") vb.addInfo(tpre+dbInfix+txSetInfix+"_ID_sameCodon_diffAA",""+cdmDiffIds.toVector.sorted.padTo(1,".").mkString(","));
-                  vb.addInfo(tpre+dbInfix+txSetInfix+"_CT_sameCodon_diffAA",""+cdmDiff.size);
+                  //if(dbName != "") 
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_sameCodon_ID",cdIds.toVector.sorted.padTo(1,".").mkString(","));
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_sameCodon_CT",""+cdm.size);
+                  addMetaData(cdm,dbName,dbInfix,meta,vb,"sameCodon");
+                  //if(dbName != "") 
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_sameCodon_diffAA_ID",""+cdmDiffIds.toVector.sorted.padTo(1,".").mkString(","));
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_sameCodon_diffAA_CT",""+cdmDiff.size);
+                  addMetaData(cdmDiff,dbName,dbInfix,meta,vb,"sameCodon_diffAA");
                   
                   val downlof = dbDownstream.flatMap{ case (g,tx,info,varset) => {
                     if(isLOF(info) && txSetFunc(tx)){
                       varset.withFilter{mInfo => {
                         isLOF(mInfo) && dbSetFunc(mInfo.dbInfo.get)
-                      }}.map{mInfo => mInfo.dbInfo.get}.toSet
+                      }}.map{mInfo => mInfo.dbInfo.get}.toSeq
                     } else {
-                      Set[KnownVarHolder]()
+                      Seq[KnownVarHolder]()
                     }
                   }}
-                  if(dbName != "") vb.addInfo(tpre+dbInfix+txSetInfix+"_ID_downstreamLOF",downlof.flatMap{getId(_, dbName)}.toVector.sorted.padTo(1,".").take(10).mkString(","));
-                  vb.addInfo(tpre+dbInfix+txSetInfix+"_CT_downstreamLOF",""+downlof.size);
+                  //if(dbName != "") 
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_downstreamLOF_ID",downlof.flatMap{getId(_, dbName)}.toVector.sorted.padTo(1,".").take(10).mkString(","));
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_downstreamLOF_CT",""+downlof.size);
+                  addMetaData(downlof,dbName,dbInfix,meta,vb,"downStreamLOF");
                   val downlofSameType = dbDownstream.flatMap{ case (g,tx,info,varset) => {
                     if(isLOF(info) && txSetFunc(tx)){
                       varset.withFilter{mInfo => {
                         isLOF(mInfo) && dbSetFunc(mInfo.dbInfo.get) && mInfo.pType == info.pType
-                      }}.map{mInfo => mInfo.dbInfo.get}.toSet
+                      }}.map{mInfo => mInfo.dbInfo.get}.toSeq
                     } else {
-                      Set[KnownVarHolder]()
+                      Seq[KnownVarHolder]()
                     }
                   }}
-                  if(dbName != "") vb.addInfo(tpre+dbInfix+txSetInfix+"_ID_downstreamLOF_sameType",downlofSameType.flatMap{getId(_, dbName)}.toVector.sorted.padTo(1,".").take(10).mkString(","));
-                  vb.addInfo(tpre+dbInfix+txSetInfix+"_CT_downstreamLOF_sameType",""+downlofSameType.size);
+                  //if(dbName != "") 
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_downstreamLOF_sameType_ID",downlofSameType.flatMap{getId(_, dbName)}.toVector.sorted.padTo(1,".").take(10).mkString(","));
+                  vb.addInfo(tpre+dbInfix+txSetInfix+"_downstreamLOF_sameType_CT",""+downlofSameType.size);
+                  addMetaData(downlofSameType,dbName,dbInfix,meta,vb,"downStreamLOF_sameType");
                 }}
                 
               }}

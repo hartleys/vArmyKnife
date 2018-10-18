@@ -365,6 +365,14 @@ object VcfAnnotateTX {
                                                    ""// description
                                        ).meta(false,"Preprocessing") ::
                                        
+                                       //makeFirstBaseMatch
+                    new UnaryArgument(
+                                         name = "makeFirstBaseMatch", 
+                                         arg = List("--makeFirstBaseMatch"),
+                                         argDesc =  "Reformats multibase indels so that the first bases match. Without this option, raw output from certain callers will not be properly trimmed by GATK leftAlignAndTrim. Requires genomeFA to be set."
+                                        ).meta(true,"Preprocessing")  :: 
+                                       
+                                       
                     new UnaryArgument(
                                          name = "leftAlignAndTrim", 
                                          arg = List("--leftAlignAndTrim"),
@@ -1171,7 +1179,8 @@ object VcfAnnotateTX {
                 
                 tableInput = parser.get[Boolean]("tableInput"),
                 tableOutput = parser.get[Boolean]("tableOutput"),
-                tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression")
+                tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression"),
+                makeFirstBaseMatch = parser.get[Boolean]("makeFirstBaseMatch")
              )
        }
      }
@@ -1259,6 +1268,7 @@ object VcfAnnotateTX {
                 
                 addVariantPosInfo : Option[String] = None,
                 
+                makeFirstBaseMatch : Boolean = false,
                 leftAlignAndTrim : Boolean = false,
                 leftAlignAndTrimWindow : Option[Int] = None,
                 
@@ -1454,6 +1464,11 @@ object VcfAnnotateTX {
               if(genomeFA.isEmpty){
                 error("ERROR: in order to left align and trim, you MUST specify a genome fasta file with the --genomeFA parameter");
               }
+              if(makeFirstBaseMatch){
+                Seq(internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)))
+              } else {
+                Seq[SVcfWalker]()
+              } ++ 
               Seq[SVcfWalker](
                     //internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)),
                     internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200), useGatkLibCall = leftAlignAndTrimWindow.isEmpty)
@@ -12615,7 +12630,258 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     
   }
   
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /*def multiSampleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
+                            headers : Seq[SVcfHeader], 
+                            inputVcfTypes : Seq[String], genomeFA : Option[String],
+                            windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
+    val vcfCodes = VCFAnnoCodes();
+
+    val genotypeOrdering = new Ordering[String]{
+                        def compare(x : String, y : String) : Int = {
+                          if(x == y) 0;
+                          else if(x == ".") -1;
+                          else if(y == ".") 1;
+                          else {
+                            val xi = string2int(x);
+                            val yi = string2int(y);
+                            if(xi < yi) -1;
+                            else 1;
+                          }
+                        }
+                      }
+    
+    val outputFmtTags : scala.collection.mutable.Map[String,SVcfCompoundHeaderLine] = new scala.collection.mutable.AnyRefMap[String,SVcfCompoundHeaderLine]();
+    val fmtTags: Map[String,Set[String]] = headers.zip(inputVcfTypes).map{ case (h,t) => {
+      ((t, h.formatLines.map{ fhl => {
+           val ct = if(fhl.ID == "AD"){
+             "R"
+           } else {
+             fhl.Number
+           }
+           val subType = if(fhl.subType == None){
+             fhl.subType;
+           } else if(fhl.ID == "AD"){
+             Some(VcfTool.subtype_AlleleCounts)
+           } else if(fhl.ID == "GT"){
+             Some(VcfTool.subtype_GtStyle)
+           } else {
+             None
+           }
+           val chl = new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = t + "_" + fhl.ID, Number = ct, Type = fhl.Type, desc = cleanQuotes(fhl.desc),subType=subType)
+           outputFmtTags.update(fhl.ID,chl)
+           (fhl.ID)
+      }}.toSet))
+    }}.toMap
+    val unionFmt = fmtTags.flatMap{ case (t,fset) => {
+      fset
+    }}.toVector.distinct
+
+    
+    val masterCallerInfoTags : Map[String,Set[String]] = inputVcfTypes.map{ mc => {
+          val masterIdx = inputVcfTypes.indexOf(mc)
+          val masterHeader = headers(masterIdx);
+          (mc,masterHeader.infoLines.map{ infoLine => {
+            //val num = if(infoLine.Number == "R" || infoLine.Number == "G" || infoLine.Number == "A") "." else infoLine.Number;
+            val num = if(infoLine.Number == "G") "." else infoLine.Number;
+            val chl = new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = infoLine.ID, Number = num, Type = infoLine.Type, desc = cleanQuotes(infoLine.desc), subType = infoLine.subType)
+            infoLine.ID
+          }}.toSet)
+    }}.toMap
+    val unionInfo = masterCallerInfoTags.flatMap{ case (t,sset) => {
+      sset
+    }}.toVector.distinct
+    
+    
+    
+    val customInfo = Seq[SVcfCompoundHeaderLine](
+      new SVcfCompoundHeaderLine("INFO",  vcfCodes.ec_alle_callerSets,   "1", "String", "For each alt allele, which callers included the given allele."),
+      new SVcfCompoundHeaderLine("INFO",  "SWH_EC_duplicateCt",   "1", "Integer", "The Number of duplicates found for this variant including this one."),
+      new SVcfCompoundHeaderLine("INFO",  "SWH_EC_duplicateIdx",   "1", "Integer", "The index of this duplicate. If there are no duplicates of this variant this will just be equal to 0.")
+    );//SWH_EC_duplicateIdx
+    val customFmt = Seq[SVcfCompoundHeaderLine](
+      new SVcfCompoundHeaderLine("FORMAT",  "GT",   "1", "String", "Final Genotype Call.")
+    )
+    
+    val vcfHeader = headers.head.copyHeader;
+    vcfHeader.infoLines = Seq[SVcfCompoundHeaderLine]();
+    vcfHeader.formatLines = Seq[SVcfCompoundHeaderLine]();
+    vcfHeader.addWalkerLikeCommand("multiSampleMergeVariants",Seq[(String,String)](("inputVcfTypes",inputVcfTypes.mkString("|"))))
+    
+    /*
+    inputVcfTypes.foreach{ mc => {
+       vcfHeader.addInfoLine(
+           new SVcfCompoundHeaderLine(in_tag = "INFO",ID = "SWH_ECINFO_QUAL_"+ mc, Number = "1", Type = "Float", desc = "QUAL field for caller "+mc)
+       );
+       vcfHeader.addInfoLine(
+           new SVcfCompoundHeaderLine(in_tag = "INFO",ID = "SWH_ECINFO_ID_"+ mc, Number = "1", Type = "String", desc = "ID field for caller "+mc)
+       );
+       vcfHeader.addInfoLine(
+           new SVcfCompoundHeaderLine(in_tag = "INFO",ID = "SWH_ECINFO_FILTER_"+ mc, Number = "1", Type = "String", desc = "FILTER field for caller "+mc)
+       );
+    }}*/
+    customInfo.foreach{ infoLine => {
+      vcfHeader.addInfoLine(infoLine);
+    }}
+    customFmt.foreach{ infoLine => {
+      vcfHeader.addFormatLine(infoLine);
+    }}
+
+    
+    (unionFmt ++ unionInfo).foreach{ fmtID => {
+      outputFmtTags.foreach{ case (tagID,headerLine) => {
+        vcfHeader.addFormatLine(headerLine);
+      }}
+    }}
+    
+    
+    val sampNames = headers.flatMap{h => h.titleLine.sampleList};
+    val sampCt = sampNames.length;
+    
+    //vcfHeader
+    val bufIters : Seq[BufferedIterator[SVcfVariantLine]] = vcIters.map{_.buffered};
+    
+    //def mergeGroupBySpan[A,B](iterSeq : Seq[BufferedIterator[A]])(f : (A => B))(implicit ord : math.Ordering[B]) : Iterator[Seq[Seq[A]]]
+    //groupBySpanMulti[A,B,C](iterSeq : Seq[BufferedIterator[A]])(g : A => C, f : (A => B))(implicit ord : math.Ordering[B], ordG : math.Ordering[C])
+    //val sortedGroupIters : BufferedIterator[Seq[Seq[SVcfVariantLine]]] = (mergeGroupBySpanWithSupergroup(bufIters){vc => vc.chrom}{vc => vc.pos}).buffered;
+    val sortedGroupIters : BufferedIterator[Seq[Seq[SVcfVariantLine]]] = groupBySpanMulti(bufIters)(v => v.chrom)(v => v.pos).buffered;
+    
+    ((sortedGroupIters.flatMap{ posSeqSeq : Seq[Seq[SVcfVariantLine]] => {
+      val swaps = posSeqSeq.flatMap{ vcSeq => vcSeq.map{ vc => (vc.ref, vc.alt.head)}}.distinct.sorted;
+      
+      swaps.flatMap{ case (currRef,currAlt) => {
+        val vcSeqSeq : Seq[Seq[SVcfVariantLine]] = posSeqSeq.map{ posSeq => posSeq.filter{vc => vc.ref == currRef && vc.alt.head == currAlt}};
+        
+        val finalGt = Array.fill[String](sampCt)("./.");
+        var callerList = Set[String]();
+        var sampleCallerList = Array.fill[Set[String]](sampCt)(Set[String]());
+        
+        val exVc = vcSeqSeq.find(vcSeq => ! vcSeq.isEmpty).get.head
+        val chrom = exVc.chrom;
+        val pos = exVc.pos;
+        val id = exVc.id;
+        val ref = currRef;
+        val alt = if(vcSeqSeq.exists{ vcSeq => vcSeq.exists{ vc => vc.alt.length > 1 }}){
+          Seq[String](exVc.alt.head,"*");
+        } else {
+          Seq[String](currAlt)
+        }
+        val numAlle = alt.length;
+        val filt = exVc.filter;
+        val qual = exVc.qual;
+        
+        val vb = SVcfOutputVariantLine(
+           in_chrom = chrom,
+           in_pos = pos,
+           in_id = id,
+           in_ref = ref,
+           in_alt = alt,
+           in_qual = qual,
+           in_filter = filt,
+           in_info = Map[String,Option[String]](),
+           in_format = Seq[String](),
+           in_genotypes = SVcfGenotypeSet(Seq[String]("GT"), Array.fill(1,sampCt)("."))
+        )
+        var callerSupport = Set[String]();
+        
+        vcSeqSeq.zip(inputVcfTypes).filter{ case (vcSeq,callerName) => vcSeq.length > 0 }.map{ case (vcSeq,callerName) => {
+          val currInfoLines = masterCallerInfoTags(callerName);
+          val currFmtLines = fmtTags(callerName);
+          vcSeq.headOption.foreach{ vc => {
+            callerSupport = callerSupport + callerName;
+            vc.info.map{ case (oldTag,fieldVal) => {
+              val (newTag,infoLine) = currInfoLines(oldTag);
+              vb.addInfoOpt(newTag,fieldVal);
+            }}
+            vc.genotypes.fmt.zipWithIndex.foreach{ case (oldTag,idx) => {
+              if(! currFmtLines.contains(oldTag)){
+                warning("Fatal error: Tag: "+oldTag+" not found in given header!\n Found header tags: "+currFmtLines.keys.toSeq.sorted.mkString(","),"PREERROR_WARNING",-1)
+              }
+              val (newTag,fmtLine) = currFmtLines(oldTag);
+              vb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(idx));
+            }}
+            val currGt = vc.genotypes.genotypeValues(0);
+            currGt.zipWithIndex.foreach{ case (gtString,i) => {
+              val gt = gtString.split("[\\|/]").sorted(genotypeOrdering).mkString("/");
+              if(finalGt(i) == "./."){
+                finalGt(i) = gt;
+              } else {
+                //do nothing, higher priority call takes precedence!
+              }
+            }}
+            vb.genotypes.genotypeValues(0) = finalGt
+            
+          }}
+          vcSeq.tail.foreach{ vc => {
+            val currGt = vc.genotypes.genotypeValues(0);
+            currGt.zipWithIndex.foreach{ case (gtString,i) => {
+              val gt = gtString.split("[\\|/]").sorted(genotypeOrdering).mkString("/");
+              if(finalGt(i) == "./."){
+                finalGt(i) = gt;
+              } else {
+                //do nothing, higher priority call takes precedence!
+              }
+            }}
+            vb.genotypes.genotypeValues(0) = finalGt
+          }}
+        }}
+        vb.addInfo(vcfCodes.ec_alle_callerSets,callerSupport.toVector.sorted.mkString(","));
+        
+        val vbSeq = Seq(vb) ++ vcSeqSeq.zip(inputVcfTypes).withFilter{case (vcSeq,callerName) => vcSeq.length > 1}.flatMap{ case (vcSeq,callerName) => {
+          val newInfoFieldSet = masterCallerInfoTags(callerName);
+          val newFmtFieldSet = fmtTags(callerName);
+          //val newInfoFieldSet = currInfoLines.map{ case (t,(v,x)) => v }.toSet;
+          //val newFmtFieldSet = currInfoLines.map{ case (t,(v,x)) => v }.toSet;
+          warning("Warning: duplicate lines found for caller: "+callerName,"DUPLICATE_VCF_LINES_"+callerName,10)
+          
+          vcSeq.tail.map{ vc => {
+            
+            val vbb = SVcfOutputVariantLine(
+             in_chrom = vb.chrom,
+             in_pos = vb.pos,
+             in_id = vb.id,
+             in_ref = vb.ref,
+             in_alt = vb.alt,
+             in_qual = vb.qual,
+             in_filter = vb.filter,
+             in_info = vb.info,
+             in_format = vb.genotypes.fmt,
+             in_genotypes = SVcfGenotypeSet(vb.genotypes.fmt,vb.genotypes.genotypeValues.map{_.clone()})
+            )
+            vbb.in_info = vbb.info.filter{ case (newTag,fieldValue) => ! newInfoFieldSet.contains(newTag) }
+            vbb.genotypes.genotypeValues = vbb.genotypes.genotypeValues.zip(vbb.genotypes.fmt).withFilter{ case (garray,fmt) => {
+              ! newFmtFieldSet.contains(fmt);
+            }}.map{ case (garray,fmt) => garray }
+            vbb.genotypes.fmt = vbb.genotypes.fmt.filter{ fmt => {
+              ! newFmtFieldSet.contains(fmt);
+            }}
+            vc.info.map{ case (oldTag,fieldVal) => {
+              val (newTag,infoLine) = currInfoLines(oldTag);
+              vbb.addInfoOpt(newTag,fieldVal);
+            }}
+            vc.genotypes.fmt.zipWithIndex.foreach{ case (oldTag,idx) => {
+              val (newTag,fmtLine) = currFmtLines(oldTag);
+              vbb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(idx));
+            }}
+            vbb
+          }}
+        }}
+        vbSeq.zipWithIndex.map{ case (vbb,vbbIdx) => {
+          vbb.addInfo("SWH_EC_duplicateCt",vbSeq.length.toString);
+          vbb.addInfo("SWH_EC_duplicateIdx",vbbIdx.toString);
+        }}
+        vbSeq;
+      }}
+      
+    }}), vcfHeader)
+    
+  }*/
   
+  /////////////////////////////////////////  /////////////////////////////////////////  /////////////////////////////////////////
+
+
+
+
   def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
                             headers : Seq[SVcfHeader], 
                             inputVcfTypes : Seq[String], genomeFA : Option[String],
