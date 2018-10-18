@@ -197,10 +197,15 @@ object VcfAnnotateTX {
                                                    "used to indicate a different alt allele on a different variant line. The star-allele encoding can be "+
                                                    "deactivated using the --splitMultiAllelicsNoStarAllele option instead." // description
                                        ).meta(false,"Preprocessing") ::
+                                       
                     new UnaryArgument( name = "splitMultiAllelicsNoStarAlle",
                                          arg = List("--splitMultiAllelicsNoStarAlle"), // name of value
                                          argDesc = "If this flag is used, multiallelic variants will be split into multiple separate VCF lines. "+
                                                    "Two copies of the AD tag will be created, AD and AD_multAlle." // description
+                                       ).meta(false,"Preprocessing") ::
+                    new UnaryArgument( name = "dropSpanIndels",
+                                         arg = List("--dropSpanIndels"), // name of value
+                                         argDesc = "Requires splitMultiAllelic. Drops spanning indels, which are marked with an asterisk allele." // description
                                        ).meta(false,"Preprocessing") ::
                     new UnaryArgument( name = "convertROAOtoAD",
                                          arg = List("--convertROAOtoAD"), // name of value
@@ -1189,7 +1194,9 @@ object VcfAnnotateTX {
                 tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression"),
                 makeFirstBaseMatch = parser.get[Boolean]("makeFirstBaseMatch"),
                 
-                thirdAlleleChar = parser.get[Option[String]]("thirdAlleleChar")
+                thirdAlleleChar = parser.get[Option[String]]("thirdAlleleChar"),
+                
+                dropSpanIndels = parser.get[Boolean]("dropSpanIndels")
              )
        }
      }
@@ -1339,7 +1346,8 @@ object VcfAnnotateTX {
                 
                 tagVariantsGtCountExpression : List[String]  = List[String](),
                 
-                thirdAlleleChar : Option[String] = None
+                thirdAlleleChar : Option[String] = None,
+                dropSpanIndels : Boolean = false
                 ){
                 /*
                  * 
@@ -1467,6 +1475,13 @@ object VcfAnnotateTX {
             (if(dropSymbolicAlleleLines){
                 reportln("Creating symbolic allele filter ... "+getDateAndTimeString,"debug");
                 Seq[SVcfWalker](new FilterSymbolicAlleleLines());
+              } else {
+                Seq[SVcfWalker]();
+              })
+        ) ++ (
+            (if(dropSpanIndels){
+                reportln("Creating symbolic allele filter ... "+getDateAndTimeString,"debug");
+                Seq[SVcfWalker](new DropSpanIndels());
               } else {
                 Seq[SVcfWalker]();
               })
@@ -4555,17 +4570,17 @@ object VcfAnnotateTX {
       
       outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", "Shortened info extracted from ANN, high only. "+annFmtDesc)).addWalker(this))
       outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"MODERATE", ".", "String", "Extract from ANN, moderate only. "+annFmtDesc)).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"LOW", ".", "String", "Extract from ANN, LOW only. "+annFmtDesc)).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"LOW", ".", "String", "Extract from ANN, LOW or MODIFIER only. "+annFmtDesc)).addWalker(this))
       
       outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
       outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_LOW", ".", "String", "Gene list with LOW effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_LOW", ".", "String", "Gene list with LOW or MODIFIER effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
       
       
       geneList.foreach{ gl => {
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_HIGH", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_MODERATE", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_LOW", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_MODERATE", ".", "String", "Extracted from ANN, moderate effects only. "+geneListDesc+annFmtDesc)).addWalker(this))
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_LOW", ".", "String", "Extracted from ANN, low or modifier effects only. "+geneListDesc+annFmtDesc)).addWalker(this))
 
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"OnList_GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
@@ -4618,7 +4633,7 @@ object VcfAnnotateTX {
               } else if(impact == "MODERATE"){
                 annMd = annMd :+ outCells
                 gMd = gMd :+ geneName
-              } else if(impact == "LOW"){
+              } else if(impact == "LOW" || impact == "MODIFIER"){
                 annLo = annLo :+ outCells
                 gLo = gLo :+ geneName
               }
@@ -4629,7 +4644,7 @@ object VcfAnnotateTX {
                 } else if(impact == "MODERATE"){
                   annMdG = annMdG :+ outCells
                   gMdG = gMdG :+ geneName
-                } else if(impact == "LOW"){
+                } else if(impact == "LOW" || impact == "MODIFIER"){
                   annLoG = annLoG :+ outCells
                   gLoG = gLoG :+ geneName
                 }
@@ -4650,9 +4665,9 @@ object VcfAnnotateTX {
             vc.addInfo( tagPrefix+"OnList_HIGH",     annHiG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
             vc.addInfo( tagPrefix+"OnList_MODERATE", annMdG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
             vc.addInfo( tagPrefix+"OnList_LOW",      annLoG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-            vc.addInfo( tagPrefix+"GENES_OnList_HIGH",     gHiG.padTo(1,".").distinct.sorted.mkString(","));
-            vc.addInfo( tagPrefix+"GENES_OnList_MODERATE", gMdG.padTo(1,".").distinct.sorted.mkString(","));
-            vc.addInfo( tagPrefix+"GENES_OnList_LOW",      gLoG.padTo(1,".").distinct.sorted.mkString(","));
+            vc.addInfo( tagPrefix+"OnList_GENES_HIGH",     gHiG.padTo(1,".").distinct.sorted.mkString(","));
+            vc.addInfo( tagPrefix+"OnList_GENES_MODERATE", gMdG.padTo(1,".").distinct.sorted.mkString(","));
+            vc.addInfo( tagPrefix+"OnList_GENES_LOW",      gLoG.padTo(1,".").distinct.sorted.mkString(","));
           }}
           
         }}
