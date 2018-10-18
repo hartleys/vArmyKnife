@@ -817,17 +817,17 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
       }
     }
     
-    notice("geneSet.size="+geneSet.getOrElse(Set()).size+". Examples:","GENESET_LENGTH",-1);
+    notice("geneSet.size="+geneSet.map{_.size}.getOrElse(-1)+". Examples:","GENESET_LENGTH",-1);
     geneSet.getOrElse(Set()).take(10).foreach{ tx => {
       notice("      "+tx,"GENEEX",-1);
     }}
-    notice("txSet.size="+txSet.getOrElse(Set()).size+". Examples:","TXSET_LENGTH",-1);
+    notice("txSet.size="+txSet.map{_.size}.getOrElse(-1)+". Examples:","TXSET_LENGTH",-1);
     txSet.getOrElse(Set()).take(10).foreach{ tx => {
       notice("      "+tx,"TXEX",-1);
     }}
     
+    reportln("Reading dbVarMap,dbTxVarMap... ["+stdUtils.getDateAndTimeString+"]","debug");
     val dbList : Seq[String] = dbdata.map{ case (dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags) => dbName }.toSeq;
-    
     val (dbVarMap,dbTxVarMap) = dbdata.foldLeft[Option[(scala.collection.mutable.Map[String,TXUtil.KnownVarHolder],scala.collection.mutable.Map[String,Set[internalUtils.TXUtil.pVariantInfo]])]](None){ 
       case (soFar,(dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags)) => {
             Some(getDbMappers(infile =dbFile, chromList =chromList, vcfCodes = vcfCodes,
@@ -841,6 +841,10 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                 ))
     }}.get
     
+    reportln("###    dbVarMap.size = "+dbVarMap.size,"note")
+    reportln("###    dbTxVarMap.size = "+dbTxVarMap.size,"note")
+    
+
     reportln("Reading txToGene map... ["+stdUtils.getDateAndTimeString+"]","debug");
     val txToGene : (String => String) = txToGeneFile match {
       case Some(f) => {
@@ -854,7 +858,6 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
         ((s : String) => s);
       }
     }
-
 
     reportln("Reading refSeq map... ["+stdUtils.getDateAndTimeString+"]","debug");
     
@@ -942,27 +945,44 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
+      var exampleDebugCt = 0;
+      val exampleDebugLimit = 20;
       
       infoList.foreach{ infoLine => {
         outHeader.addInfoLine(infoLine);
       }}
 
-              def getInfo(kvr : KnownVarHolder, dbName : String) : Option[(String,Boolean,Boolean)] = {
-                 val dbIdx = kvr.sourceList.indexOf(dbName);
-                 if(dbIdx != -1){
-                   Some((kvr.idlist(dbIdx),kvr.isPatho(dbIdx),kvr.isBen(dbIdx)));
-                 } else {
-                   None
-                 }
-              }
+
               def getId(kvr : KnownVarHolder, dbName : String) : Option[String] = {
-                 val dbIdx = kvr.sourceList.indexOf(dbName);
-                 if(dbIdx != -1){
-                   Some(kvr.idlist(dbIdx));
+                 if(dbName == ""){
+                   Some( kvr.idlist.zip(kvr.sourceList).map{case (id,src) => { src+":"+id }}.mkString("|") )
                  } else {
-                   None
+                   val dbIdx = kvr.sourceList.indexOf(dbName);
+                   if(dbIdx != -1){
+                     Some(kvr.idlist(dbIdx));
+                   } else {
+                     None
+                   }
                  }
               }
+              def getInfo(kvr : KnownVarHolder, dbName : String) : Option[(String,Boolean,Boolean)] = {
+                 if(dbName == ""){
+                   val ii = kvr.idlist.zip(kvr.isPatho).zip(kvr.isBen).map{ case ((id,p),b) => {
+                     (id,p,b)
+                   }}
+                   val pFinal = ii.exists{ case (id,p,b) => p } && (! ii.exists{ case (id,p,b) => b})
+                   val bFinal = ii.exists{ case (id,p,b) => b } && (! ii.exists{ case (id,p,b) => p})
+                   Some((kvr.idlist.zip(kvr.sourceList).map{case (id,src) => { src+":"+id }}.mkString("|"),pFinal,bFinal))
+                 } else {
+                   val dbIdx = kvr.sourceList.indexOf(dbName);
+                   if(dbIdx != -1){
+                     Some((kvr.idlist(dbIdx),kvr.isPatho(dbIdx),kvr.isBen(dbIdx)));
+                   } else {
+                     None
+                   }
+                 }
+              }
+              
     def kvhStringDesc( kvh : KnownVarHolder) : String = {
       "["+kvh.idlist.mkString(",")+"],["+kvh.sourceList.mkString(",")+"],["+kvh.isPatho.map{b => if(b) "1" else "0"}.mkString(",")+"],["+kvh.isBen.map{b => if(b) "1" else "0"}.mkString(",")+"]"
     }
@@ -981,7 +1001,12 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
           val txList = v.getInfoList(vcfCodes.txList_TAG)
           
           if(txList.filter(tx => tx != ".").length > 0){
-            notice("tx found for variant","TX_FOUND",0);
+            notice("tx found for variant","TX_FOUND",5);
+            exampleDebugCt = exampleDebugCt + 1;
+            if(exampleDebugCt < exampleDebugLimit){
+              reportln("example Tx: \""+txList.filter(tx => tx != ".").mkString("\",\"")+"\"","note")
+            }
+            
             val geneList = txList.map(x => txToGene(x));
               val varid = v.chrom + ":" + v.getInfo(vcfCodes.vMutG_TAG)
               //val vTypes = v.info.get(vcfCodes.vType_TAG).getOrElse(None).filter(_ != ".").map{ _.split("\\|") }
@@ -1088,6 +1113,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                     None
                   }
                 }}.toSet
+                if(exm.size > 0) notice("Found exact variant: "+exm.map{_.id}.mkString(","),"EXACT_VAR_TEST",5)
                 txSetIterationSet.foreach{ case (txSetInfix,txSetDesc,txSetFunc) => {
                   val aam = dbAmino.withFilter{ case (g,tx,info,varset) => {
                     txSetFunc(tx)

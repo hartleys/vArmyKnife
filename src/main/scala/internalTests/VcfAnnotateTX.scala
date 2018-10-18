@@ -580,7 +580,7 @@ object VcfAnnotateTX {
                                         
 
                                         
-                    new BinaryOptionListArgument[String](
+                    new BinaryMonoToListArgument[String](
                                          name = "tagVariantsExpression", 
                                          arg = List("--tagVariantsExpression"),
                                          valueName = "newTagID|desc|variantExpression",
@@ -1078,7 +1078,7 @@ object VcfAnnotateTX {
                        numLinesRead = parser.get[Option[Int]]("numLinesRead"),
                        addInfoVcfs = parser.get[Option[List[String]]]("addInfoVcfs"),
                        dropVariantsExpression = parser.get[Option[String]]("keepVariantsExpression"),
-                       tagVariantsExpression = parser.get[Option[List[String]]]("tagVariantsExpression"),
+                       tagVariantsExpression = parser.get[List[String]]("tagVariantsExpression"),
                        convertToStandardVcf = parser.get[Boolean]("convertToStandardVcf"),
                        addSampTag = parser.get[Option[String]]("addSampTag"),
                        addDepthStats = parser.get[Option[String]]("addDepthStats"),
@@ -1216,7 +1216,7 @@ object VcfAnnotateTX {
                 numLinesRead : Option[Int] = None,
                 addInfoVcfs : Option[List[String]] = None,
                 dropVariantsExpression : Option[String] = None,
-                tagVariantsExpression : Option[List[String]] = None,
+                tagVariantsExpression : List[String] = List[String](),
                 convertToStandardVcf : Boolean = false,
                 addSampTag : Option[String] = None,
                 addDepthStats : Option[String] = None,
@@ -2006,9 +2006,7 @@ object VcfAnnotateTX {
             }}
 
         ) ++ (
-            tagVariantsExpression match {
-              case Some(dve) => {
-                dve.toSeq.map{ exprStringRaw => exprStringRaw.split("\\|").toVector.map{s => s.trim()}}.map{ cells => {
+            tagVariantsExpression.toSeq.map{ exprStringRaw => exprStringRaw.split("\\|").toVector.map{s => s.trim()}}.map{ cells => {
                   if(cells.length > 5){
                     error("Each comma-delimited element of parameter tagVariantsExpression must have three bar-delimited parts: tag, desc, and expression. Found cells=["+cells.mkString("|")+"]");
                   }
@@ -2035,7 +2033,7 @@ object VcfAnnotateTX {
                       VcfGtExpressionTag(expr=expr,tagID=tagID,tagDesc=tagDesc,styleOpt = styleOpt)
                     } else {
                       error("UNKNOWN/INVALID tagVariantsExpression MODE:\""+mode+"\"!")
-                      null
+                      new PassThroughSVcfWalker()
                     }
                   } else if(cells.length == 3){
                     val (tagID,tagDesc,expr) = (cells(0),cells(1),cells(2));
@@ -2050,11 +2048,6 @@ object VcfAnnotateTX {
                                      geneTagString = geneTagString, subGeneTagString = subGeneTagString, geneList = geneList);
                   }
                 }}
-              }
-              case None => {
-                Seq[SVcfWalker]()
-              }
-            }
 
             
         ) ++ (
@@ -8286,7 +8279,7 @@ object VcfAnnotateTX {
      }
   }
   
-  case class PassThroughSVcfWalker(name : String, processLine : Boolean = false, groupLines : Boolean = false) extends SVcfWalker {
+  case class PassThroughSVcfWalker(name : String = "nullWalker", processLine : Boolean = false, groupLines : Boolean = false) extends SVcfWalker {
     def walkerName : String = name;
         def walkerParams : Seq[(String,String)]=  Seq[(String,String)](
           ("name",name),
