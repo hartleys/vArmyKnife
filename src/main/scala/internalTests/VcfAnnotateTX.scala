@@ -548,6 +548,13 @@ object VcfAnnotateTX {
                                                    ""+
                                                    ""// description
                                        ).meta(false,"Postprocessing") ::
+                    new BinaryOptionArgument[String](
+                                         name = "thirdAlleleChar", 
+                                         arg = List("--thirdAlleleChar"),
+                                         valueName = "tag",
+                                         argDesc =  "For multiallelic-split variants, this defines the character used for the 'other' allele. "+
+                                                    "If this is used, the original version will be copied as a backup."
+                                        ).meta(false,"Annotation") :: 
                     new UnaryArgument( name = "dropGenotypeData",
                                          arg = List("--dropGenotypeData"), // name of value
                                          argDesc = "If this flag is included, then ALL sample-level columns will be stripped from the output VCF. "+
@@ -1180,7 +1187,9 @@ object VcfAnnotateTX {
                 tableInput = parser.get[Boolean]("tableInput"),
                 tableOutput = parser.get[Boolean]("tableOutput"),
                 tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression"),
-                makeFirstBaseMatch = parser.get[Boolean]("makeFirstBaseMatch")
+                makeFirstBaseMatch = parser.get[Boolean]("makeFirstBaseMatch"),
+                
+                thirdAlleleChar = parser.get[Option[String]]("thirdAlleleChar")
              )
        }
      }
@@ -1328,7 +1337,9 @@ object VcfAnnotateTX {
                 tableInput : Boolean = false,
                 tableOutput : Boolean = false,
                 
-                tagVariantsGtCountExpression : List[String]  = List[String]()
+                tagVariantsGtCountExpression : List[String]  = List[String](),
+                
+                thirdAlleleChar : Option[String] = None
                 ){
                 /*
                  * 
@@ -2094,12 +2105,19 @@ object VcfAnnotateTX {
             }
         ) ++ (
             if(convertToStandardVcf){
-                Seq[SVcfWalker](new StdVcfConverter())
+                Seq[SVcfWalker](new StdVcfConverter(thirdAlleleChar = thirdAlleleChar))
             } else if( splitMultiAllelicsNoStarAlle) {
                 Seq[SVcfWalker](new StdVcfConverter(cleanHeaderLines = false, 
                         cleanInfoFields  = false, 
                         cleanMetaData  = false,
-                        collapseStarAllele  = true))
+                        collapseStarAllele  = true,
+                        thirdAlleleChar = thirdAlleleChar))
+            } else if(thirdAlleleChar.isDefined){
+              Seq[SVcfWalker](new StdVcfConverter(cleanHeaderLines = false, 
+                        cleanInfoFields  = false, 
+                        cleanMetaData  = false,
+                        collapseStarAllele  = true, 
+                        thirdAlleleChar = thirdAlleleChar))
             } else {
                 Seq[SVcfWalker]()
             }
@@ -4779,15 +4797,18 @@ object VcfAnnotateTX {
                         cleanInfoFields : Boolean = true, 
                         cleanMetaData : Boolean = true,
                         collapseStarAllele : Boolean = true,
-                        deleteUnannotatedFields : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
+                        deleteUnannotatedFields : Boolean = true,
+                        thirdAlleleChar : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "StdVcfConverter"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
       ("cleanHeaderLines",cleanHeaderLines.toString()),
       ("cleanInfoFields",cleanInfoFields.toString()),
       ("cleanMetaData",cleanMetaData.toString()),
       ("collapseStarAllele",collapseStarAllele.toString()),
-      ("deleteUnannotatedFields",deleteUnannotatedFields.toString())
+      ("deleteUnannotatedFields",deleteUnannotatedFields.toString()),
+      ("thirdAlleleChar",thirdAlleleChar.getOrElse("None"))
     );
+    val talle = thirdAlleleChar.getOrElse("0")
     def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
@@ -4808,12 +4829,15 @@ object VcfAnnotateTX {
       val multAlleSuffix = "_multAlle" + (if(multAlleIdx == 1) "" else multAlleIdx.toString())
       val oldFmtLines = outHeader.formatLines.filter{ fl => fixList.contains(fl.ID) };
       
-      if(collapseStarAllele){
+      if(collapseStarAllele || thirdAlleleChar.isDefined){
         oldFmtLines.foreach{ fl => {
           outHeader.addFormatLine(
             new SVcfCompoundHeaderLine("FORMAT" ,ID = fl.ID + multAlleSuffix, ".", fl.Type, "(For multiallelic variants, an additional value is included in this version to indicate the value for the other alt alleles) "+fl.desc)
           )
         }}
+        outHeader.addStatBool("isSplitMultAlleStar",false)
+      }
+      if(collapseStarAllele || thirdAlleleChar.isDefined){
         outHeader.addFormatLine(
             new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT" + multAlleSuffix, "1", "String", "Raw GT tag, prior to lossy conversion to universally readable VCF. Note that for split multiallelics there will be three possible alleles, 0, 1, and 2, where 2 represents any or all other alt alleles. FOR MOST PURPOSES, THIS IS THE GT TAG THAT SHOULD BE USED.")
         )
@@ -4823,8 +4847,6 @@ object VcfAnnotateTX {
             new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT", "1", "String", "Collapsed GT tag, for back-compatibility with software tools that cannot parse VCF v4.2. For split multiallelic variants the third allele will be collapsed with the ref allele. WARNING: It is NOT recommended that this GT tag be used for most purposes, as multiallelic alt alleles have been simplified. It is preferable to use the "+"GT" + multAlleSuffix+" tag, which may contain 3 possible alleles.")
             )
         }}
-        
-        outHeader.addStatBool("isSplitMultAlleStar",false)
       }
       
       if(cleanHeaderLines){
@@ -4924,15 +4946,7 @@ object VcfAnnotateTX {
                 }}*/
               }
             })
-            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
-            v.genotypes.genotypeValues(0).map{g => (g.split("[/\\|]"),g.contains('|'))}.zipWithIndex.foreach{ case ((g,isPhased),i) => {
-              vc.genotypes.genotypeValues(0)(i) = g.map{ a => if(a == ".") "." else {
-                val aint = string2int(a);
-                if(aint == 1) "1" else "0";
-              }}.mkString((if(isPhased) "|" else "/"));
-            }}
-          }  else {
-            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
+          } else {
             oldFmtLines.foreach{ fl => {
               val fmtIdx = v.format.indexOf(fl.ID);
               if(fmtIdx == -1){
@@ -4941,6 +4955,18 @@ object VcfAnnotateTX {
                 vc.genotypes.addGenotypeArray( fl.ID +multAlleSuffix, v.genotypes.genotypeValues(fmtIdx).clone() );
               }
             }}
+          }
+        }
+        if(v.genotypes.genotypeValues.length > 0 && (collapseStarAllele || thirdAlleleChar.isDefined)){
+          if(v.alt.length == 2 && v.alt.last == (internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING)){
+            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
+            v.genotypes.genotypeValues(0).map{g => (g.split("[/\\|]"),g.contains('|'))}.zipWithIndex.foreach{ case ((g,isPhased),i) => {
+              vc.genotypes.genotypeValues(0)(i) = g.map{ a => if(a == ".") "." else {
+                if(a == "2") talle else a;
+              }}.mkString((if(isPhased) "|" else "/"));
+            }}
+          } else {
+            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
           }
         }
         vc
