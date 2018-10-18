@@ -713,7 +713,7 @@ object VcfAnnotateTX {
                                          name = "sampleRenameFile", 
                                          arg = List("--sampleRenameFile"), 
                                          valueName = "sampleRenameFile",  
-                                         argDesc =  "File must be in tab-delimited format, with columns oldID and newID."
+                                         argDesc =  "File must be in tab-delimited format, with columns labeled oldID and newID."
                                         ).meta(true,"DEPRECATED") ::
                                         
                                         
@@ -1464,12 +1464,11 @@ object VcfAnnotateTX {
               if(genomeFA.isEmpty){
                 error("ERROR: in order to left align and trim, you MUST specify a genome fasta file with the --genomeFA parameter");
               }
-              if(makeFirstBaseMatch){
+              (if(makeFirstBaseMatch){
                 Seq(internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)))
               } else {
                 Seq[SVcfWalker]()
-              } ++ 
-              Seq[SVcfWalker](
+              }) ++ Seq[SVcfWalker](
                     //internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)),
                     internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200), useGatkLibCall = leftAlignAndTrimWindow.isEmpty)
               );
@@ -2045,7 +2044,8 @@ object VcfAnnotateTX {
                       reportln("Creating tagging utility, MODE="+mode+". "+getDateAndTimeString,"debug");
                       val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
                       val styleOpt = cells.lift(4);
-                      VcfGtExpressionTag(expr=expr,tagID=tagID,tagDesc=tagDesc,styleOpt = styleOpt)
+                      VcfGtExpressionTag( expr=expr,tagID=tagID,tagDesc=tagDesc,styleOpt = styleOpt,                  
+                                          groupFile = groupFile, groupList = None, superGroupList  = superGroupList )
                     } else {
                       error("UNKNOWN/INVALID tagVariantsExpression MODE:\""+mode+"\"!")
                       new PassThroughSVcfWalker()
@@ -4775,7 +4775,11 @@ object VcfAnnotateTX {
                         deleteUnannotatedFields : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "StdVcfConverter"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
-      ("cleanHeaderLines",cleanHeaderLines.toString())
+      ("cleanHeaderLines",cleanHeaderLines.toString()),
+      ("cleanInfoFields",cleanInfoFields.toString()),
+      ("cleanMetaData",cleanMetaData.toString()),
+      ("collapseStarAllele",collapseStarAllele.toString()),
+      ("deleteUnannotatedFields",deleteUnannotatedFields.toString())
     );
     def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -4786,16 +4790,16 @@ object VcfAnnotateTX {
       //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
       val samps = outHeader.getSampleList
       
-      val fixList = Seq("GL","PL","QA","AO","AD");
+      val fixList = Seq("GT", "GL","PL","QA","AO","AD");
       
       val multAlleIdx : Int = Stream.from(1).find{ xx => {
         val xs = if(xx == 1) "" else xx.toString;
-        (Seq("GT") ++ fixList).forall{ gg => {
+        (fixList).forall{ gg => {
           ! vcfHeader.formatLines.exists{ fl => fl.ID == gg + "_multAlle" + xs }
         }}
       }}.get
-      val multAlleSuffix = if(multAlleIdx == 1) "" else multAlleIdx.toString()
-      val oldFmtLines = outHeader.formatLines.filter{ fl => fixList.contains(fl.ID) && Set("R","A","G").contains(fl.Number)  };
+      val multAlleSuffix = "_multAlle" + (if(multAlleIdx == 1) "" else multAlleIdx.toString())
+      val oldFmtLines = outHeader.formatLines.filter{ fl => fixList.contains(fl.ID) };
       
       if(collapseStarAllele){
         oldFmtLines.foreach{ fl => {
@@ -4808,7 +4812,9 @@ object VcfAnnotateTX {
         )
         
         vcfHeader.infoLines.find{ info => info.ID == "GT" }.foreach{ oldGt => {
+          outHeader.addFormatLine(
             new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT", "1", "String", "Collapsed GT tag, for back-compatibility with software tools that cannot parse VCF v4.2. For split multiallelic variants the third allele will be collapsed with the ref allele. WARNING: It is NOT recommended that this GT tag be used for most purposes, as multiallelic alt alleles have been simplified. It is preferable to use the "+"GT" + multAlleSuffix+" tag, which may contain 3 possible alleles.")
+            )
         }}
         
         outHeader.addStatBool("isSplitMultAlleStar",false)
@@ -12727,7 +12733,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       vcfHeader.addFormatLine(infoLine);
     }}
 
-    
+     
     (unionFmt ++ unionInfo).foreach{ fmtID => {
       outputFmtTags.foreach{ case (tagID,headerLine) => {
         vcfHeader.addFormatLine(headerLine);
@@ -14085,7 +14091,11 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     }
   }
 
-  case class VcfGtExpressionTag(expr : String, tagID : String, tagDesc : String, styleOpt : Option[String] = Some("CT")) extends SVcfWalker {
+  //        vc.genotypes.sampList = sampList;
+  //      vc.genotypes.sampGrp = Some(sampleToGroupMap);
+  
+  case class VcfGtExpressionTag( expr : String, tagID : String, tagDesc : String, styleOpt : Option[String] = Some("CT"),
+                                 groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None ) extends SVcfWalker {
     def walkerName : String = "VcfGtExpressionTag."+tagID;
     val style = styleOpt.getOrElse("CT")
     def walkerParams : Seq[(String,String)]= Seq[(String,String)](
@@ -14105,14 +14115,24 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       error("Unrecognized/invalid gt expression style: \""+style+"\"")
     }
     
+    val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, groupList, superGroupList);
+    
+    
+    
     //val parser = internalUtils.VcfTool.SVcfFilterLogicParser();
     //val filter = parser.parseString(filterExpr);
     reportln("Parsed filter:\n   "+filter.printTree(),"note");
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+       val sampList = vcfHeader.titleLine.sampleList.toList
+       val sampCt   = vcfHeader.sampleCt;
        val outHeader = vcfHeader.copyHeader;
        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type=styleType,desc=tagDesc).addWalker(this));
        outHeader.addWalk(this);
        (vcMap(vcIter){ vc => {
+             vc.genotypes.sampList = sampList;
+             vc.genotypes.sampGrp = Some(sampleToGroupMap);
              val vb = vc.getOutputLine();
              val ct = Range(0,vcfHeader.sampleCt).count{ii => {
                filter.keep((vc,ii))
