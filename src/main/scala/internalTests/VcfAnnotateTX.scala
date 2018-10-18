@@ -591,12 +591,23 @@ object VcfAnnotateTX {
                                         ).meta(false,"Annotation") :: 
                                         
                     new BinaryMonoToListArgument[String](
+                                         name = "tagVariantsGtCountExpression", 
+                                         arg = List("--tagVariantsGtCountExpression"),
+                                         valueName = "newTagID|desc|genotypeExpression[|type]",
+                                         argDesc =  "If this parameter is set, then additional tags will be generated based on the given GENOTYPE expression(s). "+
+                                                    "Each element in the comma-delimited list must begin with "+
+                                                    "the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the genotype expression. "+
+                                                    "The expressions are always booleans, and follow the same rules for VCF genotype-level filtering. See the section on VCF genotype filtering, below. "+
+                                                    "Optionally, a fourth element in the list can define the type which can be either FRAC, PCT, or CT, which defines the output as either a fraction, a percentage, or a count."
+                                        ).meta(false,"Annotation") :: 
+                                        
+                    new BinaryMonoToListArgument[String](
                                          name = "tagVariantsFunction", 
                                          arg = List("--tagVariantsFunction"),
                                          valueName = "newTagID|desc|funcName|param1,param2,...",
                                          argDesc =  ""
                                         ).meta(false,"Annotation") :: 
-                                        
+
                     new BinaryMonoToListArgument[String](
                                          name = "mergeBooleanTags", 
                                          arg = List("--mergeBooleanTags"),
@@ -1159,7 +1170,8 @@ object VcfAnnotateTX {
                 tagVariantsFunction = parser.get[List[String]]("tagVariantsFunction"),
                 
                 tableInput = parser.get[Boolean]("tableInput"),
-                tableOutput = parser.get[Boolean]("tableOutput")
+                tableOutput = parser.get[Boolean]("tableOutput"),
+                tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression")
              )
        }
      }
@@ -1304,7 +1316,9 @@ object VcfAnnotateTX {
                 tagVariantsFunction : List[String] = List[String](),
                 
                 tableInput : Boolean = false,
-                tableOutput : Boolean = false
+                tableOutput : Boolean = false,
+                
+                tagVariantsGtCountExpression : List[String]  = List[String]()
                 ){
                 /*
                  * 
@@ -1959,18 +1973,7 @@ object VcfAnnotateTX {
             }
             
             
-        ) ++ (
-            if(convertToStandardVcf){
-                Seq[SVcfWalker](new StdVcfConverter())
-            } else if( splitMultiAllelicsNoStarAlle) {
-                Seq[SVcfWalker](new StdVcfConverter(cleanHeaderLines = false, 
-                        cleanInfoFields  = false, 
-                        cleanMetaData  = false,
-                        collapseStarAllele  = true))
-            } else {
-                Seq[SVcfWalker]()
-            }
-            
+
         ) ++ (
             if(outputDropInfoTags.isDefined || outputDropGenoTags.isDefined || outputKeepInfoTags.isDefined || outputKeepGenoTags.isDefined || outputKeepSamples.isDefined){
               Seq[SVcfWalker](
@@ -2001,7 +2004,7 @@ object VcfAnnotateTX {
               
               new AddFuncTag(func = funcString, newTag=tagID, paramTags=paramTags, digits = outDigits, desc = Some(desc));
             }}
-            
+
         ) ++ (
             tagVariantsExpression match {
               case Some(dve) => {
@@ -2009,8 +2012,32 @@ object VcfAnnotateTX {
                   if(cells.length > 5){
                     error("Each comma-delimited element of parameter tagVariantsExpression must have three bar-delimited parts: tag, desc, and expression. Found cells=["+cells.mkString("|")+"]");
                   }
-                  
-                  if(cells.length == 3){
+                  if(cells.head.startsWith("MODE=")){
+                    val mode = cells.head.drop(5);
+                    if(mode == "VAR"){
+                      if(cells.length != 4){
+                        error("for MODE=VAR, tagVariantsExpression must be a |-delimited list of length 4.")
+                      }
+                      reportln("Creating tagging utility, MODE=VAR. "+getDateAndTimeString,"debug");
+                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
+                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc);
+                    } else if(mode == "GENELIST"){
+                      reportln("Creating tagging utility, MODE=GENELIST. "+getDateAndTimeString,"debug");
+                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
+                      val geneTagString = cells.lift(4);
+                      val subGeneTagString = cells.lift(5);
+                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc, 
+                                     geneTagString = geneTagString, subGeneTagString = subGeneTagString, geneList = geneList);
+                    } else if(mode.startsWith("GT")){
+                      reportln("Creating tagging utility, MODE="+mode+". "+getDateAndTimeString,"debug");
+                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
+                      val styleOpt = cells.lift(4);
+                      VcfGtExpressionTag(expr=expr,tagID=tagID,tagDesc=tagDesc,styleOpt = styleOpt)
+                    } else {
+                      error("UNKNOWN/INVALID tagVariantsExpression MODE:\""+mode+"\"!")
+                      null
+                    }
+                  } else if(cells.length == 3){
                     val (tagID,tagDesc,expr) = (cells(0),cells(1),cells(2));
                     reportln("Creating Variant tagging utility ("+cells(0)+") ... "+getDateAndTimeString,"debug");
                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc);
@@ -2028,6 +2055,8 @@ object VcfAnnotateTX {
                 Seq[SVcfWalker]()
               }
             }
+
+            
         ) ++ (
             mergeBooleanTags.map{ mbt => {
               val cells : Array[String] = mbt.split(",")
@@ -2055,6 +2084,18 @@ object VcfAnnotateTX {
             } else {
                 Seq[SVcfWalker]()
             }
+        ) ++ (
+            if(convertToStandardVcf){
+                Seq[SVcfWalker](new StdVcfConverter())
+            } else if( splitMultiAllelicsNoStarAlle) {
+                Seq[SVcfWalker](new StdVcfConverter(cleanHeaderLines = false, 
+                        cleanInfoFields  = false, 
+                        cleanMetaData  = false,
+                        collapseStarAllele  = true))
+            } else {
+                Seq[SVcfWalker]()
+            }
+            
         ) ++ (
             if(dropGenotypeData){
                 Seq[SVcfWalker](StripGenotypeData())
@@ -7811,8 +7852,17 @@ object VcfAnnotateTX {
       val newHeader = vcfHeader.copyHeader//  internalUtils.VcfTool.addHeaderLines(vcfHeader,newHeaderLines);
       newHeader.addInfoLine(newHeaderline);
       newHeader.addWalk(this);
+      
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( newHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      
       (vcMap(vcIter){v => {
+        
         var vb = v.getOutputLine();
+        vb.dropInfo(overwriteInfos);
+        
         val refAlle = v.ref
         val altAlleles = v.alt.zipWithIndex.filter{ case (alt,altIdx) => alt != VcfTool.UNKNOWN_ALT_TAG_STRING };
 
@@ -13776,6 +13826,54 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     }
   }
 
+  case class VcfGtExpressionTag(expr : String, tagID : String, tagDesc : String, styleOpt : Option[String] = Some("CT")) extends SVcfWalker {
+    def walkerName : String = "VcfGtExpressionTag."+tagID;
+    val style = styleOpt.getOrElse("CT")
+    def walkerParams : Seq[(String,String)]= Seq[(String,String)](
+        ("expr","\""+expr+"\""),
+        ("tagID","\""+tagID+"\""),
+        ("tagDesc","\""+tagDesc+"\""),
+        ("style","\""+style+"\"")
+    )
+    val parser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
+    val filter : SFilterLogic[(SVcfVariantLine,Int)] = parser.parseString(expr);
+    val styleType = if(style == "CT"){
+      "Integer"
+    } else {
+      "Float"
+    }
+    if(!Set("CT","PCT","FRAC").contains(style)){
+      error("Unrecognized/invalid gt expression style: \""+style+"\"")
+    }
+    
+    //val parser = internalUtils.VcfTool.SVcfFilterLogicParser();
+    //val filter = parser.parseString(filterExpr);
+    reportln("Parsed filter:\n   "+filter.printTree(),"note");
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+       val outHeader = vcfHeader.copyHeader;
+       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type=styleType,desc=tagDesc).addWalker(this));
+       outHeader.addWalk(this);
+       (vcMap(vcIter){ vc => {
+             val vb = vc.getOutputLine();
+             val ct = Range(0,vcfHeader.sampleCt).count{ii => {
+               filter.keep((vc,ii))
+             }}
+             if(style == "CT"){
+               vb.addInfo(tagID,"" + ct);
+             } else if(style == "PCT"){
+               vb.addInfo(tagID,"" + (100.toDouble * ct.toDouble / vcfHeader.sampleCt.toDouble));
+             } else if(style == "FRAC"){
+               vb.addInfo(tagID,"" + (ct.toDouble / vcfHeader.sampleCt.toDouble));
+             }
+             
+             vb
+       }}, outHeader)
+       
+    }
+    
+  }
+
+  
   
   case class VcfExpressionTag(expr : String, tagID : String, tagDesc : String, geneTagString : Option[String] = None, subGeneTagString : Option[String] = None, geneList : Option[List[String]] = None) extends SVcfWalker {
 
