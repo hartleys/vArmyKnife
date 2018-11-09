@@ -1322,6 +1322,20 @@ object VcfTool {
                              vakUtil= vakUtil,vakStepNum=vakStepNum,vakVer=vakVer
                              );
     }
+    def updateID(newid : String) : SVcfCompoundHeaderLine = {
+      new SVcfCompoundHeaderLine(in_tag = in_tag, ID = newid, Number = Number, Type = Type, desc = desc,
+                             subType = subType,extraFields=extraFields,
+                             vakUtil= vakUtil,vakStepNum=vakStepNum,vakVer=vakVer
+                             );
+    }
+    def updateDesc(d : String) : SVcfCompoundHeaderLine = {
+      new SVcfCompoundHeaderLine(in_tag = in_tag, ID = ID, Number = Number, Type = Type, desc = d,
+                             subType = subType,extraFields=extraFields,
+                             vakUtil= vakUtil,vakStepNum=vakStepNum,vakVer=vakVer
+                             );
+    }
+    
+    
     
     /*
                new SVcfInfoHeaderLine(ID=line.ID,Number=line.Number,Type=line.Type,desc = line.desc,
@@ -1887,6 +1901,21 @@ object VcfTool {
       }
     }
     def getPloidy() : Int = genotypeValues(0).map{ (g : String) => {g.split("/").length}}.max;
+    
+    def dropGenotypeArray(fmtid : String) : Boolean = {
+      val idx = fmt.indexWhere((p : String) => { p == fmtid });
+      if(idx != -1){
+        false
+      } else if(idx == 0){
+        //GT field is mandatory!
+        genotypeValues = genotypeValues.updated(0,Array.fill[String](genotypeValues.head.length)("."))
+        true
+      } else {
+        fmt = fmt.drop(idx)
+        genotypeValues = genotypeValues.drop(idx)
+        true
+      }
+    }
     
     def addGenotypeArrayIfNew(fmtid : String, gval : Array[String]) : Int = {
       val idx = fmt.indexWhere((p : String) => { p == fmtid });

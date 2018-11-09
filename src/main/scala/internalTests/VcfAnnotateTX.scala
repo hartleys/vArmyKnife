@@ -612,6 +612,17 @@ object VcfAnnotateTX {
                                                     "the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. "+
                                                     "The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below."
                                         ).meta(false,"Annotation") :: 
+                    new BinaryMonoToListArgument[String](
+                                         name = "duplicatesTag", 
+                                         arg = List("--duplicatesTag"),
+                                         valueName = "duplicateTagPrefix",
+                                         argDesc =  "If this parameter is set, duplicates will be detected and two new tags will be added: "+
+                                                    "duplicateTagPrefix_CT and duplicateTagPrefix_IDX. The CT will indicate how many duplicates were found "+
+                                                    "matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0. All nonduplicates will "+
+                                                    "be marked with CT=1 and IDX=0."
+                                        ).meta(false,"Annotation") :: 
+                                        
+                                        //duplicateTag
                                         
                     new BinaryOptionArgument[String](
                                          name = "tallyFile", 
@@ -1212,7 +1223,9 @@ object VcfAnnotateTX {
                 
                 dropSpanIndels = parser.get[Boolean]("dropSpanIndels"),
                 dropVariantsWithNs = parser.get[Boolean]("dropVariantsWithNs"),
-                tallyFile = parser.get[Option[String]]("tallyFile")
+                tallyFile = parser.get[Option[String]]("tallyFile"),
+                
+                duplicateTag = parser.get[Option[String]]("duplicateTag")
                 //dropVariantsWithNs, tallyFile   
              )
        }
@@ -1367,7 +1380,9 @@ object VcfAnnotateTX {
                 dropSpanIndels : Boolean = false,
                 
                 dropVariantsWithNs : Boolean = false,
-                tallyFile : Option[String] = None
+                tallyFile : Option[String] = None,
+                
+                duplicateTag : Option[String] = None
                 ){
                 /*
                  * 
@@ -2061,6 +2076,10 @@ object VcfAnnotateTX {
               Seq[SVcfWalker]()
             }
         ) ++ (
+            duplicateTag.toSeq.map{ dt => {
+              new DuplicateStats(dt)
+            }}
+        ) ++ (
             //AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None )
             tagVariantsFunction.map{ ftString => {
               val cells = ftString.split("[|]")
@@ -2097,8 +2116,8 @@ object VcfAnnotateTX {
                     } else if(mode.startsWith("GT")){
                       reportln("Creating tagging utility, MODE="+mode+". "+getDateAndTimeString,"debug");
                       val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
-                      val styleOpt = cells.lift(4);
-                      VcfGtExpressionTag( expr=expr,tagID=tagID,tagDesc=tagDesc,styleOpt = styleOpt,                  
+                      //val styleOpt = cells.lift(4);
+                      VcfGtExpressionTag( expr=expr,tagID=tagID,tagDesc=tagDesc,style = mode,                  
                                           groupFile = groupFile, groupList = None, superGroupList  = superGroupList )
                     } else {
                       error("UNKNOWN/INVALID tagVariantsExpression MODE:\""+mode+"\"!")
@@ -4763,6 +4782,8 @@ object VcfAnnotateTX {
       })),outHeader)
     }
   }
+  
+
   
   class MergeSpanIndels() extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "MergeSpanIndels"
@@ -13016,6 +13037,50 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   /////////////////////////////////////////  /////////////////////////////////////////  /////////////////////////////////////////
 
 
+  class DuplicateStats(countDupTag : String, byValue : Seq[String] = Seq[String]()) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "DuplicateStat"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    //groupBySpan[A,B](iter : BufferedIterator[A])(f : (A => B))
+    val cdt = countDupTag;
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      initNotice("DROP_VAR_N");
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //countDupTag.foreach{ cdt => {
+      outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = "INFO",ID = cdt+"_CT", Number = "1", Type = "Integer", desc = "Number of duplicates"));
+      outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = "INFO",ID = cdt+"_IDX", Number = "1", Type = "Integer", desc = "Number of duplicates"));
+      //}}
+      /*val byValue.map{_.split(",")}.foreach{ bvraw => {
+        val (bvprefix,bvtag) = (bvraw(0),bvraw(1))
+        outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = "INFO",ID = bvprefix+"_CT", Number = "1", Type = "Integer", desc = "Number of duplicates"));
+        outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = "INFO",ID = bvprefix+"_IDX", Number = "1", Type = "Integer", desc = "Number of duplicates"));
+      }}*/
+      tally(cdt+"_DUPSETCT",0)
+      tally(cdt+"_DUPCT",0)
+      (addIteratorCloseAction( iter = groupBySpan(vcIter.buffered){ v => { (v.chrom,v.pos) } }.flatMap{vg => {
+        val swaps = vg.map{ v => (v.ref,v.alt.head)}.distinct.sorted
+        swaps.flatMap{ case (r,a) => {
+          val vbg = vg.filter{ v => v.ref == r && v.alt.head == a }
+          vbg.zipWithIndex.foreach{ case (v,ii) => {
+            val vb = v.getOutputLine()
+            vb.addInfo(cdt+"_CT",vbg.length+"");
+            vb.addInfo(cdt+"_IDX",ii+"");
+          }}
+          if(vbg.length > 1){
+            tally(cdt+"_DUPSETCT",1);
+            tally(cdt+"_DUPCT",vbg.length);
+          }
+          vbg
+        }}
+      }}, closeAction = (() => { 
+        //do nothing
+      })),outHeader)
+    }
+  }
+  
+
 
 
   def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
@@ -14224,10 +14289,10 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   //        vc.genotypes.sampList = sampList;
   //      vc.genotypes.sampGrp = Some(sampleToGroupMap);
   
-  case class VcfGtExpressionTag( expr : String, tagID : String, tagDesc : String, styleOpt : Option[String] = Some("CT"),
+  case class VcfGtExpressionTag( expr : String, tagID : String, tagDesc : String, style : String = "GTCT",
                                  groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None ) extends SVcfWalker {
     def walkerName : String = "VcfGtExpressionTag."+tagID;
-    val style = styleOpt.getOrElse("CT")
+    //val style = styleOpt.getOrElse("CT")
     def walkerParams : Seq[(String,String)]= Seq[(String,String)](
         ("expr","\""+expr+"\""),
         ("tagID","\""+tagID+"\""),
@@ -14236,14 +14301,16 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     )
     val parser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
     val filter : SFilterLogic[(SVcfVariantLine,Int)] = parser.parseString(expr);
-    val styleType = if(style == "CT"){
+    val styleType = if(style == "GTCT" || style == "GT"){
       "Integer"
-    } else {
+    } else if(style == "GTFRAC" || style == "GTPCT"){
       "Float"
+    } else {
+      "String"
     }
-    if(!Set("CT","PCT","FRAC","GTTAG").contains(style)){
-      error("Unrecognized/invalid gt expression style: \""+style+"\"")
-    }
+    //if(!Set("GTCT","GTPCT","GTFRAC","GTTAG").contains(style)){
+    //  error("Unrecognized/invalid gt expression style: \""+style+"\"")
+    //}
     
     val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
@@ -14255,20 +14322,86 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     //val filter = parser.parseString(filterExpr);
     reportln("Parsed filter:\n   "+filter.printTree(),"note");
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
-       val sampList = vcfHeader.titleLine.sampleList.toList
+       val sampList = vcfHeader.titleLine.sampleList.toList;
        val sampCt   = vcfHeader.sampleCt;
        val outHeader = vcfHeader.copyHeader;
+       var (rawTag,filtTag,newTag,backTag,overWrite,recodeStyle) : (String,String,String,Option[String],Boolean,String) = ("","","",None,false,"");
        if(style == "GTTAG"){
          outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number = "1", Type="Integer",desc=tagDesc).addWalker(this));
-       } else {
+       } else if(style == "GTrecodeMultAlle"){
+         val tags = tagID.split(",");
+         if(tags.length != 3){
+           error("for GTrecodeMultAlle function, tagID field must have 3 entries: fromTag, toTag, and other-alt-allele recode string!");
+         }
+         rawTag = tags(0); newTag = tags(1); recodeStyle = tags(2);
+         outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number = "1", Type="String", desc=tagDesc).addWalker(this));
+       } else if(style == "GTTAGANDCOUNT"){
+         outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number = "1", Type="Integer", desc=tagDesc).addWalker(this));
+         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID+"_CT",Number = "1", Type="Integer",desc="Number of samples tagged as "+tagID+". " +tagDesc).addWalker(this));
+       } else if(style == "GTTAGRENAME"){
+         val tags = tagID.split(",");
+         if(tags.length != 2 && tags.length != 3){
+           error("for GTTAGRENAME expression, tagID field must have 2 entries: fromTag, toTag!");
+         }
+         rawTag = tags(0); newTag = tags(1);
+         val idx = outHeader.formatLines.indexWhere( rt => rt.ID == rawTag)
+         if(idx == -1){
+           error("Error: rawTag "+rawTag + " not found in header!")
+         }
+         outHeader.formatLines = outHeader.formatLines.updated(idx,outHeader.formatLines(idx).updateID(newTag).updateDesc(tagDesc))
+       } else if(style == "GTTAGCOPY"){
+         val tags = tagID.split(",");
+         if(tags.length != 2 && tags.length != 3){
+           error("for GTCOPY expression, tagID field must have 2 entries: fromTag, toTag!");
+         }
+         rawTag = tags(0); newTag = tags(1);
+         overWrite = vcfHeader.formatLines.find(rt => rt.ID == rawTag).isDefined;
+         val oldDesc = vcfHeader.formatLines.find(rt => rt.ID == rawTag).map{rt => {
+             outHeader.addFormatLine(rt.updateID(newTag).updateDesc(tagDesc));
+             rt.desc
+         }}.getOrElse({
+             error("Error: rawTag "+rawTag + " not found in header!")
+             ""
+         })
+       } else if(style == "GTFILT"){
+         val tags = tagID.split(",");
+         if(tags.length != 3 && tags.length != 4){
+           error("for GTFILT expression, tagID field must have 3-4 entries: rawGTtag, filterTag, filteredGtTag and optionally RawCopyGtTag!");
+         }
+         rawTag = tags(0); filtTag = tags(1); newTag = tags(2); backTag = tags.lift(3);
+         //val (rawTag,filtTag,newTag, backTag) = (tags(0),tags(1),tags(2), tags.lift(3));
+         outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",newTag,Number = "1", Type="String",desc="Filtered genotype value, "+tagDesc + " (Based on GT tag "+rawTag+", see also tag "+filtTag+")").addWalker(this).updateSubtype(Some("GtStyle")));
+         outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",filtTag,Number = "1", Type="Integer",desc="Filter tag. 1 if genotype is filtered "+tagDesc + " (See also tags "+rawTag+" and "+newTag+")").addWalker(this));
+         backTag.foreach{ bt => {
+           val oldDesc = vcfHeader.formatLines.find(rt => rt.ID == rawTag).map{rt => {
+             rt.desc
+           }}.getOrElse({
+             error("Error: rawTag "+rawTag + " not found in header!")
+             ""
+           })
+           outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",newTag,Number = "1", Type="String",desc="Pre-filtered genotype value, "+tagDesc + " (Copied from GT tag "+rawTag+", see also tag "+filtTag+") (old desc: "+oldDesc).addWalker(this).updateSubtype(Some("GtStyle")))
+         }}
+       } else if(style == "GT" || style == "GTCT" || style == "GTPCT" || style == "GTFRAC"){
          outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type=styleType,desc=tagDesc).addWalker(this));
+       } else {
+         error("Unrecognized genotype function: " +style+". "+
+               "\n   Legal options are: \n"+
+               "     GTTAG: adds new FORMAT field with a boolean expression\n"+
+               "     GTTAGRENAME: Renames an existing FORMAT field with a new ID and description.\n"+
+               "     GTTAGCOPY: Copies an existing FORMAT field, making a second identical field with a different name and description.\n")+
+               "     GTFILT: Creates a new genotype field or replaces an existing one with a copy of an existing one, but filtered based on a given genotype expression\n"+
+               "     GT or GTCT: Counts the number of samples that satisfy a genotype expression\n"+
+               "     GTPCT: Counts the percentage of samples that satisfy a genotype expression\n"+
+               "     GTFRAC: Counts the fraction of samples that satisfy a genotype expression\n"+
+               "     GTTAGANDCOUNT: adds new FORMAT field as the GTTAG function and also creates a count INFO field as the CT function. The info field will be named tagID_CT"
        }
        outHeader.addWalk(this);
+       
        (vcMap(vcIter){ vc => {
              vc.genotypes.sampList = sampList;
              vc.genotypes.sampGrp = Some(sampleToGroupMap);
              val vb = vc.getOutputLine();
-             if(style == "GTTAG"){
+             if(style == "GTTAG" || style == "GTTAGANDCOUNT"){
                val gttag = Range(0,vcfHeader.sampleCt).map{ii => {
                  if(filter.keep((vc,ii))){
                    "1"
@@ -14277,16 +14410,74 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
                  }
                }}.toArray
                vb.genotypes.addGenotypeArray(tagID,gttag);
-             } else {
+               if(style == "GTTAGANDCOUNT"){
+                 val ct = gttag.count(xx => xx == "1");
+                 vb.addInfo(tagID+"_CT","" + ct);
+                 tally(""+tagID+"_CT",ct)
+               }
+               
+             } else if(style == "GTTAGCOPY"){
+               val gtidx =  vb.genotypes.fmt.indexOf(rawTag);
+               if(gtidx == -1 && overWrite){
+                 vb.genotypes.dropGenotypeArray(newTag);
+               } else {
+                 vb.genotypes.addGenotypeArray(newTag,vb.genotypes.genotypeValues(gtidx).clone());
+               }
+             } else if(style == "GTTAGRENAME"){
+               val gtidx =  vb.genotypes.fmt.indexOf(rawTag);
+               if(gtidx != -1){
+                 vb.genotypes.fmt = vb.genotypes.fmt.updated(gtidx,newTag);
+               }
+             } else if(style == "GTrecodeMultAlle"){
+               val gtidx =  vb.genotypes.fmt.indexOf(rawTag);
+               if(gtidx == -1 && overWrite){
+                 vb.genotypes.dropGenotypeArray(newTag);
+               } else if(recodeStyle.length == 1){
+                 val recodeChar = recodeStyle.head
+                 vb.genotypes.addGenotypeArray(newTag,vb.genotypes.genotypeValues(gtidx).map{g => {
+                   g.replace('2',recodeChar)
+                 }});
+               } else {
+                 vb.genotypes.addGenotypeArray(newTag,vb.genotypes.genotypeValues(gtidx).map{g => {
+                   g.replaceAll("2",recodeStyle)
+                 }});
+               }
+             } else if(style == "GTFILT"){
+               val gtidx =  vb.genotypes.fmt.indexOf(rawTag);
+               backTag.foreach{ bt => {
+                 if(gtidx == -1){
+                   vb.genotypes.addGenotypeArray(bt,Array.fill[String](vcfHeader.sampleCt)("./."))
+                 } else {
+                   vb.genotypes.addGenotypeArray(bt,vc.genotypes.genotypeValues(gtidx).clone())
+                 }
+               }}
+               
+               val (filtgt,filtbool) = if(gtidx == -1){
+                 (Array.fill[String](vcfHeader.sampleCt)("./."),
+                  Array.fill[String](vcfHeader.sampleCt)("0"))
+               } else {
+                 val gt = vc.genotypes.genotypeValues(gtidx)
+                 gt.zipWithIndex.map{ case (g,ii) => {
+                    if(filter.keep((vc,ii))){
+                      (g,"0")
+                    } else {
+                      ("./.","1")
+                    }
+                 }}.toArray.unzip
+               }
+               vb.genotypes.addGenotypeArray(newTag,filtgt)
+               vb.genotypes.addGenotypeArray(filtTag,filtbool)
+
+             } else if(style == "GT" || style == "GTCT" || style == "GTPCT" || style == "GTFRAC"){
                val ct = Range(0,vcfHeader.sampleCt).count{ii => {
                  filter.keep((vc,ii))
                }}
                tally(""+tagID+"",ct)
-               if(style == "CT"){
+               if(style == "GTCT" || style == "GT"){
                  vb.addInfo(tagID,"" + ct);
-               } else if(style == "PCT"){
+               } else if(style == "GTPCT"){
                  vb.addInfo(tagID,"" + (100.toDouble * ct.toDouble / vcfHeader.sampleCt.toDouble));
-               } else if(style == "FRAC"){
+               } else if(style == "GTFRAC"){
                  vb.addInfo(tagID,"" + (ct.toDouble / vcfHeader.sampleCt.toDouble));
                }
              }
