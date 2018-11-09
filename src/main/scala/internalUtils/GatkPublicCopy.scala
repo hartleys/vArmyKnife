@@ -768,8 +768,12 @@ object GatkPublicCopy {
     }
   }
   
+    def refToUpper(rs : Array[Byte]) : Array[Byte] = {
+      rs.map{ c => c.toChar.toUpper.toByte }
+    }
+  
   case class LeftAlignAndTrimWalker(genomeFa : String, windowSize : Int = 200, tagPrefix : Option[String] = Some("GATK_LAT_"),
-                                    useGatkLibCall : Boolean = true) extends SVcfWalker {
+                                    useGatkLibCall : Boolean = false) extends SVcfWalker {
     def walkerName : String = "LeftAlignAndTrim"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa),("windowSize",""+windowSize));
     
@@ -819,8 +823,9 @@ object GatkPublicCopy {
       val window = genLocParser.createGenomeLoc( chrom,refSeqFile.getSequenceDictionary().getSequenceIndex(chrom),startWin,endWin )
       val len = window.size();
       val refseq =  refSeqFile.getSubsequenceAt(chrom, startWin, endWin);
-      new ReferenceContext( genLocParser, genomeLoc, window, refseq.getBases());
+      new ReferenceContext( genLocParser, genomeLoc, window, refToUpper(refseq.getBases()));
     }
+
     
     val rft = refFastaTool(genomeFa = genomeFa)
     
@@ -872,17 +877,20 @@ object GatkPublicCopy {
     //val (latVC,diff) = trimAlignVC(vc,ref);
     val tvc = GATKVariantContextUtils.trimAlleles(vc, true, true)
     val trimBP = vc.getReference().getBaseString().length - tvc.getReference().getBaseString().length;
-    if(tvc.getReference().getBaseString() != vc.getReference().getBaseString()){
+    if(tvc.getReference().getBaseString().toUpperCase != vc.getReference().getBaseString().toUpperCase){
+      tally("TRIMMED",1)
       trimCt += 1;
     }
     val (latVC,diff) =  alignVC(tvc,ref,windowSize = windowSize);
     //alignAndWrite(final VariantContext vc, final ReferenceContext ref)
     //val (latVC,diff) = (latVCpair.first,latVCpair.second)
     if(diff != 0){
+      tally("SHIFTED_LEFTALIGN",1)
       leftAlignCt += 1;
     }
     val outV = makeSimpleSVcfLine(latVC,Some(v));
     val isChanged : String = if( v.pos != outV.pos || v.ref != outV.ref || v.alt != outV.alt){
+      tally("CHANGE_LEFTALIGNANDTRIM",1)
       "1"
     } else {
       "0"
@@ -900,7 +908,7 @@ object GatkPublicCopy {
     //val (latVC,diff) = trimAlignVC(vc,ref);
     val tvc = GATKVariantContextUtils.trimAlleles(vc, true, true)
     val trimBP = vc.getReference().getBaseString().length - tvc.getReference().getBaseString().length;
-    if(tvc.getReference().getBaseString() != vc.getReference().getBaseString()){
+    if(tvc.getReference().getBaseString().toUpperCase != vc.getReference().getBaseString().toUpperCase){
       trimCt += 1;
     }
     val latVCpair =  org.broadinstitute.gatk.tools.walkers.variantutils.LeftAlignAndTrimVariants.alignAndWrite(tvc,ref);
@@ -966,7 +974,7 @@ object GatkPublicCopy {
         if(refAlleStr.head != alt.head){
           return (tvc,0)
         }
-        val refSeq = ref.getBases();
+        val refSeq = refToUpper(ref.getBases());
         val originalIndex = tvc.getStart() - ref.getWindow().getStart() + 1;
         if(originalIndex < 0 || originalIndex >= ref.getBases().length){
           return (tvc,0)

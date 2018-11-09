@@ -242,7 +242,7 @@ object VcfAnnotateTX {
                                          valueName = "...",  
                                          argDesc =  "Options for a SnpSift annotate run. Provide all the options for the standard run. "+
                                                     " Do not include the annotate command itself or the input VCF. "+
-                                                    "This will call the internal SnpSift annotate commands, not merely run an external instance of SnpSift. "
+                                                    "This will call the internal SnpSift annotate methods, not merely run an external instance of SnpSift. "
                                         ).meta(false,"Annotation", 10) ::
                     new BinaryMonoToListArgument[String](
                                          name = "snpSiftDbnsfp", 
@@ -394,13 +394,13 @@ object VcfAnnotateTX {
                                                    ""// description
                                        ).meta(false,"Preprocessing") ::
 
-                    new UnaryArgument( name = "leftAlignAndTrimSecondarys",
+                   /* new UnaryArgument( name = "leftAlignAndTrimSecondarys",
                                          arg = List("--leftAlignAndTrimSecondarys"), // name of value
                                          argDesc = "Left align and trim any secondary input VCFs using a modified and ported version of the GATK v1.8-2 LeftAlignAndTrim walker."+
                                                    "" +
                                                    ""+
                                                    ""// description
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(false,"Preprocessing") ::*/
                                        
                     new UnaryArgument( name = "fixDotAltIndels",
                                          arg = List("--fixDotAltIndels"), // name of value
@@ -557,7 +557,10 @@ object VcfAnnotateTX {
                                          name = "thirdAlleleChar", 
                                          arg = List("--thirdAlleleChar"),
                                          valueName = "tag",
-                                         argDesc =  "For multiallelic-split variants, this defines the character used for the 'other' allele. "+
+                                         argDesc =  "Some users may not prefer the use of the star allele to indicate an other allele in multiallelic variants. "+
+                                                    "If this tag is raised, then the star allele will be removed from multiallelics. In addition, in the "+
+                                                    "GT field all other-allele "+
+                                                    "For multiallelic-split variants, this defines the character used for the 'other' allele. "+
                                                     "If this is used, the original version will be copied as a backup."
                                         ).meta(false,"Annotation") :: 
                     new UnaryArgument( name = "dropGenotypeData",
@@ -1495,8 +1498,8 @@ object VcfAnnotateTX {
               } else {
                 Seq[SVcfWalker]()
               }) ++ Seq[SVcfWalker](
-                    //internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)),
-                    internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200), useGatkLibCall = leftAlignAndTrimWindow.isEmpty)
+                    //internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200)), useGatkLibCall = leftAlignAndTrimWindow.isEmpty
+                    internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA.get,windowSize = leftAlignAndTrimWindow.getOrElse(200), useGatkLibCall = false)
               );
             } else {
               Seq[SVcfWalker]();
