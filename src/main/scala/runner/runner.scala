@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "2.2.44"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Thu Nov  1 13:28:50 EDT 2018"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1541093330; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "2.2.53"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Thu Nov  8 13:58:02 EST 2018"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1541703482; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -31,6 +31,11 @@ object runner {
   var RUNNER_EXECUTION_STARTTIME_MILLIS : Long = RUNNER_EXECUTION_STARTTIME_DATE.getTime();
   var RUNNER_EXECUTION_STARTTIME_STRING = RUNNER_EXECUTION_STARTTIME_DATE.toString();
   var RUNNER_EXECUTION_STARTTIME_SIMPLESTRING = internalUtils.stdUtils.getDateAndTimeStringFromDate(RUNNER_EXECUTION_STARTTIME_DATE);
+  var RUNNER_EXECUTION_ENDTIME_DATE : Option[java.util.Date] = None;
+  var RUNNER_EXECUTION_ENDTIME_MILLIS : Option[Long] = None;
+  var RUNNER_EXECUTION_ENDTIME_STRING : Option[String] = None;
+  var RUNNER_EXECUTION_ENDTIME_SIMPLESTRING : Option[String] = None;
+
     
   //Command name -> (execution call, summary, syntax)
   val utilList : Seq[CommandLineRunUtil] = Seq(
@@ -47,7 +52,7 @@ object runner {
     (new internalTests.trackToSpan.trackToSpan),
     (new internalTests.SimSeqError.GenerateSimulatedError),
     new internalTests.SimSeqError.GenerateSimulatedError,
-    new internalTests.VcfAnnotateTX.RedoEnsemblMerge,
+    //new internalTests.VcfAnnotateTX.RedoEnsemblMerge,
     new internalTests.ibdSimulator.ibdSimulator,
     new internalTests.VcfAnnotateTX.CommandFilterVCF,
     new internalTests.VcfAnnotateTX.CmdFilterGenotypesByStat,
@@ -231,6 +236,18 @@ object runner {
     //    throw e;
     //  }
     //}
+    
+    /*
+     *     tallyFile.foreach(tt => {
+      val w = openWriter(tt)
+      
+      getWarningAndNoticeTalliesTable("\t").foreach{ss => {
+        w.write(ss+"\n")
+      }}
+      
+      w.close();
+    })
+     */
     
     internalUtils.Reporter.reportln("Done. (" + (new java.util.Date()).toString + ")","note");
     internalUtils.Reporter.closeLogs;

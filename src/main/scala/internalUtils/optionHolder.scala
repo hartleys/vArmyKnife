@@ -18,6 +18,8 @@ object optionHolder {
     }
   }*/
   
+  var OPTION_TAGPREFIX = "VAK_";
+  
   var OPTION_DEBUGMODE = false;
   var OPTION_VERBOSE = false;
   

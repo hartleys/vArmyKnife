@@ -37,7 +37,7 @@ object VcfTool {
   val UNKNOWN_ALT_TAG_STRING = "*";
   val MISSING_VALUE_STRING = ".";
    
-  val TOP_LEVEL_VCF_TAG : String = "SWH_";
+  val TOP_LEVEL_VCF_TAG : String = OPTION_TAGPREFIX;
   
   def getAttributeAsStringList(vc : VariantContext, tag : String) : Seq[String] = {
     val lst = vc.getAttributeAsList(tag).asScala;
@@ -1071,7 +1071,8 @@ object VcfTool {
                         var titleLine : SVcfTitleLine,
                         var addedInfos : Set[String] = Set[String](),
                         var addedFmts : Set[String] = Set[String](),
-                        var sStatLine : Option[SVcfSStatLine] = None){
+                        var sStatLine : Option[SVcfSStatLine] = None,
+                        var metadataLines : Seq[SVcfCompoundHeaderLine] = Seq()){
     def getVcfLines : Seq[String] = (otherHeaderLines ++ sStatLine ++ walkLines ++ infoLines ++ formatLines :+ titleLine).map(_.getVcfString);
     
     def addStat(statID : String, statVal : String){
@@ -1124,6 +1125,12 @@ object VcfTool {
       }
       
     }
+    
+    
+    def addMetaLine(line : SVcfCompoundHeaderLine){
+      metadataLines = metadataLines :+ line.updateTag(OPTION_TAGPREFIX+"METADATA_"+line.in_tag);
+    }
+    
     def addFormatLine(line : SVcfCompoundHeaderLine, walker : Option[SVcfWalker] = None){
       if(line.in_tag != "FORMAT"){
         error("Impossible state! FORMAT field assigned with tag=\""+line.in_tag+"\" (rather than FORMAT)")
@@ -1302,6 +1309,10 @@ object VcfTool {
                              );
                              
     }
+    def hasMetadata() : Boolean = {
+      vakUtil.isDefined  || vakStepNum.isDefined || vakVer.isDefined || subType.isDefined || extraFields.nonEmpty
+    }
+    
     def addExtraField(t : String, v : String) : SVcfCompoundHeaderLine = {
       new SVcfCompoundHeaderLine(in_tag = in_tag, ID = ID, Number = Number, Type = Type, desc = desc,subType = subType,extraFields=extraFields + ((t,v)),
                              vakUtil= vakUtil,vakStepNum=vakStepNum,vakVer=vakVer
@@ -1335,7 +1346,12 @@ object VcfTool {
                              );
     }
     
-    
+    def updateTag(tt : String) : SVcfCompoundHeaderLine = {
+      new SVcfCompoundHeaderLine(in_tag = tt, ID = ID, Number = Number, Type = Type, desc = desc,
+                             subType = subType,extraFields=extraFields,
+                             vakUtil= vakUtil,vakStepNum=vakStepNum,vakVer=vakVer
+                             );
+    }
     
     /*
                new SVcfInfoHeaderLine(ID=line.ID,Number=line.Number,Type=line.Type,desc = line.desc,

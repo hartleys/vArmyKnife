@@ -399,9 +399,9 @@ object CalcACMGVar {
         }))
     ).map{ case (typeSubsetName,typeSubsetDesc,infoFunc) => {
       val infoLines : Seq[SVcfCompoundHeaderLine] = Seq[SVcfCompoundHeaderLine](
-          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName,Number=".",Type="String",desc="Comma delimited list of gene names for which this variant is of type: "+typeSubsetDesc).addWalker(this),
-          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName+"_CANON",Number=".",Type="String",desc="(For canonical TX only) the list of gene names for which this variant is of type: "+typeSubsetDesc).addWalker(this),
-          new SVcfCompoundHeaderLine("INFO","SWH_ANNO_txList_"+typeSubsetName,Number=".",Type="String",desc="The list of transcript IDs for which this variant is of type: "+typeSubsetDesc).addWalker(this)
+          new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"ANNO_geneList_"+typeSubsetName,Number=".",Type="String",desc="Comma delimited list of gene names for which this variant is of type: "+typeSubsetDesc).addWalker(this),
+          new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"ANNO_geneList_"+typeSubsetName+"_CANON",Number=".",Type="String",desc="(For canonical TX only) the list of gene names for which this variant is of type: "+typeSubsetDesc).addWalker(this),
+          new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"ANNO_txList_"+typeSubsetName,Number=".",Type="String",desc="The list of transcript IDs for which this variant is of type: "+typeSubsetDesc).addWalker(this)
       );
       (typeSubsetName,typeSubsetDesc,infoFunc,infoLines)
     }}
@@ -552,13 +552,13 @@ object CalcACMGVar {
             val tssGenesCanon = tssTX.withFilter{case (g,tx,info,c,i) => isRefSeq(tx)}.map{ case (g,tx,info,c,i) => g }.toList.distinct.sorted
             val tssTxList = tssTX.map{ case (g,tx,info,c,i) => tx }.toList.distinct.sorted
             
-          //new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName,Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this),
-          //new SVcfCompoundHeaderLine("INFO","SWH_ANNO_geneList_"+typeSubsetName+"_CANON",Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this),
-          //new SVcfCompoundHeaderLine("INFO","SWH_ANNO_txList_"+typeSubsetName,Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this)
+          //new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"ANNO_geneList_"+typeSubsetName,Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this),
+          //new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"ANNO_geneList_"+typeSubsetName+"_CANON",Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this),
+          //new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"ANNO_txList_"+typeSubsetName,Number=".",Type="String",desc="No description yet. "+typeSubsetDesc).addWalker(this)
             
-            vb.addInfo("SWH_ANNO_geneList_"+tssName,           tssGenes.padTo(1,".").mkString(","));
-            vb.addInfo("SWH_ANNO_geneList_"+tssName+"_CANON",  tssGenesCanon.padTo(1,".").mkString(","));
-            vb.addInfo("SWH_ANNO_txList_"  +tssName,           tssTxList.padTo(1,".").mkString(","));
+            vb.addInfo(OPTION_TAGPREFIX+"ANNO_geneList_"+tssName,           tssGenes.padTo(1,".").mkString(","));
+            vb.addInfo(OPTION_TAGPREFIX+"ANNO_geneList_"+tssName+"_CANON",  tssGenesCanon.padTo(1,".").mkString(","));
+            vb.addInfo(OPTION_TAGPREFIX+"ANNO_txList_"  +tssName,           tssTxList.padTo(1,".").mkString(","));
           }}
           
           //***************************LOF:
@@ -3506,7 +3506,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                     locusIsHotspot    : (commonSeqUtils.GenomicInterval => Boolean) ,
                     locusIsMappable   : Option[(commonSeqUtils.GenomicInterval => Boolean)] ,
                     locusIsPseudogene : Option[(commonSeqUtils.GenomicInterval => Boolean)] ,
-                    ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL","SWH_AF_GRP_CTRL"),
+                    ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL",OPTION_TAGPREFIX+"AF_GRP_CTRL"),
                     
                     inSilicoFuns : Seq[(String,StringToBool,StringToBool)],
                     inSilicoSummary : (VariantContext => (String,Seq[String])),
@@ -4348,7 +4348,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
     return vb.make();
   }
   
-  def summarizeInSilico(v : SVcfVariantLine, ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL","SWH_AF_GRP_CTRL"),
+  def summarizeInSilico(v : SVcfVariantLine, ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL",OPTION_TAGPREFIX+"AF_GRP_CTRL"),
                                             inSilicoFuns : Seq[(String,StringToBool,StringToBool)],
                                             inSilicoSummary : (SVcfVariantLine => (String,Seq[String])),
                                             vcfCodes : VCFAnnoCodes = VCFAnnoCodes()) : SVcfVariantLine = {
@@ -4449,7 +4449,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                     isHotspot    : Boolean ,
                     isMappable   : Boolean ,
                     isPseudogene : Boolean ,
-                    ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL","SWH_AF_GRP_CTRL"),
+                    ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL",OPTION_TAGPREFIX+"AF_GRP_CTRL"),
                     
                     inSilicoFuns : Seq[(String,StringToBool,StringToBool)],
                     inSilicoSummary : (SVcfVariantLine => (String,Seq[String])),
@@ -5981,7 +5981,7 @@ def getDbMappers(infile : String, chromList : Option[List[String]], vcfCodes : V
                     locusIsRepetitive : ((String,Int) => Boolean) = ((s : String,i : Int) => false),
                     locusIsConserved  : ((String,Int) => Boolean) = ((s : String,i : Int) => true ),
                     locusIsHotspot    : ((String,Int) => Boolean) = ((s : String,i : Int) => false ),
-                    ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL","SWH_AF_GRP_CTRL"),
+                    ctrlAlleFreqKeys : Seq[String] = Seq("1KG_AF","ESP_EA_AF","ExAC_ALL",OPTION_TAGPREFIX+"AF_GRP_CTRL"),
                     
                     vcfCodes : VCFAnnoCodes = VCFAnnoCodes()
                     //clinVarVariants?

@@ -138,9 +138,9 @@ object GatkPublicCopy {
       outHeader.addWalk(this);
       var idx = 0;
       var compIdx = 0;
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_isMPAR",Number="1",Type="Integer",desc="Equal to 1 iff the variant is a complex composite variant."));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_hasMPAR",Number="1",Type="Integer",desc="greater than 0 iff the variant has one or more complex composite variants attached."));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_parentIdx",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_isMPAR",Number="1",Type="Integer",desc="Equal to 1 iff the variant is a complex composite variant."));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_hasMPAR",Number="1",Type="Integer",desc="greater than 0 iff the variant has one or more complex composite variants attached."));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_parentIdx",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
       outHeader.addFormatLine(new SVcfCompoundHeaderLine("INFO",gtTag+"_MPAR",Number=".",Type="String",desc="Based on ("+gtTag+")"));
 
       
@@ -242,9 +242,9 @@ object GatkPublicCopy {
                        in_genotypes = svgs
                       );
 
-                vc.addInfo("SWH_MPAR_hasMPAR","1")
-                cvc.addInfo("SWH_MPAR_isMPAR","1")
-                cvc.addInfo("SWH_MPAR_parentIdx", allv.flatMap{ vv => vv.info.getOrElse(idxTag,None).toSeq.flatMap{ s => s.split(",").toSeq } }.padTo(1,".").mkString(","));
+                vc.addInfo(OPTION_TAGPREFIX+"MPAR_hasMPAR","1")
+                cvc.addInfo(OPTION_TAGPREFIX+"MPAR_isMPAR","1")
+                cvc.addInfo(OPTION_TAGPREFIX+"MPAR_parentIdx", allv.flatMap{ vv => vv.info.getOrElse(idxTag,None).toSeq.flatMap{ s => s.split(",").toSeq } }.padTo(1,".").mkString(","));
                 cvc.addInfo(idxTag,v.info.getOrElse(idxTag,None).getOrElse("UNK") + "/" + blockIdx);
                 cvc
               }}
@@ -312,22 +312,22 @@ object GatkPublicCopy {
       outHeader.addWalk(this);
       var idx = 0;
       var compIdx = 0;
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_FLAG",Number="1",Type="Integer",desc="Equal to 1 iff the variant is involved with any Misleading PARtial variant."));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_isMPAR",Number="1",Type="Integer",desc="Equal to 1 iff the variant is a complex composite variant."));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_hasPrimaryChild",Number="1",Type="Integer",desc="greater than 0 iff the variant has one or more complex composite variants attached."));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_hasSecondaryChild",Number="1",Type="Integer",desc="greater than 0 iff the variant has one or more complex composite variants attached."));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_parentIdx",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_primaryParent",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
-      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_secondaryParents",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
-      //outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_numChild",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
-      //outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO","SWH_MPAR_numSibs",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_FLAG",Number="1",Type="Integer",desc="Equal to 1 iff the variant is involved with any Misleading PARtial variant."));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_isMPAR",Number="1",Type="Integer",desc="Equal to 1 iff the variant is a complex composite variant."));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_hasPrimaryChild",Number="1",Type="Integer",desc="greater than 0 iff the variant has one or more complex composite variants attached."));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_hasSecondaryChild",Number="1",Type="Integer",desc="greater than 0 iff the variant has one or more complex composite variants attached."));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_parentIdx",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_primaryParent",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
+      outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_secondaryParents",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
+      //outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_numChild",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
+      //outHeader.addInfoLine(  new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_numSibs",Number=".",Type="Integer",desc="Parent indices from idx tag "+idxTag));
       
       outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",gtTag+"_MPAR",Number=".",Type="String",desc="Based on ("+gtTag+")"));
       
       mergeTags.foreach{ mtag => {
         val oldhl = vcfHeader.infoLines.find( line =>  line.ID == mtag).get
         outHeader.addInfoLine( new SVcfCompoundHeaderLine("INFO",mtag,Number=".",Type=oldhl.Type,desc=oldhl.desc ));
-        outHeader.addInfoLine( new SVcfCompoundHeaderLine("INFO","SWH_MPAR_childSet_"+mtag,Number=".",Type=oldhl.Type,desc=oldhl.desc ));
+        outHeader.addInfoLine( new SVcfCompoundHeaderLine("INFO",OPTION_TAGPREFIX+"MPAR_childSet_"+mtag,Number=".",Type=oldhl.Type,desc=oldhl.desc ));
       }}
       val sampCt = vcfHeader.titleLine.sampleList.length
       val sampRango = Range(0,vcfHeader.titleLine.sampleList.length);
@@ -348,8 +348,8 @@ object GatkPublicCopy {
         val startPos = v.start;
         val endPos = v.end;
         val vc = v.getOutputLine();
-        vc.addInfo("SWH_MPAR_isMPAR","0")
-        vc.addInfo("SWH_MPAR_FLAG","0")
+        vc.addInfo(OPTION_TAGPREFIX+"MPAR_isMPAR","0")
+        vc.addInfo(OPTION_TAGPREFIX+"MPAR_FLAG","0")
         idx = idx + 1;
         
         if( v.chrom != currChrom) {
@@ -366,7 +366,7 @@ object GatkPublicCopy {
           
           bufferMap = bufferMap.dropWhile{ case ((c,p),ov) => p < startPos - baseBuffer};
           
-          val currBuffer : Vector[SVcfOutputVariantLine] = bufferMap.map{_._2}.toVector.flatMap{ ovs => ovs.filter{ ov => ! (ov.start < v.end && ov.end > v.start) }}.filter{ ov => ov.getInfo("SWH_MPAR_isMPAR") != "1" }
+          val currBuffer : Vector[SVcfOutputVariantLine] = bufferMap.map{_._2}.toVector.flatMap{ ovs => ovs.filter{ ov => ! (ov.start < v.end && ov.end > v.start) }}.filter{ ov => ov.getInfo(OPTION_TAGPREFIX+"MPAR_isMPAR") != "1" }
           
           addToBuffer(vc);
           //bufferMap = bufferMap + ((endPos,vc));
@@ -450,20 +450,20 @@ object GatkPublicCopy {
                            in_genotypes = svgs
                           );
                     
-                    vc.addInfo("SWH_MPAR_hasPrimaryChild","1")
-                    vc.addInfo("SWH_MPAR_FLAG","1")
+                    vc.addInfo(OPTION_TAGPREFIX+"MPAR_hasPrimaryChild","1")
+                    vc.addInfo(OPTION_TAGPREFIX+"MPAR_FLAG","1")
                     
                     //TO DO: add secondary child tag! will require type change to buffer!
                     ovs.foreach{ ovv => {
-                      ovv.addInfo("SWH_MPAR_hasSecondaryChild","1")
-                      ovv.addInfo("SWH_MPAR_FLAG","1")
+                      ovv.addInfo(OPTION_TAGPREFIX+"MPAR_hasSecondaryChild","1")
+                      ovv.addInfo(OPTION_TAGPREFIX+"MPAR_FLAG","1")
                     }}
                     
-                    cvc.addInfo("SWH_MPAR_isMPAR","1")
-                    cvc.addInfo("SWH_MPAR_parentIdx",     allv.flatMap{ vv => vv.info.getOrElse(idxTag,None).toSeq.flatMap{ s => s.split(",").toSeq } }.padTo(1,".").mkString(","));
-                    cvc.addInfo("SWH_MPAR_primaryParent",    v.getInfo(idxTag));
-                    cvc.addInfo("SWH_MPAR_secondaryParents", ovs.flatMap{ vv => vv.info.getOrElse(idxTag,None).toSeq.flatMap{ s => s.split(",").toSeq } }.padTo(1,".").mkString(","));
-                    cvc.addInfo("SWH_MPAR_FLAG","1")
+                    cvc.addInfo(OPTION_TAGPREFIX+"MPAR_isMPAR","1")
+                    cvc.addInfo(OPTION_TAGPREFIX+"MPAR_parentIdx",     allv.flatMap{ vv => vv.info.getOrElse(idxTag,None).toSeq.flatMap{ s => s.split(",").toSeq } }.padTo(1,".").mkString(","));
+                    cvc.addInfo(OPTION_TAGPREFIX+"MPAR_primaryParent",    v.getInfo(idxTag));
+                    cvc.addInfo(OPTION_TAGPREFIX+"MPAR_secondaryParents", ovs.flatMap{ vv => vv.info.getOrElse(idxTag,None).toSeq.flatMap{ s => s.split(",").toSeq } }.padTo(1,".").mkString(","));
+                    cvc.addInfo(OPTION_TAGPREFIX+"MPAR_FLAG","1")
                     mergeTags.foreach{ mtag => {
                       val mergedTagSeq = allv.flatMap{ vv => {
                         vv.info.getOrElse(mtag,None)
@@ -472,9 +472,9 @@ object GatkPublicCopy {
                       
                       cvc.addInfo(mtag,mergedTagString);
                       allv.foreach{ ovv => {
-                        val mergedTagChildSet : Set[String] = ovv.info.getOrElse("SWH_MPAR_childSet_"+mtag,None).toSeq.toSet.flatMap{ (ii : String) => ii.split(",").toVector.toSet } ++ mergedTagSeq.toSet
-                        //val temp = ovv.info.getOrElse("SWH_MPAR_childSet_"+mtag,None).map{ii => (ii.split(",").toVector.toSet ++ mergedTagSeq.toSet).toVector.filter(_ != ".").sorted.mkString(",")}.getOrElse(".")
-                        ovv.addInfo("SWH_MPAR_childSet_"+mtag, mergedTagChildSet.toVector.sorted.padTo(1,".").mkString(",")  )
+                        val mergedTagChildSet : Set[String] = ovv.info.getOrElse(OPTION_TAGPREFIX+"MPAR_childSet_"+mtag,None).toSeq.toSet.flatMap{ (ii : String) => ii.split(",").toVector.toSet } ++ mergedTagSeq.toSet
+                        //val temp = ovv.info.getOrElse(OPTION_TAGPREFIX+"MPAR_childSet_"+mtag,None).map{ii => (ii.split(",").toVector.toSet ++ mergedTagSeq.toSet).toVector.filter(_ != ".").sorted.mkString(",")}.getOrElse(".")
+                        ovv.addInfo(OPTION_TAGPREFIX+"MPAR_childSet_"+mtag, mergedTagChildSet.toVector.sorted.padTo(1,".").mkString(",")  )
                       }}
                     }}
                     
@@ -544,7 +544,7 @@ object GatkPublicCopy {
   }*/
     
   
-  case class FixDotAltVcfLines(genomeFa : String, windowSize : Int = 200, tag : String = "SWH_FixedDotAltAllele") extends SVcfWalker {
+  case class FixDotAltVcfLines(genomeFa : String, windowSize : Int = 200, tag : String = OPTION_TAGPREFIX+"FixedDotAltAllele") extends SVcfWalker {
     def walkerName : String = "FixDotAltVcfLines"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa));
     

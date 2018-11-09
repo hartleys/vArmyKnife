@@ -153,6 +153,12 @@ List(
                     //                     arg = List("--ignoreUnknownParams"), // name of value
                     //                     argDesc = "Flag to indicate that unrecognized parameters will be ignored." // description
                     //                   ) :: 
+                    new BinaryArgument[String](name = "universalTagPrefix",
+                                           arg = List("--universalTagPrefix"),  
+                                           valueName = "VAK_", 
+                                           argDesc = "Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting.",
+                                           defaultValue = Some("VAK_")
+                                           ).meta(false,"Preprocessing") ::
                     new ParameterFileArgument( name = "PARAMFILE",
                                                arg = List("--paramFile"),
                                                valueName = "paramFile.txt",
@@ -165,6 +171,12 @@ List(
                                          arg = List("--debugMode"), // name of value
                                          argDesc = "Flag to indicate that much more debugging information should be sent to stderr." // description
                                        ) :: 
+                    new BinaryOptionArgument[String](
+                                         name = "tallyFile", 
+                                         arg = List("--tallyFile"),
+                                         valueName = "file.txt",
+                                         argDesc =  "Write a file with a table containing counts for all tallies, warnings and notices reported during the run."
+                                        ).meta(false,"Annotation") :: 
                     new BinaryOptionArgument[String](
                                          name = "createRunningFile", 
                                          arg = List("--createRunningFile"), 
@@ -223,12 +235,33 @@ List(
           //do nothing
         }
       }
+      
+      
     }
     def close(){
+      
+      runner.runner.RUNNER_EXECUTION_ENDTIME_DATE = Some(java.util.Calendar.getInstance().getTime())
+      runner.runner.RUNNER_EXECUTION_ENDTIME_MILLIS = Some(runner.runner.RUNNER_EXECUTION_ENDTIME_DATE.get.getTime());
+      runner.runner.RUNNER_EXECUTION_ENDTIME_STRING = Some(runner.runner.RUNNER_EXECUTION_ENDTIME_DATE.get.toString());
+      runner.runner.RUNNER_EXECUTION_ENDTIME_SIMPLESTRING = Some(internalUtils.stdUtils.getDateAndTimeStringFromDate(runner.runner.RUNNER_EXECUTION_ENDTIME_DATE.get));
+
+      
+      this.get[Option[String]]("tallyFile").foreach{ tt => {
+          val w = fileUtils.openWriter(tt)
+          
+          getWarningAndNoticeTalliesTable("\t").foreach{ss => {
+            w.write(ss+"\n")
+          }}
+          w.close();
+      }}
       this.get[Option[String]]("successfulCompletionFile") match {
         case Some(f) => {
             fileUtils.createDummyFile(f=f,
-                      message  = "# Note: if this file EXISTS, then the job completed without fatal errors.",
+                      message  = Seq("# Note: if this file EXISTS, then the job completed without fatal errors.",
+                                     "STARTTIME_MILLIS\t"+runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS,
+                                     "ENDTIME_MILLIS\t"+runner.runner.RUNNER_EXECUTION_ENDTIME_MILLIS,
+                                     "STARTTIME\t"+runner.runner.RUNNER_EXECUTION_STARTTIME_SIMPLESTRING,
+                                     "ENDTIME\t"+runner.runner.RUNNER_EXECUTION_ENDTIME_SIMPLESTRING).mkString("\n"),
                       existsWarn= "Warning: Completion File Already Exists! Is this a rerun?");
         }
         case None => {
