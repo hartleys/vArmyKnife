@@ -613,6 +613,17 @@ object VcfAnnotateTX {
                                                     "The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below."
                                         ).meta(false,"Annotation") :: 
                                         
+                    new BinaryOptionArgument[String](
+                                         name = "tallyFile", 
+                                         arg = List("--tallyFile"),
+                                         valueName = "file.txt",
+                                         argDesc =  "Write a file with a table containing counts for all tallies, warnings and notices reported during the run."
+                                        ).meta(false,"Annotation") :: 
+                    new UnaryArgument( name = "dropVariantsWithNs", //RemoveDuplicateLinesWalker
+                                         arg = List("--dropVariantsWithNs"), // name of value
+                                         argDesc = "Drop any variants that contain Ns in the ref or alt allele."
+                                       ).meta(false,"Preprocessing") ::
+                                    
                     new BinaryMonoToListArgument[String](
                                          name = "tagVariantsGtCountExpression", 
                                          arg = List("--tagVariantsGtCountExpression"),
@@ -1199,7 +1210,10 @@ object VcfAnnotateTX {
                 
                 thirdAlleleChar = parser.get[Option[String]]("thirdAlleleChar"),
                 
-                dropSpanIndels = parser.get[Boolean]("dropSpanIndels")
+                dropSpanIndels = parser.get[Boolean]("dropSpanIndels"),
+                dropVariantsWithNs = parser.get[Boolean]("dropVariantsWithNs"),
+                tallyFile = parser.get[Option[String]]("tallyFile")
+                //dropVariantsWithNs, tallyFile   
              )
        }
      }
@@ -1350,7 +1364,10 @@ object VcfAnnotateTX {
                 tagVariantsGtCountExpression : List[String]  = List[String](),
                 
                 thirdAlleleChar : Option[String] = None,
-                dropSpanIndels : Boolean = false
+                dropSpanIndels : Boolean = false,
+                
+                dropVariantsWithNs : Boolean = false,
+                tallyFile : Option[String] = None
                 ){
                 /*
                  * 
@@ -1488,6 +1505,14 @@ object VcfAnnotateTX {
               } else {
                 Seq[SVcfWalker]();
               })
+        ) ++ (
+            (if(dropVariantsWithNs){
+                reportln("Creating filter to drop variants with Ns ... "+getDateAndTimeString,"debug");
+                Seq[SVcfWalker](new DropNs());
+              } else {
+                Seq[SVcfWalker]();
+              })
+              //dropVariantsWithNs
         ) ++ (
             if(leftAlignAndTrim){
               if(genomeFA.isEmpty){
@@ -2334,7 +2359,16 @@ object VcfAnnotateTX {
       }
     }
     
-    
+    tallyFile.foreach(tt => {
+      val w = openWriter(tt)
+      
+      getWarningAndNoticeTalliesTable("\t").foreach{ss => {
+        w.write(ss+"\n")
+      }}
+      
+      w.close();
+      
+    })
     if(! summaryWriter.isEmpty) summaryWriter.get.close();
   }
   
@@ -4690,13 +4724,36 @@ object VcfAnnotateTX {
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
-      
+      initNotice("DROP_STAR_ALLE");
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
         if(v.alt.head == "*"){
           notice("dropping spanning indel (star allele).","DROP_STAR_ALLE",5);
+          None
+        } else {
+          Some(v);
+        }
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+  }
+  class DropNs() extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "DropVariantsWithNs"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      initNotice("DROP_VAR_N");
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        if(v.alt.head.contains('N') || v.ref.contains('N')){
+          notice("dropping variant with Ns: "+v.chrom+":"+v.pos+":"+v.ref+">"+v.alt.head,"DROP_VAR_N",5);
           None
         } else {
           Some(v);
@@ -7954,7 +8011,7 @@ object VcfAnnotateTX {
           error("FATAL ERROR: Cannot deal with multiallelic variants! Split variants to single-allelic!");
         }
         
-        val maxAF : Double = ctrlAlleFreqKeys.map{key => v.info.getOrElse(key,None).getOrElse("0")}.map{s => if(s == ".") 0.toDouble else string2double(s)}.max;
+        val maxAF : Double = ctrlAlleFreqKeys.map{key => v.info.getOrElse(key,None).getOrElse("0")}.map{s => if(! (scala.util.control.Exception.allCatch opt s.toDouble).isDefined) 0.toDouble else string2double(s)}.max;
         vb.addInfo(maxAfTag , maxAF.toString);
         vb;
       }},newHeader);
@@ -14300,6 +14357,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
        val outHeader = vcfHeader.copyHeader;
+       initNotice("TAGGED_"+tagID+"_0")
+       initNotice("TAGGED_"+tagID+"_1")
        
        if(isGeneTagExpr){
            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = ".", Type="String",desc=tagDesc).addWalker(this));

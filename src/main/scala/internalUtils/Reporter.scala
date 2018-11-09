@@ -321,6 +321,9 @@ object Reporter {
     }
     noticeCount(warnType) += 1;
   }
+  def initNotice(warnType : String){
+    noticeCount(warnType) = 0
+  }
   
   val tallies = scala.collection.mutable.Map[String,Int]().withDefault((x : String) => 0);
   def tally(str : String,v : Int){
@@ -366,6 +369,12 @@ object Reporter {
     }) ++
     Seq[String](indent+"---------------")
   }
+  def getWarningAndNoticeTalliesTable(delim : String = "\t") : Seq[String] = {
+      warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)) ++ 
+      noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x))++
+      tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x))
+  }
+  
   
   def closeLogs() {
     if(! warningCount.keys.isEmpty){

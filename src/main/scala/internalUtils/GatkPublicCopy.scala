@@ -839,6 +839,9 @@ object GatkPublicCopy {
         newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tp+"TRIMBP",Number="1",Type="Integer",desc="The number of bases trimmed from both ref and alt by the trim function, prior to left aligning.").addExtraField("latWindow",windowSize.toString).addExtraField("latMethod",latMethod),walker=Some(this));
       }}
       
+      tally("SHIFTED_LEFTALIGN",0)
+      tally("TRIMMED",0)
+      tally("CHANGE_LEFTALIGNANDTRIM",0)
       ((addIteratorCloseAction(bufferedGroupedResorting(vcMap(vcIter){ vc => {
         if(vc.alt.length == 2){
           if(vc.alt.last != "*"){
@@ -849,6 +852,7 @@ object GatkPublicCopy {
         }
         val rc = getReferenceContext(vc.chrom,vc.start,vc.end);
         if(useGatkLibCall){
+          warning("WARNING: USING DEPRECATED LeftAlignAndTrim Function!!!","DEPRECATED_LAT",10)
           trimAlign(vc,rc,tagPrefix)._1;
         } else {
           trimAlignNoLib(vc,rc,tagPrefix,windowSize)._1;
@@ -869,6 +873,7 @@ object GatkPublicCopy {
   
   var leftAlignCt = 0;
   var trimCt = 0;
+
   
   def trimAlignNoLib(v : SVcfVariantLine, ref : ReferenceContext, tagPrefix : Option[String] = None, windowSize : Int = 200) : (SVcfVariantLine,Int) = {
 
@@ -889,7 +894,7 @@ object GatkPublicCopy {
       leftAlignCt += 1;
     }
     val outV = makeSimpleSVcfLine(latVC,Some(v));
-    val isChanged : String = if( v.pos != outV.pos || v.ref != outV.ref || v.alt != outV.alt){
+    val isChanged : String = if( v.pos != outV.pos || v.ref != outV.ref || v.alt.head != outV.alt.head){
       tally("CHANGE_LEFTALIGNANDTRIM",1)
       "1"
     } else {

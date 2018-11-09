@@ -3000,6 +3000,21 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="INFO.tagsDiff", numParam = 2,desc="PASS iff the INFO-field t1 and t2 are different, including when one is missing and the other is not.",paramNames=Seq("t1","t2"),
+                        (params : Seq[String]) => {
+                          val tag1 = params(0);
+                          val tag2 = params(1);
+                          (a : SVcfVariantLine) => {
+                            if(tagMissing(tag1,a) && tagMissing(tag2,a)){
+                              true
+                            } else if(tagMissing(tag1,a) || tagMissing(tag2,a)){
+                              false
+                            } else {
+                              a.info(tag1).get != a.info(tag2).get
+                            }
+                          }
+                        }
+                      ),
         FilterFunction(funcName="GENO.hasTagPairMismatch", numParam = 2,desc="PASS iff the genotype-field t1 and t2 are both found on a given line but are not always equal for all samples.",paramNames=Seq("t1","t2"),
                         (params : Seq[String]) => {
                           val tag1 = params(0);
