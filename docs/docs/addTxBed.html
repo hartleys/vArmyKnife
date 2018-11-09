@@ -30,7 +30,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 2.2.34 (Updated Tue Oct 16 15:16:25 EDT 2018)</p>
+  <p>Version 2.2.53 (Updated Thu Nov  8 13:58:02 EST 2018)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -69,6 +69,24 @@ java -jar vArmyKnife.jar [java options] addTxBed [options] variants.vcf tagID:fi
 </blockquote>
 
 </section> <h2>OPTIONAL ARGUMENTS:</h2> <section>
+
+<h3>Annotation:</h3>
+
+<h4>--tallyFile file.txt:</h4>
+
+<blockquote>
+  <p>Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)</p>
+</blockquote>
+
+<h3>Preprocessing:</h3>
+
+<h4>--universalTagPrefix VAK_:</h4>
+
+<blockquote>
+  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
+</blockquote>
+
+<h3>OTHER OPTIONS:</h3>
 
 <h4>--chromList chr1,chr2,...:</h4>
 

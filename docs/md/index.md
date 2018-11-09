@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version2.2.34 (Updated Tue Oct 16 15:16:25 EDT 2018)
+> Version2.2.53 (Updated Thu Nov  8 13:58:02 EST 2018)
 
 > ([back to help base](../index.html))
 
@@ -61,10 +61,6 @@ These commands have not been fully tested and are not for production use. Docume
 >  UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 
 ### [addTxBed](addTxBed.html)
-
-> UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
-
-### [RedoEnsemblMerge](RedoEnsemblMerge.html)
 
 > UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.34 (Updated Tue Oct 16 15:16:25 EDT 2018)
+> Version 2.2.53 (Updated Thu Nov  8 13:58:02 EST 2018)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -35,6 +35,17 @@ UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY\! DO NOT USE\!
 
 
 ## OPTIONAL ARGUMENTS:
+### Annotation:
+#### --tallyFile file.txt:
+
+> Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
+
+### Preprocessing:
+#### --universalTagPrefix VAK\_:
+
+> Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
+
+### OTHER OPTIONS:
 #### --singleDbFile:
 
 > NOT CURRENTLY SUPPORTED (flag)

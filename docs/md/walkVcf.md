@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.34 (Updated Tue Oct 16 15:16:25 EDT 2018)
+> Version 2.2.53 (Updated Thu Nov  8 13:58:02 EST 2018)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -86,10 +86,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > Set the window size used for left align and trim. Indels larger than this will not be left aligned. (Int)
 
-#### --leftAlignAndTrimSecondarys:
-
-> Left align and trim any secondary input VCFs using a modified and ported version of the GATK v1.8-2 LeftAlignAndTrim walker. (flag)
-
 #### --fixDotAltIndels:
 
 > Some callers return variant lines that use a dot or dashin the alt column, especially if the VCFs were converted over from ANNOVAR files. technically per the VCF spec this should be interpreted as the absence of any variant alleles (an allele list of length 0). But some tools seem to sometimes use this encoding when they actually mean to indicate an indel. If you use this parameter, then dot-alt indels will be converted to proper form before any other processing. Note: the genomeFA parameter is required in order to use this option, as we need to be able to find the reference sequence for the previous base. (flag)
@@ -101,6 +97,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --dropSymbolicAlleleLines:
 
 > Drop all variant lines that contain symbolic alleles. If this flag is used with splitMultiAllelic, then the non-symbolic alleles of mixed-type variants will be preserved. (flag)
+
+#### --dropVariantsWithNs:
+
+> Drop any variants that contain Ns in the ref or alt allele. (flag)
 
 #### --inputKeepSamples samp1,samp2,...:
 
@@ -126,6 +126,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > Define the column in the chromDecoder text file that contains the chrom names that are to be used in the new output VCF. (Int)
 
+#### --universalTagPrefix VAK\_:
+
+> Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
+
 ### Annotation:
 #### --addLocalGcInfo tagPrefix,windowsize1|ws2|...,numDigits:
 
@@ -133,7 +137,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 #### --snpSiftAnnotate ...:
 
-> Options for a SnpSift annotate run. Provide all the options for the standard run.  Do not include the annotate command itself or the input VCF. This will call the internal SnpSift annotate commands, not merely run an external instance of SnpSift.  (repeatable String)
+> Options for a SnpSift annotate run. Provide all the options for the standard run.  Do not include the annotate command itself or the input VCF. This will call the internal SnpSift annotate methods, not merely run an external instance of SnpSift.  (repeatable String)
 
 #### --snpSiftDbnsfp ...:
 
@@ -153,7 +157,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 #### --thirdAlleleChar tag:
 
-> For multiallelic-split variants, this defines the character used for the 'other' allele. If this is used, the original version will be copied as a backup. (String)
+> Some users may not prefer the use of the star allele to indicate an other allele in multiallelic variants. If this tag is raised, then the star allele will be removed from multiallelics. In addition, in the GT field all other-allele For multiallelic-split variants, this defines the character used for the 'other' allele. If this is used, the original version will be copied as a backup. (String)
 
 #### --addVariantIdx tag:
 
@@ -162,6 +166,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --tagVariantsExpression newTagID|desc|variantExpression:
 
 > If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable String)
+
+#### --duplicatesTag duplicateTagPrefix:
+
+> If this parameter is set, duplicates will be detected and two new tags will be added: duplicateTagPrefix\_CT and duplicateTagPrefix\_IDX. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0. All nonduplicates will be marked with CT=1 and IDX=0. (String)
 
 #### --tagVariantsGtCountExpression newTagID|desc|genotypeExpression[|type]:
 
@@ -174,6 +182,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --ctrlAlleFreqKeys ...:
 
 > A comma-delimited list of field IDs to use to calculate the maximum of several included allele frequency fields. Optionally, the list can be preceded by the output tag ID, followed by a colon. Can be specified more than once with different parameters and a different output tag ID. (repeatable String)
+
+#### --tallyFile file.txt:
+
+> Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
 
 ### Sample Stats:
 #### --noGroupStats:
@@ -247,6 +259,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --runEnsembleMerger:
 
 > If this parameter is raised, then the input VCF should instead be formatted as a comma delimited list of N VCF files. Each of the N files will be run through an initial subset of the final VCF walkers including any of the following that are indicated by the other options: addVariantIdx,nonVariantFilter,chromosome converter,inputTag filters,addVariantPosInfo,splitMultiAllelics,leftAlignAndTrim, and convertROtoAD The variant data output stream from these walkers will be merged and final GT, AD, and GQ fields will be added if the requisite information is available. Final genotypes will be assigned by plurality rule if any genotype has a simple plurality of all nonmissing caller calls, and if no genotype has a plurality then the genotype will be chosen from the highest priority caller, chosen in the order they are named in the  (flag)
+
+#### --ensembleGenotypeDecision priority:
+
+> The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority\_priorityOnTies. Default is simple priority. (String)
 
 #### --singleCallerVcfNames :
 
@@ -500,6 +516,10 @@ expression returns FALSE\.
 #### INFO\.subsetOfFileList:t:f
 
 > PASS iff INFO field t is a comma delimited list and is a subset of the list contained in file f
+
+#### INFO\.tagsDiff:t1:t2
+
+> PASS iff the INFO\-field t1 and t2 are different, including when one is missing and the other is not\.
 
 #### INFO\.tagsMismatch:t1:t2
 
