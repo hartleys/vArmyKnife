@@ -383,7 +383,7 @@ object VcfAnnotateTX {
                                          arg = List("--leftAlignAndTrim"),
                                          argDesc =  "Left align and trim the primary input VCF using a modified "+
                                                     "and ported version of the GATK v3.8-2 LeftAlignAndTrim walker."
-                                        ).meta(true,"Preprocessing")  :: 
+                                        ).meta(false,"Preprocessing")  :: 
                                        
                     new BinaryOptionArgument[Int]( name = "leftAlignAndTrimWindow",
                                          arg = List("--leftAlignAndTrimWindow"), // name of value\
@@ -5854,15 +5854,23 @@ object VcfAnnotateTX {
 
       groupFile match {
         case Some(gf) => {
-          val r = getLinesSmartUnzip(gf).drop(1);
+          val r = getLinesSmartUnzip(gf).buffered //.drop(1);
+          val columnTitles = r.head.split("\t").tail
           r.foreach(line => {
             val cells = line.split("\t");
             if(cells.length < 2) error("ERROR: group file must have at least 2 columns. sample.ID and group.ID!");
-            
-            cells.tail.foreach{ c => {
-              groupToSampleMap(c) = groupToSampleMap(c) + cells(0);
-              sampleToGroupMap(cells(0)) = sampleToGroupMap(cells(0)) + c;
-              groupSet = groupSet + c;
+            val sampid = cells.head
+            cells.tail.zip(columnTitles).foreach{ case (c,tt) => {
+              if(c != "" && c != "."){
+                val ggg = if(c == "1" || c == "0"){
+                  tt + c
+                } else {
+                  c
+                }
+                groupToSampleMap(ggg) = groupToSampleMap(ggg) + sampid;
+                sampleToGroupMap(sampid) = sampleToGroupMap(sampid) + ggg;
+                groupSet = groupSet + ggg;
+              }
             }}
           })
         }
