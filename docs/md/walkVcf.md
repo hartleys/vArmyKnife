@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.53 (Updated Thu Nov  8 13:58:02 EST 2018)
+> Version 2.2.87 (Updated Mon Jan 28 16:51:20 EST 2019)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -42,7 +42,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 #### --numLinesRead N:
 
-> If this parameter is set, then the utility will stop after reading in N variant lines. (Int)
+> If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes. (Int)
+
+#### --testRun:
+
+> Only read the first 1000 lines. Equivalent to --numLinesRead 1000. Intended for testing purposes. (flag)
 
 ### Universal Parameters:
 #### --genomeFA genome.fa.gz:
@@ -81,6 +85,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --splitOutputByBed intervalBedFile.bed:
 
 > If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)
+
+#### --leftAlignAndTrim:
+
+> Left align and trim the primary input VCF using a modified and ported version of the GATK v3.8-2 LeftAlignAndTrim walker. (flag)
 
 #### --leftAlignAndTrimWindow N:
 
@@ -146,6 +154,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --addBedTags TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...:
 
 > List of tags and bed files that define said tags. For each tag, the variant will have a tag value of 1 iff the variant appears on the bed file region, and 0 otherwise. This should be a comma-delimited list consisting of one or more colon-delimited lists. Each element in the comma delimited list must have 4 colon-delimited sub-elements: the tag title (ie, the tag that will be added to the VCF file, the buffer distance, the tag description (for the VCF header), and the bedfile path. Bed files may be gzipped or zipped. (repeatable CommaDelimitedListOfStrings)
+
+#### --addContextBases windowSize[:tagInfix]:
+
+> Adds fields containing the sequence flanking the variant with the assigned windowsize. (repeatable String)
+
+#### --homopolymerRunStats tagID|bedfile.bed|hrunThreshold:
+
+> Adds a new tag that indicates when a variant adds to or deletes from a homopolymer run. Requires a homopolymer run bed file. (String)
 
 #### --addVariantPosInfo tagPrefix:
 
@@ -229,6 +245,31 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line. (String)
 
+### SnpEff Annotation Processing:
+#### --annTag ANN:
+
+> SnpEff ANN tag for info extract (String)
+
+#### --snpEffTagPrefix ANNEX\_:
+
+> Prefix for SnpEff extracted info tags (String)
+
+#### --snpEffBiotypeKeepList ANN:
+
+> todo desc (CommaDelimitedListOfStrings)
+
+#### --snpEffEffectKeepList ANN:
+
+> todo desc (CommaDelimitedListOfStrings)
+
+#### --snpEffKeepIdx 0,1,2,...:
+
+> todo desc (CommaDelimitedListOfStrings)
+
+#### --snpEffGeneListTagInfix myGeneListAbbrev:
+
+> A short abbreviation for your selected snpeff gene list, for use in the INFO tag IDs. (String)
+
 ### Filtering, Genotype-Level:
 #### --genoFilter :
 
@@ -285,6 +326,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > If this flag is included, then ALL sample-level columns will be stripped from the output VCF. This greatly reduces the file size, and can be useful for making portable variant set VCFs. (flag)
 
+#### --addDummyGenotypeColumn:
+
+> If this flag is included, then the genotype data will be stripped and replaced with a dummy column with 1 sample and 1 het genotype on every line. (flag)
+
 #### --outputKeepInfoTags tag1,tag2,...:
 
 > List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)
@@ -311,6 +356,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 > If this option is set, the output will be split up into parts by chromosome. NOTE: The outfile parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (flag)
 
 ### OTHER OPTIONS:
+#### --snpEffWarningDropList ANN:
+
+> todo desc (CommaDelimitedListOfStrings)
+
 #### --verbose:
 
 > Flag to indicate that debugging information and extra progress information should be sent to stderr. (flag)

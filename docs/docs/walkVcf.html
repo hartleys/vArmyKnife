@@ -30,7 +30,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 2.2.53 (Updated Thu Nov  8 13:58:02 EST 2018)</p>
+  <p>Version 2.2.87 (Updated Mon Jan 28 16:51:20 EST 2019)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -83,7 +83,13 @@ java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.v
 <h4>--numLinesRead N:</h4>
 
 <blockquote>
-  <p>If this parameter is set, then the utility will stop after reading in N variant lines. (Int)</p>
+  <p>If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes. (Int)</p>
+</blockquote>
+
+<h4>--testRun:</h4>
+
+<blockquote>
+  <p>Only read the first 1000 lines. Equivalent to --numLinesRead 1000. Intended for testing purposes. (flag)</p>
 </blockquote>
 
 <h3>Universal Parameters:</h3>
@@ -142,6 +148,12 @@ java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.v
 
 <blockquote>
   <p>If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)</p>
+</blockquote>
+
+<h4>--leftAlignAndTrim:</h4>
+
+<blockquote>
+  <p>Left align and trim the primary input VCF using a modified and ported version of the GATK v3.8-2 LeftAlignAndTrim walker. (flag)</p>
 </blockquote>
 
 <h4>--leftAlignAndTrimWindow N:</h4>
@@ -240,6 +252,18 @@ java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.v
 
 <blockquote>
   <p>List of tags and bed files that define said tags. For each tag, the variant will have a tag value of 1 iff the variant appears on the bed file region, and 0 otherwise. This should be a comma-delimited list consisting of one or more colon-delimited lists. Each element in the comma delimited list must have 4 colon-delimited sub-elements: the tag title (ie, the tag that will be added to the VCF file, the buffer distance, the tag description (for the VCF header), and the bedfile path. Bed files may be gzipped or zipped. (repeatable CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--addContextBases windowSize[:tagInfix]:</h4>
+
+<blockquote>
+  <p>Adds fields containing the sequence flanking the variant with the assigned windowsize. (repeatable String)</p>
+</blockquote>
+
+<h4>--homopolymerRunStats tagID|bedfile.bed|hrunThreshold:</h4>
+
+<blockquote>
+  <p>Adds a new tag that indicates when a variant adds to or deletes from a homopolymer run. Requires a homopolymer run bed file. (String)</p>
 </blockquote>
 
 <h4>--addVariantPosInfo tagPrefix:</h4>
@@ -366,6 +390,44 @@ java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.v
   <p>File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line. (String)</p>
 </blockquote>
 
+<h3>SnpEff Annotation Processing:</h3>
+
+<h4>--annTag ANN:</h4>
+
+<blockquote>
+  <p>SnpEff ANN tag for info extract (String)</p>
+</blockquote>
+
+<h4>--snpEffTagPrefix ANNEX_:</h4>
+
+<blockquote>
+  <p>Prefix for SnpEff extracted info tags (String)</p>
+</blockquote>
+
+<h4>--snpEffBiotypeKeepList ANN:</h4>
+
+<blockquote>
+  <p>todo desc (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--snpEffEffectKeepList ANN:</h4>
+
+<blockquote>
+  <p>todo desc (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--snpEffKeepIdx 0,1,2,...:</h4>
+
+<blockquote>
+  <p>todo desc (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--snpEffGeneListTagInfix myGeneListAbbrev:</h4>
+
+<blockquote>
+  <p>A short abbreviation for your selected snpeff gene list, for use in the INFO tag IDs. (String)</p>
+</blockquote>
+
 <h3>Filtering, Genotype-Level:</h3>
 
 <h4>--genoFilter :</h4>
@@ -452,6 +514,12 @@ java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.v
   <p>If this flag is included, then ALL sample-level columns will be stripped from the output VCF. This greatly reduces the file size, and can be useful for making portable variant set VCFs. (flag)</p>
 </blockquote>
 
+<h4>--addDummyGenotypeColumn:</h4>
+
+<blockquote>
+  <p>If this flag is included, then the genotype data will be stripped and replaced with a dummy column with 1 sample and 1 het genotype on every line. (flag)</p>
+</blockquote>
+
 <h4>--outputKeepInfoTags tag1,tag2,...:</h4>
 
 <blockquote>
@@ -491,6 +559,12 @@ java -jar vArmyKnife.jar [java options] walkVcf [options] variants.vcf outfile.v
 </blockquote>
 
 <h3>OTHER OPTIONS:</h3>
+
+<h4>--snpEffWarningDropList ANN:</h4>
+
+<blockquote>
+  <p>todo desc (CommaDelimitedListOfStrings)</p>
+</blockquote>
 
 <h4>--verbose:</h4>
 

@@ -266,6 +266,21 @@ object VcfAnnotateTX {
                                                     "Bed files may be gzipped or zipped."
                                         ).meta(false,"Annotation") ::
                                         
+                    new BinaryMonoToListArgument[String](
+                                         name = "addContextBases", 
+                                         arg = List("--addContextBases"), 
+                                         valueName = "windowSize[:tagInfix]",  
+                                         argDesc =  "Adds fields containing the sequence flanking the variant with the assigned windowsize."
+                                        ).meta(false,"Annotation") ::
+                                        
+                    new BinaryOptionArgument[String](
+                                         name = "homopolymerRunStats", 
+                                         arg = List("--homopolymerRunStats"), 
+                                         valueName = "tagID|bedfile.bed|hrunThreshold",  
+                                         argDesc =  "Adds a new tag that indicates when a variant adds to or deletes from a homopolymer run. Requires a homopolymer run bed file."
+                                        ).meta(false,"Annotation") ::
+                                        
+                                        //homopolymerRunStats
                                         
                     new BinaryOptionArgument[String](
                                          name = "txInfoFile", 
@@ -1246,7 +1261,10 @@ object VcfAnnotateTX {
                 ensembleGenotypeDecision = parser.get[String]("ensembleGenotypeDecision"),
                 addDummyGenotypeColumn = parser.get[Boolean]("addDummyGenotypeColumn"),
                 snpEffVarExtract = parser.get[List[String]]("snpEffVarExtract"),
-                snpEffGeneListTagInfix = parser.get[String]("snpEffGeneListTagInfix")
+                snpEffGeneListTagInfix = parser.get[String]("snpEffGeneListTagInfix"),
+                
+                homopolymerRunStats = parser.get[Option[String]]("homopolymerRunStats"),
+                addContextBases = parser.get[List[String]]("addContextBases")
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
                 //dropVariantsWithNs, tallyFile   
              )
@@ -1430,8 +1448,10 @@ object VcfAnnotateTX {
                 addDummyGenotypeColumn : Boolean = false,
                 
                 snpEffVarExtract : List[String] = List[String](),
-                snpEffGeneListTagInfix : String = "onList"
+                snpEffGeneListTagInfix : String = "onList",
                 
+                homopolymerRunStats : Option[String] = None,
+                addContextBases : List[String] = List()
                 ){
 
     
@@ -1872,6 +1892,25 @@ object VcfAnnotateTX {
               }
               case None => Seq[SVcfWalker]();
             }
+        ) ++ (
+            homopolymerRunStats.map{ hrs => {
+              val bt = hrs.split(":",-1)
+              if(bt.length == 0 || bt.length > 2) error("homopolymerRunStats must have 1-2 colon-delimited parts: threshold and tagIDinfix.");
+              if(genomeFA.isEmpty) error("homopolymerRunStats requires genomeFA!")
+              val tagPrefix = bt.lift(1).getOrElse("")
+              val lenThreshold = string2int(bt(0));
+              HomopolymerRunStats(tagPrefix=tagPrefix,genomeFa=genomeFA.get, lenThreshold = lenThreshold);
+
+            }}
+        ) ++ (
+            addContextBases.map{ hrs => {
+              val bt = hrs.split(":",-1)
+              if(bt.length == 0 || bt.length > 2) error("AddContextBases must have 1 or 2 colon-delimited parts: threshold and tagid.");
+              if(genomeFA.isEmpty) error("AddContextBases requires genomeFA!")
+              val tagPrefix = bt.lift(1).getOrElse("")
+              val lenThreshold = string2int(bt(0));
+              AddContextBases(tagPrefix=tagPrefix,genomeFa=genomeFA.get, len = lenThreshold);
+            }}
             
         ) ++ (
             if(inputSavedTxFile.isDefined | gtffile.isDefined){

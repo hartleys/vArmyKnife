@@ -19,8 +19,18 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null && pwd )"
 #  (>&2 echo "error: VARMYKNIFE_JAR environment variable not found")
 #  exit 1
 #fi
+#(>&2 echo "DIR=${DIR}")
+VARMYKNIFE_JAR=${DIR}/vArmyKnife.jar
+#(>&2 echo "VARMYKNIFE_JAR=${VARMYKNIFE_JAR}")
 
-VARMYKNIFE_JAR=${DIR}/../vArmyKnife.jar
+if [ ! -e "${VARMYKNIFE_JAR}" ]; then
+  #(>&2 echo "NOTE: vArmyKnife.jar file not found in dir, checking parent...")
+  VARMYKNIFE_JAR=${DIR}/../vArmyKnife.jar
+fi
+
+if [ ! -e "${VARMYKNIFE_JAR}" ]; then
+  (>&2 echo "ERRORWARNING: vArmyKnife.jar file not found!")
+fi
 
 (>&2 echo "JAVA=${WHICH_JAVA}")
 (>&2 echo "JAR=${VARMYKNIFE_JAR}")

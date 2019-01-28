@@ -1551,7 +1551,7 @@ object SVcfWalkerUtils {
   
 
   case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String]) extends SVcfWalker {
-    def walkerName : String = "localGcInfoWalker"
+    def walkerName : String = "CopyFieldsToInfo"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("qualTag",   qualTag.getOrElse("None")),
         ("filterTag", filterTag.getOrElse("None")),
@@ -1643,7 +1643,192 @@ object SVcfWalkerUtils {
       
     }
   }
-   
+  
+  
+  
+  
+  
+  case class HomopolymerRunStats(tagPrefix : String, genomeFa : String, lenThreshold : Int) extends SVcfWalker {
+    
+    def walkerName : String = "HomopolymerRunStats"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagPrefix", tagPrefix)
+    );
+    
+    val refFastaTool = internalUtils.GatkPublicCopy.refFastaTool(genomeFa = genomeFa);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val tagid = Map[String,String](    ("ADD",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"HRUN_ADD"),
+                                         ("DEL",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"HRUN_DEL"),
+                                         ("STAT",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"HRUN_STATUS") );
+      val len = 2 * lenThreshold
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("ADD"),Number="1",Type="Integer",desc="Equal to 1 iff the variant adds to an existing homopolymer run of length "+lenThreshold));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("DEL"),Number="1",Type="Integer",desc="Equal to 1 iff the variant deletes part of an existing homopolymer run of length "+lenThreshold));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("STAT"),Number="1",Type="String",desc="Homopolymer run warning status (homopolymer runs defined as length >="+lenThreshold+")"));
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        //val vc = v.getOutputLine()
+        
+        val vc = v.getOutputLine();
+        //vc.addInfo(tagPrefix,v.chrom+":"+v.pos+","+v.ref+","+v.alt.mkString(","))
+        //val ctrPos = v.pos + (v.ref.length / 2)
+        
+        val after = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length, end = v.pos + v.ref.length + len-1);
+        val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len + 1, end = v.pos-1);
+        val maxseq = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length, end = v.pos + v.ref.length + 10);
+        
+        //for testing, remove later:
+        //if(v.ref.last != refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length-1, end = v.pos + v.ref.length + 10).head){
+        //  warning("    v.pos="+v.pos+", v.ref="+v.ref+", maxseq="+refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length-1, end = v.pos + v.ref.length + 10),"TEST10001",1000)
+        //}
+        val refrunFwd = v.ref.zipWithIndex.find{ case (c,i) => { c != v.ref.head }}.map{_._2}.getOrElse(v.ref.length);
+        val refrunRev = v.ref.reverse.zipWithIndex.find{ case (c,i) => {c != v.ref.last}}.map{_._2}.getOrElse(v.ref.length);
+        val aftRun = after.zipWithIndex.find{         case (c,i) => { c != v.ref.last }}.map{_._2}.getOrElse(after.length)
+        val befRun = before.reverse.zipWithIndex.find{case (c,i) => { c != v.ref.head }}.map{_._2}.getOrElse(after.length)
+        var midRun = if(refrunFwd == v.ref.length+1){
+          v.ref.length + aftRun + befRun;
+        } else {
+          0;
+        }
+          
+        if(v.ref.length <= v.alt.head.length){
+          if(after.slice(0,lenThreshold).forall(s => s == v.alt.head.last) ){
+             vc.addInfo(tagid("ADD"), "1");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), "ADD-RT-"+v.alt.head.last);
+          } else if(before.reverse.slice(0,lenThreshold).forall(s => s == v.alt.head.head) ) {
+             vc.addInfo(tagid("ADD"), "1");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), "ADD-LT-"+v.alt.head.last);
+          } else if(refrunRev + aftRun >= lenThreshold & v.alt.head.last == after.head ){
+             vc.addInfo(tagid("ADD"), "1");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), "ADD-RTv2-"+v.alt.head.last);
+          } else if(refrunFwd + befRun >= lenThreshold & v.alt.head.head == before.last ){
+             vc.addInfo(tagid("ADD"), "1");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), "ADD-LTv2-"+v.alt.head.last);
+          } else if(midRun >= lenThreshold && (v.ref.head == v.alt.head.head || v.ref.head == v.alt.head.last) ){
+             vc.addInfo(tagid("ADD"), "1");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), "ADD-MID-"+v.ref.head);
+          } else {
+             /*val nearbyHrun = maxseq.tail.scanLeft((maxseq.head,0)){case ((prev,ct),cc) => {
+                if(prev == cc){
+                  (prev,ct + 1)
+                } else {
+                  (cc,0)
+                }
+             }}.sortBy{case (p,cc) => cc}.last*/
+             vc.addInfo(tagid("ADD"), "0");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), ".");
+          }
+        } else {
+          //maxseq.slice(0,5).forall(s => s == v.alt.head.last)
+          if( refrunRev + aftRun >= lenThreshold){
+             val altrunRev = v.alt.head.reverse.zipWithIndex.find{ case (c,i) => {c != v.ref.last}}.map{_._2}.getOrElse(v.alt.head.length);
+             if(altrunRev < refrunRev){
+               vc.addInfo(tagid("ADD"), "0");
+               vc.addInfo(tagid("DEL"), "1");
+               vc.addInfo(tagid("STAT"), "DEL-"+v.ref.last);
+             } else {
+               vc.addInfo(tagid("ADD"), "0");
+               vc.addInfo(tagid("DEL"), "0");
+               vc.addInfo(tagid("STAT"), "(NEAR-RT)");
+             }
+          } else if(refrunFwd + befRun >= lenThreshold){
+             val altrunFwd = v.alt.head.zipWithIndex.find{ case (c,i) => { c != v.ref.head }}.map{_._2}.getOrElse(v.alt.head.length);
+             if(altrunFwd < refrunFwd){
+               vc.addInfo(tagid("ADD"), "0");
+               vc.addInfo(tagid("DEL"), "1");
+               vc.addInfo(tagid("STAT"), "PREDEL-"+v.ref.head);
+             } else {
+               vc.addInfo(tagid("ADD"), "0");
+               vc.addInfo(tagid("DEL"), "0");
+               vc.addInfo(tagid("STAT"), "(NEAR-LT)");
+             }
+          } else {
+             vc.addInfo(tagid("ADD"), "0");
+             vc.addInfo(tagid("DEL"), "0");
+             vc.addInfo(tagid("STAT"), ".");
+          }
+        }
+        
+        
+        /*
+        windows.foreach{ currWin => {
+          val winDiff = maxWin - currWin;
+          val currSeq = maxseq.slice(winDiff,maxseq.length - winDiff);
+          val nonMissCt = currSeq.count{_ != 'N'}.toDouble
+          val missPct = 1 - (nonMissCt / currSeq.length)
+          val gcCt = currSeq.count{xx => xx == 'G' || xx == 'C'}.toDouble
+          val gcPct = gcCt / nonMissCt;
+          
+          vc.addInfo(tagPrefix+"_gcPct_"+currWin, fmtString.format(gcPct));
+          vc.addInfo(tagPrefix+"_nPct_"+currWin, fmtString.format(missPct));
+        }}*/
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
+  
+
+  case class AddContextBases(tagPrefix : String, genomeFa : String, len : Int) extends SVcfWalker {
+    
+    def walkerName : String = "AddContextBases"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagPrefix", tagPrefix)
+    );
+    
+    val refFastaTool = internalUtils.GatkPublicCopy.refFastaTool(genomeFa = genomeFa);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",Number="1",Type="String",desc="The "+len+" ref bases before the variant"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",Number="1",Type="String",desc="The "+len+" ref bases after the variant"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len,Number="1",Type="String",desc="The context around the variant in a window of size "+len));
+
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        //val vc = v.getOutputLine()
+        
+        val vc = v.getOutputLine();
+        //vc.addInfo(tagPrefix,v.chrom+":"+v.pos+","+v.ref+","+v.alt.mkString(","))
+        //val ctrPos = v.pos + (v.ref.length / 2)
+        val after = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length, end = v.pos + v.ref.length + len-1);
+        val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len + 1, end = v.pos-1);
+        vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",before);
+        vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",after);
+        vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"",before+"["+v.ref+">"+v.alt.mkString("|")+"]"+after);
+        
+        /*
+        windows.foreach{ currWin => {
+          val winDiff = maxWin - currWin;
+          val currSeq = maxseq.slice(winDiff,maxseq.length - winDiff);
+          val nonMissCt = currSeq.count{_ != 'N'}.toDouble
+          val missPct = 1 - (nonMissCt / currSeq.length)
+          val gcCt = currSeq.count{xx => xx == 'G' || xx == 'C'}.toDouble
+          val gcPct = gcCt / nonMissCt;
+          
+          vc.addInfo(tagPrefix+"_gcPct_"+currWin, fmtString.format(gcPct));
+          vc.addInfo(tagPrefix+"_nPct_"+currWin, fmtString.format(missPct));
+        }}*/
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
   
   case class AddVariantPosInfoWalker(tagPrefix : String = "RAWVARIANT") extends SVcfWalker {
     def walkerName : String = "AddVariantPosWalker"
@@ -5983,6 +6168,111 @@ object SVcfWalkerUtils {
   }
   
 
+
+  case class HomopolymerAdjacency(bedFile : String, bedIdx : String, tag : String, desc : String) extends SVcfWalker {
+    def walkerName : String = "homopolymerAdjacency."+tag;
+    
+    def walkerParams : Seq[(String,String)]=  Seq[(String,String)](
+          ("bedFile","\""+bedFile+"\""),
+          ("tag",tag),
+          ("desc",desc)
+     )
+    var currChrom : String=  "???"
+    var arr : internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String] = internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String](false);
+    
+    val initReader = getLinesSmartUnzip(bedFile).buffered
+    skipWhile(initReader)(_.startsWith("#"));
+    
+    val isGtf = bedFile.toUpperCase().endsWith(".GTF") || bedFile.toUpperCase().endsWith(".GTF.GZ") || bedFile.toUpperCase().endsWith(".GTF.ZIP");
+    //WARNING: GTF maybe not implemented?
+    val lines : BufferedIterator[String] = initReader.buffered
+    val isComplexBed = (! isGtf) && (lines.head.split("\t").length >= 12);
+    
+    val tabixReader = new htsjdk.tribble.readers.TabixReader(bedFile,bedIdx)
+    
+    def getCellIterator( itr : htsjdk.tribble.readers.TabixReader.Iterator ) : Iterator[Array[String]] = {
+      (new Iterator[String] {
+        var buf : Option[String] = Option(itr.next())
+        def hasNext : Boolean = buf.isDefined;
+        def next : String = {
+          val out = buf
+          buf = Option(itr.next());
+          out.get
+        }
+      }).map{ _.split("\t") }.buffered
+    }
+    def getIvIterator( cellIterator : Iterator[Array[String]] ) : Iterator[(internalUtils.commonSeqUtils.GenomicInterval,String)] = {
+          cellIterator.map(cells => {
+            val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
+            (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start,0),end),cells(3))
+          })
+    }
+    
+    def loadChrom(chrom : String){
+      if(chrom != currChrom){
+        //notice("Loading chromosome "+chrom+" in bed file " +
+        reportln("Loading chromosome "+chrom+" from bed file "+bedFile+" ["+internalUtils.stdUtils.getDateAndTimeString+"]","debug");
+        arr = internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String](false);
+        getIvIterator(getCellIterator( tabixReader.query(chrom) )).foreach{ case (iv,n) => {
+          arr.addSpan(iv, n);
+        }}
+        arr.finalizeStepVectors;
+        reportln("Finished loading chromosome "+chrom+" from bed file "+bedFile+" ["+internalUtils.stdUtils.getDateAndTimeString+"]","deepDebug");
+      }
+    }
+
+    /*def bedFunc(iv : internalUtils.commonSeqUtils.GenomicInterval) : String = {
+        if(style == "+"){
+                    if(arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }) "1" else "0"
+        } else if(style == "-"){
+                    if(arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }) "0" else "1"
+        } else {
+                    arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+        }
+        
+    }*/
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val newHeader = vcfHeader.copyHeader
+      /*if(style != "+" && style != "-"){
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = ".", Type = "String", desc = desc));
+      } else {
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = "1", Type = "Integer", desc = desc));
+      }*/
+      newHeader.addWalk(this);
+      newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = ".", Type = "String", desc = "Indicates whether variant is an extension or deletion of a homopolymer run. "+ desc));
+      
+      (vcMap(vcIter){v => {
+        var vb = v.getLazyOutputLine()
+        loadChrom(v.chrom);
+        //val out = bedFunc(vb.variantIV);
+        if(v.ref.length < v.alt.head.length){
+          val newBase = v.ref.last;
+          val endIV = internalUtils.commonSeqUtils.GenomicInterval(v.chrom,'.', start = v.pos-1, end = v.pos + math.max(1,v.ref.length)+1); 
+          val ixSteps = arr.findIntersectingSteps(endIV).filter{ case (iv,currSet) => ! currSet.isEmpty }.toVector
+          if(ixSteps.nonEmpty && ixSteps.head._2.head.head == newBase){
+            vb.addInfo(tag,"DEL-"+newBase);
+          } else if(ixSteps.nonEmpty){
+            vb.addInfo(tag,"NEAR-"+newBase);
+          }
+        } else {
+          val newBase = v.alt.head.last;
+          val endIV = internalUtils.commonSeqUtils.GenomicInterval(v.chrom,'.', start = v.pos + math.max(1,v.ref.length), end = v.pos + math.max(1,v.ref.length)+1); 
+          val ixSteps = arr.findIntersectingSteps(endIV).filter{ case (iv,currSet) => ! currSet.isEmpty }.toVector
+          if(ixSteps.nonEmpty && ixSteps.head._2.head.head == newBase){
+            vb.addInfo(tag,"ADD-"+newBase);
+          } else if(ixSteps.nonEmpty){
+            vb.addInfo(tag,"NEAR-"+newBase);
+          }
+        }
+        
+        //vb.addInfo(tag,bedFunc(vb.variantIV));
+        vb
+      }},newHeader)
+   }
+    
+  }
+  
   case class AddIdxBedFile(bedFile : String, bedIdx : String, tag : String, bufferDist : Int, desc : String, chromList : Option[List[String]], style : String = "+") extends SVcfWalker {
     def walkerName : String = "AddBedAnno."+tag;
     
