@@ -6333,13 +6333,13 @@ object VcfAnnotateTX {
       //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
       val samps = outHeader.getSampleList
       
-      def makeRegexFunc(h : Option[List[String]], d: Boolean) : (String => Boolean) ={
+      def makeRegexFunc(h : Option[List[String]], d: Boolean) : Option[(String => Boolean)] ={
         h.map{k => {
           val rx = k.map{ kk => java.util.regex.Pattern.compile(kk) }
           ((s : String) => {
             rx.exists( rr => rr.matcher(s).matches() )
           })
-        }}.getOrElse( (s : String) => d )
+        }}
       }
       
       val kirFunc = makeRegexFunc(keepInfoRegex,true)
@@ -6348,15 +6348,35 @@ object VcfAnnotateTX {
       val dgrFunc = makeRegexFunc(dropGenoRegex,false)
       
       val infoTags = vcfHeader.infoLines.map{infoline => infoline.ID}.toSet;
+      val genoTags = vcfHeader.formatLines.map{infoline => infoline.ID}.toSet;
+
+      val keepInfoSet = infoTags.filter{ i => keepInfoTags.map{ kit => kit.contains(i) }.getOrElse(true) && (! (dropInfoTags.contains(i))) }
+      val keepGenoSet = genoTags.filter{ i => keepGenotypeTags.map{ kit => kit.contains(i)}.getOrElse(true) && (! dropGenotypeTags.contains(i))}
+      /*
       val keepInfoSet = keepInfoTags match {
         case Some(kit) => {
-          infoTags.filter{ i => (kit.contains(i) || (kirFunc(i) && (! dirFunc(i))) ) && (! (dropInfoTags.contains(i)))}.toSet
+          infoTags.filter{ i => kit.contains(i) && (! (dropInfoTags.contains(i))) }
+        }
+        case None => {
+          infoTags.filter{ i => kit.contains(i) && (! (dropInfoTags.contains(i))) }
+        }
+      }*/
+      
+      /*
+      val keepInfoSet = keepInfoTags match {
+        case Some(kit) => {
+            infoTags.filter{ i => (kit.contains(i) || 
+                                       (
+                                           kirFunc.map{ kk => { kk(i) } }.getOrElse(false) || 
+                                           dirFunc.map{ kk => ! kk(i)}.getOrElse(false)
+                                       )
+                                  ) && (! (dropInfoTags.contains(i)))}.toSet
+          }
         }
         case None => {
           infoTags.filter{ i => ((kirFunc(i) && (! dirFunc(i))) ) && (! (dropInfoTags.contains(i)))}.toSet
         }
       }
-      val genoTags = vcfHeader.formatLines.map{infoline => infoline.ID}.toSet;
       val keepGenoSet = keepGenotypeTags match {
         case Some(kit) => {
           genoTags.filter{ i => (kit.contains(i) || (kgrFunc(i) && (! dgrFunc(i))) ) && (! dropGenotypeTags.contains(i))}.toSet
@@ -6364,7 +6384,7 @@ object VcfAnnotateTX {
         case None => {
           genoTags.filter{ i => (                   (kgrFunc(i) && (! dgrFunc(i))) ) && (! dropGenotypeTags.contains(i))}.toSet
         }
-      }
+      }*/
       val keepSampIndices = keepSamples match {
         case Some(x) => {
           Some(samps.zipWithIndex.filter{case (s,idx) => ( x.contains(s) ) && (! dropSamples.contains(s))}.map{_._2}.toArray)
@@ -12310,7 +12330,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         }
       }}
       val adFmtTags : Seq[(String,Seq[(String,String)])] = adStyleFmtTags.map{ tagString => { tagString.split("\\|") }}.map{ tagCells => (tagCells.head,tagCells.lift(1).getOrElse("No Desc")) }.flatMap{ case (t, desc) => {
-        val nl = new SVcfCompoundHeaderLine("FORMAT",t, "A","Integer", desc, subType = Some(VcfTool.subtype_AlleleCounts)).addWalker(this);
+        val nl = new SVcfCompoundHeaderLine("FORMAT",t, "R","Integer", desc, subType = Some(VcfTool.subtype_AlleleCounts)).addWalker(this);
         //reportln("Adding GtStyleUnsplit subtype to tag: "+nl.ID,"note");
         //reportln("    nl:"+nl.getVcfString,"note");
         val foundTags = inputVcfTypes.map{vt => (vt,vt+"_"+t)}.filter{ case (vt,vtag) => vcfHeader.formatLines.exists{ hl => hl.ID == vtag } };
