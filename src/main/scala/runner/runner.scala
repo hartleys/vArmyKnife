@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "2.2.66"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Fri Jan 18 11:52:58 EST 2019"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1547830378; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "2.2.69"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Thu Jan 24 16:15:02 EST 2019"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1548364502; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -40,38 +40,38 @@ object runner {
   //Command name -> (execution call, summary, syntax)
   val utilList : Seq[CommandLineRunUtil] = Seq(
     new internalTests.VcfAnnotateTX.CmdMultiStepPipeline,
-    new internalTests.VcfAnnotateTX.GenerateTxAnnotation,
-    new internalTests.VcfAnnotateTX.CommandVcfToMatrix
+    new internalTests.SVcfWalkerUtils.GenerateTxAnnotation,
+    new internalTests.SVcfWalkerUtils.CommandVcfToMatrix
   );
   
   val depreciatedUtilList : Seq[CommandLineRunUtil] = Seq(
-    (new internalTests.VcfAnnotateTX.AddGroupSummaries),
-    (new internalTests.VcfAnnotateTX.ConvertAminoRangeToGenoRange),
+    (new internalTests.SVcfWalkerUtils.AddGroupSummaries),
+    (new internalTests.SVcfWalkerUtils.ConvertAminoRangeToGenoRange),
     (new internalUtils.CalcACMGVar.CmdAssessACMG),
-    (new internalTests.VcfAnnotateTX.CmdRecodeClinVarCLN),
+    (new internalTests.SVcfWalkerUtils.CmdRecodeClinVarCLN),
     (new internalTests.trackToSpan.trackToSpan),
     (new internalTests.SimSeqError.GenerateSimulatedError),
     new internalTests.SimSeqError.GenerateSimulatedError,
     //new internalTests.VcfAnnotateTX.RedoEnsemblMerge,
     new internalTests.ibdSimulator.ibdSimulator,
-    new internalTests.VcfAnnotateTX.CommandFilterVCF,
-    new internalTests.VcfAnnotateTX.CmdFilterGenotypesByStat,
-    new internalTests.VcfAnnotateTX.RunCalcVariantCountSummary,
-    new internalTests.VcfAnnotateTX.compareVcfs,
-    new internalTests.VcfAnnotateTX.CmdAddTxBed,
-    new internalTests.VcfAnnotateTX.CmdCalcGenotypeStatTable,
-    new internalTests.VcfAnnotateTX.CmdFixVcfInfoWhitespace,
+    new internalTests.SVcfWalkerUtils.CommandFilterVCF,
+    new internalTests.SVcfWalkerUtils.CmdFilterGenotypesByStat,
+    new internalTests.SVcfWalkerUtils.RunCalcVariantCountSummary,
+    new internalTests.SVcfWalkerUtils.compareVcfs,
+    new internalTests.SVcfWalkerUtils.CmdAddTxBed,
+    new internalTests.SVcfWalkerUtils.CmdCalcGenotypeStatTable,
+    new internalTests.SVcfWalkerUtils.CmdFixVcfInfoWhitespace,
     new internalTests.makeBedWiggle.CmdCodingCoverageStats,
-    new internalTests.VcfAnnotateTX.CmdExtractSingletons,
+    new internalTests.SVcfWalkerUtils.CmdExtractSingletons,
     new internalTests.makeBedWiggle.CmdBuildSummaryTracks,
     new internalTests.makeBedWiggle.CmdGenHomopolymerBed,
-    new internalTests.VcfAnnotateTX.CmdConvertChromNames,
-    new internalTests.VcfAnnotateTX.CmdFilterTags,
-    new internalTests.VcfAnnotateTX.CmdConvertToStandardVcf,
+    new internalTests.SVcfWalkerUtils.CmdConvertChromNames,
+    new internalTests.SVcfWalkerUtils.CmdFilterTags,
+    new internalTests.SVcfWalkerUtils.CmdConvertToStandardVcf,
     new internalUtils.fileUtils.CmdZip,
-    new internalTests.VcfAnnotateTX.VcfParserTest,
-    new internalTests.VcfAnnotateTX.CmdCreateVariantSampleTableV2,
-    new internalTests.VcfAnnotateTX.CmdCreateVariantSampleTable
+    new internalTests.SVcfWalkerUtils.VcfParserTest,
+    new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTableV2,
+    new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTable
   )
   
   val utilCommandList : Map[String, () => CommandLineRunUtil] = utilList.map((util) => {
@@ -119,7 +119,7 @@ object runner {
      Map(
          ("runVcfTest" -> (() => new internalTests.VcfUtilTests.runVcfUtilTests)),
          ("HelloWorld" -> (() => new HelloWorld.SayHelloWorld)),
-         ("testTXSeqUtil" -> (() => new internalTests.VcfAnnotateTX.testTXSeqUtil)),
+         ("testTXSeqUtil" -> (() => new internalTests.SVcfWalkerUtils.testTXSeqUtil)),
          ("legacyTxAnno" -> (() => (new internalTests.LegacyVcfWalkers.addTXAnno))),
          ("legacySplit" -> (() => (new internalTests.LegacyVcfWalkers.CmdSplitMultiAllelics))),
          ("legacyCanonInfo" -> (() => (new internalTests.LegacyVcfWalkers.CmdAddCanonicalInfo))),

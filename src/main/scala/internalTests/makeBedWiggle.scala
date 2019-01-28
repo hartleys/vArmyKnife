@@ -62,6 +62,14 @@ class CmdGenHomopolymerBed extends CommandLineRunUtil {
      def run(args : Array[String]) {
        val out = parser.parseArguments(args.toList.tail);
        if(out){
+         if(parser.get[Int]("bufferDist") == 0){
+         genHomopolymerBedNoOverlap(
+             infile = parser.get[String]("infile"),
+             outfile = parser.get[String]("outfile"),
+             chromListFile = parser.get[String]("chromListFile"),
+             homopolyLen = parser.get[Int]("homopolyLen")
+         ).run();
+         } else {
          genHomopolymerBed(
              infile = parser.get[String]("infile"),
              outfile = parser.get[String]("outfile"),
@@ -69,6 +77,7 @@ class CmdGenHomopolymerBed extends CommandLineRunUtil {
              homopolyLen = parser.get[Int]("homopolyLen"),
              bufferDist = parser.get[Int]("bufferDist")
          ).run();
+         }
        }
      }
   }
@@ -162,6 +171,80 @@ class CmdGenHomopolymerBed extends CommandLineRunUtil {
     
     
   }
+
+  case class genHomopolymerBedNoOverlap(infile : String, outfile : String, chromListFile : String, 
+                               homopolyLen : Int = 4, 
+                               blockSize : Int = 1000){
+    def run(){
+      
+      val chromLens : Vector[(String,Int)] = getLinesSmartUnzip(chromListFile).map{line => {
+        val cells = line.split("\t");
+        (cells(0), cells(1).toInt);
+      }}.toVector
+      
+      reportln("Generating EGC... ["+getDateAndTimeString+"]" ,"note");
+      val egc = new internalUtils.genomicAnnoUtils.EfficientGenomeSeqContainer_MFA(infile);
+      reportln("EGC created... ["+getDateAndTimeString+"]" ,"note");
+
+      val writer = openWriterSmart(outfile);
+      val prog = internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[String](
+                                elementTitle = "fasta lines", lineSec = 60,
+                                reportFunction  = ((s : String, i : Int) => " " + s +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                           )
+      var lnct = 0;
+      reportln("Starting iteration... ["+getDateAndTimeString+"]" ,"note");
+      
+      var totalRunCt = 0;
+      var totalSpanCt = 0;
+      var totalSpanBp : Long = 0;
+      var totalGenomeBp : Long = 0;
+      
+      for((chrom,chromLen) <- chromLens){
+        reportln("Switching to chrom "+chrom+" ["+getDateAndTimeString+"]" ,"debug");
+        
+        egc.switchToChrom(chrom);
+        reportln("Chrom switch complete ["+getDateAndTimeString+"]" ,"debug");
+
+        val bpIter =  Range(0,chromLen / blockSize + 1).iterator.map{ i => {
+          val s = egc.getSeqForInterval(chrom,i * blockSize,(i+1) * blockSize,false)
+          egc.shiftBufferTo(chrom, i * blockSize)
+          lnct = lnct + 1;
+          prog.reportProgress(lnct,"");
+          s;
+        }}.flatMap(l => l.toUpperCase().toSeq).zipWithIndex.buffered
+        
+        reportln("Generated bpIter ["+getDateAndTimeString+"]" ,"debug");
+        
+        var runCt = 0;
+        var spanBp = 0;
+        //var (ivStart,ivEnd) = (0,0);
+        var ivChars = Set[Char]();
+        var currRunChar = '-';
+        var runStartPos = 0;
+        bpIter.foreach{ case (c,pos) => {
+          if(currRunChar == '-'){
+            runStartPos = pos;
+          } else if(c != currRunChar || c == 'N'){
+            if(pos - runStartPos >= homopolyLen){
+               spanBp = spanBp + (pos - runStartPos);
+               writer.write(chrom+"\t"+runStartPos+"\t"+pos+"\t"+currRunChar+"\n");
+            }
+            runStartPos = pos;
+          }
+          currRunChar = c;
+        }}
+        
+        reportln("For chrom: "+chrom+", found "+runCt+" homopolymer runs, covering "+spanBp+"/"+chromLen+"bp ("+(new java.math.BigDecimal(100.toDouble * spanBp.toDouble/chromLen.toDouble)).setScale(2,java.math.BigDecimal.ROUND_HALF_UP)+"%)","note");
+        totalRunCt +=  runCt;
+        totalSpanBp += spanBp;
+        totalGenomeBp += chromLen;
+      }
+      reportln("Total: "+totalRunCt+" and "+(totalSpanCt)+" masked spans, covering "+totalSpanBp+"/"+totalGenomeBp+"bp ("+(new java.math.BigDecimal(100.toDouble * totalSpanBp.toDouble/totalGenomeBp.toDouble)).setScale(2,java.math.BigDecimal.ROUND_HALF_UP)+"%)","note");
+      writer.close();
+    }
+  }
+  
+  
   class CmdBuildSummaryTracks extends CommandLineRunUtil {
      override def priority = 20;
      val parser : CommandLineArgParser = 
