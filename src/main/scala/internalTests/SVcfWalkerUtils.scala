@@ -1778,7 +1778,7 @@ object SVcfWalkerUtils {
           }
           case None => {
             if(! (Set("STATICSET.INTERSECT").contains(func) && pidx > 0)){
-              warning("WARN: cannot find tag: "+param)
+              warning("WARN: cannot find tag: \""+param+"\"")
             }
             "?"
           }

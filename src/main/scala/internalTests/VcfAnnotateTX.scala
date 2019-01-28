@@ -536,8 +536,12 @@ object VcfAnnotateTX {
                                          name = "numLinesRead", 
                                          arg = List("--numLinesRead"), 
                                          valueName = "N",  
-                                         argDesc =  "If this parameter is set, then the utility will stop after reading in N variant lines."
+                                         argDesc =  "If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes."
                                         ).meta(false,"Input Parameters") ::
+                    new UnaryArgument( name = "testRun",
+                                         arg = List("--testRun","--test","-t"), // name of value
+                                         argDesc = "Only read the first 1000 lines. Equivalent to --numLinesRead 1000. Intended for testing purposes."// description
+                                       ).meta(false,"Input Parameters") ::
                                         
                     new BinaryOptionListArgument[String](
                                          name = "addInfoVcfs", 
@@ -968,11 +972,11 @@ object VcfAnnotateTX {
                                            arg = List("--snpEffGeneListTagInfix"),  
                                            valueName = "myGeneListAbbrev", 
                                            argDesc = "A short abbreviation for your selected snpeff gene list, for use in the INFO tag IDs.",
-                                           defaultValue = Some("onList")
+                                           defaultValue = Some("OnList_")
                                            ).meta(false,"SnpEff Annotation Processing") ::
                     new BinaryMonoToListArgument[String](
                                          name = "varMatchDbName", 
-                                         arg = List("--varMatchDbName"), 
+                                         arg = List("--varMatchDbName"),  
                                          valueName = "...",  
                                          argDesc =  "For advanced users only. Seriously don't mess with this unless you've talked to the author."
                                         ).meta(true,"INCOMPLETE") ::
