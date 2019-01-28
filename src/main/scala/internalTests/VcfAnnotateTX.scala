@@ -580,7 +580,12 @@ object VcfAnnotateTX {
                                                    ""+
                                                    ""// description
                                        ).meta(false,"Postprocessing") ::
-
+                    new UnaryArgument( name = "addDummyGenotypeColumn",
+                                         arg = List("--addDummyGenotypeColumn"), // name of value
+                                         argDesc = "If this flag is included, then the genotype data will be stripped and replaced with a dummy column with 1 sample and 1 het genotype on every line." +
+                                                   ""+
+                                                   ""// description
+                                       ).meta(false,"Postprocessing") ::
                     new UnaryArgument( name = "dropSymbolicAlleleLines",
                                          arg = List("--dropSymbolicAlleleLines"), // name of value
                                          argDesc = "Drop all variant lines that contain symbolic alleles. If this flag is used with splitMultiAllelic, then the non-symbolic alleles of mixed-type variants will be preserved."
@@ -1232,7 +1237,8 @@ object VcfAnnotateTX {
                 
                 duplicateTag = parser.get[Option[String]]("duplicatesTag"),
                 
-                ensembleGenotypeDecision = parser.get[String]("ensembleGenotypeDecision")
+                ensembleGenotypeDecision = parser.get[String]("ensembleGenotypeDecision"),
+                addDummyGenotypeColumn = parser.get[Boolean]("addDummyGenotypeColumn")
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
                 //dropVariantsWithNs, tallyFile   
              )
@@ -1392,7 +1398,8 @@ object VcfAnnotateTX {
                 
                 duplicateTag : Option[String] = None,
                 
-                ensembleGenotypeDecision : String = "majority_firstOnTies"
+                ensembleGenotypeDecision : String = "majority_firstOnTies",
+                addDummyGenotypeColumn : Boolean = false
                 ){
                 /*
                  * 
@@ -2202,8 +2209,8 @@ object VcfAnnotateTX {
             }
             
         ) ++ (
-            if(dropGenotypeData){
-                Seq[SVcfWalker](StripGenotypeData())
+            if(dropGenotypeData || addDummyGenotypeColumn){
+                Seq[SVcfWalker](StripGenotypeData(addDummyGenotypeColumn=addDummyGenotypeColumn))
             } else {
                 Seq[SVcfWalker]()
             }
@@ -4136,9 +4143,11 @@ object VcfAnnotateTX {
           }
         }
       }}
-      val outType = if(! Set("SUM","MIN","MAX","DIFF").contains(f)){
+      val outType = if(! Set("SUM","MIN","MAX","DIFF","TAG.TALLY","TAG.TALLY.IF").contains(f)){
         "String"
       } else if( Set("LEN").contains(f) ){
+        "Integer"
+      } else if( f == "TAG.TALLY" || f == "TAG.TALLY.IF"){
         "Integer"
       } else if(paramTypes.forall(pt => pt == "Integer")){
         "Integer"
@@ -4161,7 +4170,7 @@ object VcfAnnotateTX {
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
       
-      
+      val countMap = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ) )
       //def getInfo(vv : SVcfVariantLine, tt : String) : Option[
       
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
@@ -4259,6 +4268,26 @@ object VcfAnnotateTX {
           error("MIN function not yet implemented")
         } else if(f == "MAX"){
           error("MAX function not yet implemented")
+        } else if(f == "TAG.TALLY.IF" && paramTags.length > 2){
+            val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            val tagif : Int = v.info.get(paramTags.last).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+            val vv : Int = v.info.get(paramTags.last).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+            if(tagif == 1){
+               g.foreach{ gg => {
+                 countMap.update( gg, countMap(gg) + vv );
+               }}
+            }
+        } else if(f == "TAG.TALLY" && paramTags.length > 1){
+            val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            val vv : Int = v.info.get(paramTags.last).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+            g.foreach{ gg => {
+              countMap.update( gg, countMap(gg) + vv );
+            }}
+        } else if(f == "TAG.TALLY" && paramTags.length == 1){
+            val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            g.foreach{ gg => {
+              countMap.update( gg, countMap(gg) + 1 );
+            }}
         } else {
           error("Unrecognized function: " +f);
         }
@@ -4278,7 +4307,11 @@ object VcfAnnotateTX {
          
         vc
       }}, closeAction = (() => {
-        //do nothing
+        if(f == "TAG.TALLY" || f == "TAG.TALLY.IF"){
+          countMap.foreach{ case (gg, vv) => {
+            tally(paramTags.head+":"+gg,vv)
+          }}
+        }
       })),outHeader)
       
     }
@@ -4619,6 +4652,9 @@ object VcfAnnotateTX {
       ki.map(string2int(_)).toSet
     }}.getOrElse( Range(0,16).toSet )
     
+    //good default keepIdx set: 1,2,3,4,7,10,15,16
+    
+    //                           0       1        2        3           4      5        6      7           8      9         10        11           12             13                14                 15     16
     val snpEffIdxDesc =  Seq("allele","effect","impact","geneName","geneID","txType","txID","txBiotype","rank","HGVS.c","HGVS.p","cDNAposition","cdsPosition","proteinPosition","distToFeature","warnings","errors");
     val snpEffFmtDescString = "A comma delimited list with bar-delimited entries in the format: "+keepIdx.map{i => snpEffIdxDesc(i)}.mkString("|") +"."
     val bioTypeDesc = snpEffBiotypeKeepList.map{ blist => {
@@ -6272,17 +6308,25 @@ object VcfAnnotateTX {
     }
     
   }
-  case class StripGenotypeData() extends internalUtils.VcfTool.SVcfWalker {
+  case class StripGenotypeData(addDummyGenotypeColumn : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "StripGenotypeData"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)]()
     def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
-      outHeader.titleLine = SVcfTitleLine(Seq[String]())
+      
+      outHeader.titleLine = if(addDummyGenotypeColumn){
+        SVcfTitleLine(Seq[String]("DUMMYVAR"))
+      }else {
+        SVcfTitleLine(Seq[String]())
+      }
+      
+      val gs = SVcfGenotypeSet.getGenotypeSet(Seq[String]("0/1"),Seq[String]("GT"))
       
       return ( vcMap(vcIter)(vc => {
         val vb = vc.getLazyOutputLine()
         vb.removeGenotypeInfo();
+        vb.in_genotypes = gs.copyGenotypeSet();
         vb;
       }), outHeader)
     }
@@ -12312,7 +12356,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         val (tag,desc) = (tagCells(0),tagCells.lift(1).getOrElse("No Desc"));
         newHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag = "INFO",ID = , Number = "R", Type = "Integer", desc = desc));
       }}*/
-      
+       
       val gtFmtTags : Seq[(String,Seq[(String,String)])] = gtStyleFmtTags.map{ tagString => { tagString.split("\\|") }}.map{ tagCells => (tagCells.head,tagCells.lift(1).getOrElse("No Desc")) }.flatMap{ case (t, desc) => {
         val nl = new SVcfCompoundHeaderLine("FORMAT",t, "1","String", desc, subType = Some(VcfTool.subtype_GtStyle)).addWalker(this);
         val disLine = new SVcfCompoundHeaderLine("FORMAT",t+"_DISAGREE", "1","Integer", "Equal to 1 if and only if there is no active disagreement between callers.").addWalker(this);

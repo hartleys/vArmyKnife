@@ -894,8 +894,8 @@ object VcfTool {
     
     def readTableToVcf(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
       val bufLines = lines.buffered;
-      if(! bufLines.head.startsWith("#CHROM\tPOS\tID\tREF\tALT\t")){
-        error("Error: table must begin with string: \"#CHROM\tPOS\tID\tREF\tALT\t\"");
+      if(! bufLines.head.startsWith("#CHROM\tPOS\tID\tREF\tALT")){
+        error("Error: table must begin with string: \"#CHROM\tPOS\tID\tREF\tALT\"");
       }
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
       val header = readTableHeader(allRawHeaderLines.head);
@@ -1878,6 +1878,12 @@ object VcfTool {
     var sampGrp : Option[scala.collection.mutable.AnyRefMap[String,Set[String]]] = None
     def setSampList( samps : List[String]){
       sampList = samps;
+    }
+    def copyGenotypeSet() : SVcfGenotypeSet = {
+      val out = SVcfGenotypeSet(fmt=fmt,genotypeValues=genotypeValues)
+      out.sampList = out.sampList;
+      out.sampGrp = out.sampGrp;
+      out;
     }
     
     def idxIsGrp(idx : Int, grp : String) : Boolean = {
