@@ -575,7 +575,7 @@ List(
             argList.find(_.isNamed(inputArguments.head)) match {
               case Some(arg) => {
                 val remainder = arg.parse(inputArguments);
-                if(debugMode) reportln("  INPUT_ARG("+arg.getName()+")="+arg(),"note");
+                //if(debugMode) reportln("  INPUT_ARG("+arg.getName()+")="+arg(),"note");
                 parseParamArgs(remainder, debugMode);
               }
               case None => {
@@ -697,6 +697,8 @@ List(
     }
     def isReady : Boolean = true;
     def parse(args : List[String]) : List[String] = {
+//if(debugMode) reportln("  INPUT_ARG("+arg.getName()+")="+arg(),"note");
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")=true","note");
       if(args.head.charAt(0) == '-'){
         if(args.head.charAt(1) == '-'){
           setValue(true);
@@ -760,6 +762,7 @@ List(
       
       val argFile = args.tail.head;
       value = Some(argFile);
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")="+argFile,"note");
       val parsedArgs = parseArgumentFile(argFile)
       parsedArgs ++ args.drop(2);
     }
@@ -879,9 +882,11 @@ List(
     def isReady : Boolean = ! ((value.isEmpty) && (isMandatory));
     def parse(args : List[String]) : List[String] = {
       if(args.length < 2) throwSyntaxErrorMessage("Variable " + arg(0) + " not set to anything!");
-      
+
       val valueString = args.tail.head;
       setValue(stringParser.parse(valueString)(respectQuotes=respectQuotes,stripQuotes=stripQuotes));
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")="+value.toString(),"note");
+
       args.tail.tail;
     }
   }
@@ -929,7 +934,10 @@ List(
       if(args.length < 2) throwSyntaxErrorMessage("Variable " + arg(0) + " not set to anything!");
       val valueString = args.tail.head;
       //setValue(stringParser.parse(valueString));
-      addToValue(stringParser.parse(valueString)(respectQuotes=respectQuotes,stripQuotes=stripQuotes));
+      val addme = stringParser.parse(valueString)(respectQuotes=respectQuotes,stripQuotes=stripQuotes);
+      addToValue(addme);
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")="+addme.map{_.toString()}.mkString(","),"note");
+
       args.tail.tail;
     }
   }
@@ -969,6 +977,7 @@ List(
     def parse(args : List[String]) : List[String] = {
       if(args.length < 2) throwSyntaxErrorMessage("Variable " + arg(0) + " not set to anything!");
       val valueString = args.tail.head;
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")+="+valueString,"note");
       //setValue(stringParser.parse(valueString));
       addToValue(stringParser.parse(valueString)(respectQuotes=respectQuotes,stripQuotes=stripQuotes));
       args.tail.tail;
@@ -1058,7 +1067,10 @@ List(
       if(args.length < 2) throwSyntaxErrorMessage("Variable " + arg(0) + " not set to anything!");
       
       val valueString = args.tail.head;
-      setValue(stringParser.parse(valueString)(respectQuotes=respectQuotes,stripQuotes=stripQuotes));
+      val addme = stringParser.parse(valueString)(respectQuotes=respectQuotes,stripQuotes=stripQuotes)      
+      setValue(addme);
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")+="+addme.toString(),"note");
+      
       args.tail.tail;
     }
   }
@@ -1105,7 +1117,8 @@ List(
       val theRestList = args.takeRight(args.length - stringList.length);
       
       val valueList = stringList.map(s => stringParser.parse(s)(respectQuotes=respectQuotes,stripQuotes=stripQuotes));
-      
+      if(internalUtils.optionHolder.OPTION_verboseInputInfo) reportln("   INPUT_ARG("+this.getName()+")+="+valueList.map{_.toString()}.mkString(","),"note");
+
       setValue(valueList);
       
       theRestList;

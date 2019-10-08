@@ -2132,8 +2132,8 @@ object SVcfWalkerUtils {
         vc
       }}, closeAction = (() => {
         //val out = openWriter(outfile);
-        out.write("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length+"\t"+"sampList=["+finalKeepSampSet.toVector.sorted.mkString(",")+"]"+"\n");
-        reportln("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length+"\t"+"sampList=["+finalKeepSampSet.toVector.sorted.mkString(",")+"]","note")
+        out.write("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length+"\n");
+        reportln("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length,"note")
         burdenMatrix.keys.toVector.sorted.foreach{ g => {
           val mtr = burdenMatrix(g);
           val altCt = altCounts(g);
