@@ -64,6 +64,14 @@ object helpDocs {
     val helpCommand = filtArgs.lift(1).getOrElse("?");
         
     if(helpCommand == "?" || helpCommand == "--man" || helpCommand == "--help" || helpCommand == "help" || helpCommand == "-help" || helpCommand == "man" || helpCommand == "-man"){
+      //generalHelp;
+      val commandList : Map[String, () => CommandLineRunUtil] = runner.commandList;
+      val cmd = commandList.get("walkVcf");
+      
+      report("HELP: vArmyKnife\n","output");
+      (cmd.get)().parser.reportManual();
+      
+    } else if(helpCommand == "secondaryCommands"){
       generalHelp;
     } else if(helpCommand == "generateMarkdownPages") {
       writeMarkdownHelp("./");
@@ -125,10 +133,12 @@ object helpDocs {
       sb.append("    NOTE: if you run into OutOfMemoryExceptions, \n    try adding the java options: \"-Xmx18000M -Xms5000M\""+"\n");
       sb.append("\n");
       
-      sb.append("GENERAL SYNTAX:\n");
-      sb.append("    java [_java_options_] -jar "+runner.Runner_ThisProgramsExecutableJarFileName +" _COMMAND_ [_options_]"+"\n");
-      sb.append("     or"+"\n");
-      sb.append("    varmyknife [_java_options_] "+" _COMMAND_ [_options_]"+"\n");
+      sb.append("GENERAL SYNTAX:\n\n");
+      sb.append("    varmyknife [java_options] "+" [options] infile outfile"+"\n");
+      sb.append("    OR"+"\n");
+      sb.append("    varmyknife [java_options] "+" [options] infile - > outfile"+"\n");
+      sb.append("    OR"+"\n");
+      sb.append("    varmyknife [java_options] "+"--CMD commandName"+" [options]"+"\n");
 
       sb.append("\n");
       

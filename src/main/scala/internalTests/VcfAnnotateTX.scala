@@ -73,7 +73,9 @@ object VcfAnnotateTX {
                             "These tools can be invoked with the command:",
                             "    varmyknife --CMD commandName [options]",
                             "For more information, use the command:" ,
-                            "    varmyknife --help CMD") 
+                            "    varmyknife --help CMD",
+                            "For a listing of all secondary commands, use the command: ",
+                            "    varmyknife --help secondaryCommands") 
                             
      val altCommandDocMd : Seq[String] = Seq("## Secondary Commands:",
                             "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
@@ -81,7 +83,9 @@ object VcfAnnotateTX {
                             "These tools can be invoked with the command:",
                             "    varmyknife --CMD commandName [options]",
                             "For more information see the [secondary command page](secondaryCommands.html), or use the command:" ,
-                            "    varmyknife --help CMD") 
+                            "    varmyknife --help CMD",
+                            "For a listing of all secondary commands, use the command: ",
+                            "    varmyknife --help secondaryCommands") 
      val manualExtras = sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
                         sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +
                         altCommandDocText.map{ acm => {

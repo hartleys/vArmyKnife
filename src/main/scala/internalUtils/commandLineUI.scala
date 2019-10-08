@@ -94,7 +94,7 @@ List(
 "Additional License information can be accessed using the command:",
 "    vArmyKnife --help LICENSES",
 "And can also found in the distributed source code in:",
-"    src/main/resources/");
+"    src/main/resources/library.LICENSES.txt");
    
   //type Command = ((Array[String]) => Unit);
 
@@ -419,7 +419,7 @@ List(
       sb.append("# "+runner.runner.UTILITY_TITLE+"\n");
       sb.append("> Version " + runner.runner.UTIL_VERSION + " (Updated " + runner.runner.UTIL_COMPILE_DATE +")\n\n");
       sb.append("> ([back to main](../index.html)) ([back to java-utility help]("+backToIndexPath+"))\n\n");
-      sb.append("## Help for java command \""+escapeToMarkdown(command)+"\"\n\n");
+      sb.append("## Help for vArmyKnife command \""+escapeToMarkdown(command)+"\"\n\n");
       if(aliases.length > 0){
         sb.append("ALIASES: "+aliases.mkString(",")+"\n");
       }
@@ -489,11 +489,28 @@ List(
       report(getShortHelp(),verb);
     }
     def getShortHelp() : String = {
-      "    varmyknife [java options] " + command + " [options] " + argList.map(_.getShortSyntax()).filter(_ != "").mkString(" ")+"\n"+
-      "      or \n"+
-      "    java -jar "+runner.runner.Runner_ThisProgramsExecutableJarFileName+" [java options] " + command + " [options] " + argList.map(_.getShortSyntax()).filter(_ != "").mkString(" ")+"\n"+
+      if(command == "walkVcf"){
+      var sb = new StringBuilder();
+      sb.append("GENERAL SYNTAX:\n\n");
+      sb.append("    varmyknife [java_options] "+" [options] infile outfile"+"\n");
+      sb.append("    OR"+"\n");
+      sb.append("    varmyknife [java_options] "+" [options] infile - > outfile"+"\n");
+      sb.append("    OR, to use other secondary tools:"+"\n");
+      sb.append("    varmyknife [java_options] "+"--CMD commandName"+" [options]"+"\n");
+      return sb.toString();
+        
+      } else {
+      
+      var sb = new StringBuilder();
+      sb.append("GENERAL SYNTAX:\n\n");
+      sb.append("    varmyknife [java_options] "+"--CMD "+command+" [options]"+"\n");
+      return sb.toString();
+      }
+      //"    varmyknife [java options] " + command + " [options] " + argList.map(_.getShortSyntax()).filter(_ != "").mkString(" ")+"\n"+
+      //"      or \n"+
+      //"    java -jar "+runner.runner.Runner_ThisProgramsExecutableJarFileName+" [java options] " + command + " [options] " + argList.map(_.getShortSyntax()).filter(_ != "").mkString(" ")+"\n"+
          //argList.foldLeft[String]("")((soFar : String, curr : Argument[Any]) => soFar +" "+ curr.getShortSyntax()) +
-         "\n"
+       //  "\n"
          //getForMoreHelp();
     }
     
