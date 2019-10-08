@@ -327,9 +327,17 @@ object Reporter {
   
   val tallies = scala.collection.mutable.Map[String,Int]().withDefault((x : String) => 0);
   val talliesCol2 = scala.collection.mutable.Map[String,Int]().withDefault((x : String) => 0);
+  val tallyFloat = scala.collection.mutable.Map[String,Double]().withDefault((x : String) => 0.0);
 
   def tally(str : String,v : Int){
     tallies.update(str,tallies(str)+v);
+  }
+  def tally(str : String,v : Double){
+    tallyFloat.update(str,tallyFloat(str)+v);
+  }
+  def tally(str : String, v: Double,v2 : Int){
+    tallies.update(str,tallies(str)+v2);
+    tallyFloat.update(str,tallyFloat(str)+v);
   }
   def tally(str : String,v : Int, v2 : Int){
     tallies.update(str,tallies(str)+v);
@@ -376,10 +384,14 @@ object Reporter {
     Seq[String](indent+"---------------")
   }
   def getWarningAndNoticeTalliesTable(delim : String = "\t") : Seq[String] = {
-    if( talliesCol2.size > 0){
+    if( talliesCol2.size > 0 ){
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)+delim+".") ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x)+delim+".")++
       tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x)+delim+talliesCol2.getOrElse(x,"."))
+    } else if(tallyFloat.size > 0){
+      warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)+delim+".") ++ 
+      noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x)+delim+".")++
+      tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallyFloat(x)+delim+tallies.getOrElse(x,"."))
     } else {
     
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)) ++ 

@@ -2188,18 +2188,27 @@ object SVcfWalkerUtils {
           }
         }
       }}
-      val outType = if(! Set("MULT.BY.K","DIV.BY.K","SUM","MIN","MAX","DIFF","RATIO","TAG.TALLY","TAG.TALLY.IF","TAG.TALLY.IFEXPR").contains(f)){
-        "String"
+      val outType = 
+      if(Set("TAG.TALLY.IFEXPR").contains(f)){
+        if( paramTypes.lift(2).map{pp => pp == "Float"}.getOrElse(false) ){
+          "Float"
+        } else {
+          "Integer"
+        }
+      } else  if(Set("CONVERT.TO.INT","TAG.TALLY","TAG.TALLY.IF","RANDFLAG","LEN").contains(f)  || f.startsWith("TAG.TALLY") ){
+        "Integer"
+      } else if(Set("CONVERT.TO.FLOAT","MULT.BY.K","DIV.BY.K","RATIO","PROD").contains(f)){
+        "Float"
       } else if( Set("LEN").contains(f) ){
         "Integer"
-      } else if( Set("TAG.TALLY","TAG.TALLY.IF","RANDFLAG").contains(f) || f.startsWith("TAG.TALLY")){
-        "Integer"
-      } else if( Set("MULT.BY.K","DIV.BY.K","RATIO").contains(f) ){
-        "Float"
-      } else if(paramTypes.forall(pt => pt == "Integer")){
-        "Integer"
+      } else if(Set("SUM","MIN","MAX","DIFF").contains(f)){
+         if(paramTypes.forall(pt => pt == "Integer")){
+           "Integer"
+         } else {
+           "Float"
+         }
       } else {
-        "Float"
+        "String"
       }
       val outNum = if(f.startsWith("SETS.") || f.startsWith("STATICSET.")){
         "."
@@ -2210,7 +2219,7 @@ object SVcfWalkerUtils {
       if(f == "DIFF" && paramTags.length != 2){
         error("ERROR: function DIFF requires exactly 2 params");
       }
-      
+              
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number=outNum,Type=outType,desc=desc.getOrElse("Result of performing function "+func+" on tags: "+paramTags.mkString(",")+".")));
       val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
       if( overwriteInfos.nonEmpty ){
@@ -2218,6 +2227,8 @@ object SVcfWalkerUtils {
       }
       
       val countMap = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ) )
+      val countMapFloat = new scala.collection.mutable.AnyRefMap[String,Double](defaultEntry = ( (s : String) => 0.0 ) )
+
       val varcountMap = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ) )
       //def getInfo(vv : SVcfVariantLine, tt : String) : Option[
       
@@ -2356,6 +2367,12 @@ object SVcfWalkerUtils {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toVector }.getOrElse(Vector[String]()).size
             }}.sum
             vc.addInfo(newTag, sumLen + "");
+        } else if(f == "CONVERT.TO.INT"){
+          val out = v.info.get(paramTags.head).getOrElse(None).map{z => math.round( string2double(z) ).toInt.toString}.getOrElse(".");
+          vc.addInfo(newTag,out);
+        } else if(f == "CONVERT.TO.FLOAT"){
+          val out = v.info.get(paramTags.head).getOrElse(None).map{z => ( string2double(z) ).toString}.getOrElse(".");
+          vc.addInfo(newTag,out);
         } else if(f == "MIN"){
           if(outType == "Integer"){
             val paramVals : Seq[Int] = paramTags.flatMap{ param => {
@@ -2494,14 +2511,27 @@ object SVcfWalkerUtils {
               if( fe.keep(v) ){
                 warning("", newTag+":TOTAL_1",1 ) 
                 val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
-                val vv : Int = paramTags.lift(2).map{ ss => v.info.get(ss).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0) }.getOrElse(1);
-                  //v.info.get(paramTags(2)).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
-                if(vv > 0){
-                  g.foreach{ gg => {
-                    countMap.update( gg, countMap(gg) + vv );
-                    varcountMap.update(gg, varcountMap(gg) + 1);
-                  }}
-                  
+                
+                if(outType == "Integer"){
+                  val vv : Int = paramTags.lift(2).map{ ss => v.info.get(ss).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0) }.getOrElse(1);
+                    //v.info.get(paramTags(2)).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+                  if(vv > 0){
+                    g.foreach{ gg => {
+                      countMap.update( gg, countMap(gg) + vv );
+                      varcountMap.update( gg, varcountMap(gg) + 1 );
+                    }}
+                    
+                  }
+                } else {
+                  val vv : Double = paramTags.lift(2).map{ ss => v.info.get(ss).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2double(ss) }.getOrElse(0.0) }.getOrElse(1.0);
+                    //v.info.get(paramTags(2)).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+                  if(vv > 0){
+                    g.foreach{ gg => {
+                      countMapFloat.update( gg, countMapFloat(gg) + vv );
+                      varcountMap.update( gg, varcountMap(gg) + 1 );
+                    }}
+                    
+                  }
                 }
               } else {
                 warning("", newTag+":TOTAL_0",1 ) 
@@ -2548,17 +2578,31 @@ object SVcfWalkerUtils {
         vc
       }}, closeAction = (() => {
         if(f == "TAG.TALLY" || f == "TAG.TALLY.IF" || f.startsWith("TAG.TALLY")){
-          countMap.foreach{ case (gg, vv) => {
-            varcountMap.get( gg ) match {
-              case Some(vvv) => {
-                tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
+          if(outType == "Integer"){
+            countMap.foreach{ case (gg, vv) => {
+              varcountMap.get( gg ) match {
+                case Some(vvv) => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
+                }
+                case None => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv);
+                }
               }
-              case None => {
-                tally(newTag+":"+paramTags.head+":"+gg,vv);
+              
+            }}
+          } else {
+            countMapFloat.foreach{ case (gg, vv) => {
+              varcountMap.get( gg ) match {
+                case Some(vvv) => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
+                }
+                case None => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv);
+                }
               }
-            }
-            
-          }}
+              
+            }}
+          }
         }
       })),outHeader)
       
