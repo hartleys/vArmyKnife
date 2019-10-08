@@ -1565,7 +1565,51 @@ object SVcfWalkerUtils {
 
   }
   
-  
+  case class ReorderSamples(sampleOrdering : Seq[String], sort : Boolean = false) extends SVcfWalker {
+    def walkerName : String = "ReorderSamples"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("sampOrd",   if(sort){ "alphabeticalSort" } else {sampleOrdering.take(10).mkString(",") + ( if(sampleOrdering.length > 10 ){"..."}else{""})})
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      val missingSamp = sampleOrdering.find{ s => {
+        ! vcfHeader.titleLine.sampleList.contains(s);
+      }}
+      missingSamp.foreach{ s =>{
+        error("Sample reordering failed! Cannot find sample: "+s);
+      }}
+      val sampIX = if(sort){
+        vcfHeader.titleLine.sampleList.zipWithIndex.sorted.toArray
+      } else {
+        sampleOrdering.map{ s => {
+          vcfHeader.titleLine.sampleList.zipWithIndex.find{ case(ss,ix) => ss == s }.get
+        }}.toArray
+      }
+      outHeader.titleLine = SVcfTitleLine(sampIX.map{ case (ss,ix) => ss });
+      
+      if(sampIX.zipWithIndex.exists{ case ((ss,ix),ixx) => {
+        ix != ixx
+      }}){
+        reportln("ReorderSamples: Samples have been reordered!","note")
+      } else {
+        reportln("ReorderSamples: no change in order, samples are already in order!","note")
+      }
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        vc.genotypes.genotypeValues = vc.genotypes.genotypeValues.map{ gg => {
+          sampIX.map{ case (ss,ix) => gg(ix)}
+        }}
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
   
 
   case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String]) extends SVcfWalker {
@@ -1611,6 +1655,8 @@ object SVcfWalkerUtils {
       //vc.dropInfo(overwriteInfos);
     }
   }
+  
+  
   class addWiggleDepthWalker(wigFile : String, tag : String, desc : String) extends SVcfWalker {
     
     def walkerName : String = "addWiggleDepthWalker"
@@ -2369,9 +2415,11 @@ object SVcfWalkerUtils {
             vc.addInfo(newTag, sumLen + "");
         } else if(f == "CONVERT.TO.INT"){
           val out = v.info.get(paramTags.head).getOrElse(None).map{z => math.round( string2double(z) ).toInt.toString}.getOrElse(".");
+          //val out = v.info.get(paramTags.head).getOrElse(None).map{z => string2doubleOpt(z).map{zz => math.round(zz).toInt.toString}.getOrElse(".")}.getOrElse(".");
           vc.addInfo(newTag,out);
         } else if(f == "CONVERT.TO.FLOAT"){
           val out = v.info.get(paramTags.head).getOrElse(None).map{z => ( string2double(z) ).toString}.getOrElse(".");
+          //val out = v.info.get(paramTags.head).getOrElse(None).map{z => string2doubleOpt(z).map{zz => zz.toString}.getOrElse(".")}.getOrElse(".");
           vc.addInfo(newTag,out);
         } else if(f == "MIN"){
           if(outType == "Integer"){
@@ -2585,11 +2633,11 @@ object SVcfWalkerUtils {
                   tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
                 }
                 case None => {
-                  tally(newTag+":"+paramTags.head+":"+gg,vv);
+                  tally(newTag+":"+paramTags.head+":"+gg,vv); 
                 }
-              }
+              } 
               
-            }}
+            }} 
           } else {
             countMapFloat.foreach{ case (gg, vv) => {
               varcountMap.get( gg ) match {
@@ -3665,7 +3713,9 @@ object SVcfWalkerUtils {
         vc.dropInfo( overwriteInfos );
         val gtidxRaw = vc.genotypes.fmt.indexOf(splitGtTag);
         val gtIdx = if(gtidxRaw == -1) vc.genotypes.fmt.indexOf(stdGtTag) else gtidxRaw;
-        if(gtIdx == -1) error("Cannot find \""+splitGtTag+"\" or \""+stdGtTag+"\" in fmt line: \""+vc.genotypes.fmt.mkString(",")+"\"");
+        if(gtIdx == -1) {
+          warning("Cannot find \""+splitGtTag+"\" or \""+stdGtTag+"\" in fmt line: \""+vc.genotypes.fmt.mkString(",")+"\"","NO_GENO_FIELD_WARNING",25);
+        } else {
         val gt : Vector[String] = v.genotypes.genotypeValues(gtIdx).toVector;
         val simpleClass : Vector[Int] = gt.map{ genoString => {
           val gc = genoString.split("[/\\|]")
@@ -3823,8 +3873,9 @@ object SVcfWalkerUtils {
             
           }
         }
-
+        }
         vc
+
       }}, closeAction = (() => {
         //do nothing
       })),outHeader)
@@ -10312,29 +10363,33 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       val addRawGt = (! noRawGt) && (rawGtTag != gtTag);
       val rango = Range(0,vcfHeader.sampleCt);
       val outIter = vcMap(vcIter){ vc => {
-        vc.genotypes.sampList = sampList;
-        vc.genotypes.sampGrp = Some(sampleToGroupMap);
-        val vb = vc.getOutputLine();
-        //vb.genotypes.genotypeValues = vb.genotypes.genotypeValues :+ Array.fill[String](vb.genotypes.genotypeValues(0).length)("0");
         val gtIdx = vc.genotypes.fmt.indexOf(gtTag);
-        val gtVals = vc.genotypes.genotypeValues(gtIdx)
-        val newGtIdx = vb.genotypes.addGenotypeArray(newGTTag, gtVals.clone());
-        
-        //val ploidy = vb.genotypes.getPloidy();
-        
-        if( addRawGt ){
-          vb.genotypes.addGenotypeArray( rawGtTag,gtVals.clone() );
+        if(gtIdx > -1){
+          vc.genotypes.sampList = sampList;
+          vc.genotypes.sampGrp = Some(sampleToGroupMap);
+          val vb = vc.getOutputLine();
+          //vb.genotypes.genotypeValues = vb.genotypes.genotypeValues :+ Array.fill[String](vb.genotypes.genotypeValues(0).length)("0");
+          val gtVals = vc.genotypes.genotypeValues(gtIdx)
+          val newGtIdx = vb.genotypes.addGenotypeArray(newGTTag, gtVals.clone());
+          
+          //val ploidy = vb.genotypes.getPloidy();
+          
+          if( addRawGt ){
+            vb.genotypes.addGenotypeArray( rawGtTag,gtVals.clone() );
+          }
+          val ftIdx = vb.genotypes.addGenotypeArrayIfNew(filterTag,Array.fill[String](sampCt)("0"));
+  
+          rango.withFilter{(i) => gtVals(i).head != '.' && (!filterLogic.keep((vc,i)))}.foreach{ (i) => {
+              vb.genotypes.genotypeValues(newGtIdx)(i) = missingGeno;
+              vb.genotypes.genotypeValues(ftIdx)(i) = "1";
+          }}
+          if(internalUtils.optionHolder.OPTION_DEBUGMODE){
+            tally("NUM_GT_FILTERED",vb.genotypes.genotypeValues(ftIdx).count{x => x == "1"})
+          }
+          vb;
+        } else {
+          vc.getOutputLine();
         }
-        val ftIdx = vb.genotypes.addGenotypeArrayIfNew(filterTag,Array.fill[String](sampCt)("0"));
-
-        rango.withFilter{(i) => gtVals(i).head != '.' && (!filterLogic.keep((vc,i)))}.foreach{ (i) => {
-            vb.genotypes.genotypeValues(newGtIdx)(i) = missingGeno;
-            vb.genotypes.genotypeValues(ftIdx)(i) = "1";
-        }}
-        if(internalUtils.optionHolder.OPTION_DEBUGMODE){
-          tally("NUM_GT_FILTERED",vb.genotypes.genotypeValues(ftIdx).count{x => x == "1"})
-        }
-        vb;
       }}
       
       return (outIter,outHeader);

@@ -596,7 +596,7 @@ object VcfAnnotateTX {
                                         ).meta(false,"Merge Multicaller VCFs") ::
                    new BinaryOptionArgument[List[String]](
                                          name = "singleCallerPriority", 
-                                         arg = List("concordanceCallerPriority","--singleCallerPriority"), 
+                                         arg = List("--concordanceCallerPriority","--singleCallerPriority"), 
                                          valueName = "vcfName1,vcfName2,...",  
                                          argDesc =  "This parameter should be a comma delimited list composed of the VCF names "+
                                                     "from the --singleCallerVcfNames parameter (or a subset of that list). Single callers can be left off this list and their calls will not be "+
@@ -904,6 +904,19 @@ object VcfAnnotateTX {
                                                     "before processing. This can be useful for updating a file with a new version or annotation, as it "+
                                                     "can be used to ensure a clean input."
                                         ).meta(false,"Preprocessing") ::
+                                        
+                    new BinaryOptionArgument[List[String]](
+                                         name = "inputSampleOrdering", 
+                                         arg = List("--inputSampleOrdering"), 
+                                         valueName = "samp1,samp2,...",  
+                                         argDesc =  "List of samples in the order you want them to be in prior to any analysis. If you are filtering down your sample list using inputKeepSamples or renaming your samples via sampleRenameFile, then the reordering happens AFTER the renaming."
+                                        ).meta(false,"Preprocessing") ::
+                    new UnaryArgument( name = "inputSampleOrderingAlphabetical",
+                                         arg = List("--inputSampleOrderingAlphabetical"), // name of value
+                                         argDesc = "This option causes the samples to be reordered into alphabetical order. See --inputSampleOrdering for more info on how and when the reordering happens."
+                                       ).meta(false,"Preprocessing") ::
+                                        //ReorderSamples(sampleOrdering : Seq[String], sort : Boolean = false)
+                                        
                                         
                     new BinaryOptionArgument[List[String]](
                                          name = "renameInputInfoTags", 
@@ -1464,8 +1477,10 @@ object VcfAnnotateTX {
                 calcBurdenCounts = parser.get[List[String]]("calcBurdenCounts"),
                 burdenCountsFile = parser.get[Option[String]]("burdenCountsFile"),
                 
-                fixSwappedRefAlt = parser.get[Boolean]("fixSwappedRefAlt")
+                fixSwappedRefAlt = parser.get[Boolean]("fixSwappedRefAlt"),
                 
+                inputSampleOrdering = parser.get[Option[List[String]]]("inputSampleOrdering"),
+                inputSampleOrderingAlphabetical = parser.get[Boolean]("inputSampleOrderingAlphabetical")
                 // calcBurdenCounts burdenCountsFile
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
                 //dropVariantsWithNs, tallyFile   
@@ -1495,6 +1510,8 @@ object VcfAnnotateTX {
      ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     */
 
+
+  
   def runSAddTXAnno(vcffile : String, outfile : String, 
                 gtffile : Option[String], 
                 genomeFA : Option[String],
@@ -1675,9 +1692,14 @@ object VcfAnnotateTX {
                 calcBurdenCounts : List[String] = List[String](),
                 burdenCountsFile : Option[String] = None,
                 
-                fixSwappedRefAlt : Boolean = false
+                fixSwappedRefAlt : Boolean = false,
+                
+                inputSampleOrdering : Option[List[String]] = None,
+                inputSampleOrderingAlphabetical : Boolean = false
                 ){
 
+
+    
                                             /*
                          *snpEffBiotypeIdx : Int = 7,
                           snpEffWarnIdx : Int = 15,
@@ -1863,7 +1885,7 @@ object VcfAnnotateTX {
             }}
         
         ) ++ (
-            if(inputDropInfoTags.isDefined || inputKeepInfoTags.isDefined || renameInputGenoTags.isDefined || renameInputInfoTags.isDefined || inputKeepSamples.isDefined || unPhaseAndSortGenotypes.isDefined){
+            if(inputDropInfoTags.isDefined || inputKeepInfoTags.isDefined || renameInputGenoTags.isDefined || renameInputInfoTags.isDefined || inputKeepSamples.isDefined || unPhaseAndSortGenotypes.isDefined || sampleRenameFile.isDefined){
               Seq[SVcfWalker](
                   FilterTags(
                      keepGenotypeTags = None,
@@ -1882,6 +1904,28 @@ object VcfAnnotateTX {
               )
             } else {
               Seq[SVcfWalker]()
+            }
+            
+                /*
+     *                 inputSampleOrdering : Option[List[String]] = None,
+                inputSampleOrderingAlphabetical : Boolean = false
+                      new BinaryOptionArgument[List[String]](
+                                         name = "inputSampleOrdering", 
+                                         arg = List("--inputSampleOrdering"), 
+                                         valueName = "samp1,samp2,...",  
+                                         argDesc =  "List of samples in the order you want them to be in prior to any analysis. If you are filtering down your sample list using inputKeepSamples or renaming your samples via sampleRenameFile, then the reordering happens AFTER the renaming."
+                                        ).meta(false,"Preprocessing") ::
+                    new UnaryArgument( name = "inputSampleOrderingAlphabetical",
+                                         arg = List("--inputSampleOrderingAlphabetical"), // name of value
+                                         argDesc = "This option causes the samples to be reordered into alphabetical order. See --inputSampleOrdering for more info on how and when the reordering happens."
+                                       ).meta(false,"Preprocessing") ::
+                                        //ReorderSamples(sampleOrdering : Seq[String], sort : Boolean = false)
+*/
+        ) ++ (
+            if(inputSampleOrdering.isDefined || inputSampleOrderingAlphabetical){
+              Seq[SVcfWalker]( new ReorderSamples(sampleOrdering = inputSampleOrdering.getOrElse(List[String]()), sort = inputSampleOrderingAlphabetical) )
+            } else {
+              Seq();
             }
         ) ++ (
             copyFmtTag.map{ cft => {
