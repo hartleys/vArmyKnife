@@ -4799,7 +4799,7 @@ object SVcfWalkerUtils {
       
       newHeaderLines.foreach{hl => {
         outHeader.addInfoLine(hl);
-      }}
+      }} 
       outHeader.addWalk(this);
       
       val overwriteInfos = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
@@ -7949,13 +7949,23 @@ object SVcfWalkerUtils {
      }
   }
   
-  case class PassThroughSVcfWalker(name : String = "nullWalker", processLine : Boolean = false, groupLines : Boolean = false) extends SVcfWalker {
+  case class PassThroughSVcfWalker(name : String = "nullWalker", processLine : Boolean = false, groupLines : Boolean = false,params : Seq[(String,String)] = Seq[(String,String)]()) extends SVcfWalker {
     def walkerName : String = name;
         def walkerParams : Seq[(String,String)]=  Seq[(String,String)](
-          ("name",name),
-          ("processLine",processLine.toString),
-          ("groupLines",groupLines.toString)
-        )
+          ("name",name)
+        ) ++ (
+           if(processLine || groupLines){
+             if(processLine && groupLines){
+               Seq(("processingSteps","processAndGroup"))
+             } else if(processLine){
+               Seq(("processingSteps","process"))
+             } else {
+               Seq(("processingSteps","group"))
+             }
+           } else {
+             Seq();
+           }
+        ) ++ params 
     def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
