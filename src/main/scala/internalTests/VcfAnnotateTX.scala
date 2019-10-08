@@ -452,7 +452,11 @@ object VcfAnnotateTX {
                                          arg = List("--makeFirstBaseMatch"),
                                          argDesc =  "Reformats multibase indels so that the first bases match. Without this option, raw output from certain callers will not be properly trimmed by GATK leftAlignAndTrim. Requires genomeFA to be set."
                                         ).meta(true,"Preprocessing")  :: 
-                                       
+                    new UnaryArgument( name = "fixSwappedRefAlt",
+                                         arg = List("--fixSwappedRefAlt"), // name of value
+                                         argDesc = "Checks if the ref allele matches the alt allele. IF they don't match, it checks if the alt allele matches and switches the ref/alt if it does. Otherwise it simply adds a warning tag."
+                                       ).meta(false,"Preprocessing") ::
+                                       //fixSwappedRefAlt
                                        
                     new UnaryArgument(
                                          name = "leftAlignAndTrim", 
@@ -1161,6 +1165,7 @@ object VcfAnnotateTX {
                                          arg = List("--findComplexVars"), // name of value
                                          argDesc = ""
                                        ).meta(true,"INCOMPLETE") ::
+
                     new BinaryOptionArgument[List[String]](
                                          name = "findComplexVarMergeInfoTags", 
                                          arg = List("--findComplexVarMergeInfoTags"), 
@@ -1385,7 +1390,9 @@ object VcfAnnotateTX {
                 
                 keepVariantsExpressionPrefilter = parser.get[Option[String]]("keepVariantsExpressionPrefilter"),
                 calcBurdenCounts = parser.get[List[String]]("calcBurdenCounts"),
-                burdenCountsFile = parser.get[Option[String]]("burdenCountsFile")
+                burdenCountsFile = parser.get[Option[String]]("burdenCountsFile"),
+                
+                fixSwappedRefAlt = parser.get[Boolean]("fixSwappedRefAlt")
                 
                 // calcBurdenCounts burdenCountsFile
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
@@ -1587,7 +1594,9 @@ object VcfAnnotateTX {
                 
                 keepVariantsExpressionPrefilter : Option[String] = None,
                 calcBurdenCounts : List[String] = List[String](),
-                burdenCountsFile : Option[String] = None
+                burdenCountsFile : Option[String] = None,
+                
+                fixSwappedRefAlt : Boolean = false
                 ){
 
                                             /*
@@ -1825,6 +1834,18 @@ object VcfAnnotateTX {
                 Seq[SVcfWalker]();
               })
               //dropVariantsWithNs
+        ) ++ (
+            //FixRefAltSwaps( genomeFa: String, changeTag : Option[String] = Some("RefAltSwap"), warnTag : Option[String] = Some("BadRefAlle"))
+            (
+               if(fixSwappedRefAlt){
+                if(genomeFA.isEmpty){
+                  error("ERROR: in order to fix ref/alt swaps, you MUST specify a genome fasta file with the --genomeFA parameter");
+                }
+                 Seq(internalUtils.GatkPublicCopy.FixRefAltSwaps( genomeFa = genomeFA.get, changeTag = Some("RefAltSwap"), warnTag  = Some("BadRefAlle")))
+               } else {
+                 Seq[SVcfWalker]();
+               }
+            )
         ) ++ (
             if(leftAlignAndTrim){
               if(genomeFA.isEmpty){

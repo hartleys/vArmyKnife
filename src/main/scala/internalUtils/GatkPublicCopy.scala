@@ -627,6 +627,174 @@ object GatkPublicCopy {
     }
   }
 
+  
+    
+  case class FixRefAltSwaps( genomeFa: String, strandSwapTag : Option[String] = Some("StrandSwap"), changeTag : Option[String] = Some("RefAltSwap"), warnTag : Option[String] = Some("BadRefAlle")) extends SVcfWalker {
+    def walkerName : String = "FixRefAltSwaps"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa));
+    
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
+    def getBasesForIv(chrom : String, start : Int, end : Int) : String = {
+      if(end < 1){
+        return ("N" * (end - start))
+      } else if(start < 1){
+        return ("N" * (1-start))+this.getBasesForIv(chrom=chrom,start=1,end=end);
+      } else if( start >= refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength ){
+        return ("N" * (end - start))
+      } else if(end > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        val e = refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength;
+        return this.getBasesForIv(chrom=chrom,start=start,end=e) + ("N" * (end - e))
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
+      }
+    }
+    
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      //  def bufferedResorting[A](iter : Iterator[A], bufferSize : Int)(f : (A => Int)) : Iterator[A] = {
+      val newHeader = vcfHeader.copyHeader;
+      changeTag.foreach{ tag => {
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tag,Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the original VCF line had switched the ref and alt alleles. Note: the GT tag will be swapped to match the new ordering, but none of the other tags will be changed!").addWalker(this));
+      }}
+      strandSwapTag.foreach{ tag => {
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tag,Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the original VCF line the allele strands are swapped.").addWalker(this));
+      }}
+      
+      warnTag.foreach{ tag => {
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tag,Number = "1", Type = "Integer", desc = "Equal to 1 if and only if neither the ref nor the alt alleles match the reference.").addWalker(this));
+      }}
+      
+      newHeader.addWalk(this);
+      var noticeShownA = true;
+      (vcMap(vcIter){ vc => {
+        val vb = vc.getOutputLine();
+        
+        if(vc.alt.length > 2 || ( vc.alt.length > 1 && vc.alt(1) != VcfTool.UNKNOWN_ALT_TAG_STRING )){
+          warning("Error: cannot run Ref-Alt swap check if there is more than 1 alt allele!","warn_multiallelic_refaltswapcheck!\n    line: "+vc.getSimpleVcfString(),10);
+          changeTag.foreach{ tag => vb.addInfo(tag,".")}
+          warnTag.foreach{ tag => vb.addInfo(tag,".")}
+        } else {
+          if( vc.ref.length > 1 || vc.alt.head.length > 1){
+            val refBase = getBasesForIv(vc.chrom,vc.pos,vc.pos + vc.ref.length-1);
+            if(vc.ref != refBase){
+              warning("Ref-mismatch malformed INDEL VCF line:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + vc.ref.length,vc.pos + vc.ref.length+2),
+                   "Warning_malformed_vcf_INDEL_BadRefAllele",100);
+              changeTag.foreach{ tag => vb.addInfo(tag,".")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,".")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"1")}
+              
+            } else {
+              changeTag.foreach{ tag => vb.addInfo(tag,".")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,".")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"0")}
+            }
+            
+          } else { 
+            val refBase = getBaseAtPos(vc.chrom,vc.pos);
+            
+            
+            if(vc.ref == refBase){
+              changeTag.foreach{ tag => vb.addInfo(tag,"0")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,"0")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"0")}
+              notice("Ref-Match:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + 1,vc.pos + 3),
+                   "Notice_refmatchOK",5);
+            } else if(vc.alt.head == refBase){
+              changeTag.foreach{ tag => vb.addInfo(tag,"1")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,"0")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"0")}
+              val newRef = vc.alt.head;
+              val newAlt = vc.ref;
+              
+              vb.in_ref = newRef;
+              vb.in_alt = vb.in_alt.updated(0,newAlt);
+              
+              if(vb.genotypes.genotypeValues.length > 0){
+                vb.genotypes.genotypeValues(0) = vb.genotypes.genotypeValues(0).map{ gg => {
+                  gg.replaceAll("1","R").replaceAll("0","1").replaceAll("R","0")
+                }}
+              }
+              notice("Ref-Alt switched in variant:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + 1,vc.pos + 3),
+                   "Notice_malformed_vcf_RefAltSwap",100);
+            } else if( complementString(vc.ref) == refBase ){
+              changeTag.foreach{ tag => vb.addInfo(tag,"0")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,"1")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"0")}
+              vb.in_ref = complementString(vc.ref);
+              vb.in_alt = vb.in_alt.updated(0,complementString(vc.alt.head));
+              notice("strand switched in variant:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + 1,vc.pos + 3),
+                   "Notice_malformed_vcf_StrandSwap",100);
+            } else if( complementString(vc.alt.head) == refBase ){
+              changeTag.foreach{ tag => vb.addInfo(tag,"1")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,"1")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"0")}
+              val newRef = complementString(vc.alt.head);
+              val newAlt = complementString(vc.ref);
+              
+              vb.in_ref = newRef;
+              vb.in_alt = vb.in_alt.updated(0,newAlt);
+              
+              if(vb.genotypes.genotypeValues.length > 0){
+                vb.genotypes.genotypeValues(0) = vb.genotypes.genotypeValues(0).map{ gg => {
+                  gg.replaceAll("1","R").replaceAll("0","1").replaceAll("R","0")
+                }}
+              }
+              notice("Ref-Alt switched AND strand switched in variant:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + 1,vc.pos + 3),
+                   "Notice_malformed_vcf_RefAltSwapAndStrandSwap",100);
+            } else if(vc.ref != refBase ){
+              warning("Ref-mismatch malformed SNV VCF line:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + 1,vc.pos + 3),
+                   "Warning_malformed_vcf_SNV_BadRefAllele",100);
+              changeTag.foreach{ tag => vb.addInfo(tag,"0")}
+              
+              warnTag.foreach{ tag => vb.addInfo(tag,"1")}
+            } else {
+              changeTag.foreach{ tag => vb.addInfo(tag,"?")}
+              strandSwapTag.foreach{ tag => vb.addInfo(tag,"?")}
+              warnTag.foreach{ tag => vb.addInfo(tag,"?")}
+              warning("WARNING: IMPOSSIBLE STATE:\n"+
+                   "   old line: "+vc.getSimpleVcfString()+"\n"+
+                   "   new line: "+vb.getSimpleVcfString()+"\n"+
+                   "        REF: "+getBasesForIv(vc.chrom,vc.pos-3,vc.pos-1) + "/"+refBase+"/"+getBasesForIv(vc.chrom,vc.pos + 1,vc.pos + 3),
+                   "Warning_malformed_vcf_IMPOSSIBLE_STATE",100);
+            }
+          }
+        }
+        vb;
+      }},newHeader);
+      
+    }
+  }
+  
   case class FixFirstBaseMismatch(genomeFa : String, windowSize : Int = 200, changeTag : Option[String] = Some("GATK_LAT_FIRSTBASEMM")) extends SVcfWalker {
     def walkerName : String = "FixFirstBaseMismatch"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa));
@@ -772,6 +940,7 @@ object GatkPublicCopy {
       rs.map{ c => c.toChar.toUpper.toByte }
     }
   
+    
   case class LeftAlignAndTrimWalker(genomeFa : String, windowSize : Int = 200, tagPrefix : Option[String] = Some("GATK_LAT_"),
                                     useGatkLibCall : Boolean = false) extends SVcfWalker {
     def walkerName : String = "LeftAlignAndTrim"

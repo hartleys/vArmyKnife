@@ -92,6 +92,9 @@ object commonSeqUtils {
   def complementSequenceString(s : Seq[Char]) : Seq[Char] = {
     s.map(reverseBaseCharMap(_));
   }
+  def complementString(s : String) : String = {
+    complementSequenceString(s.toSeq).mkString("")
+  }
   
   
   /******************************************************************************************************
