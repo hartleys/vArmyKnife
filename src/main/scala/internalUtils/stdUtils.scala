@@ -1463,6 +1463,28 @@ object stdUtils {
     Integer.parseInt(s,16);
   }
   
+  def string2floatOpt(s : String) : Option[Float] = {
+    try {
+        Some(s.toFloat)
+    } catch {
+        case e: NumberFormatException => None
+    }
+  }
+  def string2doubleOpt(s : String) : Option[Double] = {
+    try {
+        Some(s.toDouble)
+    } catch {
+        case e: NumberFormatException => None
+    }
+  }
+  def string2intOpt(s : String) : Option[Int] = {
+    try {
+        Some(s.toInt)
+    } catch {
+        case e: NumberFormatException => None
+    }
+  }
+  
   //note on string formatting:
   // "%.3f".format(1.092512) returns "1.093"
   

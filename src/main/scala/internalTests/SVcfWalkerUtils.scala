@@ -2118,12 +2118,14 @@ object SVcfWalkerUtils {
           }
         }
       }}
-      val outType = if(! Set("SUM","MIN","MAX","DIFF","TAG.TALLY","TAG.TALLY.IF","TAG.TALLY.IFEXPR").contains(f)){
+      val outType = if(! Set("MULT.BY.K","SUM","MIN","MAX","DIFF","RATIO","TAG.TALLY","TAG.TALLY.IF","TAG.TALLY.IFEXPR").contains(f)){
         "String"
       } else if( Set("LEN").contains(f) ){
         "Integer"
       } else if( f == "TAG.TALLY" || f == "TAG.TALLY.IF" || f.startsWith("TAG.TALLY")){
         "Integer"
+      } else if( Set("MULT.BY.K","RATIO").contains(f) ){
+        "Float"
       } else if(paramTypes.forall(pt => pt == "Integer")){
         "Integer"
       } else {
@@ -2227,6 +2229,28 @@ object SVcfWalkerUtils {
               vc.addInfo(newTag, ".");
             }
           }
+        } else if(f == "RATIO"){
+            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toDouble
+            }}
+            if(paramVals.length == 2){
+              val out = if(paramVals(1) == 0.0){
+                vc.addInfo(newTag, ".");
+              } else {
+                digits match {
+                  case Some(dd) => {
+                    vc.addInfo(newTag, ("%."+dd+"f").format(paramVals(0) / paramVals(1)) );
+                  }
+                  case None => {
+                    vc.addInfo(newTag, ""+(paramVals(0) / paramVals(1)));
+                  }
+                }
+              }
+            } else {
+              vc.addInfo(newTag, ".");
+            }
         } else if(f == "STATICSET.INTERSECT"){
           val param = paramTags.head;
           val staticSet = paramTags.tail.toSet;
@@ -2254,9 +2278,111 @@ object SVcfWalkerUtils {
             }}.sum
             vc.addInfo(newTag, sumLen + "");
         } else if(f == "MIN"){
-          error("MIN function not yet implemented")
+          if(outType == "Integer"){
+            val paramVals : Seq[Int] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toInt
+            }}
+            if(paramVals.nonEmpty){
+              vc.addInfo(newTag, ""+paramVals.min);
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          } else {
+            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toDouble
+            }}
+            if(paramVals.nonEmpty){
+              digits match {
+                case Some(dd) => {
+                  vc.addInfo(newTag, ("%."+dd+"f").format(paramVals.min) );
+                }
+                case None => {
+                  vc.addInfo(newTag, ""+paramVals.min);
+                }
+              }
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          }
         } else if(f == "MAX"){
-          error("MAX function not yet implemented")
+          if(outType == "Integer"){
+            val paramVals : Seq[Int] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toInt
+            }}
+            if(paramVals.nonEmpty){
+              vc.addInfo(newTag, ""+paramVals.max);
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          } else {
+            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+              v.info.get(param).getOrElse(None)
+            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
+              paramVal.toDouble
+            }}
+            if(paramVals.nonEmpty){
+              digits match {
+                case Some(dd) => {
+                  vc.addInfo(newTag, ("%."+dd+"f").format(paramVals.max) );
+                }
+                case None => {
+                  vc.addInfo(newTag, ""+paramVals.max);
+                }
+              }
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+          }
+        } else if(f == "PROD"){
+          val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+            string2doubleOpt(param) match {
+              case Some(dd) => {
+                Some(dd)
+              }
+              case None => {
+                v.info.get(param).getOrElse(None).filter(paramVal => paramVal != ".").map{ paramVal => {
+                  paramVal.toDouble
+                }}
+              }
+            }
+          }}
+            if(paramVals.nonEmpty){
+              val out = paramVals.product
+              digits match {
+                case Some(dd) => {
+                  vc.addInfo(newTag, ("%."+dd+"f").format(out) );
+                }
+                case None => {
+                  vc.addInfo(newTag, ""+out);
+                }
+              }
+            } else {
+              vc.addInfo(newTag, ".");
+            }
+        } else if(f == "MULT.BY.K"){
+            val k = string2double(paramTags(1));
+            v.info.get(paramTags.head).getOrElse(None) match {
+              case Some(pp) => {
+                val out = string2double(pp) / k;
+                digits match {
+                  case Some(dd) => {
+                    vc.addInfo(newTag, ("%."+dd+"f").format(out) );
+                  }
+                  case None => {
+                    vc.addInfo(newTag, ""+out);
+                  }
+                }
+              }
+              case None => {
+                vc.addInfo(newTag, ".");
+              }
+            }
         } else if(f == "TAG.TALLY.IFEXPR"){
 
             filterExpr.foreach{ fe =>{
