@@ -3422,6 +3422,25 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="GTAG.any.gt", numParam = -1,desc="PASS iff any one of the samples have a value for their genotype-tag entry greater than k.",paramNames=Seq("gtTag","k"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val gtTag = params.head;
+                          val gtK = string2double( params(1) );
+                          
+                          (a : SVcfVariantLine) => {
+                            val idx = a.genotypes.fmt.indexOf( gtTag );
+                            if(idx == -1){
+                              false
+                            } else {
+                              a.genotypes.genotypeValues(idx).exists{ vv => {
+                                string2doubleOpt(vv).map{ vvv => vvv > gtK }.getOrElse(false);
+                              }}
+                            }
+                          }
+                        }
+                      ),
+                      
+                      
         FilterFunction(funcName="AnyGtPass", numParam = -1,desc="PASS iff any one of the samples pass the supplied GT filter.",paramNames=Seq("simpleGtFiltExpression","k1","..."),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val gtFiltName = params.head;

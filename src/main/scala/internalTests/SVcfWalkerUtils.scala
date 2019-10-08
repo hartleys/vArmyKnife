@@ -1602,7 +1602,7 @@ object SVcfWalkerUtils {
         vc.genotypes.genotypeValues = vc.genotypes.genotypeValues.map{ gg => {
           sampIX.map{ case (ss,ix) => gg(ix)}
         }}
-        
+         
         vc
       }}, closeAction = (() => {
         //do nothing
