@@ -15,6 +15,70 @@ object stdUtils {
   //  
   //}
   
+//object ParamStrType extends Enumeration {
+//  type ParamStrType = Value
+//  val psString, psInt, psDouble, psFlag = Value
+//}
+  /*
+  def getParamStrSet( s : String , , delim = "[|]", innerDelim = "[=]") : Seq[String] = {
+    ParamStrSet(s.split(delim).toSeq.map{ ss => {
+      val sc = ss.split(innerDelim);
+      val ps = 
+    }})
+  }
+  
+  
+  def getParamStr(s : String, pss : ParamStrSet) : String = {
+    val ps = pss.
+  }*/
+  
+  
+  //Types: Flag, String, Int, Double
+  case class ParamStr( id : String, 
+                       synon: Seq[String], 
+                       ty : String,
+                       valueString : String = "x",
+                       desc : String = "no description provided",
+                       req : Boolean = false
+                       ){
+    
+  }
+  case class ParamStrSet( pp : Seq[ParamStr] ) {
+    val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
+    def paramMap = pm;
+  }
+  case class ParsedParamStrSet( ss : String, pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
+    val paramMap = pss.paramMap;
+    val sc = ss.split(delim).toSeq;
+    val params = sc.map{ cell => {
+       val x= cell.split(innerDelim);
+       (x.head, x.lift(1) )
+    }}.map{ case ( paramID, paramValue ) => {
+      if(! paramMap.contains(paramID)){
+        error("Parameter \""+paramID+"\" not found! legal params are: "+paramMap.map{ _._2.id }.mkString(",")  );
+      }
+      val prm = paramMap(paramID);
+      paramValue match {
+        case Some(pv) => {
+          (paramID,(prm,pv))
+        }
+        case None => {
+          if(prm.ty == "Flag"){
+            (paramID,(prm,"1"))
+          } else {
+            error("ERROR: param \""+paramID+"\" is not of type \"Flag\"")
+            (paramID,(prm,"."))
+          }
+        }
+      }
+    }}.toMap
+    
+    def getValue(pid : String): Option[String] = params.get(pid).map{ case (prm,pv) => pv };
+    def getValueOrElse(pid : String, ee : String) : String = params.get(pid).map{ case (prm,pv) => pv }.getOrElse(ee);
+  }
+  
+  
+  
    def levenshtein(s1: String, s2: String) = {
       import scala.math._
       def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)

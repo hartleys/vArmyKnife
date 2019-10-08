@@ -491,6 +491,7 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
                   sumTotal : Double,
                   targetArray : GenomicArrayOfSets[String]){
     
+  //var addExtra
   (new java.io.File( outputDir + "/" )).mkdir();
 
     val finalBreakpoints = fullFinalBreakpoints.map{ case (i,chrom,allbp) => {

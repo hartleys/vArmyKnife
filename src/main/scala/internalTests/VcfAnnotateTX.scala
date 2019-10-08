@@ -2758,7 +2758,7 @@ object VcfAnnotateTX {
                 error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
                 new PassThroughSVcfWalker()
               } else if(mapType == "sampleCounts"){
-                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                //error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
                 
                 reportln("Created sample count calc ("+mapID+") ... "+getDateAndTimeString,"debug");
                 val tagInfix = if(mapID == "") "" else mapID + "_";
@@ -3280,6 +3280,9 @@ object VcfAnnotateTX {
     if(! summaryWriter.isEmpty) summaryWriter.get.close();
   }
   
+  
+  
+
   
   /*
    * runEnsembleMerger
