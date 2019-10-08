@@ -3391,6 +3391,23 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="QUAL.gt",numParam=1,desc="PASS iff the QUAL column is greater than k.",paramNames=Seq("k"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val v = string2float( params(0) );
+                          (a : SVcfVariantLine) => {
+                            string2floatOpt(a.qual).map{q => q > v}.getOrElse(false)
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="QUAL.gtm",numParam=1,desc="PASS iff the QUAL column is greater than k, OR qual is missing.",paramNames=Seq("k"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val v = string2float( params(0) );
+                          (a : SVcfVariantLine) => {
+                            string2floatOpt(a.qual).map{q => q > v}.getOrElse(true)
+                          }
+                        }
+                      ),
+                      
         FilterFunction(funcName="TRUE",numParam=0,desc="Always pass",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {

@@ -1564,7 +1564,7 @@ object SVcfWalkerUtils {
     }
 
   }
-  
+   
   case class ReorderSamples(sampleOrdering : Seq[String], sort : Boolean = false) extends SVcfWalker {
     def walkerName : String = "ReorderSamples"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -1610,14 +1610,18 @@ object SVcfWalkerUtils {
       //vc.dropInfo(overwriteInfos);
     }
   }
-  
+  //               Seq(new CopyFieldsToInfo(qualTag = copyQualToInfo, filterTag = copyFilterToInfo, idTag = copyIdToInfo, copyFilterToGeno=copyFilterToGeno, copyInfoToGeno=copyInfoToGeno))
 
-  case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String]) extends SVcfWalker {
+
+  case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], copyFilterToGeno : Option[String],copyQualToGeno : Option[String],
+                              copyInfoToGeno : List[String]) extends SVcfWalker {
     def walkerName : String = "CopyFieldsToInfo"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("qualTag",   qualTag.getOrElse("None")),
         ("filterTag", filterTag.getOrElse("None")),
-        ("idTag", idTag.getOrElse("None"))
+        ("idTag", idTag.getOrElse("None")),
+        ("copyFilterToGeno",copyFilterToGeno.getOrElse("None")),
+        ("copyInfoToGeno", copyInfoToGeno.padTo(1,".").mkString(",") )
     );
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -1627,11 +1631,31 @@ object SVcfWalkerUtils {
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="Float",desc="QUAL field"));
       }}
       filterTag.map{ tagID => {
-        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="Float",desc="FILTER field"));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="String",desc="FILTER field"));
       }}
       idTag.map{ tagID => {
-        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="Float",desc="ID field"));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="String",desc="ID field"));
       }}
+      copyFilterToGeno.map{ tagID => {
+        outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number="1",Type="String",desc="ID field"))
+      }}
+      copyQualToGeno.map{ tagID => {
+        outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number="1",Type="Float",desc="ID field"))
+      }}
+      val copyInfoPairs = copyInfoToGeno.map{ t => {
+        val c = t.split(",");
+        if( c.length != 2){
+          error("Error: copyInfoToGeno must have 2 comma delimited values: the info tag and the format tag!")
+        }
+        (c(0),c(1))
+      } }
+      
+      val sampleCt = vcfHeader.titleLine.sampleList.length;
+      
+      copyInfoPairs.map{ case (info,geno) => {
+        outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",geno,Number="1",Type="Float",desc="Info column copied from "+info+" (todo copy over info)"))
+      }}
+      
       val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
       if( overwriteInfos.nonEmpty ){
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
@@ -1643,10 +1667,24 @@ object SVcfWalkerUtils {
           vc.addInfo(tagID, v.qual)
         }}
         filterTag.map{ tagID => {
-          vc.addInfo(tagID, v.filter)
+          vc.addInfo(tagID, v.filter.replaceAll("[,;= ]","."))
         }}
         idTag.map{ tagID => {
           vc.addInfo(tagID, v.id)
+        }}
+        copyInfoPairs.map{ case (info,geno) => {
+          v.info.getOrElse(info,None).map{ infovalue => {
+            vc.genotypes.addGenotypeArray(geno,Array.fill(sampleCt)( infovalue ))
+          }}
+          //addGenotypeArray
+        }}
+        copyFilterToGeno.map{ tagID => {
+          
+          vc.genotypes.addGenotypeArray(tagID,Array.fill(sampleCt)( v.filter.replaceAll("[,;= ]",".") ))
+          //addGenotypeArray
+        }}
+        copyQualToGeno.map{ tagID => {
+          vc.genotypes.addGenotypeArray(tagID,Array.fill(sampleCt)( v.qual ))
         }}
         vc
       }}, closeAction = (() => {

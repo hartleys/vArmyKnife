@@ -1098,6 +1098,24 @@ object VcfAnnotateTX {
                                          argDesc =  "Use this parameter to copy the FILTER field into an info field."
                         ).meta(true,"Preprocessing") ::
                     new BinaryOptionArgument[String](
+                                         name = "copyFilterToGeno", 
+                                         arg = List("--copyFilterToGeno"), 
+                                         valueName = "genoFieldName",  
+                                         argDesc =  "NOT IMPLEMENTED YET! Use this parameter to copy the FILTER field into the genotype field of every sample."
+                        ).meta(true,"Preprocessing") ::
+                    new BinaryOptionArgument[String](
+                                         name = "copyQualToGeno", 
+                                         arg = List("--copyQualToGeno"), 
+                                         valueName = "genoFieldName",  
+                                         argDesc =  "NOT IMPLEMENTED YET! Use this parameter to copy the QUAL field into the genotype field of every sample."
+                        ).meta(true,"Preprocessing") ::
+                    new BinaryMonoToListArgument[String](
+                                         name = "copyInfoToGeno", 
+                                         arg = List("--copyInfoToGeno"), 
+                                         valueName = "infoFieldName,genoFieldName",  
+                                         argDesc =  "NOT IMPLEMENTED YET! Use this parameter to copy the INFO field into a genotype field. The value will be the same for every sample."
+                        ).meta(true,"Preprocessing") ::
+                    new BinaryOptionArgument[String](
                                          name = "copyIdToInfo", 
                                          arg = List("--copyIdToInfo"), 
                                          valueName = "infoFieldName",  
@@ -1435,6 +1453,10 @@ object VcfAnnotateTX {
                 
                 copyQualToInfo = parser.get[Option[String]]("copyQualToInfo"),
                 copyFilterToInfo = parser.get[Option[String]]("copyFilterToInfo"),
+                copyFilterToGeno = parser.get[Option[String]]("copyFilterToGeno"),
+                copyQualToGeno   = parser.get[Option[String]]("copyQualToGeno"),
+                copyInfoToGeno = parser.get[List[String]]("copyInfoToGeno"),
+
                 copyIdToInfo  = parser.get[Option[String]]("copyIdToInfo"),
                 noGroupStats  = parser.get[Boolean]("noGroupStats"),
                 splitMultiAllelicsNoStarAlle = parser.get[Boolean]("splitMultiAllelicsNoStarAlle"),
@@ -1647,6 +1669,9 @@ object VcfAnnotateTX {
                 mergeBooleanTags : List[String] = List(),
                 copyQualToInfo : Option[String] = None,
                 copyFilterToInfo : Option[String] = None,
+                copyFilterToGeno : Option[String] = None,
+                copyQualToGeno : Option[String] = None,
+                copyInfoToGeno : List[String] = List[String](),
                 copyIdToInfo : Option[String] = None,
                 
                 noGroupStats : Boolean = false,
@@ -1950,11 +1975,15 @@ object VcfAnnotateTX {
               }
             }
         ) ++ (
-            if(copyQualToInfo.isDefined || copyFilterToInfo.isDefined || copyIdToInfo.isDefined){
-               Seq(new CopyFieldsToInfo(qualTag = copyQualToInfo, filterTag = copyFilterToInfo, idTag = copyIdToInfo))
+            if(copyQualToInfo.isDefined || copyFilterToInfo.isDefined || copyIdToInfo.isDefined || copyFilterToGeno.isDefined || copyInfoToGeno.length > 0 || copyQualToGeno.isDefined){
+               Seq(new CopyFieldsToInfo(qualTag = copyQualToInfo, filterTag = copyFilterToInfo, idTag = copyIdToInfo, copyFilterToGeno=copyFilterToGeno, copyInfoToGeno=copyInfoToGeno,copyQualToGeno=copyQualToGeno))
             } else {
               Seq()
             }
+            /*
+             *                 copyFilterToGeno = parser.get[Option[String]]("copyFilterToGeno"),
+                copyInfoToGeno = parser.get[Option[String]]("copyInfoToGeno"),
+             */
         ) ++ (
             (if(splitMultiAllelics){
                 reportln("Creating multiallelic-split utility ... "+getDateAndTimeString,"debug");
