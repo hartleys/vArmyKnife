@@ -37,6 +37,7 @@ object stdUtils {
   case class ParamStr( id : String, 
                        synon: Seq[String], 
                        ty : String,
+                       defaultValue : Option[String] = None,
                        valueString : String = "x",
                        desc : String = "no description provided",
                        req : Boolean = false
@@ -50,7 +51,7 @@ object stdUtils {
   case class ParsedParamStrSet( ss : String, pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
     val paramMap = pss.paramMap;
     val sc = ss.split(delim).toSeq;
-    val params = sc.map{ cell => {
+    var rawParams = sc.map{ cell => {
        val x= cell.split(innerDelim);
        (x.head, x.lift(1) )
     }}.map{ case ( paramID, paramValue ) => {
@@ -60,21 +61,71 @@ object stdUtils {
       val prm = paramMap(paramID);
       paramValue match {
         case Some(pv) => {
-          (paramID,(prm,pv))
+          (paramID,(prm,Some(pv)))
         }
         case None => {
           if(prm.ty == "Flag"){
-            (paramID,(prm,"1"))
+            (paramID,(prm,Some("1")))
           } else {
             error("ERROR: param \""+paramID+"\" is not of type \"Flag\"")
-            (paramID,(prm,"."))
+            (paramID,(prm,None))
           }
         }
       }
     }}.toMap
+    var params : Map[String,(ParamStr,Option[String])] = Map[String,(ParamStr,Option[String])]();
+    var paramsHaveBeenSet = false;
+    def setDefaults() {
+      setDefaults(defaultParamKV = Map[String,String]())
+    }
+    def setDefaults(defaultParamKV : Map[String,String]) {
+      params = pss.pp.map{ ps => {
+        rawParams.get(ps.id) match {
+          case Some(paramval) => {
+            (ps.id,paramval)
+          }
+          case None => {
+            defaultParamKV.get(ps.id) match {
+              case Some(dpv) => {
+                (ps.id,(ps,Some(dpv)));
+              }
+              case None => {
+                (ps.id,(ps,ps.defaultValue))
+              }
+            }
+          }
+        }
+      }}.toMap;
+      paramsHaveBeenSet = true;
+    }
+    def getFlag(pid : String) : Boolean = {
+      rawParams.contains(pid);
+    }
     
-    def getValue(pid : String): Option[String] = params.get(pid).map{ case (prm,pv) => pv };
-    def getValueOrElse(pid : String, ee : String) : String = params.get(pid).map{ case (prm,pv) => pv }.getOrElse(ee);
+      def get(pid : String): Option[String] = {
+        if(! paramsHaveBeenSet) setDefaults();
+        params(pid)._2;
+      }
+      def getOrElse(pid : String, ee : String) : String = {
+        if(! paramsHaveBeenSet) setDefaults();
+        params(pid)._2.getOrElse(ee);
+      }
+      def getOrDie(pid : String) : String = {
+        get(pid).getOrElse({
+          error("Mandatory field not set! "+pid);
+          ".";
+        })
+      }
+      def getOrDot(pid : String) : String   = {
+        getOrElse(pid,".");
+      }
+      def apply(pid: String) : String = {
+        getOrDie(pid);
+      }
+
+    /*def get(pid : String): Option[String] = params.get(pid).map{ case (prm,pv) => pv }.getOrElse(None);
+      def getOrDef(pid : String) : String = params.get(pid).map{ case (prm,pv) => pv }.getOrElse(None).getOrElse(".");
+      def getOrElse(pid : String, ee : String) : String = params.get(pid).map{ case (prm,pv) => pv }.getOrElse(None).getOrElse(ee);*/
   }
   
   

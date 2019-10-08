@@ -10219,7 +10219,8 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                   gs.addGenotypeArray(newID,gs.genotypeValues(fIdx).clone());
                   gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{g => {
                     if(g.contains('.')){
-                      g
+                      //g
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else if(gg == ".") "." else "2"}.sorted.mkString("/")
                     } else {
                       g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
                     }

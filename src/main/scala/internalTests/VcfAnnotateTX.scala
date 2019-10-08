@@ -53,9 +53,10 @@ object VcfAnnotateTX {
                               ""+
                               ""+
                               ""+
-                              ""
+                              "";
 
-      
+
+                              
     /* val altCommandDocText : Seq[String] = Seq("Secondary Commands:",
                             "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
                             "which perform other tasks. ",
@@ -2076,7 +2077,7 @@ object VcfAnnotateTX {
         
         
     /*
-(
+( 
             
           singleCallerVcfs match {
             case Some(scv) => {
@@ -2562,8 +2563,8 @@ object VcfAnnotateTX {
                 val varMatchPathoExprMap  = varMatchPathoExpression.map{_.split("\\|")}.map{x => (x(0),x(1))}.toMap;
                 val varMatchBenignExprMap = varMatchBenignExpression.map{_.split("\\|")}.map{x => (x(0),x(1))}.toMap;
                 val varMatchMetadataMap   = varMatchMetadataList.map{_.split("\\|")}.map{x => (x(0),x(1).split(",").toSeq)}.toMap;
-                val varMatchIdTagMap      = varMatchIdTag.map{_.split("\\|")}.map{x => (x(0),x(1))}.toMap;
-
+                val varMatchIdTagMap      = varMatchIdTag.map{_.split("\\|")}.map{x => (x(0),x(1))}.toMap
+                
                 
                 
                 var varMatchGeneSet = if(varMatchGeneList.isEmpty){ None } else { Some(varMatchGeneList.toSet) }
@@ -2649,6 +2650,200 @@ object VcfAnnotateTX {
             }}
             
         ) ++ ({
+          
+          /*
+
+  //Types: Flag, String, Int, Double
+  case class ParamStr( id : String, 
+                       synon: Seq[String], 
+                       ty : String,
+                       valueString : String = "x",
+                       desc : String = "no description provided",
+                       req : Boolean = false
+                       ){
+    
+  }
+  case class ParamStrSet( pp : Seq[ParamStr] ) {
+    val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
+    def paramMap = pm;
+  }
+  case class ParsedParamStrSet( ss : String, pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
+    val paramMap = pss.paramMap;
+    val sc = ss.split(delim).toSeq;
+    val params = sc.map{ cell => {
+       val x= cell.split(innerDelim);
+       (x.head, x.lift(1) )
+    }}.map{ case ( paramID, paramValue ) => {
+      if(! paramMap.contains(paramID)){
+        error("Parameter \""+paramID+"\" not found! legal params are: "+paramMap.map{ _._2.id }.mkString(",")  );
+      }
+      val prm = paramMap(paramID);
+      paramValue match {
+        case Some(pv) => {
+          (paramID,(prm,pv))
+        }
+        case None => {
+          if(prm.ty == "Flag"){
+            (paramID,(prm,"1"))
+          } else {
+            error("ERROR: param \""+paramID+"\" is not of type \"Flag\"")
+            (paramID,(prm,"."))
+          }
+        }
+      }
+    }}.toMap
+    
+    def getValue(pid : String): Option[String] = params.get(pid).map{ case (prm,pv) => pv };
+    def getValueOrElse(pid : String, ee : String) : String = params.get(pid).map{ case (prm,pv) => pv }.getOrElse(ee);
+  }
+  
+  
+           */
+          /*
+     val DEFAULT_MAP_PARAMS : Seq[ParamStr] = Seq[ParamStr](
+           ParamStr(id = "mapID",synon=Seq(),ty="String",valueString="id",desc="",req=true)
+         )
+     val MAP_FUNCTIONS : Map[String,(ParamStrSet, (ParsedParamStrSet) => SVcfWalker)] = Map[String,(ParamStrSet, (ParsedParamStrSet) => SVcfWalker)](
+       ("tagVariantsExpression" , (ParamStrSet(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided"))
+         )), (params : ParsedParamStrSet) => {
+           VcfExpressionTag(expr = params.getOrDie("expr"), tagID = params.getOrDie("mapID"), tagDesc = params.getOrDie("desc"));
+         })
+       ),
+       ("genotypeFilter" , (ParamStrSet(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "filterTag",synon=Seq(),ty="String",valueString="tagID",desc="",req=true),
+           ParamStr(id = "outputGT",synon=Seq(),ty="String",valueString="filtered_GT",desc="",req=true),
+           ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="",req=true),
+           ParamStr(id = "inputGtNewName",synon=Seq(),ty="",valueString="prefilt_GT",desc="",req=true),
+           ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="",req=false),
+           ParamStr(id = "superGroups",synon=Seq(),ty="String",valueString="superGroups",desc="",req=false)
+         )), (params : ParsedParamStrSet) => {
+             
+                //groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None
+                FilterGenotypesByStat(
+                   filter = params("expr"), 
+                   filterTag = params("filterTag"),
+                   gtTag = params("inputGtTag"),
+                   rawGtTag = params("inputGtNewName"),
+                   noRawGt = params.rawParams.contains("inputGtNewName"),
+                   newGTTag = params("outputGT"),
+                   groupFile = params.get("groupFile"), 
+                   groupList = None, 
+                   superGroupList  = params.get("superGroupList")
+                )
+         })
+       ),
+       ("sampleCounts" , (ParamStrSet(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "grpFile",synon=Seq(),ty="String",valueString="expr",desc="",req=false),
+           ParamStr(id = "superGroups",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "calcCounts",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "calcFreq",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "calcMisc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "calcAlle",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "calcHetHom",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "calcMultiHet",synon=Seq(),ty="Flag",valueString="",desc="",req=false)
+         )), (params : ParsedParamStrSet) => {
+                val mapID = params.getOrDie("mapID")
+                val tagInfix = if(mapID == "") "" else mapID + "_";
+                val vcfCodes : VCFAnnoCodes = VCFAnnoCodes(CT_INFIX = tagInfix)
+                SAddGroupInfoAnno(groupFile = params.get("grpFile"),
+                                                groupList = None,
+                                                superGroupList  = params.get("superGroups"), 
+                                                chromList = params.get("chromList").map{ _.split(",").toList },
+                                                noMultiAllelics = true,
+                                                tagFilter = None,
+                                                tagPreFiltGt = None,
+                                                GTTag = params("inputGT"),
+                                                vcfCodes = vcfCodes,
+                                                addAlle = params.getFlag("calcAlle"), addCounts = params.getFlag("calcCounts"), addFreq = params.getFlag("calcFreq"), addMiss = params.getFlag("calcMiss"),
+                                                addHetHom = params.getFlag("calcHetHom"), addMultiHet = params.getFlag("calcMultiHet")
+                                                )
+         })
+       ),
+       ("sampleLists" , (ParamStrSet(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="expr",desc="",req=false),
+           ParamStr(id = "printLimit",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "groupFile",synon=Seq(),ty="",valueString="",desc="",req=false),
+           ParamStr(id = "superGroupList",synon=Seq(),ty="",valueString="",desc="",req=false)
+         )), (params : ParsedParamStrSet) => {
+           new PassThroughSVcfWalker()
+         })
+       ),
+       ("depthStats" , (ParamStrSet(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="expr",desc="",req=false),
+           ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "inputDP",synon=Seq(),ty="",valueString="",desc="",req=false)
+         )), (params : ParsedParamStrSet) => {
+           new PassThroughSVcfWalker()
+         })
+       ),
+       ("filterTags" , (ParamStrSet(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "FORMAT.keep",synon=Seq(),ty="String",valueString="expr",desc="",req=false),
+           ParamStr(id = "FORMAT.drop",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "INFO.keep",synon=Seq(),ty="",valueString="",desc="",req=false),
+           ParamStr(id = "INFO.drop",synon=Seq(),ty="",valueString="",desc="",req=false),
+           ParamStr(id = "SAMPLES.keep",synon=Seq(),ty="",valueString="",desc="",req=false),
+           ParamStr(id = "SAMPLES.drop",synon=Seq(),ty="",valueString="",desc="",req=false)
+         )), (params : ParsedParamStrSet) => {
+           new PassThroughSVcfWalker()
+         })
+       )
+     )
+     */
+    /*
+     * 
+     * mapID
+     * chromList
+     * inputGT
+     * filterTag
+     * outputGT
+     * inputGtNewName
+if(mapType == "filterTags"){
+                 val keepGeno = params.get("FORMAT.keep").map{ _.split(",").toList }
+                 val keepInfo = params.get("INFO.keep").map{ _.split(",").toList }
+                 val keepSamp = params.get("SAMPLES.keep").map{ _.split(",").toList }
+                 val dropGeno = params.get("FORMAT.drop").map{ _.split(",").toList }.toList.flatten
+                 val dropInfo = params.get("INFO.drop").map{ _.split(",").toList }.toList.flatten
+                 val dropSamp = params.get("SAMPLES.drop").map{ _.split(",").toList }.toList.flatten
+                 FilterTags(
+                     keepGenotypeTags = keepGeno,
+                     dropGenotypeTags = dropGeno,
+                     keepInfoTags = keepInfo,
+                     dropInfoTags = dropInfo,
+                     dropAsteriskAlleles = false,
+                     keepSamples = keepSamp,
+                     dropSamples = dropSamp,
+                     alphebetizeHeader = false,
+                     renameInfoTags = None
+                  )
+              }
+     */
+     /*
+            val walkseq : Seq[SVcfWalker] = variantMapFunction.map{ vmfString => {
+              val fullcells = vmfString.split("(?<!\\\\)[|]").map{ xx => xx.replaceAll("\\\\[|]","|") }
+              if(fullcells.length < 2){
+                error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
+              }
+              val mapType = fullcells.head;
+              val mapID = fullcells(1);
+              
+              val (funcParamSet,funcFunc) : (ParamStrSet,(ParsedParamStrSet) => SVcfWalker) = MAP_FUNCTIONS.getOrElse(mapType,{
+                error("Unknown Map Function: \""+mapType+"\"");
+                null
+              })
+              val params = ParsedParamStrSet( (fullcells.drop(2).toSeq :+ ("mapID="+mapID)).mkString("|"), funcParamSet)
+              
+              params.setDefaults(Map[String,String](
+                  
+              ))
+              
+              funcFunc(params);
+            }}*/
+          
             val sseq : Seq[SVcfWalker] = variantMapFunction.map{ vmfString => {
               val fullcells = vmfString.split("(?<!\\\\)[|]").map{ xx => xx.replaceAll("\\\\[|]","|") }
               if(fullcells.length < 2){
@@ -2746,7 +2941,7 @@ object VcfAnnotateTX {
                    gtTag = inputGtTag,
                    rawGtTag = copyRawGt,
                    noRawGt = noRawGt,
-                   newGTTag = filterOutputGtTag,
+                   newGTTag = outputGtTag,
                    groupFile = grpFile, 
                    groupList = None, 
                    superGroupList  = superGroups
