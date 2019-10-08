@@ -5100,7 +5100,7 @@ object SVcfWalkerUtils {
   
   case class AddAltSampLists(tagGT : String = "GT",
                              outputTagPrefix : String = OPTION_TAGPREFIX+"SAMPLIST_",
-                             printLimit : Int = 25,
+                             printLimit : Option[Int] = None,
                              groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None,
                              expr : Option[String] = None
                             ) extends internalUtils.VcfTool.SVcfWalker {
@@ -5165,6 +5165,8 @@ object SVcfWalkerUtils {
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val filterExpr : Option[SFilterLogic[SVcfVariantLine]] = expr.map{filterExpressionString => internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )}
 
+      val printLim = printLimit.getOrElse(vcfHeader.sampleCt+10);
+      
       val outHeader = initVCF(vcfHeader);
       val overwriteInfos = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
       if( overwriteInfos.nonEmpty ){
@@ -5199,7 +5201,7 @@ object SVcfWalkerUtils {
             if(s.length == 0){
               //do nothing
             } else {
-              if(s.length <= printLimit){
+              if(s.length <= printLim){
                 vc.addInfo(outputTagPrefix+""+gClass,s.mkString(","));
                 groups.foreach( grp => {
                   val groupSet = groupToSampleMap(grp);
@@ -5213,13 +5215,13 @@ object SVcfWalkerUtils {
                   }
                 })
               } else {
-                vc.addInfo(outputTagPrefix+""+gClass,"TOO_MANY_TO_PRINT,"+s.length+","+s.take(printLimit).mkString(","));
+                vc.addInfo(outputTagPrefix+""+gClass,"TOO_MANY_TO_PRINT,"+s.length+","+s.take(printLim).mkString(","));
                 groups.foreach( grp => {
                   val tag = outputTagPrefix+"GRP_"+grp+"_"+gClass
                   val groupSet = groupToSampleMap(grp);
                   val gss = s.filter{ss => groupSet.contains(ss)}
-                  if(gss.length > printLimit){
-                    vc.addInfo(tag,"TOO_MANY_TO_PRINT,"+gss.length+","+gss.take(printLimit).mkString(","));
+                  if(gss.length > printLim){
+                    vc.addInfo(tag,"TOO_MANY_TO_PRINT,"+gss.length+","+gss.take(printLim).mkString(","));
                   } else {
                     vc.addInfo(tag,gss.mkString(","));
                   }

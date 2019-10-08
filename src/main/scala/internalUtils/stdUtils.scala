@@ -40,17 +40,20 @@ object stdUtils {
                        defaultValue : Option[String] = None,
                        valueString : String = "x",
                        desc : String = "no description provided",
-                       req : Boolean = false
+                       req : Boolean = false,
+                       initParam : Boolean = false,
+                       hidden : Boolean = false,
+                       defaultDesc : Option[String] = None
                        ){
     
   }
-  case class ParamStrSet( pp : Seq[ParamStr] ) {
+  case class ParamStrSet(mapType : String, desc : String, pp : Seq[ParamStr] ) {
     val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
     def paramMap = pm;
   }
-  case class ParsedParamStrSet( ss : String, pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
+  case class ParsedParamStrSet( sc : Seq[String], pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
     val paramMap = pss.paramMap;
-    val sc = ss.split(delim).toSeq;
+    //val sc = ss.split(delim).toSeq;
     var rawParams = sc.map{ cell => {
        val x= cell.split(innerDelim);
        (x.head, x.lift(1) )
@@ -73,7 +76,7 @@ object stdUtils {
         }
       }
     }}.toMap
-    var params : Map[String,(ParamStr,Option[String])] = Map[String,(ParamStr,Option[String])]();
+    var params : Map[String,(ParamStr,Option[String],Boolean)] = Map[String,(ParamStr,Option[String],Boolean)]();
     var paramsHaveBeenSet = false;
     def setDefaults() {
       setDefaults(defaultParamKV = Map[String,String]())
@@ -81,25 +84,38 @@ object stdUtils {
     def setDefaults(defaultParamKV : Map[String,String]) {
       params = pss.pp.map{ ps => {
         rawParams.get(ps.id) match {
-          case Some(paramval) => {
-            (ps.id,paramval)
+          case Some((a,b)) => {
+            (ps.id,(a,b,true))
           }
           case None => {
             defaultParamKV.get(ps.id) match {
               case Some(dpv) => {
-                (ps.id,(ps,Some(dpv)));
+                (ps.id,(ps,Some(dpv),false));
               }
               case None => {
-                (ps.id,(ps,ps.defaultValue))
+                (ps.id,(ps,ps.defaultValue,false))
               }
             }
           }
         }
       }}.toMap;
+      params.find{ case (paramid,(ps,pv,isSet)) => {
+        ps.req && (! isSet)
+      }}.foreach{ case (paramid,(ps,pv,isSet)) => {
+        error("ERROR: parameter "+paramid+" is REQUIRED for function "+pss.mapType)
+      }}
+      
+      
       paramsHaveBeenSet = true;
     }
     def getFlag(pid : String) : Boolean = {
       rawParams.contains(pid);
+    }
+    def set(paramID : String, paramValue : String){
+      params = params.updated(paramID, ( pss.paramMap(paramID),Some(paramValue), true)  )
+    }
+    def isSet(paramID : String) : Boolean = {
+      params.get(paramID).map{ _._3}.getOrElse(false);
     }
     
       def get(pid : String): Option[String] = {

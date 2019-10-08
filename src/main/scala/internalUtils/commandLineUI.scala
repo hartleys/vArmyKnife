@@ -8,6 +8,32 @@ import internalUtils.stdUtils._;
 
 object commandLineUI {
 
+  case class UserManualBlock( lines : Seq[String],
+                              title : Option[String] = None, 
+                              level : Int = 1, isCodeBlock : Boolean = true){
+    def mdBlockIndent = if(isCodeBlock) 4 else 0;
+    def getBlockString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH) : String = {
+      title.map{ "  "+_+"\n" }.getOrElse("") + lines.map{line => {
+        wrapLineWithIndent(line,lineLen,4)
+      }}.mkString("\n");
+      /*
+      
+      title.map{case (lmrt,lmrd) => {
+        "" + (lmrt match {
+          case Some(tx) => "### "+escapeToMarkdown(tx)+"\n\n";
+          case None => "";
+        }) + wrapLineWithIndent(escapeToMarkdown(lmrd),internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,0)+"\n"
+      }}.mkString("\n")+*/
+    }
+    def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH) : String = {
+      title.map{ tx => "### "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + lines.map{line => {
+        wrapLineWithIndent(escapeToMarkdown(line),lineLen, mdBlockIndent );
+      }}.mkString("\n");
+    }
+    
+  }
+  
+  
 
   abstract class StringParser[T]{
     def parse(s : String)(respectQuotes : Boolean, stripQuotes : Boolean) : T;

@@ -51,6 +51,22 @@ object helpDocs {
   //    "<TODO>: Write description!"
   //);
   
+  case class HelpTopic( topicName : String, desc : String = "", topicManual : Seq[internalUtils.commandLineUI.UserManualBlock]){
+   def blockManual : String = topicManual.map{ umb => {
+     umb.getBlockString()
+   }}.mkString("\n")
+   def markdownManual : String = topicManual.map{ umb => {
+     umb.getMarkdownString();
+   }}.mkString("\n")
+  }
+  
+  val helpTopics : Seq[HelpTopic] = Seq[HelpTopic](
+      HelpTopic("VarFunctions","Functions that perform a single operation on a variant file.",internalTests.VcfAnnotateTX.MAPFUNCTIONS_USERMANUALBLOCKS),
+      HelpTopic("VariantExpressions","Syntax for logical Expressions that return either true or false for a variant. Used by various other functions.",internalUtils.VcfTool.sVcfFilterLogicParser.logicManualFmt ),
+      HelpTopic("GenotypeExpressions","Syntax for logical Expressions that return either true or false for a given sample and a given variant. Used by various other functions.",internalUtils.VcfTool.sGenotypeFilterLogicParser.logicManualFmt )
+  )
+  val helpTopicMap : Map[String,HelpTopic] = helpTopics.map{ht => (ht.topicName,ht)}.toMap;
+  
   def runHelp(args : Array[String]){
     //report("Help:","output");
     if(args.exists{ a => a == "--verbose" || a == "-v"}){
@@ -69,6 +85,11 @@ object helpDocs {
       val cmd = commandList.get("walkVcf");
       
       report("HELP: vArmyKnife\n","output");
+      reportln("AVAILABLE HELP TOPICS:","output");
+      helpTopics.foreach{ ht => {
+        reportln( wrapLinesWithIndent(ht.topicName+":"+ht.desc, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "    ", false) ,"output");
+      }}
+      
       (cmd.get)().parser.reportManual();
       
     } else if(helpCommand == "secondaryCommands"){
@@ -90,6 +111,8 @@ object helpDocs {
             report(line + "\n","output");
           }}
         }
+    } else if(helpTopicMap.contains(helpCommand)){
+      report( helpTopicMap(helpCommand).blockManual,"output" );
     } else {
       //Print help for a specific function:
       
@@ -251,6 +274,12 @@ object helpDocs {
         }
         val writer = openWriter(outdir+filename+".md");
         writer.write(parser.getMarkdownManual());
+        writer.close();
+      }
+      
+      for((topicName,ht) <- helpTopicMap){
+        val writer = openWriter(outdir+topicName+".md");
+        writer.write(ht.markdownManual);
         writer.close();
       }
   }
