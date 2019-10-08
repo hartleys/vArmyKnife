@@ -1680,6 +1680,11 @@ object VcfAnnotateTX {
             
     val summaryWriter = if(summaryFile.isEmpty) None else Some(openWriterSmart(summaryFile.get));
     val burdenWriter = burdenCountsFile.map{ bcf => openWriterSmart(bcf)};
+    
+    burdenWriter.foreach{ bw => {
+      //out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+      bw.write("tagID\tgeneID\tburdenCt\taltCt\tvarCt\n");
+    }}
     reportln("Initializing VCF walker ... "+getDateAndTimeString,"debug");
 
     val deepDebugMode = false;

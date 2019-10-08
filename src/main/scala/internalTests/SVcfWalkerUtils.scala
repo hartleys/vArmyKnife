@@ -1985,7 +1985,7 @@ object SVcfWalkerUtils {
   class generateBurdenMatrix(paramString : String, out : WriterUtil) extends internalUtils.VcfTool.SVcfWalker { 
     val params = paramString.split(",");
     val tagID = params(0);
-    def walkerName : String = "AddFuncTag."+tagID;
+    def walkerName : String = "GenerateBurdenTable."+tagID;
     val geneTag = params(1);
     val outfile = params(2);
     val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
@@ -2019,6 +2019,7 @@ object SVcfWalkerUtils {
       val keepSampSet = sampSubset.getOrElse(fullSampList.toSet);
       val sampIdxList = fullSampList.zipWithIndex.filter{ case (samp,idx)=> { keepSampSet.contains(samp) }}.map{ case (samp,idx) => idx };
 
+      notice("BTcount: parsed sample list, found: "+sampIdxList.length+" first 10 sample idx: ["+sampIdxList.slice(0,10).mkString("/")+"]","sampIdxListFound",10);
       
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
@@ -2030,11 +2031,14 @@ object SVcfWalkerUtils {
                  new Array[Int]( outHeader.titleLine.sampleList.length )
               )
             }}
+            notice("genelist found: "+geneList.mkString("/"),"GENELIST_FOUND",25);
             var numAlt = 0;
             v.genotypes.getGtTag(gtTag).map{ gta => {
               sampIdxList.foreach{ sampIdx => {
                 val gt = gta(sampIdx);
+                notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
                 if( gt.split("[|/]").contains("1")){
+                  notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
                   numAlt = numAlt + 1;
                   cts.map{ ctsCurr => {
                     ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
