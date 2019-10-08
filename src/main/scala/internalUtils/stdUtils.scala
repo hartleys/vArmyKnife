@@ -695,6 +695,37 @@ object stdUtils {
     }
   }
   
+  /*
+   * Not sure I like the batchiterator?
+   */
+  /*
+  class BatchIterator[A]{
+    def hasNext : Boolean;
+    def next : A;
+    def hasNextBlock : Boolean;
+    def nextBlock;
+  }
+  def makeBatchIteratorByBreakpoints[A]( inputIter : BufferedIterator[A])(f : (A => Boolean) ) : BatchIterator[(A,Int)] = {
+    val iter = inputIter.buffered;
+    new BatchIterator[(A,Int)]{
+      var ii = 0;
+      def hasNext : Boolean = {
+        iter.hasNext && (! f( iter.head ));
+      }
+      def next : (A,Int) = {
+        ii = ii + 1;
+        (iter.next,ii-1);
+      }
+      def hasNextBlock : Boolean = {
+        iter.hasNext
+      }
+      def nextBlock{
+        ii = 0;
+        (iter.next,0);
+      }
+    }
+  }*/
+  
   
   def groupBySpan[A,B](iter : BufferedIterator[A])(f : (A => B)) : Iterator[Seq[A]] = {
     //var currIter = iter;

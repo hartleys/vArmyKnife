@@ -619,6 +619,11 @@ object genomicAnnoUtils {
     def getSteps(chromName : String, strand : Char) : Iterator[(GenomicInterval, Set[B])];
     def getSteps : Iterator[(GenomicInterval, Set[B])];
     
+    def addChrom(chromName : String){
+      error("ERROR: addChrom not implemented for this class!");
+      //do nothing by default
+    }
+    
     def getValueSet : Set[B];
     
   }
@@ -659,6 +664,14 @@ object genomicAnnoUtils {
       chromMap.contains((chromName,'+'));
     } else {
       chromMap.contains((chromName,'.'));
+    }
+    override def addChrom(chromName : String){
+      if(isStranded){
+        chromMap((chromName,'+')) = InternalStepVector[B]();
+        chromMap((chromName,'-')) = InternalStepVector[B]();
+      } else {
+        chromMap((chromName,'.')) = InternalStepVector[B]();
+      }
     }
     
     def isFinalized : Boolean = isFinalizedFlag;
@@ -762,6 +775,13 @@ object genomicAnnoUtils {
     def isStranded : Boolean = true;
     def isFinalized : Boolean = isFinalizedFlag;
     
+    override def addChrom(chromName : String){
+        //chromMap((chromName,'+')) = InternalStepVector[B]();
+        //chromMap((chromName,'-')) = InternalStepVector[B]();
+          chromMap = chromMap + (( (chromName,'+'),  InternalStepVector[B]()))
+          chromMap = chromMap + (( (chromName,'-'),  InternalStepVector[B]()))
+    }
+    
     def finalizeStepVectors : GenomicArrayOfSets[B] = {
       if(isFinalizedFlag) return this;
       gsvMap = Map[(String,Char),GenomicStepVector[B]]();
@@ -861,6 +881,12 @@ object genomicAnnoUtils {
     }
     def isStranded : Boolean = true;
     def isFinalized : Boolean = isFinalizedFlag;
+    
+    override def addChrom(chromName : String){
+        //chromMap((chromName,'+')) = InternalStepVector[B]();
+        //chromMap((chromName,'-')) = InternalStepVector[B]();
+          chromMap = chromMap + (( (chromName,'.'),  InternalStepVector[B]()   ))
+    }
     
     def finalizeStepVectors : GenomicArrayOfSets[B] = {
       if(isFinalizedFlag) return this;

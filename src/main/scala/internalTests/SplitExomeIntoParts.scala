@@ -132,12 +132,14 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
                            nonSplitOverHighCoverageRegions : List[String],
                            nonSplitGeneIntervals : List[String],
                            targetRegionBed : Option[String]){
+  (new java.io.File( outputDir )).mkdir();
   
   reportln("Initializing SplitExomeIntoParts ["+getDateAndTimeString+"]","note");
-  val chromLengthMap : Map[String,Int] = getLinesSmartUnzip(chromLengthFile).map{ line => {
+  val chromLengthList : Vector[(String,Int)] = getLinesSmartUnzip(chromLengthFile).map{ line => {
     val cells = line.split("\t");
     (cells(0), string2int(cells(1)))
-  }}.toMap;
+  }}.toVector;
+  val chromLengthMap : Map[String,Int] = chromLengthList.toMap;
   reportln("ChromLengthMap read finished. Found: "+chromLengthMap.size+"chroms examples: ["+chromLengthMap.take(3).map{_._1}.mkString(",")+"] ["+getDateAndTimeString+"]","note");
 
   
@@ -171,15 +173,6 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     add_bedfile(arr,bedfile,bedtitle,chromLengthMap,bedbuffer);
   }}
   
-  nonSplitGeneIntervals.foreach{ ivset => {
-    val cells = ivset.split("[|]");
-    val bedfile = cells(0);
-    val bedtitle = cells.lift(1).getOrElse("GENE");
-    val bedbuffer = string2int(cells.lift(2).getOrElse("0"));
-    reportln("Parsing gene GTF file: "+bedtitle+":"+bedfile+" ["+getDateAndTimeString+"]","note");
-    add_qcGetGeneCounts_geneArea_regions(arr,bedfile,bedtitle,codes=stdGtfCodes,buffer = bedbuffer, chromLens=chromLengthMap);
-  }}
-  
   nonSplitOverHighCoverageRegions.foreach{ wigfile => {
     val cells = wigfile.split("[|]");
     val bedfile = cells(0);
@@ -190,12 +183,31 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     addwig(arr,bedfile,bedtitle,t,bedbuffer);
   }}
   
+  nonSplitGeneIntervals.foreach{ ivset => {
+    val cells = ivset.split("[|]");
+    val bedfile = cells(0);
+    val bedtitle = cells.lift(1).getOrElse("GENE");
+    val bedbuffer = string2int(cells.lift(2).getOrElse("0"));
+    reportln("Parsing gene GTF file: "+bedtitle+":"+bedfile+" ["+getDateAndTimeString+"]","note");
+    add_qcGetGeneCounts_geneArea_regions(arr,bedfile,bedtitle,codes=stdGtfCodes,buffer = bedbuffer, chromLens=chromLengthMap);
+  }}
+
+
+
+  chromLengthMap.foreach{ case (chrom,clen) => {
+    if(!  arr.hasChrom(chrom) ){
+      arr.addChrom(chrom);
+    }
+  }}
+  
   arr.finalizeStepVectors;
+  
+  /////////////////////////////////////////////////////////////////////////////////
   
   reportln("Starting breakpoint calcs ["+getDateAndTimeString+"]","note");
 
-  val breakablePoints = arr.getChroms.toVector.map{ case (chrom,cs) => {
-    (chrom, arr.getSteps(chrom,cs).filter{ case (iv,ivset) => {
+  val breakablePoints = chromLengthList.map{ case (chrom,clen) => {
+    (chrom, arr.getSteps(chrom,'.').filter{ case (iv,ivset) => {
       ivset.size == 0 && iv.start + 5 < iv.end && iv.end < chromLengthMap(chrom)
     }}.map{ case (iv,ivset) => ((iv.start + iv.end) / 2) }.toVector)
   }}
@@ -237,8 +249,8 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
 
   val gstatout = openWriter(outputDir+"/genomeArray.status.txt");
   gstatout.write("chrom\tstart\tend\tstatus\n");
-  arr.getChroms.toVector.foreach{ case (chrom,cs) => {
-    arr.getSteps(chrom,cs).foreach{ case (iv,ivset) => {
+  chromLengthList.map{ case (chrom,clen) => {
+    arr.getSteps(chrom,'.').foreach{ case (iv,ivset) => {
       gstatout.write(chrom+"\t"+iv.start+"\t"+iv.end+"\t"+ivset.toVector.sorted.mkString("/")+"\n");
     }}
   }}
@@ -276,7 +288,7 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
         reportln("   Initial Part Ct: "+chrom+"="+pc,"note");
   }}
   val partCountPerChromRemainder = partCountPerChromDoubles.zip(partCountPerChromInitial).zip(chroms).zipWithIndex.map{ case (((dbl,flr),chrom),i) => {
-    ((dbl - flr),chrom,i)
+    ((dbl - flr.toDouble),chrom,i,dbl,flr)
   }}.sorted.reverse
   
   val totalPartCountInitial = partCountPerChromInitial.sum;
@@ -290,23 +302,28 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
   }
   reportln("   Parts Left: "+partsLeft,"note");
   
-  val partCountPerChrom = partCountPerChromRemainder.map{ case (rem,chrom,i) => {
-    if( i < partsLeft){
-      (i,chrom,partCountPerChromInitial(i) + 1);
+  val partCountPerChrom = partCountPerChromRemainder.zipWithIndex.map{ case ((rem,chrom,i, dbl, flr),j) => {
+    val remString = "%.4f".format(rem);
+    val dblString = "%.4f".format(dbl);
+    val flrString = ""+flr
+    if( j < partsLeft){
+      reportln("chrom["+chrom+"]["+dblString+" - "+flrString+" = "+remString+"] [ADD 1]","note")
+      (i,chrom,partCountPerChromInitial(i) + 1,""+partCountPerChromInitial(i)+"+1");
     } else {
-      (i,chrom,partCountPerChromInitial(i));
+      reportln("chrom["+chrom+"]["+dblString+" - "+flrString+" = "+remString+"] [ADD 0]","note")
+      (i,chrom,partCountPerChromInitial(i),""+partCountPerChromInitial(i));
     }
   }}.sorted;
   
-  partCountPerChrom.foreach{ case (i,chrom,pc) => {
-        reportln("   Final Part Ct: "+chrom+"="+pc,"note");
+  partCountPerChrom.foreach{ case (i,chrom,pc,addString) => {
+        reportln("   Final Part Ct: "+chrom+"="+pc +" ("+addString+")","note");
   }}
   val finalPartCountAllChroms = partCountPerChrom.map{_._3}.sum;
   reportln("Final Part Count: "+finalPartCountAllChroms,"note");
   
   ////////////////////////////////////////////////////////////////////////////
   
-  val finalBreakpoints = partCountPerChrom.map{ case (i,chrom,pc) => {
+  val finalBreakpoints = partCountPerChrom.map{ case (i,chrom,pc,addString) => {
     val chromTotalSpan = unbreakableSpanInfo(i)._2.map{ case (s,e,ct) => ct }.sum
     if(pc == 1){
       (i,chrom,Vector((0,chromLengthMap(chrom),chromTotalSpan)))
@@ -334,16 +351,16 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
   reportln("Writing all-breakpoint summary ["+getDateAndTimeString+"]","note");
   
   val finalBreakOut = openWriter(outputDir+"/breakpoints.all.txt");
-  finalBreakOut.write("chrom\tstart\tend\tlen\texomeLen\n");
+  finalBreakOut.write("chrom\tstart\tend\tlen\texomeLen\trelativeLen\n");
   finalBreakpoints.foreach{ case (i,chrom,fbp) => {
     fbp.foreach{ case (s,e,ct) => {
-      finalBreakOut.write(chrom+"\t"+s+"\t"+e+"\t"+(e-s)+"\t"+ct+"\n");
+      finalBreakOut.write(chrom+"\t"+s+"\t"+e+"\t"+(e-s)+"\t"+ct+"\t"+ "%.4f".format(ct.toDouble * partct / sumTotal)+"\n");
     }}
   }}
   finalBreakOut.close();
   
   
-  val numZeros = getNumZeros(partCountPerChrom.map{ case (i,chrom,pc) => pc }.max)
+  val numZeros = getNumZeros(partCountPerChrom.map{ case (i,chrom,pc,addString) => pc }.max)
   
   reportln("Writing all-target summary ["+getDateAndTimeString+"]","note");
 
@@ -421,7 +438,15 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     val iter = getLinesSmartUnzip(bedfile).buffered;
     
     def getChrom(chromLine : String) : String = {
-      chromLine.split("\\s+").map{ cc => (cc.split("[=]")(0),cc.split("[=]")(1)) }.find{ cc => cc._1 == "chrom"}.map{ _._2 }.getOrElse({
+      reportln("chromLine = "+chromLine,"debug");
+      chromLine.split("\\s+").map{ cc => {
+        val ccArray = cc.split("[=]");
+        reportln("chromArray: [\""+ccArray.mkString("\",\"")+"]","debug")
+        (cc.split("[=]")(0),cc.split("[=]").lift(1))
+      }}.find{ cc => cc._1 == "chrom"}.map{ _._2.getOrElse({
+        error("malformatted wiggle file line!");
+        "chr?"
+      }) }.getOrElse({
         error("malformatted wiggle file line!");
         "chr?"
       });
@@ -432,19 +457,40 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     }
     var currChrom = getChrom(line);
     
+    val reportCT = 1000000;
+    
+    var lnct = 0;
+    var pos = 0;
+    var blockct = 0;
+    def readNext( note : String = "."){
+      lnct = lnct + 1;
+      pos = pos + 1;
+      if(lnct % reportCT == 0){
+        report(".","progress");
+        if(lnct % (reportCT * 5) == 0){
+          report(" ","progress");
+          if(lnct % (reportCT * 20) == 0){
+            report(" read "+"%,d".format(lnct)+" lines. ["+currChrom+":"+pos+"] ["+blockct+" blocks] ["+note+"] ["+getDateAndTimeString+"]\n","progress");
+          }
+        }
+      }
+      line = iter.next;
+    }
+
     while(iter.hasNext){
-      var pos = 0;
       while( iter.hasNext && (! line.startsWith("fixedStep"))){
         while(iter.hasNext && (! line.startsWith("fixedStep")) && string2double(line) < t){
-          pos = pos + 1;
-          line = iter.next;
+          readNext("LowCoverageSection");
         }
         if(iter.hasNext && (! line.startsWith("fixedStep")) && string2double(line) >= t){
+          warning("Entering High Coverage section! "+currChrom+":"+pos,"START_HICOV_SECTION",10);
+          blockct = blockct + 1;
           var start = pos;
-          while(iter.hasNext && (! line.startsWith("fixedStep")) && string2double(line) > t){
-            pos = pos + 1;          
-            line = iter.next
+          while(iter.hasNext && (! line.startsWith("fixedStep")) && string2double(line) >= t){
+            readNext("HighCoverageSection");
           }
+          warning("Leaving High Coverage section! "+currChrom+":"+pos,"END_HICOV_SECTION",10);
+
           val s = math.max( start - buffer,0)
           val iv = new GenomicInterval(currChrom,'.',s,pos);
           arr.addSpan(iv,bedTitle);
@@ -452,8 +498,12 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
       }
       if(iter.hasNext){
         currChrom = getChrom(line);
+        readNext("newChrom");
+        pos = 0;
       }
     }
+   
+    report(" read "+lnct+" lines. ["+currChrom+":"+pos+"] ["+getDateAndTimeString+"]\n","progress");
   }
 
   def add_bedfile( arr : GenomicArrayOfSets[String], bedfile : String,bedTitle : String, chromLens : Map[String,Int], buffer : Int = 0){
@@ -488,10 +538,13 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     var lnct = 0;
     for(gtfLine <- gtfReader){
       lnct = lnct + 1;
-      if(lnct % 1000 == 0){
+      if(lnct % 25000 == 0){
         report(".","progress");
-        if(lnct % 10000 == 0){
-          report(" parsed "+lnct+" lines.\n","progress");
+        if(lnct % 125000 == 0){
+          report(" ","progress");
+          if(lnct % 500000 == 0){
+            report(" parsed "+lnct+" lines. ["+getDateAndTimeString+"]\n","progress");
+          }
         }
       }
       if(gtfLine.featureType == codes.STD_EXON_TYPE_CODE || gtfLine.featureType == codes.STD_CDS_TYPE_CODE){
