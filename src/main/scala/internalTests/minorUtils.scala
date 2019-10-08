@@ -171,7 +171,7 @@ object minorUtils {
     val (vcfHeader,vcIter) : (SVcfHeader, Iterator[SVcfVariantLine]) = 
                internalUtils.VcfTool.SVcfLine.memMergeVcfFiles(
                          infiles = infiles, 
-                         sampids = infixes,  
+                         sampids = infixes, 
                          sumInfoFields = sumInfoFields,     //not implemented
                          splitInfoFields = splitInfoFields,   //not implemented
                          firstInfoFields =firstInfoFields,   //not implemented

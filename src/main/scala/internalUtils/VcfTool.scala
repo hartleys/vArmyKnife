@@ -904,7 +904,7 @@ object VcfTool {
         internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[String](infiles.iterator,
                                                              internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[String](
                                                                    elementTitle = "files", lineSec = 60,
-                                                                   reportFunction  = ((vc : String, i : Int) => " " + sampids(i) +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                                                                   reportFunction  = ((vc : String, i : Int) => " " + sampids.lift(i).getOrElse(".") +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
         )).zipWithIndex.foreach{ case (ff,sidx) => {
         //infiles.zipWithIndex.iterator.foreach{ case (ff, sidx) => {
 

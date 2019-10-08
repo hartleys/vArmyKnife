@@ -1821,7 +1821,60 @@ object SVcfWalkerUtils {
       
     }
   }
-  
+
+  case class AddAltSequence(tagString : Option[String], genomeFa : String, len : Int) extends SVcfWalker {
+          val tagid = tagString.getOrElse( internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+"altSeq"+len )
+
+    def walkerName : String = "AddAltSequence"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagString", tagid),
+        ("len",""+len)
+    );
+    
+    val refFastaTool = internalUtils.GatkPublicCopy.refFastaTool(genomeFa = genomeFa);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid,Number="1",Type="String",desc="The sequence of the alt allele, with "+len + " flanking bp on each side."));
+
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        //val vc = v.getOutputLine()
+        
+        val vc = v.getOutputLine();
+        
+        val alts = v.alt.filter(p => p != "*");
+        //vc.addInfo(tagPrefix,v.chrom+":"+v.pos+","+v.ref+","+v.alt.mkString(","))
+        //val ctrPos = v.pos + (v.ref.length / 2)
+        val after = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length, end = v.pos + v.ref.length + len-1);
+        val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len + 1, end = v.pos-1);
+        //vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",before);
+        //vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",after);
+        //vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"",before+"["+v.ref+">"+v.alt.mkString("|")+"]"+after);
+        //vc.addInfo(tagid,before+v.alt.head+after);
+        vc.addInfo(tagid,alts.map{a => { before+a+after }}.mkString(","));
+        /*
+        windows.foreach{ currWin => {
+          val winDiff = maxWin - currWin;
+          val currSeq = maxseq.slice(winDiff,maxseq.length - winDiff);
+          val nonMissCt = currSeq.count{_ != 'N'}.toDouble
+          val missPct = 1 - (nonMissCt / currSeq.length)
+          val gcCt = currSeq.count{xx => xx == 'G' || xx == 'C'}.toDouble
+          val gcPct = gcCt / nonMissCt;
+          
+          vc.addInfo(tagPrefix+"_gcPct_"+currWin, fmtString.format(gcPct));
+          vc.addInfo(tagPrefix+"_nPct_"+currWin, fmtString.format(missPct));
+        }}*/
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
 
   case class AddContextBases(tagPrefix : String, genomeFa : String, len : Int) extends SVcfWalker {
     
@@ -8703,7 +8756,64 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     }
   }
   
-  
+  case class SnpSiftFilter( snpSiftAnnoStrings : List[String] ) extends internalUtils.VcfTool.SVcfWalker {
+    val dropMatch = snpSiftAnnoStrings.map{ ssas => ssas.split("|")(1) == "DROP_MATCH" }
+    val snpSiftAnnoCmds = snpSiftAnnoStrings.map{ ssas => ssas.split("|")(2) }
+    val snpSiftAnnoTitles = snpSiftAnnoStrings.map{ ssas => ssas.split("|")(0) }
+    
+    def walkerName : String = "SnpSiftFilter"
+    val dropOrKeep = dropMatch.map{ dm => {
+      if(dm){
+        "DROP_MATCH"
+      } else {
+        "KEEP_MATCH"
+      }
+    }}
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+       ("cmdsAndFilter",snpSiftAnnoCmds.zip(dropOrKeep).zip(snpSiftAnnoTitles).map{ case ((cmd,dm),tt) => {
+         dm+"/"+tt+"/"+cmd.replaceAll("\\s","_").replaceAll("[^A-Za-z._-]","_")
+       }}.mkString("|"))
+    )
+    
+    val argsList = snpSiftAnnoCmds.map{ ssac => {  Array[String]("annotate") ++ ssac.split("\\s+") ++ Array[String]("dummyvar") }}
+    val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
+    
+    val ssList = argsList.map{ args => {
+      val ss = new org.snpsift.SnpSift(args);
+      val ssa = ss.cmd();
+      ssa.annotateInit(dummyIter);
+      val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummyIter,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
+      ssa.annotate(initilizerExampleVariant)
+      ssa
+    }}
+    val sss = ssList.zip(dropMatch);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val newHeader = vcfHeader.copyHeader;
+
+      (vcFlatMap(vcIter){ v => {
+        val vb = v.getLazyOutputLine();
+        val ve = vb.makeSnpeffVariantEntry(dummyIter);
+        
+        val dropIdx = sss.indexWhere{ case (ssa,dm) => {
+          val isMatched = ssa.annotate(ve);
+          dm == isMatched
+          //  DROPMATCH + isMatched = DROP
+          // !DROPMATCH + !isMatched = DROP
+        }}
+        if(dropIdx == -1){
+          notice("Passed all snpsift match filters","SNPSIFT_MATCHFILT_PASS",10);
+          //notice("Found variant with SnpSift."+cmdId+" annotation match.","SNPSIFT_ANNOTATE_"+cmdId,1);
+          Some(v);
+        } else {
+          notice("Failed Snpsift match filter: "+snpSiftAnnoTitles(dropIdx),"SNPSIFT_MATCHFILT_FAIL_"+snpSiftAnnoTitles(dropIdx),10);
+          None
+        }
+      }},newHeader);
+    }
+    
+    
+  }
   
   case class SnpSiftAnnotater(cmdId : String,snpSiftAnnoCmd : String, tagPrefix : String = "") extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "snpSiftAnnotate"+cmdId
@@ -8944,7 +9054,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     } else {
         Set[String]();
     }
-    
+    mergeSecondaryVcf
     val alleCtCt = new scala.collection.mutable.HashMap[Int, Int]().withDefaultValue(0)
     val badCtCt = new scala.collection.mutable.HashMap[Int, Int]().withDefaultValue(0)
     
@@ -10704,7 +10814,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         
         vcSeq.iterator.map(vc => {
           
-          val vb = vc.getOutputLine();
+          val vb = vc.getLazyOutputLine();
           val altAlles = vc.alt.filter{ a => a != internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING };
           if(altAlles.length > 1) error("mergeSecondaryVcf utility requires multiallelic variants be split in the primary VCF!");
           val altAlle = altAlles.head;
@@ -10732,6 +10842,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
           } 
           if(matchVc.length >= 1){
            // val (avc,avcAlleIdx) = matchVc.head;
+            notice("FOUND_MATCH: "+inputVcfTag,"MATCH_"+inputVcfTag+"_1",5);
             newInfoTags.foreach{ case (oldTag,newTag) => {
               
               /*
@@ -10784,6 +10895,9 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
               
               vb.addInfo(newTag.ID,tagValue.padTo(1,".").mkString(","));
             }}
+          } else {
+            notice("NONMATCH: "+inputVcfTag,"MATCH_"+inputVcfTag+"_0",5);
+            
           }
           vb;
         })

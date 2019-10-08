@@ -287,6 +287,13 @@ object VcfAnnotateTX {
                                                     " Do not include the annotate command itself or the input VCF. "+
                                                     "This will call the internal SnpSift annotate methods, not merely run an external instance of SnpSift. "
                                         ).meta(false,"Annotation", 10) ::
+                    new BinaryMonoToListArgument[String](
+                                         name = "snpSiftFilter", 
+                                         arg = List("--snpSiftFilter"), 
+                                         valueName = "filter Name|KEEP_MATCH or DROP_MATCH|SnpSift command",  
+                                         argDesc =  "Options for a SnpSift annotate run. Filters based on the results of this run. "
+                                        ).meta(false,"Annotation", 10) ::
+                                        
                                         
                     new BinaryOptionArgument[String](
                                          name = "snpEffAnnotate", 
@@ -330,8 +337,17 @@ object VcfAnnotateTX {
                                          name = "addContextBases", 
                                          arg = List("--addContextBases"), 
                                          valueName = "windowSize[:tagInfix]",  
-                                         argDesc =  "Adds fields containing the sequence flanking the variant with the assigned windowsize."
+                                         argDesc =  "Adds fields containing the sequence flanking the variant with the assigned windowsize. Note: requires genomeFA be set!"
                                         ).meta(false,"Annotation") ::
+                                        
+                    new BinaryMonoToListArgument[String](
+                                         name = "addAltSequence", 
+                                         arg = List("--addAltSequence"), 
+                                         valueName = "windowSize[:tagID]",  
+                                         argDesc =  "Adds a field with the alt allele and [windowSize] base pairs of reference-genome flanking sequence to each side. If no tagID is specified, the tagID will be VAK_altSeq[windowsSize]. Note: requires genomeFA be set! Note: this parameter can be set more than once (with different window sizes)."
+                                        ).meta(false,"Annotation") ::
+                                        
+                                        //addAltSequence
                                         
                     new BinaryOptionArgument[String](
                                          name = "homopolymerRunStats", 
@@ -1380,6 +1396,7 @@ object VcfAnnotateTX {
                 
                 homopolymerRunStats = parser.get[Option[String]]("homopolymerRunStats"),
                 addContextBases = parser.get[List[String]]("addContextBases"),
+                addAltSequence = parser.get[List[String]]("addAltSequence"),
                 addSampCountWithMultVector = parser.get[List[String]]("addSampCountWithMultVector"),
                 snpEffBiotypeIdx = parser.get[Int]("snpEffBiotypeIdx"),
                 snpEffWarnIdx = parser.get[Int]("snpEffWarnIdx"),
@@ -1583,6 +1600,7 @@ object VcfAnnotateTX {
                 
                 homopolymerRunStats : Option[String] = None,
                 addContextBases : List[String] = List(),
+                addAltSequence : List[String] = List(),
                 addSampCountWithMultVector : List[String] = List(),
                 
                 snpEffBiotypeIdx : Int = 7,
@@ -2101,6 +2119,16 @@ object VcfAnnotateTX {
               val tagPrefix = bt.lift(1).getOrElse("")
               val lenThreshold = string2int(bt(0));
               AddContextBases(tagPrefix=tagPrefix,genomeFa=genomeFA.get, len = lenThreshold);
+            }}
+        ) ++ (
+            //AddAltSequence(tagString : Option[String], genomeFa : String, len : Int)
+            addAltSequence.map{ hrs => {
+              val bt = hrs.split(":",-1)
+              if(bt.length == 0 || bt.length > 2) error("addAltSequence must have 1 or 2 colon-delimited parts: threshold and tagid.");
+              if(genomeFA.isEmpty) error("addAltSequence requires genomeFA!")
+              val tagString = bt.lift(1)
+              val lenThreshold = string2int(bt(0));
+              AddAltSequence(tagString=tagString,genomeFa=genomeFA.get, len = lenThreshold);
             }}
             
         ) ++ (
