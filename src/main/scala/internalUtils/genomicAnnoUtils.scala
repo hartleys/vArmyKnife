@@ -40,7 +40,7 @@ object genomicAnnoUtils {
     }
     def findChromosome(c : String){
         val cix = chromList.indexOf(c)
-        if(cix == -1){
+        if(cix == -1 || chromList.indexOf(currChrom) < cix){
            notice("scanning for chromosome: "+c,"CHROM_SCAN_FWD",-1);
            var keepGoing = true;
            while( iter.hasNext && keepGoing){
