@@ -4058,7 +4058,7 @@ object SVcfWalkerUtils {
               }
             }}
           } else {
-            error("Multiallelic group counts are not currently supported!")
+            error("Multiallelic group counts are not currently supported!\n" + vc.getSimpleVcfString())
             vb;
           }
         }
