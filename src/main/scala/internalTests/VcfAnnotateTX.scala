@@ -54,13 +54,45 @@ object VcfAnnotateTX {
                               ""+
                               ""+
                               ""
-     
-                              
-                              
+
+      
+    /* val altCommandDocText : Seq[String] = Seq("Secondary Commands:",
+                            "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
+                            "which perform other tasks. ",
+                            "These tools can be invoked with the command:",
+                            "    varmyknife --CMD commandName [options]") ++ 
+                               runner.runner.sortedCommandList.filter{ case (arg,cmdMk) => { ! cmdMk().isAlpha }}.flatMap{ case (arg,cmdMaker) => {
+                                  val parser = cmdMaker().parser;
+                                  Seq[String](arg, parser.getDescription)
+                                  //sb.append("### ["+arg+"]("+arg+".html)\n\n");
+                                  //sb.append("> "+(parser.getDescription).replaceAll("_","\\\\_") + "\n\n");
+                                }}*/
+     val altCommandDocText : Seq[String] = Seq("Secondary Commands:",
+                            "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
+                            "which perform other tasks. ",
+                            "These tools can be invoked with the command:",
+                            "    varmyknife --CMD commandName [options]",
+                            "For more information, use the command:" ,
+                            "    varmyknife --help CMD") 
+                            
+     val altCommandDocMd : Seq[String] = Seq("## Secondary Commands:",
+                            "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
+                            "which perform other tasks. ",
+                            "These tools can be invoked with the command:",
+                            "    varmyknife --CMD commandName [options]",
+                            "For more information see the [secondary command page](secondaryCommands.html), or use the command:" ,
+                            "    varmyknife --help CMD") 
      val manualExtras = sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
-                        sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) 
+                        sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +
+                        altCommandDocText.map{ acm => {
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
+                        }}.mkString("\n");
+                        
      val markdownManualExtras = sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
-                        sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) 
+                        sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +
+                        altCommandDocMd.map{ acm => {
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
+                        }}.mkString("\n");
      
      /*
       * Categories:
@@ -95,7 +127,7 @@ object VcfAnnotateTX {
           aliases = Seq("multiStepPipeline"),
           quickSynopsis = "", 
           synopsis = "", 
-          description = "This utility performs a series of transformations on an input VCF file and adds an array of informative tags."+BETA_WARNING,
+          description = "This utility performs a series of transformations on an input VCF file and adds an array of informative tags.",
           argList = 
                     new UnaryArgument( name = "tableInput",
                                          arg = List("--tableInput"), // name of value

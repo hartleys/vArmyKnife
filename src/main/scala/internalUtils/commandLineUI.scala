@@ -85,23 +85,16 @@ object commandLineUI {
   val DEFAULT_AUTHOR = List("Stephen W. Hartley, Ph.D. stephen.hartley (at nih dot gov)");
   val DEFAULT_LEGAL =  
 List(
-     " This software is \"United States Government Work\" under the terms of the United States Copyright "+
-     " Act.  It was written as part of the authors' official duties for the United States Government and "+
-     " thus cannot be copyrighted.  This software is freely available to the public for use without a "+
-     " copyright notice.  Restrictions cannot be placed on its present or future use.",
-
-     " Although all reasonable efforts have been taken to ensure the accuracy and reliability of the "+
-     " software and data, the National Cancer Institute (NCI) and the U.S. Government "+
-     " does not and cannot warrant the performance or results that may be obtained by using this software "+
-     " or data.  NCI and the U.S. Government disclaims all warranties as to performance, merchantability "+
-     " or fitness for any particular purpose.",
-
-     " In any work or product derived from this material, proper attribution of the authors as the source "+
-     " of the software or data should be made, using \"NCI, Division of Cancer Epidemiology and Genetics, Human Genetics Program\" as the citation.",
-
-     " NOTE: This package USES, but is not derived from, several externally-developed libraries licensed under various licenses.",
-     " For more information on the licenses of the contained libraries, use the command: ",
-     " java -jar thisjarfile.jar help LICENSES");
+"Written 2017-2019 by Stephen Hartley, PhD ",
+"National Cancer Institute (NCI), Division of Cancer Epidemiology and Genetics (DCEG), Human Genetics Program",
+"As a work of the United States Government, this software package and all related documentation and information is in the public domain within the United States. Additionally, the National Institutes of Health and the National Cancer Institute waives copyright and related rights in the work worldwide through the CC0 1.0 Universal Public Domain Dedication (which can be found at https://creativecommons.org/publicdomain/zero/1.0/).",
+"Although all reasonable efforts have been taken to ensure the accuracy and reliability of the software and data, the National Human Genome Research Institute (NHGRI), the National Cancer Institute (NCI) and the U.S. Government does not and cannot warrant the performance or results that may be obtained by using this software or data. NHGRI, NCI and the U.S. Government disclaims all warranties as to performance, merchantability or fitness for any particular purpose.",
+"In work or products derived from this material, proper attribution of the authors as the source of the software or data may be made using \"NCI Division of Cancer Epidemiology and Genetics, Human Genetics Program\" as the citation.",
+"This package uses (but is not derived from) several externally-developed, open-source libraries which have been distributed under various open-source licenses. vArmyKnife is distributed with compiled versions of these packages.",
+"Additional License information can be accessed using the command:",
+"    vArmyKnife --help LICENSES",
+"And can also found in the distributed source code in:",
+"    src/main/resources/");
    
   //type Command = ((Array[String]) => Unit);
 
@@ -420,12 +413,12 @@ List(
       return sb.toString;
     }
     
-    def getMarkdownManual() : String = {
+    def getMarkdownManual(backToIndexPath : String = "index.html") : String = {
       val sb = new StringBuilder("");
       
       sb.append("# "+runner.runner.UTILITY_TITLE+"\n");
       sb.append("> Version " + runner.runner.UTIL_VERSION + " (Updated " + runner.runner.UTIL_COMPILE_DATE +")\n\n");
-      sb.append("> ([back to main](../index.html)) ([back to java-utility help](index.html))\n\n");
+      sb.append("> ([back to main](../index.html)) ([back to java-utility help]("+backToIndexPath+"))\n\n");
       sb.append("## Help for java command \""+escapeToMarkdown(command)+"\"\n\n");
       if(aliases.length > 0){
         sb.append("ALIASES: "+aliases.mkString(",")+"\n");

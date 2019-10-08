@@ -178,7 +178,7 @@ object helpDocs {
       val sb = new StringBuilder("");
       sb.append("# "+runner.UTILITY_TITLE+"\n");
       sb.append("> Version" + runner.UTIL_VERSION + " (Updated " + runner.UTIL_COMPILE_DATE +")\n\n");
-      sb.append("> ([back to help base](../index.html))\n\n");
+      sb.append("> ([back to help base](secondaryCommands.html))\n\n");
       sb.append("## General Help\n\n");
       
       sb.append("## DESCRIPTION:\n\n");
@@ -186,16 +186,22 @@ object helpDocs {
       sb.append("NOTE: if you run into OutOfMemoryExceptions, try adding the java options: \"-Xmx8G\""+"\n\n");
       
       sb.append("## GENERAL SYNTAX:\n\n");
-      sb.append("    java [java_options] -jar "+runner.Runner_ThisProgramsExecutableJarFileName +" COMMAND [options]"+"\n\n");
-      sb.append("     or"+"\n");
-      sb.append("    varmyknife [java_options] "+" COMMAND [options]"+"\n");
+      sb.append("    varmyknife [java_options] "+" [options] infile outfile"+"\n");
+      sb.append("    OR"+"\n");
+      sb.append("    varmyknife [java_options] "+" [options] infile - > outfile"+"\n");
+      sb.append("    OR"+"\n");
+      sb.append("    varmyknife [java_options] "+"--CMD commandName"+" [options]"+"\n");
       
       sb.append("## COMMANDS:\n");
       for((arg, cmdMaker) <- runner.sortedCommandList.filter{ case (arg,cmdMk) => { ! cmdMk().isAlpha }} ){
         val parser = cmdMaker().parser;
-        
-        sb.append("### ["+arg+"]("+arg+".html)\n\n");
-        sb.append("> "+(parser.getDescription).replaceAll("_","\\\\_") + "\n\n");
+        if(arg == "walkVcf"){
+           sb.append("### ["+arg+"](index.html)\n\n");
+          sb.append("> "+(parser.getDescription).replaceAll("_","\\\\_") + "\n\n");
+        } else {
+          sb.append("### ["+arg+"]("+arg+".html)\n\n");
+          sb.append("> "+(parser.getDescription).replaceAll("_","\\\\_") + "\n\n");
+        }
       }
       
       //if( runner.sortedCommandList.exists{ case (arg,cmdMk) => { cmdMk().isAlpha }}){
@@ -222,13 +228,18 @@ object helpDocs {
       sb.append("## LEGAL:\n\n");
       sb.append(lineseq2string(wrapLinesWithIndent(LEGAL, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "    ", false)) + "\n");
       
-      val indexwriter = openWriter(outdir+"index.md");
+      val indexwriter = openWriter(outdir+"secondaryCommands.md");
       indexwriter.write(sb.toString);
       indexwriter.close();
       
       for((arg, cmdMaker) <- runner.sortedCommandList ++ runner.depreciated_commandList){
         val parser = cmdMaker().parser;
-        val writer = openWriter(outdir+arg+".md");
+        val filename = if(arg == "walkVcf"){
+          "index"
+        } else {
+          arg
+        }
+        val writer = openWriter(outdir+filename+".md");
         writer.write(parser.getMarkdownManual());
         writer.close();
       }
