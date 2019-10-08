@@ -249,12 +249,15 @@ List(
       }}
       this.get[Option[String]]("successfulCompletionFile") match {
         case Some(f) => {
+            val runtimesec = (runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS - runner.runner.RUNNER_EXECUTION_ENDTIME_MILLIS.getOrElse(runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS)) / 1000000;
             fileUtils.createDummyFile(f=f,
                       message  = Seq("# Note: if this file EXISTS, then the job completed without fatal errors.",
                                      "STARTTIME_MILLIS\t"+runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS,
-                                     "ENDTIME_MILLIS\t"+runner.runner.RUNNER_EXECUTION_ENDTIME_MILLIS,
+                                     "ENDTIME_MILLIS\t"+runner.runner.RUNNER_EXECUTION_ENDTIME_MILLIS.getOrElse(runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS),
                                      "STARTTIME\t"+runner.runner.RUNNER_EXECUTION_STARTTIME_SIMPLESTRING,
-                                     "ENDTIME\t"+runner.runner.RUNNER_EXECUTION_ENDTIME_SIMPLESTRING).mkString("\n"),
+                                     "ENDTIME\t"+runner.runner.RUNNER_EXECUTION_ENDTIME_SIMPLESTRING,
+                                     "RUNTIME_SEC\t"+runtimesec
+                                     ).mkString("\n"),
                       existsWarn= "Warning: Completion File Already Exists! Is this a rerun?");
         }
         case None => {

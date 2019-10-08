@@ -2207,7 +2207,7 @@ object VcfTool {
         val remainderLines = allInputLines.filter( a => ! a.startsWith("#"));
         headerLines.iterator ++ remainderLines;
       } else {
-        getLinesSmartUnzip(infileString)
+        getLinesSmartUnzip(infileString,allowStdin=true)
       }
     
     val (vcfHeader,vcIter) = if(chromList.isEmpty){
@@ -2250,7 +2250,7 @@ object VcfTool {
         val remainderLines = allInputLines.filter( a => ! a.startsWith("#"));
         headerLines.iterator ++ remainderLines;
       } else {
-        getLinesSmartUnzip(infileString)
+        getLinesSmartUnzip(infileString,allowStdin=true)
       }
     
     val (vcfHeader,vcIter) = if(chromList.isEmpty){
