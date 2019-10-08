@@ -67,6 +67,13 @@ class CmdSplitExomeIntoParts extends CommandLineRunUtil {
                                          argDesc =  ""
                                         ).meta(false,"Annotation") :: 
                                         
+                    new BinaryMonoToListArgument[Int](
+                                         name = "subSplitByFactor", 
+                                         arg = List("--subSplitByFactor"),
+                                         valueName = "x",
+                                         argDesc =  ""
+                                        ).meta(false,"Annotation") :: 
+                                        
                     new BinaryOptionArgument[String](
                                          name = "targetRegionBed", 
                                          arg = List("--targetRegionBed"), 
@@ -104,7 +111,8 @@ class CmdSplitExomeIntoParts extends CommandLineRunUtil {
               nonSplitIntervalSet = parser.get[List[String]]("nonSplitIntervalSet"),
               nonSplitOverHighCoverageRegions = parser.get[List[String]]("nonSplitOverHighCoverageRegions"),
               nonSplitGeneIntervals = parser.get[List[String]]("nonSplitGeneIntervals"),
-              targetRegionBed = parser.get[Option[String]]("targetRegionBed")
+              targetRegionBed = parser.get[Option[String]]("targetRegionBed"),
+              subSplitByFactor = parser.get[List[Int]]("subSplitByFactor")
              )
          
          /*if(parser.get[Int]("bufferDist") == 0){
@@ -131,7 +139,8 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
                            nonSplitIntervalSet : List[String],
                            nonSplitOverHighCoverageRegions : List[String],
                            nonSplitGeneIntervals : List[String],
-                           targetRegionBed : Option[String]){
+                           targetRegionBed : Option[String],
+                           subSplitByFactor : List[Int]){
   (new java.io.File( outputDir )).mkdir();
   
   reportln("Initializing SplitExomeIntoParts ["+getDateAndTimeString+"]","note");
@@ -173,23 +182,46 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     add_bedfile(arr,bedfile,bedtitle,chromLengthMap,bedbuffer);
   }}
   
-  nonSplitOverHighCoverageRegions.foreach{ wigfile => {
+  
+
+  nonSplitOverHighCoverageRegions.map{ wigfile => {
+    
     val cells = wigfile.split("[|]");
     val bedfile = cells(0);
     val bedtitle = cells(1);
     val t = string2double( cells(2) );
     val bedbuffer = string2int(cells.lift(3).getOrElse("0"));
     reportln("Parsing coverage wiggle file: "+bedtitle+":"+bedfile+" ["+getDateAndTimeString+"]","note");
-    addwig(arr,bedfile,bedtitle,t,bedbuffer);
+    (bedtitle,t,bedbuffer, addwig(arr,bedfile,bedtitle,t,bedbuffer))
+  }}.foreach{ case (bedtitle,t,bedbuffer,warr) => {
+    val ww = openWriterSmart(outputDir+"/wig."+bedtitle+".covGT"+t+".buffer"+bedbuffer+".bed.gz");
+    chromLengthList.map{ case (chrom,clen) => {
+      if(warr.hasChrom(chrom)){
+        warr.getSteps(chrom,'.').filter{ case (iv,ss) => ss.size > 0 }.foreach{ case (iv,ss) => {
+          ww.write(chrom+"\t"+iv.start+"\t"+iv.end+"\n");
+        }}
+      } //else do nothing
+    }}
+    ww.close();
   }}
   
-  nonSplitGeneIntervals.foreach{ ivset => {
+  nonSplitGeneIntervals.map{ ivset => {
     val cells = ivset.split("[|]");
     val bedfile = cells(0);
     val bedtitle = cells.lift(1).getOrElse("GENE");
     val bedbuffer = string2int(cells.lift(2).getOrElse("0"));
     reportln("Parsing gene GTF file: "+bedtitle+":"+bedfile+" ["+getDateAndTimeString+"]","note");
-    add_qcGetGeneCounts_geneArea_regions(arr,bedfile,bedtitle,codes=stdGtfCodes,buffer = bedbuffer, chromLens=chromLengthMap);
+    (bedtitle,bedbuffer,add_qcGetGeneCounts_geneArea_regions(arr,bedfile,bedtitle,codes=stdGtfCodes,buffer = bedbuffer, chromLens=chromLengthMap));
+  }}.foreach{ case (bedtitle,bedbuffer,warr) => {
+    val ww = openWriterSmart(outputDir+"/gtfGeneSpans."+bedtitle+".buffer"+bedbuffer+".bed.gz");
+    chromLengthList.map{ case (chrom,clen) => {
+      if(warr.hasChrom(chrom)){
+        warr.getSteps(chrom,'.').filter{ case (iv,ss) => ss.size > 0 }.foreach{ case (iv,ss) => {
+          ww.write(chrom+"\t"+iv.start+"\t"+iv.end+"\t"+ss.mkString(",")+"\n");
+        }}
+      } //else do nothing
+    }}
+    ww.close();
   }}
 
 
@@ -347,20 +379,20 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
   }}
   
   ///////////////////////////////////////////////////////
-  
+  val numZeros = getNumZeros(partCountPerChrom.map{ case (i,chrom,pc,addString) => pc }.max)
+
   reportln("Writing all-breakpoint summary ["+getDateAndTimeString+"]","note");
   
-  val finalBreakOut = openWriter(outputDir+"/breakpoints.all.txt");
-  finalBreakOut.write("chrom\tstart\tend\tlen\texomeLen\trelativeLen\n");
+  val finalBreakOut = openWriter(outputDir+"/chunkInfo.txt");
+  finalBreakOut.write("chrom\tstart\tend\tchunkID\tlen\texomeLen\trelativeLen\n");
   finalBreakpoints.foreach{ case (i,chrom,fbp) => {
-    fbp.foreach{ case (s,e,ct) => {
-      finalBreakOut.write(chrom+"\t"+s+"\t"+e+"\t"+(e-s)+"\t"+ct+"\t"+ "%.4f".format(ct.toDouble * partct / sumTotal)+"\n");
+    fbp.zipWithIndex.foreach{ case ((s,e,ct),segmentIdx) => {
+      val spanTitle = chrom+"."+("%0"+numZeros+"d").format(segmentIdx) 
+      finalBreakOut.write(chrom+"\t"+s+"\t"+e+"\t"+spanTitle+"\t"+(e-s)+"\t"+ct+"\t"+ "%.4f".format(ct.toDouble * partct / sumTotal)+"\n");
     }}
   }}
   finalBreakOut.close();
   
-  
-  val numZeros = getNumZeros(partCountPerChrom.map{ case (i,chrom,pc,addString) => pc }.max)
   
   reportln("Writing all-target summary ["+getDateAndTimeString+"]","note");
 
@@ -381,16 +413,15 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
   
   reportln("Writing tgtSpan files ["+getDateAndTimeString+"]","note");
 
-  
   (new java.io.File( outputDir + "/tgtSpans" )).mkdir();
   finalBreakpoints.foreach{ case (i,chrom,fbp) => {
     fbp.zipWithIndex.foreach{ case ((s,e,ct), segmentIdx) => {
       val spanTitle = chrom+"."+("%0"+numZeros+"d").format(segmentIdx) 
       val spangt = openWriter(outputDir+"/tgtSpans/spans."+spanTitle+".bed");
-      unbreakableSpanInfo(i)._2.zipWithIndex.filter{ case ((tgtS,tgtE,tgtCT),ivIdx) => {
-        s <= tgtS && e >= tgtE
-      }}.foreach{ case ((tgtS,tgtE,tgtCT),ivIdx) => {
-        spangt.write(chrom+"\t"+tgtS+"\t"+tgtE+"\n");
+      targetArray.findWhollyContainedSteps(new GenomicInterval( chrom,'.',s,e )).filter{ case (iv,stepset) => {
+        stepset.size > 0
+      }}.foreach{ case (iv,stepset) => {
+        spangt.write(chrom+"\t"+iv.start+"\t"+iv.end+"\n");
       }}
       spangt.close();
     }}
@@ -428,15 +459,154 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
   }}
   chunkListOut.close();
   chunkPairOut.close();
+  
+  subSplitByFactor.foreach{ breakFactor => {
+    writeSubSplit(breakFactor = breakFactor,
+                  fullFinalBreakpoints = finalBreakpoints,
+                  unbreakableSpanInfo = unbreakableSpanInfo,
+                  numZeros = numZeros,
+                  outputDir = outputDir+"/merged."+breakFactor+"/",
+                  sumTotal = sumTotal,
+                  targetArray = targetArray
+        );
+  }}
+  
+  
 }
   
+/*
+************************************************************************************************************************
+* ************************************************************************************************************************
+* ************************************************************************************************************************
+* ************************************************************************************************************************
+* ************************************************************************************************************************
+* ************************************************************************************************************************
+* ************************************************************************************************************************
+*/
+
+  def writeSubSplit(breakFactor : Int, 
+                  fullFinalBreakpoints : Vector[(Int,String,Vector[(Int,Int,Int)])], 
+                  unbreakableSpanInfo  : Vector[(String,Vector[(Int,Int,Int)])],
+                  numZeros : Int, outputDir : String,
+                  sumTotal : Double,
+                  targetArray : GenomicArrayOfSets[String]){
+    
+  (new java.io.File( outputDir + "/" )).mkdir();
+
+    val finalBreakpoints = fullFinalBreakpoints.map{ case (i,chrom,allbp) => {
+      val (chunkCt,soFarTotal,chunkStart,ct,chunkList,prevChunkEnd) = allbp.zipWithIndex.foldLeft( (1, Vector[(Int,Int,Int,Vector[String])](), 0,0, Vector[String](),0) ){ case ((chunkCt, soFar, chunkStart, ct, chunkList,prevChunkEnd),((currStart,currEnd,currCt),segmentIdx)) => {
+        val chunkTitle = ("%0"+numZeros+"d").format(segmentIdx) 
+        if(chunkCt == breakFactor){
+          (1,soFar :+ (chunkStart,currEnd,ct + currCt,chunkList :+ chunkTitle),currEnd,0,Vector[String](),0);
+        } else {
+          (chunkCt + 1, soFar, chunkStart, ct + currCt, chunkList :+ chunkTitle, currEnd)
+        }
+      }}
+      val outfoldres = (if(prevChunkEnd == 0){
+        soFarTotal
+      } else {
+        soFarTotal :+ (chunkStart,prevChunkEnd,ct,chunkList)
+      })
+      (i,chrom,outfoldres)
+    }}
+  val partct = finalBreakpoints.map{ _._3.length }.sum
+    
+  reportln("Writing all-breakpoint summary ["+getDateAndTimeString+"]","note");
+  
+  val finalBreakOut = openWriter(outputDir+"/chunkInfo.txt");
+  finalBreakOut.write("chrom\tstart\tend\tchunkID\tlen\texomeLen\trelativeLen\tfullChunkList\n");
+  finalBreakpoints.foreach{ case (i,chrom,fbp) => {
+    fbp.zipWithIndex.foreach{ case ((s,e,ct,chunkList),segmentIdx) => {
+      val rawSpanTitle = ("%0"+numZeros+"d").format(segmentIdx) 
+      val spanTitle = chrom+".M"+breakFactor+"."+rawSpanTitle+"."+chunkList.head+"."+chunkList.last;
+      finalBreakOut.write(chrom+"\t"+s+"\t"+e+"\t"++"\t"+(e-s)+"\t"+ct+"\t"+ "%.4f".format(ct.toDouble * partct / sumTotal)+"\t"+chunkList.map{c => chrom+"."+c}.mkString(",")+"\n");
+    }}
+  }}
+  finalBreakOut.close();
+  
+  //val numZeros = getNumZeros(partCountPerChrom.map{ case (i,chrom,pc,addString) => pc }.max)
+  
+  reportln("Writing all-target summary ["+getDateAndTimeString+"]","note");
+
+  val finaltgt = openWriter(outputDir+"/breakpoint.targetSpans.all.txt");
+  finaltgt.write("chrom\tstart\tend\ttitle\tgSpan\teSpan\n");
+  finalBreakpoints.foreach{ case (i,chrom,fbp) => {
+    fbp.zipWithIndex.foreach{ case ((s,e,ct,chunkList), segmentIdx) => {
+      val rawSpanTitle = ("%0"+numZeros+"d").format(segmentIdx) 
+      val spanTitle = chrom+".M"+breakFactor+"."+rawSpanTitle+"."+chunkList.head+"."+chunkList.last;
+      unbreakableSpanInfo(i)._2.zipWithIndex.filter{ case ((tgtS,tgtE,tgtCT),ivIdx) => {
+        s <= tgtS && e >= tgtE
+      }}.foreach{ case ((tgtS,tgtE,tgtCT),ivIdx) => {
+        finaltgt.write(chrom+"\t"+tgtS+"\t"+tgtE+"\t"+spanTitle+"\t"+(tgtE-tgtS)+"\t"+tgtCT+"\t"+ivIdx+"\n");
+      }}
+      //finaltgt.write(chrom+"\t"+s+"\t"+e+"\t"+(e-s)+"\t"+ct+"\n");
+    }}
+  }}
+  finaltgt.close();
+  
+  reportln("Writing tgtSpan files ["+getDateAndTimeString+"]","note");
+
+  (new java.io.File( outputDir + "/tgtSpans" )).mkdir();
+  finalBreakpoints.foreach{ case (i,chrom,fbp) => {
+    fbp.zipWithIndex.foreach{ case ((s,e,ct,chunkList), segmentIdx) => {
+      //val spanTitle = chrom+"."+("%0"+numZeros+"d").format(segmentIdx) 
+      val rawSpanTitle = ("%0"+numZeros+"d").format(segmentIdx) 
+      val spanTitle = chrom+".M"+breakFactor+"."+rawSpanTitle+"."+chunkList.head+"."+chunkList.last;
+      val spangt = openWriter(outputDir+"/tgtSpans/spans."+spanTitle+".bed");
+      unbreakableSpanInfo(i)._2.zipWithIndex.filter{ case ((tgtS,tgtE,tgtCT),ivIdx) => {
+        s <= tgtS && e >= tgtE
+      }}.foreach{ case ((tgtS,tgtE,tgtCT),ivIdx) => {
+        spangt.write(chrom+"\t"+tgtS+"\t"+tgtE+"\n");
+      }}
+      spangt.close();
+    }}
+  }}
+  
+  reportln("Writing chrom.chunks files ["+getDateAndTimeString+"]","note");
+
+  (new java.io.File( outputDir + "/chrom.chunks/" )).mkdir();
+  finalBreakpoints.foreach{ case (i,chrom,fbp) => {
+    val spangt = openWriter(outputDir+"/chrom.chunks/chunkList."+chrom+".txt");
+    val spangt2 = openWriter(outputDir+"/chrom.chunks/chunkPairs."+chrom+".txt");
+    val spangt3 = openWriter(outputDir+"/chrom.chunks/chunkSpans."+chrom+".bed");
+    fbp.zipWithIndex.foreach{ case ((s,e,ct,chunkList), segmentIdx) => {
+      //val spanTitle = chrom+"."+("%0"+numZeros+"d").format(segmentIdx)
+      val rawSpanTitle = ("%0"+numZeros+"d").format(segmentIdx) 
+      val spanTitle = "M"+breakFactor+"."+rawSpanTitle+"."+chunkList.head+"."+chunkList.last;
+      spangt.write(spanTitle+"\n");
+      spangt2.write(chrom+"\t"+spanTitle+"\n");
+      spangt3.write(chrom+"\t"+s+"\t"+e+"\t"+spanTitle+"\n");
+    }}
+    spangt.close();
+    spangt2.close();
+    spangt3.close();
+  }}
+  
+  reportln("Writing chunklist files ["+getDateAndTimeString+"]","note");
+
+  val chunkListOut = openWriter(outputDir+"/chunkList.txt");
+  val chunkPairOut = openWriter(outputDir+"/chunkPairList.txt");
+  finalBreakpoints.foreach{ case (i,chrom,fbp) => {
+    fbp.zipWithIndex.foreach{ case ((s,e,ct,chunkList), segmentIdx) => {
+      //val spanXX = ("%0"+numZeros+"d").format(segmentIdx) 
+      //val spanTitle = chrom+"."+spanXX
+      val rawSpanTitle = ("%0"+numZeros+"d").format(segmentIdx)
+      val spanTitle = "M"+breakFactor+"."+rawSpanTitle+"."+chunkList.head+"."+chunkList.last;
+      chunkListOut.write(chrom+"."+spanTitle+"\n");
+      chunkPairOut.write(chrom+"\t"+spanTitle+"\n");
+    }}
+  }}
+  chunkListOut.close();
+  chunkPairOut.close();
+
+  }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 
-  def addwig(arr :  GenomicArrayOfSets[String], bedfile : String,bedTitle : String, t : Double, buffer : Int = 0){
+  def addwig(arr :  GenomicArrayOfSets[String], bedfile : String,bedTitle : String, t : Double, buffer : Int = 0) : GenomicArrayOfSets[String] = {
     val iter = getLinesSmartUnzip(bedfile).buffered;
-    
+    val warr : GenomicArrayOfSets[String] = GenomicArrayOfSets[String](false);
     def getChrom(chromLine : String) : String = {
       reportln("chromLine = "+chromLine,"debug");
       chromLine.split("\\s+").map{ cc => {
@@ -494,6 +664,7 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
           val s = math.max( start - buffer,0)
           val iv = new GenomicInterval(currChrom,'.',s,pos);
           arr.addSpan(iv,bedTitle);
+          warr.addSpan(iv,bedTitle);
         }
       }
       if(iter.hasNext){
@@ -504,6 +675,7 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     }
    
     report(" read "+lnct+" lines. ["+currChrom+":"+pos+"] ["+getDateAndTimeString+"]\n","progress");
+    return warr.finalizeStepVectors;
   }
 
   def add_bedfile( arr : GenomicArrayOfSets[String], bedfile : String,bedTitle : String, chromLens : Map[String,Int], buffer : Int = 0){
@@ -527,11 +699,13 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
   }
   
   
-  def add_qcGetGeneCounts_geneArea_regions( arr : GenomicArrayOfSets[String], gtffile : String,gtftitle : String, codes : internalUtils.GtfTool.GtfCodes, buffer : Int = 0, chromLens : Map[String,Int]){
+  def add_qcGetGeneCounts_geneArea_regions( arr : GenomicArrayOfSets[String], gtffile : String,gtftitle : String, 
+            codes : internalUtils.GtfTool.GtfCodes, 
+            buffer : Int = 0, chromLens : Map[String,Int]) : GenomicArrayOfSets[String]= {
     val stranded = false;
    // return buildGenomicArrayOfSets_fromGtf(stranded, gtffile, (gtfLine : GtfLine) => gtfLine.featureType == codes.STD_CDS_TYPE_CODE, (gtfLine : GtfLine) => extractGeneId(gtfLine, codes));
     val gtfReader = internalUtils.GtfTool.GtfReader.getGtfReader(gtffile, stranded, true, "\\s+");
-    
+    val warr : GenomicArrayOfSets[String] = GenomicArrayOfSets[String](false);
     reportln("      (Loading gene regions)","debug");
     
     val spanArray = scala.collection.mutable.AnyRefMap[String,GenomicInterval]();
@@ -573,7 +747,9 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
       val end = math.min( chromLens(iv.chromName), buffer + iv.end);
       val biv = GenomicInterval(iv.chromName,'.',start,end);
       arr.addSpan(biv, gtftitle + "." + geneID);
+      warr.addSpan(biv,gtftitle+"."+geneID);
     }
+    return warr.finalizeStepVectors;
     
     //reportln("      (Region array complete)","debug");
     //return arr;
