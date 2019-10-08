@@ -6575,6 +6575,7 @@ object SVcfWalkerUtils {
           arr.addSpan(iv, n);
         }}
         arr.finalizeStepVectors;
+        currChrom = chrom;
         reportln("Finished loading chromosome "+chrom+" from bed file "+bedFile+" ["+internalUtils.stdUtils.getDateAndTimeString+"]","deepDebug");
       }
     }

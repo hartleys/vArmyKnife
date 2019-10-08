@@ -2053,11 +2053,11 @@ object VcfAnnotateTX {
                     }
                   }
                   
-                  if((new File(bedFile+".tbi")).exists()){
-                    AddIdxBedFile(bedFile = bedFile, bedIdx = bedFile + ".tbi", tag =t, bufferDist = string2int(bufferDist), desc =desc, chromList = chromList,style=style);
-                  } else {
+                  //if((new File(bedFile+".tbi")).exists()){
+                  //  AddIdxBedFile(bedFile = bedFile, bedIdx = bedFile + ".tbi", tag =t, bufferDist = string2int(bufferDist), desc =desc, chromList = chromList,style=style);
+                  //} else {
                     AddTxBedFile(bedFile = bedFile, tag =t, bufferDist = string2int(bufferDist), desc =desc, chromList = chromList,style=style);
-                  }
+                  //}
                 }}
               }
               case None => Seq[SVcfWalker]();
