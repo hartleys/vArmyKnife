@@ -1027,7 +1027,7 @@ object GatkPublicCopy {
           trimAlignNoLib(vc,rc,tagPrefix,windowSize)._1;
         }
       }},windowSize * 4){vc => vc.pos}{vc => vc.chrom}{vc => (vc.pos,vc.ref,vc.alt.head)}, closeAction = (() => {
-        reportln("Trimmed "+trimCt+" lines and leftAligned "+leftAlignCt+" lines.","note");
+        notice("Trimmed "+trimCt+" lines and leftAligned "+leftAlignCt+" lines.","TRIM_NOTICE",10);
       }))
       ), newHeader);
       

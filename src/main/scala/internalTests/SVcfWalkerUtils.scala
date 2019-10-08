@@ -4605,7 +4605,11 @@ object SVcfWalkerUtils {
     
   }
       
-  case class FilterTags(keepGenotypeTags : Option[List[String]], dropGenotypeTags : List[String], keepInfoTags : Option[List[String]], dropInfoTags : List[String],dropAsteriskAlleles : Boolean,
+  case class FilterTags(keepGenotypeTags : Option[List[String]] = None, 
+                        dropGenotypeTags : List[String] = List[String](), 
+                        keepInfoTags : Option[List[String]] = None, 
+                        dropInfoTags : List[String] = List[String](),
+                        dropAsteriskAlleles : Boolean = false,
                         keepSamples : Option[List[String]] = None, dropSamples : List[String] = List[String](),
                         alphebetizeHeader : Boolean = true,
                         renameInfoTags : Option[List[String]] = None,
@@ -8920,7 +8924,8 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                                  singleCallerAlleFixPrefix : String = "SA_",
                                  splitSimple : Boolean = false,
                                  rawPrefix : Option[String] = Some("UNSPLIT_"),
-                                 forceSplit : Boolean = false
+                                 forceSplit : Boolean = false,
+                                 silent : Boolean = false
                                ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "SSplitMultiAllelics"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](
@@ -8945,15 +8950,15 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     
     val singleCallerFmtKeySumIntAltsCells = singleCallerFmtKeySumIntAlts.map{_.split("\\|").toVector}.toVector;
     
-    
+    val noteCt = if(silent){ 0 } else { 5 }
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       
       if( vcfHeader.infoLines.contains(vcfCodes.splitIdx_TAG) || vcfHeader.isSplitMA ){
-        warning("Multiallelics appear to have already been split in this file!","ALLELES_ALREADY_SPLIT",-1);
+        warning("Multiallelics appear to have already been split in this file!","ALLELES_ALREADY_SPLIT",10);
       }
       if(vcfHeader.walkLines.exists(walkline => walkline.ID == "SSplitMultiAllelics") || vcfHeader.isSplitMA ){
-          warning("Splitmultiallelic walker found in this VCF file's header. Skipping multiallelic split!","ALLELES_ALREADY_SPLIT",-1);
+          warning("Splitmultiallelic walker found in this VCF file's header. Skipping multiallelic split!","ALLELES_ALREADY_SPLIT",10);
           //if(! forceSplit){
             return((vcIter,vcfHeader));
           //}
@@ -8962,37 +8967,37 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       //if(vcfHeader.titleLine.sampleList.length > 0){
         vcfHeader.formatLines.find(fline => fline.ID == "GT").foreach{ fline => {
           val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "1","String", fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
-          reportln("Adding GtStyleUnsplit subtype to tag: "+fline.ID,"note");
-          reportln("    fline:"+fline.getVcfString,"note");
-          reportln("    nl:"+nl.getVcfString,"note");
+          notice("Adding GtStyleUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
           vcfHeader.addFormatLine(nl,walker=Some(this));
         }}
         vcfHeader.formatLines.find(fline => fline.ID == "AD").foreach{ fline => {
           val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "R","Integer", fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
-          reportln("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID,"note");
-          reportln("    fline:"+fline.getVcfString,"note");
-          reportln("    nl:"+nl.getVcfString,"note");
+          notice("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
           vcfHeader.addFormatLine(nl,walker=Some(this));
         }}
         vcfHeader.formatLines.find(fline => fline.ID == "AO").foreach{ fline => {
           val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "A","Integer", fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
-          reportln("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID,"note");
-          reportln("    fline:"+fline.getVcfString,"note");
-          reportln("    nl:"+nl.getVcfString,"note");
+          notice("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
           vcfHeader.addFormatLine(nl,walker=Some(this));
         }}
         fmtKeySumIntAlts.foreach{t => vcfHeader.formatLines.find(fline => fline.ID == t && fline.subType.isEmpty).foreach{ fline => {
           val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, fline.Number,fline.Type, fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
-          reportln("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID,"note");
-          reportln("    fline:"+fline.getVcfString,"note");
-          reportln("    nl:"+nl.getVcfString,"note");
+          notice("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
           vcfHeader.addFormatLine(nl,walker=Some(this));
         }}}
         fmtKeyGenotypeStyle.foreach{t => vcfHeader.formatLines.find(fline => fline.ID == t && fline.subType.isEmpty).foreach{ fline => {
           val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, fline.Number,fline.Type, fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
-          reportln("Adding GtStyleUnsplit subtype to tag: "+fline.ID,"note");
-          reportln("    fline:"+fline.getVcfString,"note");
-          reportln("    nl:"+nl.getVcfString,"note");
+          notice("Adding GtStyleUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
           vcfHeader.addFormatLine(nl,walker=Some(this));
         }}}
       
@@ -9031,11 +9036,11 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         fline.subType match {
           case Some(st) => {
             if(st == VcfTool.subtype_GtStyleUnsplit){
-              reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              //reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID, Number=fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle))
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit",  Number="1", Type="String", desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
-              reportln("    ol:"+ol.getVcfString,"note");
-              reportln("    nl:"+nl.getVcfString,"note");
+              //reportln("    ol:"+ol.getVcfString,"note");
+              //reportln("    nl:"+nl.getVcfString,"note");
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
               Some((fline.ID,fline.ID + "_presplit",ol,nl));
@@ -9055,11 +9060,11 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
               if(fline.Number != "R" && fline.Number != "A"){
                 warning("Warning: Tag with subtype: subtype_AlleleCountsUnsplit must have Number R or A","MalformedFormatTag",10)
               }
-              reportln("Adding new Allele-Count FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              //reportln("Adding new Allele-Count FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID,Number= fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCounts))
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
-              reportln("    ol:"+ol.getVcfString,"note");
-              reportln("    nl:"+nl.getVcfString,"note");
+              //reportln("    ol:"+ol.getVcfString,"note");
+              //reportln("    nl:"+nl.getVcfString,"note");
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
               Some((fline.ID,fline.ID + "_presplit",ol,nl));
@@ -9077,7 +9082,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
           fline.ID == oldID
         }} == -1 && (fline.Number == "R" || fline.Number == "A")
       }}.flatMap{ fline => {
-              reportln("Adding new FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              //reportln("Adding new FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID,Number= fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc)
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
               newHeader.addFormatLine(ol,walker=Some(this));
@@ -12646,6 +12651,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   }
 
   
+  
+
   
 }
 

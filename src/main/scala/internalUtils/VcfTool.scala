@@ -841,8 +841,195 @@ object VcfTool {
    
   */
   
+
+  
   object SVcfLine {
     
+
+    def memMergeVcfFiles(infiles : List[String], sampids : List[String],  
+                         sumInfoFields : Seq[String] = Seq[String](),     //implemented
+                         splitInfoFields : Seq[String] = Seq[String](),   //not implemented
+                         firstInfoFields : Seq[String] = Seq[String](),   //implemented
+                         gtInfoFields : Seq[String] = Seq[String](),      //implemented
+                         genomeFA : String, latWindow : Int = 200, idxTagString : String = "IDX.",
+                         leftAlignAndTrim : Boolean = true, splitMultiAllelics : Boolean = true) : (SVcfHeader, Iterator[SVcfVariantLine]) = {
+      val keepInfoFields = sumInfoFields ++ splitInfoFields ++ firstInfoFields ++ gtInfoFields
+
+      //walkVCFFile(infile :String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int] = None, dropGenotypes : Boolean = false)
+      
+      val BUFprewalker : SVcfWalker = chainSVcfWalkers(Seq(
+                internalTests.SVcfWalkerUtils.FilterTags(keepInfoTags = Some(keepInfoFields.toList)),
+                (new internalTests.SVcfWalkerUtils.AddVariantIdx(tag = "",idxPrefix = Some(""))),
+                internalTests.SVcfWalkerUtils.SSplitMultiAllelics(),
+                internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA,windowSize = latWindow, useGatkLibCall = false)
+      ))
+      val (bufiter,rawHeader) = getSVcfIterator(infiles.head,chromList =None, numLinesRead=None);
+      val header = BUFprewalker.walkVCF(bufiter,rawHeader)._2;
+      
+      val outHeader = header.copyHeader
+      outHeader.titleLine = new SVcfTitleLine(sampids)
+      
+      val fmtseq = outHeader.formatLines.map{ ff => ff.ID }.sortBy{ f => if( f == "GT"){ 0 } else { 1 } }
+      
+      reportln("keepInfoFields["+keepInfoFields.length+"]:"+keepInfoFields.mkString(","),"note");
+      
+      gtInfoFields.foreach{ gif => {
+        val infoline = header.infoLines.find( ff => ff.ID == gif )
+        infoline.foreach( oldline => {
+          outHeader.addFormatLine(
+            new  SVcfCompoundHeaderLine("FORMAT",ID=oldline.ID,Number = oldline.Number, Type = oldline.Type,desc = "(copied from the single-sample INFO field) "+oldline.desc)
+          )
+        })
+      }}
+      
+      reportln("STARTING MAIN FILE READ.","note");
+      
+      (outHeader,{
+        
+        val lineMap : scala.collection.mutable.Map[(String,Int,String,String),Vector[(String,SVcfVariantLine,Int)]] = 
+                ( new scala.collection.mutable.AnyRefMap[(String,Int,String,String),Vector[(String,SVcfVariantLine,Int)]]).withDefault( x => Vector() )
+                
+        /*
+               val variantLines = if(withProgress){
+                         internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
+                           //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
+                           bufLines.map(line => SVcfInputVariantLine(line)), 
+                           internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
+                                elementTitle = "lines", lineSec = 60,
+                                reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                           )
+                         )
+         */
+        
+        internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[String](infiles.iterator,
+                                                             internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[String](
+                                                                   elementTitle = "files", lineSec = 60,
+                                                                   reportFunction  = ((vc : String, i : Int) => " " + sampids(i) +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+        )).zipWithIndex.foreach{ case (ff,sidx) => {
+        //infiles.zipWithIndex.iterator.foreach{ case (ff, sidx) => {
+
+          val prewalker : SVcfWalker = chainSVcfWalkers(Seq(
+                internalTests.SVcfWalkerUtils.FilterTags(keepInfoTags = Some(keepInfoFields.toList)),
+                (new internalTests.SVcfWalkerUtils.AddVariantIdx(tag = "varIDX",idxPrefix = Some(sampids(sidx)+"."))),
+                internalTests.SVcfWalkerUtils.SSplitMultiAllelics(),
+                internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = genomeFA,windowSize = latWindow, useGatkLibCall = false)
+          ))
+          val iter = getLinesSmartUnzip(ff).buffered
+          skipWhile(iter)(line => line.startsWith("#"));
+          val lines =  prewalker.walkVCF( iter.map(line => SVcfInputVariantLine(line)),rawHeader)._1; 
+          //val (lines,h) = prewalker.walkVCF(getSVcfIterator(infiles.head,chromList =None, numLinesRead=None)._1, header)
+          
+          /*
+                 val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      val header = readVcfHeader(allRawHeaderLines);
+      
+      val variantLines = if(withProgress){
+                         internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
+                           //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
+                           bufLines.map(line => SVcfInputVariantLine(line)), 
+                           internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
+                                elementTitle = "lines", lineSec = 60,
+                                reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                           )
+                         )
+           */
+          
+          //val (vheader,lines) = prewalker.walkVCF( iter.map(line => SVcfInputVariantLine(line)),header)._1; 
+          lines.foreach{ v => {
+            val ix = (v.chrom,v.pos,v.ref,v.alt.head);
+            //val sofar = lineMap(ix);
+            //lineMap.update( ix, lineMap(ix) :+ ((sampids(sidx),sidx,v)) );
+            //val lix = lineMap(ix)
+            //lix.update( sampids(sidx), v );
+            lineMap.update( ix, lineMap(ix) :+ ((sampids(sidx),v,sidx)) );
+          }}
+        }}
+        
+        val varList = lineMap.keys.toVector.sorted
+        
+        reportln("Generating merged iterator...","note");
+        
+
+        
+        varList.iterator.map{ vid => {
+          val vlines = lineMap(vid);
+          val vs     = vlines.head._1;
+          val vb = vlines.head._2.getOutputLine();
+          
+          if( vlines.exists{ case (ss,vv,sidx) => {
+            vv.alt.length > 1
+          }} && vb.alt.length == 1){
+            vb.in_alt = vb.alt :+ "*";
+          }
+          
+          /*
+          vb.genotypes.fmt = fmtseq.filter{ fgt => {
+            vlines.exists{ case (ss,vv,sidx) => {
+              vv.genotypes.fmt.contains(fgt);
+            }}
+          }}
+          if(vb.genotypes.fmt.length == 0 || vb.genotypes.fmt.head != "GT"){
+            vb.genotypes.fmt = "GT" +: vb.genotypes.fmt
+          }*/
+          vb.genotypes.fmt = Seq("GT");
+          vlines.foreach{ case (ss,vv,sidx) => {
+            vv.genotypes.fmt.foreach{ gg => {
+              if(! vb.genotypes.fmt.contains(gg)){
+                vb.genotypes.fmt = vb.genotypes.fmt :+ gg
+              }
+            }}
+          }}
+          
+          vb.genotypes.genotypeValues = vb.genotypes.fmt.toArray.map{ fgt => {
+            val aa = Array.fill[String](sampids.length)(".");
+            vlines.foreach{ case (ss,vv,sidx) => {
+              val fidx = vv.genotypes.fmt.indexOf(fgt);
+              if(fidx >= 0){
+                aa(sidx) = vv.genotypes.genotypeValues(fidx).head;
+              }
+            }}
+            aa;
+          }}
+          
+          
+          gtInfoFields.foreach{ infotag => {
+            if( vlines.exists{ case (ss,vv,sidx) => vv.info.contains( infotag) } ){
+               val aa = Array.fill[String](sampids.length)(".");
+               vlines.foreach{ case (ss,vv,sidx) => {
+                 vv.info.getOrElse(infotag,None).foreach{ dd => {
+                   aa(sidx) = dd;
+                 }}
+               }}
+               vb.genotypes.genotypeValues = vb.genotypes.genotypeValues :+ aa;
+               vb.genotypes.fmt = vb.in_genotypes.fmt :+ infotag;
+            }
+          }}
+          
+          sumInfoFields.foreach{ infotag => {
+            if( vlines.exists{ case (ss,vv,sidx) => vv.info.contains( infotag) } ){
+              val isum = 
+                if( header.infoLines.find( ffl => ffl.ID == infotag).get.Type == "Integer") {
+                  vlines.map{ case (ss,vv,sidx) => {
+                    vv.info.get(infotag).getOrElse(None).map{ string2int(_) }.getOrElse(0);
+                  }}.sum + ""
+                } else {
+                  vlines.map{ case (ss,vv,sidx) => {
+                    vv.info.get(infotag).getOrElse(None).map{ string2double(_) }.getOrElse(0.0);
+                  }}.sum + ""
+                }
+              vb.addInfo(infotag,""+isum);
+            }
+          }}
+
+          
+          
+          vb;
+          //SVcfGenotypeSet(var fmt : Seq[String],
+                    //         var genotypeValues : Array[Array[String]])
+          //vb.in_genotypes.genotypeValues = 
+        }}
+      });
+    }
     
     
     def readVcfs(lines : BufferedIterator[BufferedIterator[String]], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfInputVariantLine]) = {
