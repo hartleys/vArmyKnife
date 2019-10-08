@@ -2866,51 +2866,6 @@ if(mapType == "filterTags"){
                    val desc = params.getOrElse("desc","") + " (generated with expression: "+expr+")";
                    reportln("Creating Variant tagging utility ("+mapID+") ... "+getDateAndTimeString,"debug");
                    VcfExpressionTag(expr = expr, tagID = mapID, tagDesc = desc);
-              /*} else if(mapType == "tagVariantsExpressionWithGeneList"){
-                   val expr = params.getOrElse("expr",{
-                     error("tagVariantsExpression must have parameter \"expr\": "+vmfString);
-                     ""
-                   })
-                   val desc = params.getOrElse("desc","") + " (generated with expression: "+expr+")";
-                   val geneList = params.getOrElse("
-                   reportln("Creating Variant tagging utility ("+mapID+") ... "+getDateAndTimeString,"debug");
-                   VcfExpressionTag(expr = expr, tagID = mapID, tagDesc = desc);*/
-                   /*
-                  if( params.contains("MODE") ){
-                    val mode = params("MODE");
-                    if(mode == "VAR"){
-                      //ADD ERROR CHECK
-                      reportln("Creating tagging utility, MODE=VAR. "+getDateAndTimeString,"debug");
-                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
-                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc);
-                    } else if(mode == "GENELIST"){
-                      //ADD ERROR CHECK
-                      reportln("Creating tagging utility, MODE=GENELIST. "+getDateAndTimeString,"debug");
-                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
-                      val geneTagString = cells.lift(4);
-                      val subGeneTagString = cells.lift(5);
-                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc, 
-                                     geneTagString = geneTagString, subGeneTagString = subGeneTagString, geneList = geneList);
-                    } else if(mode.startsWith("GT")){
-                      //ADD ERROR CHECK
-                      reportln("Creating tagging utility, MODE="+mode+". "+getDateAndTimeString,"debug");
-                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
-                      //val styleOpt = cells.lift(4);
-                      VcfGtExpressionTag( expr=expr,tagID=tagID,tagDesc=tagDesc,style = mode,                  
-                                          groupFile = groupFile, groupList = None, superGroupList  = superGroupList )
-                    } else {
-                      //ADD ERROR CHECK
-                      error("UNKNOWN/INVALID tagVariantsExpression MODE:\""+mode+"\"!")
-                      new PassThroughSVcfWalker()
-                    }
-                  } else if(cells.length == 3){
-
-                  } else {
-                     error("Invalid tagVariantsExpression tag: \""+vmfString+"\"");
-                     new PassThroughSVcfWalker()
-                  }*/
-                
-                
               } else if(mapType == "tagVariantsFunction"){
                 error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
                 new PassThroughSVcfWalker()
@@ -2968,6 +2923,8 @@ if(mapType == "filterTags"){
                 val addAlle   = Set("T","TRUE","1").contains( params.getOrElse("calcAlle","0").toUpperCase() );
                 val addHetHom   = Set("T","TRUE","1").contains( params.getOrElse("calcHetHom","0").toUpperCase() );
                 val addMultiHet = Set("T","TRUE","1").contains( params.getOrElse("calcMultiHet","0").toUpperCase() );
+                
+                val expr =  params.get("expr")
 
                 SAddGroupInfoAnno(groupFile = grpFile,
                                                 groupList = None,
@@ -2979,21 +2936,24 @@ if(mapType == "filterTags"){
                                                 GTTag = inputGtTag,
                                                 vcfCodes = vcfCodes,
                                                 addAlle = addAlle, addCounts = addCounts, addFreq = addFreq, addMiss = addMiss,
-                                                addHetHom = addHetHom, addMultiHet = addMultiHet
+                                                addHetHom = addHetHom, addMultiHet = addMultiHet,
+                                                expr=expr
                                                 )
                 
               } else if(mapType == "sampleLists"){
-                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                //error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
                 val tagPrefix = if(mapID == "") "" else mapID + "_";
                 val inputGT  = params.getOrElse("inputGT",calcStatGtTag);
                 val printLimit = params.get("printLimit").map{string2int(_)}.getOrElse(25);
                 val grpFile     = params.get("groupFile").map{ gf => Some(gf) }.getOrElse( groupFile );
                 val superGroups = params.get("superGroupList").map{ gf => Some(gf) }.getOrElse( superGroupList );
+                val expr =  params.get("expr")
                 
                  AddAltSampLists(tagGT = inputGT,
                              outputTagPrefix = tagPrefix+"SAMPLIST_",
                              printLimit = printLimit,
-                             groupFile = grpFile, groupList = None, superGroupList = superGroups
+                             groupFile = grpFile, groupList = None, superGroupList = superGroups,
+                             expr = expr
                             )
                 
                 
@@ -3002,12 +2962,12 @@ if(mapType == "filterTags"){
                 val tagPrefix = if(mapID == "") "" else mapID + "_";
                 val inputGT  = params.getOrElse("inputGT",calcStatGtTag);
                 val inputAD  = params.get("inputAD");
-                val inputDP  = params.get("inputAD");
+                val inputDP  = params.get("inputDP");
                // val expr  = params.get("expr");
                 
                 AddStatDistributionTags(tagAD = inputAD, 
                                             tagGT = inputGT, 
-                                            tagDP = inputAD,
+                                            tagDP = inputDP,
                                             tagSingleCallerAlles = None,
                                             outputTagPrefix=tagPrefix,
                                             variantStatExpression = None

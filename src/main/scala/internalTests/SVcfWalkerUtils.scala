@@ -4238,7 +4238,11 @@ object SVcfWalkerUtils {
       val genoClassDesc = genoClasses.map{ gc => "Number of samples with the "+gc+" genotype for this variant (based on tag "+tagGT+")" }
      
       
-    def walkerParams : Seq[(String,String)] = Seq[(String,String)](("tagAD",tagAD.toString),("tagGT",tagGT),("tagSingleCallerAlles",tagSingleCallerAlles.toString),("outputTagPrefix",outputTagPrefix))
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+        ("tagAD",tagAD.toString),("tagDP",tagDP.toString),
+        ("tagGT",tagGT),
+        ("tagSingleCallerAlles",tagSingleCallerAlles.toString),
+        ("outputTagPrefix",outputTagPrefix))
 
     var samps : Seq[String] = null;
     val (sampleToGroupMap,groupToSampleMap,groups) = getGroups(groupFile,groupList,superGroupList);
@@ -4494,8 +4498,15 @@ object SVcfWalkerUtils {
             } else if(dpIdx == -1) {
               ads.map{case (r,a) => 0}
             } else {
-              v.genotypes.genotypeValues(dpIdx).map{ a => {
-                if(a == ".") 0 else string2int(a);
+              v.genotypes.genotypeValues(dpIdx).zip(ads).map{ case (d,(r,a)) => {
+                if(d == "."){
+                  0 
+                } else {
+                  string2intOpt(d).getOrElse({
+                    warning("WARNING: AddStatDistrubutionWalker: Malformed DP string, falling back to sumAD (offending string: \""+d+"\" from tag \""+tagDP.get+"\")\n   VCF Line:"+vc.getSimpleVcfString() ,"MALFORMED_DP",100)
+                    r + a
+                  })
+                }
               }}.sorted
             }
             val depthMedian = sumDepthSorted(medianIdx);
@@ -4604,7 +4615,8 @@ object SVcfWalkerUtils {
              tagPrefix : String = "",
              tagFilter : Option[String] = None,
              tagPreFiltGt : Option[String] = None,
-             vcfCodes : VCFAnnoCodes = VCFAnnoCodes()) extends internalUtils.VcfTool.SVcfWalker {
+             vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
+             expr : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker {
     
     def walkerName : String = "SAddGroupInfoAnno"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](
@@ -4628,7 +4640,9 @@ object SVcfWalkerUtils {
   
       val (sampleToGroupMap,groupToSampleMap,groups) = getGroups(groupFile,groupList,superGroupList);
 
-  
+      val filterExpr : Option[SFilterLogic[SVcfVariantLine]] = expr.map{filterExpressionString => internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )}
+
+      
       val sampNames = vcfHeader.getSampleList;
       val nsamp = sampNames.length
   
@@ -4794,6 +4808,7 @@ object SVcfWalkerUtils {
       }
       
       return (vcMap(vcIter)(vc => {
+        if((filterExpr.map{fe => fe.keep(vc)}.getOrElse(true))){
         var vb = vc.getOutputLine()
         vb.dropInfo(overwriteInfos)
         val gtidxRaw = vc.genotypes.fmt.indexOf(splitGtTag);
@@ -4952,6 +4967,9 @@ object SVcfWalkerUtils {
           }
         }
         vb
+        } else {
+          vc
+        }
       }),outHeader);
     }
   }
@@ -5083,7 +5101,8 @@ object SVcfWalkerUtils {
   case class AddAltSampLists(tagGT : String = "GT",
                              outputTagPrefix : String = OPTION_TAGPREFIX+"SAMPLIST_",
                              printLimit : Int = 25,
-                             groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None
+                             groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None,
+                             expr : Option[String] = None
                             ) extends internalUtils.VcfTool.SVcfWalker {
      def walkerName : String = "AddAltSampLists"
      val HET : Int = 0
@@ -5144,6 +5163,8 @@ object SVcfWalkerUtils {
       outHeader
     }
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val filterExpr : Option[SFilterLogic[SVcfVariantLine]] = expr.map{filterExpressionString => internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )}
+
       val outHeader = initVCF(vcfHeader);
       val overwriteInfos = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
       if( overwriteInfos.nonEmpty ){
@@ -5155,7 +5176,7 @@ object SVcfWalkerUtils {
         vc.dropInfo(overwriteInfos);
         
         val gtIdx = v.genotypes.fmt.indexOf(tagGT);
-        if(gtIdx == -1){
+        if(gtIdx == -1 || (! filterExpr.map{fe => fe.keep(vc)}.getOrElse(true))){
           warning("Missing genotype tag ("+gtIdx+")","MISSING_GT_TAG",10);
         } else {
           val gt : Vector[String] = v.genotypes.genotypeValues(gtIdx).toVector;
@@ -5192,13 +5213,13 @@ object SVcfWalkerUtils {
                   }
                 })
               } else {
-                vc.addInfo(outputTagPrefix+""+gClass,"TOO_MANY_TO_PRINT");
+                vc.addInfo(outputTagPrefix+""+gClass,"TOO_MANY_TO_PRINT,"+s.length+","+s.take(printLimit).mkString(","));
                 groups.foreach( grp => {
                   val tag = outputTagPrefix+"GRP_"+grp+"_"+gClass
                   val groupSet = groupToSampleMap(grp);
                   val gss = s.filter{ss => groupSet.contains(ss)}
                   if(gss.length > printLimit){
-                    vc.addInfo(tag,"TOO_MANY_TO_PRINT");
+                    vc.addInfo(tag,"TOO_MANY_TO_PRINT,"+gss.length+","+gss.take(printLimit).mkString(","));
                   } else {
                     vc.addInfo(tag,gss.mkString(","));
                   }
