@@ -232,11 +232,21 @@ object VcfAnnotateTX {
                     new BinaryMonoToListArgument[String](
                                          name = "snpSiftAnnotate", 
                                          arg = List("--snpSiftAnnotate"), 
-                                         valueName = "...",  
+                                         valueName = "tagPrefix,snpSiftParameters",  
                                          argDesc =  "Options for a SnpSift annotate run. Provide all the options for the standard run. "+
                                                     " Do not include the annotate command itself or the input VCF. "+
                                                     "This will call the internal SnpSift annotate methods, not merely run an external instance of SnpSift. "
                                         ).meta(false,"Annotation", 10) ::
+                                        
+                    new BinaryOptionArgument[String](
+                                         name = "snpEffAnnotate", 
+                                         arg = List("--snpEffAnnotate"), 
+                                         valueName = "tagPrefix,snpEffParameters",  
+                                         argDesc =  "Options for a SnpEff ann run. Provide all the options for the standard run. "+
+                                                    " Do not include the annotate command itself or the input VCF. "+
+                                                    "This will call the internal SnpEff ann methods, not merely run an external instance of SnpEff. "
+                                        ).meta(false,"Annotation") ::
+                                        
                     new BinaryMonoToListArgument[String](
                                          name = "snpSiftDbnsfp", 
                                          arg = List("--snpSiftDbnsfp"), 
@@ -325,6 +335,14 @@ object VcfAnnotateTX {
                                          valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
                                          argDesc =  "A list of top-level supergroups. Requires the --groupFile parameter to be set."
                                         ).meta(false,"Sample Stats") :: 
+                                        
+                                        //SAddSampCountWithMultVector(tagID : String, gtTag : String, desc : String, vectorFile : String)
+                    new BinaryMonoToListArgument[String](
+                                         name = "addSampCountWithMultVector", 
+                                         arg = List("--addSampCountWithMultVector"), 
+                                         valueName = "tagID|desc|sampMultFile.txt",  
+                                         argDesc =  "Beta feature: not for general use."
+                                        ).meta(false,"Sample Stats") ::
                                         
                     new BinaryOptionArgument[List[String]](
                                          name = "chromList", 
@@ -620,7 +638,15 @@ object VcfAnnotateTX {
                                                     "line filter expression. "+
                                                     "See the section on VCF line filtering below. "
                                         ).meta(false,"Filtering, Variant-Level",40) :: 
-
+                    new BinaryOptionArgument[String](
+                                         name = "keepVariantsExpressionPrefilter", 
+                                         arg = List("--keepVariantsExpressionPrefilter"),
+                                         valueName = "vcfLineFilterExpression",
+                                         argDesc =  "If this parameter is set, then VCF lines will be parsed in if and only if they pass the given "+
+                                                    "line filter expression. Note that this will be performed BEFORE other processing, so all referenced tags "+
+                                                    "must be in the input VCF."+
+                                                    "See the section on VCF line filtering below. "
+                                        ).meta(false,"Filtering, Variant-Level",40) :: 
                     new BinaryOptionArgument[String](
                                          name = "dropVariantsExpression", 
                                          arg = List("--dropVariantsExpression"),
@@ -734,6 +760,14 @@ object VcfAnnotateTX {
                                                     ""+
                                                     ""
                                         ).meta(true,"Sample Stats") :: 
+                    new BinaryMonoToListArgument[String](
+                                         name = "addWiggleAnnotation", 
+                                         arg = List("--addWiggleAnnotation"),
+                                         valueName = "tagID|desc|wigfile.wig",
+                                         argDesc =  "Supply a wiggle (.wig) file. The value in the wiggle file at position POS will be added as an INFO tag."+
+                                                    ""+
+                                                    ""
+                                        ).meta(true,"Annotation") :: 
                     new BinaryOptionArgument[List[String]](
                                          name = "inputKeepSamples", 
                                          arg = List("--inputKeepSamples"), 
@@ -976,6 +1010,32 @@ object VcfAnnotateTX {
                                          arg = List("--snpEffKeepIdx"), 
                                          valueName = "0,1,2,...",  
                                          argDesc =  "todo desc"
+                        ).meta(false,"SnpEff Annotation Processing") ::
+                        
+
+                    new BinaryArgument[Int](name = "snpEffBiotypeIdx",
+                                           arg = List("--snpEffBiotypeIdx"),  
+                                           valueName = "7", 
+                                           argDesc = "The index of the field in the annotation column that contains the biotype.",
+                                           defaultValue = Some(7)
+                                           ).meta(false,"SnpEff Annotation Processing") ::
+                    new BinaryArgument[Int](name = "snpEffWarnIdx",
+                                           arg = List("--snpEffWarnIdx"),  
+                                           valueName = "7", 
+                                           argDesc = "The index of the field in the annotation column that contains warnings or flags.",
+                                           defaultValue = Some(15)
+                                           ).meta(false,"SnpEff Annotation Processing") ::
+                    new BinaryArgument[Int](name = "snpEffFieldLen",
+                                           arg = List("--snpEffFieldLen"),  
+                                           valueName = "16", 
+                                           argDesc = "The the length of an annotation entry.",
+                                           defaultValue = Some(16)
+                                           ).meta(false,"SnpEff Annotation Processing") ::
+                    new BinaryOptionArgument[List[String]](
+                                         name = "snpEffFields", 
+                                         arg = List("--snpEffFields"), 
+                                         valueName = "Allele,Consequence,...",  
+                                         argDesc =  "The names of the fields in the annotation entries."
                         ).meta(false,"SnpEff Annotation Processing") ::
 
                     new BinaryMonoToListArgument[String](name = "snpEffVarExtract",
@@ -1264,7 +1324,17 @@ object VcfAnnotateTX {
                 snpEffGeneListTagInfix = parser.get[String]("snpEffGeneListTagInfix"),
                 
                 homopolymerRunStats = parser.get[Option[String]]("homopolymerRunStats"),
-                addContextBases = parser.get[List[String]]("addContextBases")
+                addContextBases = parser.get[List[String]]("addContextBases"),
+                addSampCountWithMultVector = parser.get[List[String]]("addSampCountWithMultVector"),
+                snpEffBiotypeIdx = parser.get[Int]("snpEffBiotypeIdx"),
+                snpEffWarnIdx = parser.get[Int]("snpEffWarnIdx"),
+                snpEffFieldLen = parser.get[Int]("snpEffFieldLen"),
+                snpEffFields = parser.get[Option[List[String]]]("snpEffFields"),
+                addWiggleAnnotation = parser.get[List[String]]("addWiggleAnnotation"),
+                snpEffAnnotate = parser.get[Option[String]]("snpEffAnnotate"),
+                
+                keepVariantsExpressionPrefilter = parser.get[Option[String]]("keepVariantsExpressionPrefilter")
+                
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
                 //dropVariantsWithNs, tallyFile   
              )
@@ -1272,7 +1342,7 @@ object VcfAnnotateTX {
      }
   }
 
-    /*
+    /*SAddSampCountWithMultVector(tagID : String, gtTag : String, desc : String, vectorFile : String)
                     new BinaryMonoToListArgument[String](name = "snpEffVarExtract",
                                            arg = List("--snpEffVarExtract"),  
                                            valueName = "outTag|0,1,...|description", 
@@ -1381,6 +1451,7 @@ object VcfAnnotateTX {
                 runEnsembleMerger : Boolean = false,
                 convertROAOtoAD : Boolean = false,
                 snpSiftAnnotate : List[String] = List[String](),
+                snpEffAnnotate : Option[String] = None,
                 fixDotAltIndels : Boolean = false,
                 dropSymbolicAlleleLines : Boolean = false,
                 addHeaderLineSubtype : List[String] = List[String](),
@@ -1451,11 +1522,27 @@ object VcfAnnotateTX {
                 snpEffGeneListTagInfix : String = "onList",
                 
                 homopolymerRunStats : Option[String] = None,
-                addContextBases : List[String] = List()
+                addContextBases : List[String] = List(),
+                addSampCountWithMultVector : List[String] = List(),
+                
+                snpEffBiotypeIdx : Int = 7,
+                snpEffWarnIdx : Int = 15,
+                snpEffFieldLen : Int = 16,
+                snpEffFields : Option[List[String]] = None,
+                
+                addWiggleAnnotation : List[String] = List[String](),
+                
+                keepVariantsExpressionPrefilter : Option[String] = None
                 ){
 
-    
+                                            /*
+                         *snpEffBiotypeIdx : Int = 7,
+                          snpEffWarnIdx : Int = 15,
+                          snpEffFieldLen : Int = 16,
+                          snpEffFields : Option[List[String]] = None
+                         */
     /*
+     * SAddSampCountWithMultVector(tagID : String, gtTag : String, desc : String, vectorFile : String)
      **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
      * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
      * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
@@ -1485,7 +1572,7 @@ object VcfAnnotateTX {
               new MergeBooleanTags(tagID = tagID, mergeTags = mergeTags, tagNames = tagNames)
             }
             def getTagVariantsFunction(ftString : String) : SVcfWalker = {
-              val cells = ftString.split("[|]")
+              val cells = ftString.split("[|]",-1)
               val tagID = cells(0);
               val desc  = cells(1);
               val funcString = cells(2);
@@ -1592,7 +1679,13 @@ object VcfAnnotateTX {
               }
               case None => Seq[SVcfWalker]();
             }
+        ) ++ (
             
+            keepVariantsExpressionPrefilter.map{ expr => {
+               reportln("Creating Variant Filter utility (PREFILTER) ... "+getDateAndTimeString,"debug");
+               VcfExpressionFilter(filterExpr = expr);
+            }}
+        
         ) ++ (
             if(inputDropInfoTags.isDefined || inputKeepInfoTags.isDefined || renameInputGenoTags.isDefined || renameInputInfoTags.isDefined || inputKeepSamples.isDefined || unPhaseAndSortGenotypes.isDefined){
               Seq[SVcfWalker](
@@ -1811,6 +1904,12 @@ object VcfAnnotateTX {
             }}
             
         ) ++ (
+            
+            snpEffAnnotate.toSeq.map{ssa => {
+              new SnpEffAnnotater(ssa.split(",",2)(0),ssa.split(",",2)(1),ssa.split(",",2)(0) )
+            }}
+            
+        ) ++ (
             addLocalGcInfo.map{ ss => {
               if(genomeFA.isEmpty){
                 error("in order to perform local GC info add, you must include the genomeFA parameter");
@@ -1825,6 +1924,16 @@ object VcfAnnotateTX {
               //val 
               //new SnpSiftAnnotater(ssa.split(",",2)(0),ssa.split(",",2)(1))
             //}}
+        ) ++ (
+            //addWiggleDepthWalker(wigFile : String, tag : String, desc : String)
+            addWiggleAnnotation.map{ ss => {
+              val scells = ss.split("[|]");
+              if(scells.length != 3){
+                error("addWiggleAnnotation error: must have 3 elements: tagID, desc, wig");
+              }
+              val (tagID,desc,wigfile) = ((scells(0),scells(1),scells(2)));
+              new addWiggleDepthWalker(wigFile = wigfile, tag = tagID, desc = desc);
+            }}
             
         ) ++ (
           genoFilter match {
@@ -1985,6 +2094,16 @@ object VcfAnnotateTX {
               Seq[SVcfWalker]();
             }
         ) ++ (
+            addSampCountWithMultVector.map{ asc => asc.split("[|]")}.map{ cc => {
+              val tagID = cc(0);
+              val gtTag = calcStatGtTag;
+              val desc = cc(1);
+              val vectorFile = cc(2);
+              new SAddSampCountWithMultVector(tagID =tagID, gtTag = gtTag, desc = desc, vectorFile = vectorFile);
+              //SAddSampCountWithMultVector(tagID : String, gtTag : String, desc : String, vectorFile : String)
+            }}
+            
+        ) ++ (
           dbnsfpFile match {
             case Some(df) => {
              reportln("Creating DBNSFP utility ... "+getDateAndTimeString,"debug");
@@ -2098,7 +2217,11 @@ object VcfAnnotateTX {
                      snpEffWarningDropList = snpEffWarningDropList,
                      snpEffKeepIdx = snpEffKeepIdx,
                      snpEffVarExtract = snpEffVarExtract,
-                     geneListTagInfix = snpEffGeneListTagInfix
+                     geneListTagInfix = snpEffGeneListTagInfix,
+                     snpEffBiotypeIdx=snpEffBiotypeIdx,
+                     snpEffWarnIdx=snpEffWarnIdx,
+                     snpEffFieldLen=snpEffFieldLen,
+                     snpEffFields=snpEffFields
                      )
                  );
                }
@@ -2106,6 +2229,13 @@ object VcfAnnotateTX {
                  Seq[SVcfWalker]()
                }
              }
+                                                         /*
+                         *snpEffBiotypeIdx : Int = 7,
+                          snpEffWarnIdx : Int = 15,
+                          snpEffFieldLen : Int = 16,
+                          snpEffFields : Option[List[String]] = None
+                         */
+             
         ) ++ (
             ctrlAlleFreqKeys.toSeq.map{ cafk => {
                 val cells = cafk.split(":");
@@ -2259,8 +2389,14 @@ object VcfAnnotateTX {
              }}.sortBy{case (p,ss) => p}.map{ case (p,ss) => {
                ((p,getMergeBooleanTags(ss)))
              }}
-             (tvf ++ tve ++ mbt).sortBy{ case (p,w) => p}.map{_._2}
-             
+             val ssq = (tvf ++ tve ++ mbt).sortBy{ case (p,w) => p}.map{_._2}
+             if(ssq.length > 0){
+               reportln("-----Chaining "+ssq.length+" negative-ordered tag function walkers:","note")
+             }
+             ssq.foreach( sss => {
+               reportln("     Adding: "+sss.walkerName,"note")
+             })
+             ssq
         }) ++ ({
              val tvf : Vector[SVcfWalker] = tagVariantsFunction.filter( ! _.startsWith("ORDER=") ).toVector.map{ ss => {
                ((0, ss ))
@@ -2277,10 +2413,16 @@ object VcfAnnotateTX {
              }}.map{ case (p,ss) => {
                getMergeBooleanTags(ss);
              }}
-             (tvf ++ tve ++ mbt)
-             
+             val ssq = (tvf ++ tve ++ mbt)
+             if(ssq.length > 0){
+               reportln("-----Chaining "+ssq.length+" default-ordered tag function walkers:","note")
+             }
+             ssq.foreach( sss => {
+               reportln("     Adding: "+sss.walkerName,"note")
+             })
+             ssq
         }) ++ ({
-             val tvf : Vector[(Double,SVcfWalker)] = tagVariantsFunction.filter( _.startsWith("ORDER=[+0-9]") ).toVector.map{ ss => {
+             val tvf : Vector[(Double,SVcfWalker)] = tagVariantsFunction.filter( x => x.startsWith("ORDER=") && (!x.startsWith("ORDER=-"))  ).toVector.map{ ss => {
                if(! ss.contains("|")) error("Invalid tagVariantsFunction entry: \""+ss+"\"")
                val NORD = ss.drop(6);
                val p = string2double( NORD.split("[|]",2)(0) )
@@ -2288,7 +2430,7 @@ object VcfAnnotateTX {
              }}.sortBy{case (p,ss) => p}.map{ case (p,ss) => {
                ((p, getTagVariantsFunction(ss)))
              }}
-             val tve : Vector[(Double,SVcfWalker)] = tagVariantsExpression.filter( _.startsWith("ORDER=[+0-9]") ).toVector.map{ ss => {
+             val tve : Vector[(Double,SVcfWalker)] = tagVariantsExpression.filter(  x => x.startsWith("ORDER=") && (!x.startsWith("ORDER=-"))   ).toVector.map{ ss => {
                if(! ss.contains("|")) error("Invalid tagVariantsExpression entry: \""+ss+"\"")
                val NORD = ss.drop(6);
                val p = string2double( NORD.split("[|]",2)(0) )
@@ -2296,7 +2438,7 @@ object VcfAnnotateTX {
              }}.sortBy{case (p,ss) => p}.map{ case (p,ss) => {
                ((p,getTagVariantsExpression(ss)))
              }}
-             val mbt : Vector[(Double,SVcfWalker)] = mergeBooleanTags.filter( _.startsWith("ORDER=[+0-9]") ).toVector.map{ ss => {
+             val mbt : Vector[(Double,SVcfWalker)] = mergeBooleanTags.filter(  x => x.startsWith("ORDER=") && (!x.startsWith("ORDER=-")) ).toVector.map{ ss => {
                if(! ss.contains("|")) error("Invalid mergeBooleanTags entry: \""+ss+"\"")
                val NORD = ss.drop(6);
                val p = string2double( NORD.split("[|]",2)(0) )
@@ -2304,8 +2446,14 @@ object VcfAnnotateTX {
              }}.sortBy{case (p,ss) => p}.map{ case (p,ss) => {
                ((p,getMergeBooleanTags(ss)))
              }}
-             (tvf ++ tve ++ mbt).sortBy{ case (p,w) => p}.map{_._2}
-          
+             val ssq = (tvf ++ tve ++ mbt).sortBy{ case (p,w) => p}.map{_._2}
+             if(ssq.length > 0){
+               reportln("-----Chaining "+ssq.length+" positive-ordered tag function walkers:","note")
+             }
+             ssq.foreach( sss => {
+               reportln("     Adding: "+sss.walkerName,"note")
+             })
+             ssq
              /*
         }) ++ ({
             //AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None )
@@ -2493,9 +2641,9 @@ object VcfAnnotateTX {
                 nameOpt.getOrElse(".")
               }}
               val namesValid = names.forall{ name => {
-                val nameValid = validStringRegex.matcher(name).find();
+                val nameValid = ! ( validStringRegex.matcher(name).find());
                 if(! nameValid){
-                  notice("","IntervalNameNotValid",1)
+                  notice("","IntervalNameNotValid: \""+name+"\"",1)
                 }
                 nameValid;
               }}

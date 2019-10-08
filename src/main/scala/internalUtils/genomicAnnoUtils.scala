@@ -12,9 +12,94 @@ import internalUtils.GtfTool._;
 //import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
+import fileUtils._;
 
 object genomicAnnoUtils {
 
+  abstract class EfficientWiggleParser {
+    def getValueAtPos(c : String, p : Int): String 
+    
+  }
+  
+  class SimpleEfficientWiggleParser(infile : String) extends EfficientWiggleParser {
+    var currChrom = "";
+    var currPos = 0;
+    var buffer = "";
+    var chromList : Vector[String] = Vector[String]();
+    var iter = getLinesSmartUnzip(infile).buffered;
+    var headerLine = "";
+    var windowSize = 1;
+    
+    def skipToNextChrom(){
+      while( iter.hasNext && (! iter.head.startsWith("fixedStep"))){
+        iter.next;
+      }
+      //if(! iter.hasNext){
+        //chromosome not found!
+      //}
+    }
+    def findChromosome(c : String){
+        val cix = chromList.indexOf(c)
+        if(cix == -1){
+           notice("scanning for chromosome: "+c,"CHROM_SCAN_FWD",-1);
+           var keepGoing = true;
+           while( iter.hasNext && keepGoing){
+            if(iter.head.startsWith("fixedStep")){
+              headerLine = iter.next;
+              val cc = headerLine.trim().split("\\s+").find(_.startsWith("chrom")).getOrElse({error("fixedStep line found with no chrom tag: \""+iter.head+"\"");"?NO CHROM FOUND?"}).split("=")(1);
+              if( ! chromList.contains(cc)){
+                notice("    Found chrom: \""+cc+"\" ["+getDateAndTimeString+"]","CHROM_OBS",-1);
+                chromList = chromList :+ cc;
+              }
+              if(cc == c){
+                keepGoing = false;
+              } else {
+                notice("        Skipping chrom: \""+cc+"\" (searching for: \""+c+"\") ["+getDateAndTimeString+"]","CHROM_OBS",-1);
+              }
+            } else {
+              iter.next;
+            }
+          }
+        } else {
+          notice("Skipping back to top and scanning for chromosome: "+c+" ["+getDateAndTimeString+"]","CHROM_SCAN_BACK",-1);
+          iter = getLinesSmartUnzip(infile).buffered;
+          while( iter.hasNext && ((! iter.head.startsWith("fixedStep")) || 
+               ( iter.head.trim().split("\\s+").find(_.startsWith("chrom")).getOrElse({error("fixedStep line found with no chrom tag: \""+iter.head+"\"");"?NO CHROM FOUND?"}).split("=")(1) != c ))){
+            iter.next;
+          }
+          headerLine = iter.next;
+        }
+        if(! iter.hasNext){
+          error("Failed to find chromosome: \""+c+"\"");
+        }
+        windowSize = headerLine.trim().split("\\s+").find(_.startsWith("step")).getOrElse("step=1").split("=")(1).toInt
+        currChrom = c;
+        currPos = 0;
+        buffer = iter.next;
+    }
+    
+    def getValueAtPos(c : String, p : Int): String = {
+        if(c != currChrom){
+          findChromosome(c)
+        }
+        if(p < currPos){
+          error("ERROR: back-access of wig file! Is vcf sorted?");
+        }
+        while(iter.hasNext && currPos+windowSize < p && (! iter.head.startsWith("fixedStep"))){
+          currPos = currPos + windowSize;
+          buffer = iter.next
+        }
+        if( currPos+windowSize < p ){
+          warning("Attempt to access beyond chromosome end!","WIGGLE_ACCESS_BEYOND_CHROMEND",-1)
+          "0";
+        } else {
+          buffer;
+        }
+    }
+  }
+  
+  
+  
   /*
    * Useful classes:
    */

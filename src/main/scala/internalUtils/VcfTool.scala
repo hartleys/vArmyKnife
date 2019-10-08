@@ -2211,6 +2211,7 @@ object VcfTool {
     //def walkerInfo : SVcfWalkerInfo;
     
     var walkerNumber : Option[String] = None;
+    var walkerTitle : String = "";
     
     def fmtOption[A](a : Option[A]) : String = a match {
       case Some(x) => ""+x.toString+"";
@@ -2339,7 +2340,7 @@ object VcfTool {
             val newInfix = splitFuncVc(vc);
             if(newInfix.isEmpty && currOut.isDefined){
               currOut.foreach(out => {
-                reportln("Finished with file: "+outPrefix+currOutFileInfix+outSuffix+"." ,"progress");
+                reportln("Finished with file: "+outPrefix+currOutFileInfix.get+outSuffix+"." ,"progress");
                 out.close()
               })
               currOut = None;
@@ -2349,8 +2350,8 @@ object VcfTool {
                 out.close()
               })
               currOutFileInfix = newInfix
-              reportln("Starting new file: "+outPrefix+currOutFileInfix+outSuffix,"progress")
-              currOut = Some( openWriterSmart(outPrefix+currOutFileInfix+outSuffix) )
+              reportln("Starting new file: "+outPrefix+currOutFileInfix.get+outSuffix,"progress")
+              currOut = Some( openWriterSmart(outPrefix+currOutFileInfix.get+outSuffix) )
               currOut.foreach(out => {
                 newHeader.getVcfLines.foreach{ line => {
                   out.write(line+"\n")
