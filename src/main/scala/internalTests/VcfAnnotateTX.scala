@@ -2899,6 +2899,7 @@ object VcfAnnotateTX {
     }
     
     burdenWriter.foreach{ bw => {
+      reportln("Closing burden count writer...","note");
       bw.close();
     }}
     if(! summaryWriter.isEmpty) summaryWriter.get.close();

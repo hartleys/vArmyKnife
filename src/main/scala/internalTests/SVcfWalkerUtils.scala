@@ -2040,7 +2040,7 @@ object SVcfWalkerUtils {
     val tagID = params(0);
     def walkerName : String = "GenerateBurdenTable."+tagID;
     val geneTag = params(1);
-    val outfile = params(2);
+    //val outfile = params(2);
     val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
     val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
     val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
@@ -2095,12 +2095,12 @@ object SVcfWalkerUtils {
         if(filterExpr.keep(v)){
           val geneList = v.info.get(geneTag).getOrElse(None).map{a => a.split(",")}.getOrElse( new Array[String](0) );
           //geneList.foreach{ g => {
-            val cts = geneList.map{ g => { 
+            val cts = geneList.map{ g => {
               burdenMatrix.getOrElseUpdate(g,
                  new Array[Int]( outHeader.titleLine.sampleList.length )
               )
             }}
-            notice("genelist found: "+geneList.mkString("/"),"GENELIST_FOUND",25);
+            notice("genelist found: \""+geneList.mkString("/")+"\"","GENELIST_FOUND",25);
             var numAlt = 0;
             v.genotypes.getGtTag(gtTag).map{ gta => {
               sampIdxList.foreach{ sampIdx => {
@@ -2132,7 +2132,8 @@ object SVcfWalkerUtils {
         vc
       }}, closeAction = (() => {
         //val out = openWriter(outfile);
-        
+        out.write("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length+"\t"+"sampList=["+finalKeepSampSet.toVector.sorted.mkString(",")+"]"+"\n");
+        reportln("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length+"\t"+"sampList=["+finalKeepSampSet.toVector.sorted.mkString(",")+"]","note")
         burdenMatrix.keys.toVector.sorted.foreach{ g => {
           val mtr = burdenMatrix(g);
           val altCt = altCounts(g);
