@@ -17,7 +17,7 @@ import scala.collection.JavaConverters._
 
 object makeBedWiggle {
    
-  
+ 
 class CmdGenHomopolymerBed extends CommandLineRunUtil {
      override def priority = 20;
      val parser : CommandLineArgParser = 

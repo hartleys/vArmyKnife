@@ -798,7 +798,14 @@ object VcfAnnotateTX {
                                          valueName = "newTagID|desc|funcName|param1,param2,...",
                                          argDesc =  ""
                                         ).meta(false,"Annotation") :: 
-
+                                        
+                    new BinaryMonoToListArgument[String](
+                                         name = "variantMapFunction", 
+                                         arg = List("--variantMapFunction","--FCN","--fcn","-F"),
+                                         valueName = "FunctionType|ID|param1=p1|param2=p2|...",
+                                         argDesc =  "TODO DESC"
+                                        ).meta(false,"Annotation") :: 
+                                        
                     new BinaryMonoToListArgument[String](
                                          name = "mergeBooleanTags", 
                                          arg = List("--mergeBooleanTags"),
@@ -1502,7 +1509,9 @@ object VcfAnnotateTX {
                 fixSwappedRefAlt = parser.get[Boolean]("fixSwappedRefAlt"),
                 
                 inputSampleOrdering = parser.get[Option[List[String]]]("inputSampleOrdering"),
-                inputSampleOrderingAlphabetical = parser.get[Boolean]("inputSampleOrderingAlphabetical")
+                inputSampleOrderingAlphabetical = parser.get[Boolean]("inputSampleOrderingAlphabetical"),
+                
+                variantMapFunction = parser.get[List[String]]("variantMapFunction")
                 // calcBurdenCounts burdenCountsFile
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
                 //dropVariantsWithNs, tallyFile   
@@ -1720,7 +1729,9 @@ object VcfAnnotateTX {
                 fixSwappedRefAlt : Boolean = false,
                 
                 inputSampleOrdering : Option[List[String]] = None,
-                inputSampleOrderingAlphabetical : Boolean = false
+                inputSampleOrderingAlphabetical : Boolean = false,
+                
+                variantMapFunction : List[String] = List[String]()
                 ){
 
 
@@ -2171,6 +2182,96 @@ object VcfAnnotateTX {
             }}
             
         ) ++ (
+          dbnsfpFile match {
+            case Some(df) => {
+             reportln("Creating DBNSFP utility ... "+getDateAndTimeString,"debug");
+             Seq[SVcfWalker](SRedoDBNSFPannotation(
+               dbnsfpfile = df,
+               chromStyle = "hg19", 
+               chromList = chromList,
+               posFieldTitle = "pos(1-coor)",
+               chromFieldTitle = "chr",
+               altFieldTitle = "alt",
+               singleDbFile = false,
+               dbFileDelim = "\t",
+               tagPrefix = OPTION_TAGPREFIX+"dbNSFP_",
+               dropTags = None,
+               keepTags = dbnsfpTags
+             ))
+            }
+            case None => Seq[SVcfWalker]();
+          }
+        ) ++ ( 
+          addInfoVcfs match {
+            case Some(infoVcfs) => {
+              
+              infoVcfs.toSeq.map{ v => {
+                val cells =  v.split(":")
+                if(cells.length != 3 && cells.length != 2) error("each element of addInfoVcfs must have 2-3 elements separated by colons!");
+                val vcfTag = cells(0);
+                val vcfFile = cells(1);
+                val tagSet : Option[List[String]]= if(cells.isDefinedAt(2)) Some(cells(2).split("\\|").toList) else None
+                reportln("Creating addVCFtags ("+vcfTag+") utility ... "+getDateAndTimeString,"debug");
+                mergeSecondaryVcf(inputVCF = vcfFile, inputVcfTag = vcfTag, inputVcfName = vcfTag, getTags = tagSet, tagPrefix = "");
+              }}
+            }
+            case None => {
+              Seq[SVcfWalker]();
+            }
+          }
+        ) ++ (
+            if(addSummaryCLNSIG){
+              reportln("Creating clinVar utility ... "+getDateAndTimeString,"debug");
+              Seq[SVcfWalker](SAddSummaryCln(vcfCodes = vcfCodes));
+            } else {
+              Seq[SVcfWalker]();
+            }
+            
+        ) ++ (
+            if(inputSavedTxFile.isDefined | gtffile.isDefined){
+                reportln("Creating TX utility ... "+getDateAndTimeString,"debug");
+                Seq(AddTxAnnoSVcfWalker(
+                    gtffile =gtffile, 
+                    genomeFA =genomeFA, 
+                    summaryWriter =summaryWriter,
+                    txInfoFile = txInfoFile,
+                    addStopCodon =addStopCodon,
+                    inputSavedTxFile =inputSavedTxFile,
+                    outputSavedTxFile =outputSavedTxFile,
+                    chromList =chromList,
+                    txToGeneFile = txToGeneFile,
+                    geneVariantsOnly = geneVariantsOnly,
+                    bufferSize = bufferSize,
+                    //addBedTags = addBedTags,
+                    addBedTags = None,
+                    vcfCodes =vcfCodes,
+                    geneList = geneList,
+                    txTypes = txTypes
+                    ), 
+                    new internalUtils.CalcACMGVar.AddMoreGeneAnno(txToGeneFile =txToGeneFile, refSeqFile =addCanonicalTags)
+                )
+            } else {
+                Seq()
+            }
+          
+         ) ++ (
+             if(addTxSummaryInfo){
+                Seq( new internalUtils.CalcACMGVar.AddMoreGeneAnno(txToGeneFile =txToGeneFile, refSeqFile =addCanonicalTags) )
+             } else {
+                Seq()
+             }
+            
+            
+        ) ++ (
+            if(addCanonicalTags.isDefined){
+              reportln("Creating AddCanonicalInfo utility ... "+getDateAndTimeString,"debug");
+              Seq[SVcfWalker](SAddCanonicalInfo(canonicalTxFile = addCanonicalTags.get));
+            } else {
+              Seq[SVcfWalker]();
+            }
+            
+            
+        ) ++ (
             addLocalGcInfo.map{ ss => {
               if(genomeFA.isEmpty){
                 error("in order to perform local GC info add, you must include the genomeFA parameter");
@@ -2292,40 +2393,7 @@ object VcfAnnotateTX {
               AddAltSequence(tagString=tagString,genomeFa=genomeFA.get, len = lenThreshold);
             }}
             
-        ) ++ (
-            if(inputSavedTxFile.isDefined | gtffile.isDefined){
-                reportln("Creating TX utility ... "+getDateAndTimeString,"debug");
-                Seq(AddTxAnnoSVcfWalker(
-                    gtffile =gtffile, 
-                    genomeFA =genomeFA, 
-                    summaryWriter =summaryWriter,
-                    txInfoFile = txInfoFile,
-                    addStopCodon =addStopCodon,
-                    inputSavedTxFile =inputSavedTxFile,
-                    outputSavedTxFile =outputSavedTxFile,
-                    chromList =chromList,
-                    txToGeneFile = txToGeneFile,
-                    geneVariantsOnly = geneVariantsOnly,
-                    bufferSize = bufferSize,
-                    //addBedTags = addBedTags,
-                    addBedTags = None,
-                    vcfCodes =vcfCodes,
-                    geneList = geneList,
-                    txTypes = txTypes
-                    ), 
-                    new internalUtils.CalcACMGVar.AddMoreGeneAnno(txToGeneFile =txToGeneFile, refSeqFile =addCanonicalTags)
-                )
-            } else {
-                Seq()
-            }
-          
-         ) ++ (
-             if(addTxSummaryInfo){
-                Seq( new internalUtils.CalcACMGVar.AddMoreGeneAnno(txToGeneFile =txToGeneFile, refSeqFile =addCanonicalTags) )
-             } else {
-                Seq()
-             }
-            
+
          /*) ++ (
             if(groupFile.isEmpty || splitAlleleGroupCounts){
               Seq[SVcfWalker]();
@@ -2374,58 +2442,7 @@ object VcfAnnotateTX {
               //SAddSampCountWithMultVector(tagID : String, gtTag : String, desc : String, vectorFile : String)
             }}
             
-        ) ++ (
-          dbnsfpFile match {
-            case Some(df) => {
-             reportln("Creating DBNSFP utility ... "+getDateAndTimeString,"debug");
-             Seq[SVcfWalker](SRedoDBNSFPannotation(
-               dbnsfpfile = df,
-               chromStyle = "hg19", 
-               chromList = chromList,
-               posFieldTitle = "pos(1-coor)",
-               chromFieldTitle = "chr",
-               altFieldTitle = "alt",
-               singleDbFile = false,
-               dbFileDelim = "\t",
-               tagPrefix = OPTION_TAGPREFIX+"dbNSFP_",
-               dropTags = None,
-               keepTags = dbnsfpTags
-             ))
-            }
-            case None => Seq[SVcfWalker]();
-          }
-        ) ++ ( 
-          addInfoVcfs match {
-            case Some(infoVcfs) => {
-              
-              infoVcfs.toSeq.map{ v => {
-                val cells =  v.split(":")
-                if(cells.length != 3 && cells.length != 2) error("each element of addInfoVcfs must have 2-3 elements separated by colons!");
-                val vcfTag = cells(0);
-                val vcfFile = cells(1);
-                val tagSet : Option[List[String]]= if(cells.isDefinedAt(2)) Some(cells(2).split("\\|").toList) else None
-                reportln("Creating addVCFtags ("+vcfTag+") utility ... "+getDateAndTimeString,"debug");
-                mergeSecondaryVcf(inputVCF = vcfFile, inputVcfTag = vcfTag, inputVcfName = vcfTag, getTags = tagSet, tagPrefix = "");
-              }}
-            }
-            case None => {
-              Seq[SVcfWalker]();
-            }
-          }
-        ) ++ (
-            if(addSummaryCLNSIG){
-              reportln("Creating clinVar utility ... "+getDateAndTimeString,"debug");
-              Seq[SVcfWalker](SAddSummaryCln(vcfCodes = vcfCodes));
-            } else {
-              Seq[SVcfWalker]();
-            }
-        ) ++ (
-            if(addCanonicalTags.isDefined){
-              reportln("Creating AddCanonicalInfo utility ... "+getDateAndTimeString,"debug");
-              Seq[SVcfWalker](SAddCanonicalInfo(canonicalTxFile = addCanonicalTags.get));
-            } else {
-              Seq[SVcfWalker]();
-            }
+
         ) ++ (
 
             addDepthStats match {
@@ -2630,7 +2647,201 @@ object VcfAnnotateTX {
             duplicateTag.toSeq.map{ dt => {
               new DuplicateStats(dt)
             }}
+            
         ) ++ ({
+            val sseq : Seq[SVcfWalker] = variantMapFunction.map{ vmfString => {
+              val fullcells = vmfString.split("(?<!\\\\)[|]").map{ xx => xx.replaceAll("\\\\[|]","|") }
+              if(fullcells.length < 2){
+                error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
+              }
+              val mapType = fullcells.head;
+              val mapID = fullcells(1);
+              val params : Map[String,String] = fullcells.tail.tail.map{ cc => { 
+                                                        val ccc = cc.split("=");
+                                                        if(ccc.length != 2){
+                                                          error("In variantMapFunction "+mapType+"/"+mapID+", each parameter after the 2nd must be of the form param=p");
+                                                        }
+                                                        (ccc(0),ccc(1))
+                                                     }}.toMap;
+              if(mapType == "tagVariantsExpression"){
+                   val expr = params.getOrElse("expr",{
+                     error("tagVariantsExpression must have parameter \"expr\": "+vmfString);
+                     ""
+                   })
+                   val desc = params.getOrElse("desc","") + " (generated with expression: "+expr+")";
+                   reportln("Creating Variant tagging utility ("+mapID+") ... "+getDateAndTimeString,"debug");
+                   VcfExpressionTag(expr = expr, tagID = mapID, tagDesc = desc);
+              /*} else if(mapType == "tagVariantsExpressionWithGeneList"){
+                   val expr = params.getOrElse("expr",{
+                     error("tagVariantsExpression must have parameter \"expr\": "+vmfString);
+                     ""
+                   })
+                   val desc = params.getOrElse("desc","") + " (generated with expression: "+expr+")";
+                   val geneList = params.getOrElse("
+                   reportln("Creating Variant tagging utility ("+mapID+") ... "+getDateAndTimeString,"debug");
+                   VcfExpressionTag(expr = expr, tagID = mapID, tagDesc = desc);*/
+                   /*
+                  if( params.contains("MODE") ){
+                    val mode = params("MODE");
+                    if(mode == "VAR"){
+                      //ADD ERROR CHECK
+                      reportln("Creating tagging utility, MODE=VAR. "+getDateAndTimeString,"debug");
+                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
+                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc);
+                    } else if(mode == "GENELIST"){
+                      //ADD ERROR CHECK
+                      reportln("Creating tagging utility, MODE=GENELIST. "+getDateAndTimeString,"debug");
+                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
+                      val geneTagString = cells.lift(4);
+                      val subGeneTagString = cells.lift(5);
+                      VcfExpressionTag(expr = expr, tagID = tagID, tagDesc = tagDesc, 
+                                     geneTagString = geneTagString, subGeneTagString = subGeneTagString, geneList = geneList);
+                    } else if(mode.startsWith("GT")){
+                      //ADD ERROR CHECK
+                      reportln("Creating tagging utility, MODE="+mode+". "+getDateAndTimeString,"debug");
+                      val (tagID,tagDesc,expr) = (cells(1),cells(2),cells(3));
+                      //val styleOpt = cells.lift(4);
+                      VcfGtExpressionTag( expr=expr,tagID=tagID,tagDesc=tagDesc,style = mode,                  
+                                          groupFile = groupFile, groupList = None, superGroupList  = superGroupList )
+                    } else {
+                      //ADD ERROR CHECK
+                      error("UNKNOWN/INVALID tagVariantsExpression MODE:\""+mode+"\"!")
+                      new PassThroughSVcfWalker()
+                    }
+                  } else if(cells.length == 3){
+
+                  } else {
+                     error("Invalid tagVariantsExpression tag: \""+vmfString+"\"");
+                     new PassThroughSVcfWalker()
+                  }*/
+                
+                
+              } else if(mapType == "tagVariantsFunction"){
+                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                new PassThroughSVcfWalker()
+              } else if(mapType == "genotypeFilter"){
+                //error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                //new PassThroughSVcfWalker()
+                
+                reportln("Creating GT Filter ("+mapID+") ... "+getDateAndTimeString,"debug");
+                val tagPrefix = if(mapID == "") "" else mapID + "_";
+                
+                val expr = params.getOrElse("expr",{
+                     error("genotypeFilter MUST have parameter \"expr\" ("+vmfString+")");
+                     ""
+                })
+                val ft          = params.getOrElse("filterTag",tagPrefix+"FILTER_GT")
+                val outputGtTag = params.getOrElse("outputGT",tagPrefix+"GT")
+                val inputGtTag  = params.getOrElse("inputGT","GT");
+                val copyRawGt   = params.getOrElse("inputGtNewName",tagPrefix+"PREFILTER_GT");
+                val ungt =        params.contains("inputGtNewName");
+                val noRawGt = copyRawGt.isEmpty;
+                 
+                val grpFile     = params.get("groupFile").map{ gf => Some(gf) }.getOrElse( groupFile );
+                val superGroups = params.get("superGroupList").map{ gf => Some(gf) }.getOrElse( superGroupList );
+                //groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None
+                FilterGenotypesByStat( 
+                   filter = expr, 
+                   filterTag = ft,
+                   gtTag = inputGtTag,
+                   rawGtTag = copyRawGt,
+                   noRawGt = noRawGt,
+                   newGTTag = filterOutputGtTag,
+                   groupFile = grpFile, 
+                   groupList = None, 
+                   superGroupList  = superGroups
+                )
+              } else if(mapType == "genotypeExpression"){
+                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                new PassThroughSVcfWalker()
+              } else if(mapType == "keepVariantsExpression"){
+                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                new PassThroughSVcfWalker()
+              } else if(mapType == "sampleCounts"){
+                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                
+                reportln("Created sample count calc ("+mapID+") ... "+getDateAndTimeString,"debug");
+                val tagInfix = if(mapID == "") "" else mapID + "_";
+                val vcfCodes : VCFAnnoCodes = VCFAnnoCodes(CT_INFIX = tagInfix)
+                
+                val grpFile     = params.get("groupFile").map{ gf => Some(gf) }.getOrElse( groupFile );
+                val superGroups = params.get("superGroupList").map{ gf => Some(gf) }.getOrElse( superGroupList );
+                val inputGtTag  = params.getOrElse("inputGT",calcStatGtTag);
+                val addCounts = Set("T","TRUE","1").contains( params.getOrElse("calcCounts","0").toUpperCase() );
+                val addFreq   = Set("T","TRUE","1").contains( params.getOrElse("calcFreqs","0").toUpperCase() );
+                val addMiss   = Set("T","TRUE","1").contains( params.getOrElse("calcMiss","0").toUpperCase() );
+                val addAlle   = Set("T","TRUE","1").contains( params.getOrElse("calcAlle","0").toUpperCase() );
+                val addHetHom   = Set("T","TRUE","1").contains( params.getOrElse("calcHetHom","0").toUpperCase() );
+                val addMultiHet = Set("T","TRUE","1").contains( params.getOrElse("calcMultiHet","0").toUpperCase() );
+
+                SAddGroupInfoAnno(groupFile = grpFile,
+                                                groupList = None,
+                                                superGroupList  = superGroups, 
+                                                chromList = chromList,
+                                                noMultiAllelics = splitAlleleGroupCounts || splitMultiAllelics,
+                                                tagFilter = None,
+                                                tagPreFiltGt = None,
+                                                GTTag = inputGtTag,
+                                                vcfCodes = vcfCodes,
+                                                addAlle = addAlle, addCounts = addCounts, addFreq = addFreq, addMiss = addMiss,
+                                                addHetHom = addHetHom, addMultiHet = addMultiHet
+                                                )
+                
+              } else if(mapType == "sampleLists"){
+                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                val tagPrefix = if(mapID == "") "" else mapID + "_";
+                val inputGT  = params.getOrElse("inputGT",calcStatGtTag);
+                val printLimit = params.get("printLimit").map{string2int(_)}.getOrElse(25);
+                val grpFile     = params.get("groupFile").map{ gf => Some(gf) }.getOrElse( groupFile );
+                val superGroups = params.get("superGroupList").map{ gf => Some(gf) }.getOrElse( superGroupList );
+                
+                 AddAltSampLists(tagGT = inputGT,
+                             outputTagPrefix = tagPrefix+"SAMPLIST_",
+                             printLimit = printLimit,
+                             groupFile = grpFile, groupList = None, superGroupList = superGroups
+                            )
+                
+                
+              } else if(mapType == "depthStats"){
+                //error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+                val tagPrefix = if(mapID == "") "" else mapID + "_";
+                val inputGT  = params.getOrElse("inputGT",calcStatGtTag);
+                val inputAD  = params.get("inputAD");
+                val inputDP  = params.get("inputAD");
+               // val expr  = params.get("expr");
+                
+                AddStatDistributionTags(tagAD = inputAD, 
+                                            tagGT = inputGT, 
+                                            tagDP = inputAD,
+                                            tagSingleCallerAlles = None,
+                                            outputTagPrefix=tagPrefix,
+                                            variantStatExpression = None
+                )
+              } else if(mapType == "filterTags"){
+                 val keepGeno = params.get("FORMAT.keep").map{ _.split(",").toList }
+                 val keepInfo = params.get("INFO.keep").map{ _.split(",").toList }
+                 val keepSamp = params.get("SAMPLES.keep").map{ _.split(",").toList }
+                 val dropGeno = params.get("FORMAT.drop").map{ _.split(",").toList }.toList.flatten
+                 val dropInfo = params.get("INFO.drop").map{ _.split(",").toList }.toList.flatten
+                 val dropSamp = params.get("SAMPLES.drop").map{ _.split(",").toList }.toList.flatten
+                 FilterTags(
+                     keepGenotypeTags = keepGeno,
+                     dropGenotypeTags = dropGeno,
+                     keepInfoTags = keepInfo,
+                     dropInfoTags = dropInfo,
+                     dropAsteriskAlleles = false,
+                     keepSamples = keepSamp,
+                     dropSamples = dropSamp,
+                     alphebetizeHeader = false,
+                     renameInfoTags = None
+                  )
+              } else {
+                error("UNKNOWN variantMapFunction TYPE: \""+mapType+"\"");
+                new PassThroughSVcfWalker()
+              }
+            }}
+            sseq;
+        }) ++ ({
     //getTagVariantsFunction tagVariantsFunction
     //getTagVariantsExpression tagVariantsExpression
     //getMergeBooleanTags mergeBooleanTags

@@ -126,7 +126,8 @@ object stdUtils {
       string2int(xs.head.toString());
     }
   }
-  
+  def getNumZeros(c : Int) : Int = { math.log10((c + 1).toDouble).ceil.toInt }
+
   /*
    * Utility Classes:
    */

@@ -1579,7 +1579,7 @@ object SVcfWalkerUtils {
       }}
       missingSamp.foreach{ s =>{
         error("Sample reordering failed! Cannot find sample: "+s);
-      }}
+      }} 
       val sampIX = if(sort){
         vcfHeader.titleLine.sampleList.zipWithIndex.sorted.toArray
       } else {
@@ -2232,6 +2232,589 @@ object SVcfWalkerUtils {
     }
   }
 
+  
+
+  case class VcfTagFunctionParam( id : String, 
+                                  ty : String, 
+                                  req: Boolean = true, 
+                                  defval : String = "", 
+                                  dotdot : Boolean = false ){
+    
+
+    
+    def checkParamType( param : String, h : SVcfHeader) : Boolean = {
+      def checkIsInt(pp : String) : Boolean = {
+        string2intOpt(pp).nonEmpty;
+      }
+      def checkIsFloat(pp : String) : Boolean = {
+        string2doubleOpt(pp).nonEmpty;
+      }
+      def checkIsInfo(pp : String) : Boolean = {
+          h.infoLines.exists{ ln => {
+            ln.ID == pp
+          }}
+      }
+      def checkIsGeno(pp : String) : Boolean = {
+          h.formatLines.exists{ ln => {
+            ln.ID == pp
+          }}
+      }
+      ty.split("[|]").exists{ tyy => {
+        if( ty.toUpperCase().startsWith("INFO") ){
+          checkIsInfo(param)
+        } else if( ty.toUpperCase().startsWith("GENO")){
+          checkIsGeno(param)
+        } else if( ty.toUpperCase().startsWith("INT")){
+          checkIsInt(param);
+        } else if( ty.toUpperCase().startsWith("FLOAT")){
+          checkIsFloat(param);
+        } else {
+          true
+        }
+      }}
+    }
+  }
+  abstract class VcfTagFcn() {
+    def md : VcfTagFcnMetadata;
+    def h : SVcfHeader;
+    def pv : Seq[String];
+    def dgts : Option[Int];
+    def init() : Boolean;
+    def run(vc : SVcfOutputVariantLine);
+    
+      def checkIsInt(pp : String) : Boolean = {
+        string2intOpt(pp).nonEmpty;
+      }
+      def checkIsFloat(pp : String) : Boolean = {
+        string2doubleOpt(pp).nonEmpty;
+      }
+      def checkIsInfo(pp : String) : Boolean = {
+          h.infoLines.exists{ ln => {
+            ln.ID == pp
+          }}
+      }
+      def checkIsGeno(pp : String) : Boolean = {
+          h.formatLines.exists{ ln => {
+            ln.ID == pp
+          }}
+      }
+      def checkVcfTagParams() : Boolean = {
+          md.params.padTo( pv.length, md.params.last ).zip(pv).exists{ case (vtfp, pvv) => {
+              ! vtfp.checkParamType(pvv, h);
+          }}
+      }
+      
+      def writeDouble(vc : SVcfOutputVariantLine, tag : String,dd : Double){
+              dgts match {
+                case Some(dd) => {
+                  vc.addInfo(tag, ("%."+dd+"f").format( dd ) );
+                }
+                case None => {
+                  vc.addInfo(tag, ""+(dd));
+                }
+              }
+      }
+      def writeInt(vc : SVcfOutputVariantLine, tag : String,dd : Int){
+                vc.addInfo(tag, ""+(dd));
+      }
+      def writeString(vc : SVcfOutputVariantLine, tag : String,dd : String){
+                vc.addInfo(tag, ""+(dd));
+      }
+    
+  }
+  case class VcfTagFcnMetadata( id : String, synon : Seq[String],
+                              shortDesc : String,
+                              desc : String,
+                              params : Seq[VcfTagFunctionParam]){
+     def getID : String = id;
+     def getShort : String = shortDesc;
+     def getDesc : String = desc;
+     def getParams :  Seq[VcfTagFunctionParam] = params;
+  }
+  
+  abstract class VcfTagFcnFactory(){
+     def metadata : VcfTagFcnMetadata;
+     def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn;
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  val vcfTagFunctionMap : Seq[VcfTagFcnFactory] = Seq[VcfTagFcnFactory](
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "SUM",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var isInteger : Boolean = true;
+              var const : Either[Int,Double] = Right[Int,Double](0);
+              var infoParams : Seq[String] = Seq[String]();
+              def init() : Boolean = {
+                isInteger = pv.exists{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Number != "1") warning("Warning: running SUM function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                infoParams = pv.filter{pp => h.infoLines.exists(hh => hh.ID == pp ) }
+                if(isInteger){
+                  const = Left[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2int(_) }.sum )
+                } else {
+                  const = Right[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2double(_) }.sum )
+                }
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                const match {
+                  case Left(k) => {
+                    val out = k + infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2int(vv)}.sum
+                    writeInt(vc,newTag,out);
+                  }
+                  case Right(k) => {
+                    val out = k + infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2double(vv)}.sum
+                    writeDouble(vc,newTag,out);
+                  }
+                }
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "PROD",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var isInteger : Boolean = true;
+              var const : Either[Int,Double] = Right[Int,Double](0);
+              var infoParams : Seq[String] = Seq[String]();
+              def init() : Boolean = {
+                isInteger = pv.exists{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Number != "1") warning("Warning: running "+md.id+" function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                infoParams = pv.filter{pp => h.infoLines.exists(hh => hh.ID == pp ) }
+                if(isInteger){
+                  const = Left[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2int(_) }.product )
+                } else {
+                  const = Right[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2double(_) }.product )
+                }
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                const match {
+                  case Left(k) => {
+                    val out = k + infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2int(vv)}.product
+                    writeInt(vc,newTag,out);
+                  }
+                  case Right(k) => {
+                    val out = k + infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2double(vv)}.product
+                    writeDouble(vc,newTag,out);
+                  }
+                }
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "DIV",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var isInteger : Boolean = true;
+              var const : Double = 0.0;
+              var infoParams : Seq[String] = Seq[String]();
+              var eitherParams : Seq[Either[Double,String]] = Seq[Either[Double,String]]();
+              
+              def init() : Boolean = {
+                isInteger = pv.exists{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Number != "1") warning("Warning: running "+md.id+" function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                eitherParams = pv.map{ pp => {
+                  if(h.infoLines.exists(hh => hh.ID == pp )){
+                    Right( pp );
+                  } else {
+                    if(  string2doubleOpt(pp).isEmpty) error("Attempting to divide by "+pp+", which isn't numeric!");
+                    Left( string2double(pp) );
+                  }
+                }}
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                val outSeq : Seq[Option[Double]] = eitherParams.map{ ep => {
+                  ep match {
+                    case Left(x) => Some(x);
+                    case Right(x) => vc.info.getOrElse(x,None).filter( vv => vv != "." ).map{ vv => string2double(vv) }
+                  }
+                }}
+                val out : Option[Double] = outSeq.tail.foldLeft(outSeq.head){ case (soFar,curr) => {
+                  if(curr.contains(0.0)){
+                    None;
+                  } else {
+                    soFar.flatMap{ sf => { curr.map{ cc => sf / cc }}}
+                  }
+                }}
+                out.foreach{ vv => {
+                  writeDouble(vc,newTag,vv);
+                }}
+                
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "LEN",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO_list",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "delim", ty = "Char",req=false,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var delims : String = "";
+              
+              def init() : Boolean = {
+                if(paramValues.length < 1){
+                  error("Function "+md.id+" requires at least 1 parameter!");
+                }
+                delims = paramValues.tail.mkString("")
+                if(delims.startsWith("^")){
+                  delims = "[\\"+delims+"]";
+                } else if(delims == ""){
+                  delims = "[,]";
+                } else {
+                  delims = "["+delims+"]";
+                }
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                //vc.addInfo(tag, ""+(dd));
+                vc.info.getOrElse(paramValues.head,None).foreach{ vv => {
+                  if(vv == "."){
+                    vc.addInfo(newTag, "0")
+                  } else {
+                    vc.addInfo(newTag, ""+vv.split(delims).length)
+                  }
+                }}
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "LEN",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO_list",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "delim", ty = "Char",req=false,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var delims : String = "";
+              
+              def init() : Boolean = {
+                if(paramValues.length < 1){
+                  error("Function "+md.id+" requires at least 1 parameter!");
+                }
+                delims = paramValues.tail.mkString("")
+                if(delims.startsWith("^")){
+                  delims = "[\\"+delims+"]";
+                } else if(delims == ""){
+                  delims = "[,]";
+                } else {
+                  delims = "["+delims+"]";
+                }
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                //vc.addInfo(tag, ""+(dd));
+                vc.info.getOrElse(paramValues.head,None).foreach{ vv => {
+                  if(vv == "."){
+                    vc.addInfo(newTag, "0")
+                  } else {
+                    vc.addInfo(newTag, ""+vv.split(delims).length)
+                  }
+                }}
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "DIFF",synon = Seq("SUBTRACT"),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var isInteger : Boolean = true;
+              var runparams : Seq[Either[Either[Int,Double],String]] = Seq();
+              def init() : Boolean = {
+                if(paramValues.length != 2){
+                  error("Function "+md.id+" requires exactly 2 parameters!");
+                }
+                isInteger = pv.exists{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Number != "1") warning("Warning: running "+md.id+" function on tag: "+info.ID+", which is a list. Will go across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running "+info.ID+" function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                runparams = pv.map{ pp => {
+                  if( h.infoLines.exists{ ff => ff.ID == pp } ){
+                    Right(pp)
+                  } else if(isInteger){
+                    Left(Left( string2int(pp)));
+                  } else {
+                    Left(Right(string2double(pp)));
+                  }
+                }}
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                
+                val outseq : Seq[Either[Int,Double]]= runparams.map{ ppe => {
+                  ppe match {
+                    case Right(x) => if(isInteger){
+                      Left(string2intOpt(x).getOrElse(0));
+                    } else {
+                      Right(string2doubleOpt(x).getOrElse(0.0));
+                    }
+                    case Left(Right(x)) => Right(x);
+                    case Left(Left(x)) => Left(x);
+                  }
+                }}
+                if(isInteger){
+                  val a = outseq(0).left.toOption.getOrElse(0);
+                  val b = outseq(1).left.toOption.getOrElse(0);
+                  writeInt(vc,newTag,(a - b));
+                } else {
+                  val a = outseq(0).right.toOption.getOrElse(0.0);
+                  val b = outseq(1).right.toOption.getOrElse(0.0);
+                  writeDouble(vc,newTag,(a - b));
+                }
+              }
+            }
+          }
+        },        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "MAX",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var isInteger : Boolean = true;
+              var const : Either[Int,Double] = Right[Int,Double](0);
+              var infoParams : Seq[String] = Seq[String]();
+              def init() : Boolean = {
+                isInteger = pv.exists{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Number != "1") warning("Warning: running SUM function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                infoParams = pv.filter{pp => h.infoLines.exists(hh => hh.ID == pp ) }
+                if(isInteger){
+                  const = Left[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2int(_) }.max )
+                } else {
+                  const = Right[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2double(_) }.max )
+                }
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                const match {
+                  case Left(k) => {
+                    val out = (infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2int(vv)} :+ k).max
+                    writeInt(vc,newTag,out);
+                  }
+                  case Right(k) => {
+                    val out = (infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2double(vv)} :+ k).max
+                    writeDouble(vc,newTag,out);
+                  }
+                }
+              }
+            }
+          }
+        },        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "MIN",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader;
+              def pv : Seq[String] = paramValues;
+              def dgts : Option[Int] = digits;
+              def md : VcfTagFcnMetadata = mmd;
+              var isInteger : Boolean = true;
+              var const : Either[Int,Double] = Right[Int,Double](0);
+              var infoParams : Seq[String] = Seq[String]();
+              def init() : Boolean = {
+                isInteger = pv.exists{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Number != "1") warning("Warning: running SUM function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                pv.foreach{ pp => {
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                    if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
+                  }}
+                }}
+                infoParams = pv.filter{pp => h.infoLines.exists(hh => hh.ID == pp ) }
+                if(isInteger){
+                  const = Left[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2int(_) }.min )
+                } else {
+                  const = Right[Int,Double]( pv.filter{pp => ! h.infoLines.exists(hh => hh.ID == pp ) }.map{ string2double(_) }.min )
+                }
+                checkVcfTagParams();
+              }
+              def run(vc : SVcfOutputVariantLine){
+                const match {
+                  case Left(k) => {
+                    val out = (infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2int(vv)} :+ k).min
+                    writeInt(vc,newTag,out);
+                  }
+                  case Right(k) => {
+                    val out = (infoParams.flatMap{ tag => vc.info.getOrElse(tag,None).toSeq.flatMap{_.split(",")}}.filter( vv => vv != "." ).map{vv => string2double(vv)} :+ k).min
+                    writeDouble(vc,newTag,out);
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+  )
+
+
+  /*class VcfTagFcnFact(paramValues : Seq[String], outHeader : SVcfHeader, fcn : VcfTagFunctionHolder){
+    def checkParams() : Boolean = {
+      params.padTo( paramValues.length, params.last ).zip(params).map{ case (vtfp, pp) => {
+          vtfp.checkParamType(pp, outHeader);
+      }}
+    }
+    def init(outHeader: SVcfHeader) : Boolean;
+    def run(vc : SVcfOutputVariantLine)
+  }*/
+  
+  
+
+  
   class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "AddFuncTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
@@ -2241,7 +2824,7 @@ object SVcfWalkerUtils {
         ("func",func),
         ("paramTags",paramTags.mkString("|"))
     );
-    
+
     /*
       Parameter Format:
         --tagVariantsFunction [ORDER:N|]tagid|desc|funcString|param1,param2,...|floatOutputDigits
@@ -2252,6 +2835,12 @@ object SVcfWalkerUtils {
               val paramTags = cells.lift(3).map{_.split(",").toSeq}.getOrElse(Seq[String]());
               val outDigits = cells.lift(4).map{ _.toInt }
      */
+    
+    
+    
+    
+    
+    
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
@@ -2425,6 +3014,30 @@ object SVcfWalkerUtils {
             } else {
               vc.addInfo(newTag, ".");
             }
+        } else if(f == "FLAGSET"){
+          //val tags = paramTags.map{ p => { p.split("=")(0) }};
+          val tagNames = paramTags.map{ p => { 
+            val cells = p.split("=");
+            if(cells.length > 2){
+              error("Error: each parameter in tagVariantFunction FLAGSET must be of the form: tagID or tagID=tagName. Offending param: \""+p+"\"");
+            }
+            (cells(0),cells.lift(1).getOrElse(p));
+          }}
+          val sets = tagNames.filter{ case (t,tid) => {
+            v.info.get(t) match {
+              case Some(Some(vv)) => {
+                vv == "1";
+              }
+              case Some(None) => {
+                true
+              }
+              case None => {
+                false
+              }
+            }
+          }}.map{_._2}
+          vc.addInfo(newTag, (sets).toVector.sorted.padTo(1,".").mkString(","));
+          //val tt = tags.zip(tagNames
         } else if(f == "STATICSET.INTERSECT"){
           val param = paramTags.head;
           val staticSet = paramTags.tail.toSet;
@@ -2995,6 +3608,7 @@ object SVcfWalkerUtils {
                           snpEffKeepIdx : Option[List[String]] = None,
                           geneListName : Option[String] = None,
                           snpEffVarExtract : List[String] = List[String](),
+                          snpEffInfoExtract : List[String] = List[String](),
                           geneListTagInfix : String = "onList_",
                           snpEffBiotypeIdx : Int = 7,
                           snpEffWarnIdx : Int = 15,
@@ -3066,6 +3680,32 @@ object SVcfWalkerUtils {
       val svexFullDesc = snpEffFmtDescString + bioTypeDesc + effectListDesc + warnListDesc
       (svexOutTag+"_",svexIdx,svexFullDesc)
     }}
+    
+    val thisWalker = this;
+    
+    object VarExtract {
+      def getVarExtract( s : String ){
+        
+      }
+    }
+    case class VarExtract(tagID : String, columnIx : Seq[Int], desc : String, collapseUniques : Boolean, 
+                          tagSet : Set[String] = Set[String]("HIGH","MODERATE","LOW"),
+                          listSet : Set[String] = Set[String]("ALL","onList")){
+      
+      def getInfoLine() : SVcfCompoundHeaderLine = {
+        (new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", snpEffFmtDescString +{
+          if(collapseUniques){
+            "(collapsing unique entries) "
+          } else {
+            ""
+          }
+        } + bioTypeDesc + effectListDesc + warnListDesc)).addWalker(thisWalker)
+      }
+      
+      def init(){
+        
+      }
+    }
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
@@ -3958,6 +4598,7 @@ object SVcfWalkerUtils {
              addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true, 
              addAlle : Boolean= true, addHetHom : Boolean = true, 
              sepRef : Boolean = true, countMissing : Boolean = true,
+             addMultiHet : Boolean = true,
              noMultiAllelics : Boolean = false,
              GTTag : String = "GT",
              tagPrefix : String = "",
@@ -4033,7 +4674,7 @@ object SVcfWalkerUtils {
       val newHeaderLines = groupAnno.flatMap{case (grp,i,gtag,groupDesc,groupSize) => {
         
         (if(addFreq){
-          List(
+          /*List(
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAF_TAG + gtag, anum, "Float", "The alt allele frequency"+groupDesc+adesc+"."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHomFrq_TAG + gtag, anum, "Float", "The frequency of homalt calls"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHetFrq_TAG + gtag, anum, "Float", "The frequency of het calls"+groupDesc  +adesc+ "."),
@@ -4041,17 +4682,57 @@ object SVcfWalkerUtils {
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are missing"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nOthFrq_TAG + gtag, "1", "Integer", "The frequency of calls include a different allele"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefFrq_TAG + gtag, "1", "Integer", "The frequency of calls include any nonref allele "+groupDesc  +adesc+ ".")
-          )
+          )*/
+          List(new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAF_TAG + gtag, anum, "Float", "The alt allele frequency"+groupDesc+adesc+"."))++
+          (if(addHetHom){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHomFrq_TAG + gtag, anum, "Integer", "The frequency of homalt calls"+groupDesc +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHetFrq_TAG + gtag, anum, "Integer", "The frequency of het calls"+groupDesc +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefFrq_TAG + gtag, "1",  "Integer", "The frequency of calls include any nonref allele "+groupDesc  +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nOthFrq_TAG + gtag, "1",  "Integer", "The frequency of calls include a different allele"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addMiss){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are missing"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addAlle){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAltFrq_TAG + gtag,   anum, "Integer", "The frequency of calls that include the alt allele"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addMultiHet){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMahFrq_TAG + gtag,   anum, "Integer", "The frequency of genotype calls that include both the alt allele and some other alt allele (multiallelic het) "+groupDesc  +adesc+ ".")
+            )
+          } else { List() })
+          
         } else { List() }) ++ 
         (if(addCounts){
-          List(
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHomCt_TAG + gtag, anum, "Integer", "The number of homalt calls"+groupDesc +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHetCt_TAG + gtag, anum, "Integer", "The number of het calls"+groupDesc +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAltCt_TAG + gtag,   anum, "Integer", "The number of calls that are het or homalt"+groupDesc  +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisCt_TAG + gtag, "1", "Integer", "The number of calls that are missing"+groupDesc  +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nOthCt_TAG + gtag, "1",  "Integer", "The number of calls include a different allele"+groupDesc  +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefCt_TAG + gtag, "1",  "Integer", "The number of calls include any nonref allele "+groupDesc  +adesc+ ".")
-          )  
+          (if(addHetHom){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHomCt_TAG + gtag, anum, "Integer", "The number of homalt calls"+groupDesc +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHetCt_TAG + gtag, anum, "Integer", "The number of het calls"+groupDesc +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefCt_TAG + gtag, "1",  "Integer", "The number of calls include any nonref allele "+groupDesc  +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nOthCt_TAG + gtag, "1",  "Integer", "The number of calls include a different allele"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addMiss){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisCt_TAG + gtag, "1", "Integer", "The number of calls that are missing"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addAlle){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAltCt_TAG + gtag,   anum, "Integer", "The number of calls that include the alt allele"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addMultiHet){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMahCt_TAG + gtag,   anum, "Integer", "The number of genotype calls that include both the alt allele and some other alt allele (multiallelic het) "+groupDesc  +adesc+ ".")
+            )
+          } else { List() })
         } else { List() }) ++ (
           tagFilter match {
             case Some(t) => {
@@ -4138,6 +4819,7 @@ object SVcfWalkerUtils {
             val othAltCts = Array.fill[Int](fullGroupList.length)(0);
             val othCts = Array.fill[Int](fullGroupList.length)(0);
             val unkCts = Array.fill[Int](fullGroupList.length)(0);
+            //val mahCts = Array.fill[Int](fullGroupList.length)(0);
             
             val filtCts = Array.fill[Int](fullGroupList.length)(0);
             val rawGtMissing = Array.fill[Int](fullGroupList.length)(0);
@@ -4228,12 +4910,13 @@ object SVcfWalkerUtils {
             }
             groupAnno.foreach{case (grp,i,gtag,groupDesc,groupSize) => {
               if(addCounts){
-                 vb.addInfo(vcfCodes.nHomCt_TAG + gtag, homCts(i).toString);
-                 vb.addInfo(vcfCodes.nHetCt_TAG + gtag, hetCts(i).toString);
-                 vb.addInfo(vcfCodes.nMisCt_TAG + gtag, misCts(i).toString);
-                 vb.addInfo(vcfCodes.nOthCt_TAG + gtag, (othCts(i) + othAltCts(i)).toString);
-                 vb.addInfo(vcfCodes.nAltCt_TAG + gtag, (homCts(i) + hetCts(i) + othAltCts(i)).toString);
-                 vb.addInfo(vcfCodes.nNonrefCt_TAG + gtag, (homCts(i) + hetCts(i) + othAltCts(i) + othCts(i)).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nHomCt_TAG + gtag, homCts(i).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nHetCt_TAG + gtag, hetCts(i).toString);
+                 if(addMiss) vb.addInfo(vcfCodes.nMisCt_TAG + gtag, misCts(i).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nOthCt_TAG + gtag, (othCts(i) + othAltCts(i)).toString);
+                 if(addAlle) vb.addInfo(vcfCodes.nAltCt_TAG + gtag, (homCts(i) + hetCts(i) + othAltCts(i)).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nNonrefCt_TAG + gtag, (homCts(i) + hetCts(i) + othAltCts(i) + othCts(i)).toString);
+                 if(addMultiHet) vb.addInfo(vcfCodes.nMahCt_TAG + gtag, (othAltCts(i)).toString);
                  if(tagFilter.isDefined){
                    vb.addInfo(vcfCodes.nFiltCt_TAG + gtag, (filtCts(i)).toString);
                  }
@@ -4245,13 +4928,14 @@ object SVcfWalkerUtils {
               if(addFreq){
                 val n = groupSize.toDouble
                  vb.addInfo(vcfCodes.nAF_TAG + gtag, ((homCts(i) * 2 + hetCts(i) ).toDouble / (n * 2.toDouble)).toString);
-                 vb.addInfo(vcfCodes.nHomFrq_TAG + gtag, (homCts(i).toDouble / n).toString);
-                 vb.addInfo(vcfCodes.nHetFrq_TAG + gtag, (hetCts(i).toDouble / n).toString);
-                 vb.addInfo(vcfCodes.nMisFrq_TAG + gtag, (misCts(i).toDouble / n).toString);
-                 vb.addInfo(vcfCodes.nOthFrq_TAG + gtag, ((othCts(i) + othAltCts(i)).toDouble / n).toString);
-                 vb.addInfo(vcfCodes.nAltFrq_TAG + gtag, ((homCts(i) + hetCts(i) + othAltCts(i)).toDouble / n).toString);
-                 vb.addInfo(vcfCodes.nNonrefFrq_TAG + gtag, ((homCts(i) + hetCts(i) + othAltCts(i) + othCts(i)).toDouble / n).toString);
-  
+                 if(addHetHom) vb.addInfo(vcfCodes.nHomFrq_TAG + gtag, (homCts(i).toDouble / n).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nHetFrq_TAG + gtag, (hetCts(i).toDouble / n).toString);
+                 if(addMiss) vb.addInfo(vcfCodes.nMisFrq_TAG + gtag, (misCts(i).toDouble / n).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nOthFrq_TAG + gtag, ((othCts(i) + othAltCts(i)).toDouble / n).toString);
+                 if(addAlle) vb.addInfo(vcfCodes.nAltFrq_TAG + gtag, ((homCts(i) + hetCts(i) + othAltCts(i)).toDouble / n).toString);
+                 if(addHetHom) vb.addInfo(vcfCodes.nNonrefFrq_TAG + gtag, ((homCts(i) + hetCts(i) + othAltCts(i) + othCts(i)).toDouble / n).toString);
+                 if(addMultiHet) vb.addInfo(vcfCodes.nMahFrq_TAG + gtag, ((othAltCts(i)).toDouble / n).toString);
+
                  if(tagFilter.isDefined){
                    vb.addInfo(vcfCodes.nFiltFrq_TAG + gtag, (filtCts(i).toDouble / n).toString);
                  }

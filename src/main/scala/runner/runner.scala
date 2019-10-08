@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "2.2.176"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Mon Aug 26 14:54:59 EDT 2019"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1566845699; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "2.2.191"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Tue Sep 17 17:05:39 EDT 2019"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1568754339; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -72,7 +72,8 @@ object runner {
     new internalUtils.fileUtils.CmdZip,
     new internalTests.SVcfWalkerUtils.VcfParserTest,
     new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTableV2,
-    new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTable
+    new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTable,
+    new internalTests.SplitExomeIntoParts.CmdSplitExomeIntoParts
   )
   
   val utilCommandList : Map[String, () => CommandLineRunUtil] = utilList.map((util) => {
