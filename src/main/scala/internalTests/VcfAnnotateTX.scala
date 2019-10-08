@@ -1967,7 +1967,7 @@ object VcfAnnotateTX {
         ) ++ (
             
             snpEffAnnotate.toSeq.map{ssa => {
-              new SnpEffAnnotater(ssa.split(",",2)(0),ssa.split(",",2)(1),ssa.split(",",2)(0) )
+              new SnpEffAnnotater(ssa.split(",",-1)(0),ssa.split(",",-1)(1),ssa.split(",",-1)(0) )
             }}
             
         ) ++ (
