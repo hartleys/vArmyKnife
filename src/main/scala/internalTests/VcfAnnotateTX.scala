@@ -577,23 +577,65 @@ object VcfAnnotateTX {
                                         
                                         
                     new UnaryArgument( name = "runEnsembleMerger",
-                                         arg = List("--runEnsembleMerger"), // name of value
-                                         argDesc = "If this parameter is raised, then the input VCF should instead be formatted as a "+
+                                         arg = List("--concordanceCaller","--runEnsembleMerger"), // name of value
+                                         argDesc = "This parameter is used to run the ConcordanceCaller utility, which is designed to merge the variant calls from multiple variant callers on the same sample set. "+
+                                                   ""+
+                                                   "If this parameter is raised, then the input VCF should instead be formatted as a "+
                                                    "comma delimited list of N VCF files. Each of the N files will be run through an initial subset of the final VCF " +
                                                    "walkers including any of the following that are indicated by the other options: addVariantIdx,nonVariantFilter,chromosome converter,inputTag filters,addVariantPosInfo,splitMultiAllelics,leftAlignAndTrim, and convertROtoAD "+
                                                    "The variant data output stream from these walkers will be merged and final GT, AD, and GQ fields will be added if the requisite information is available. Final genotypes will be assigned by plurality rule if any genotype has a simple plurality of all nonmissing caller calls, "+
                                                    "and if no genotype has a plurality then the genotype will be chosen from the highest priority caller, chosen in the order they are named in the "
                                        ).meta(false,"Merge Multicaller VCFs",50) ::
                                        
+                   new BinaryOptionArgument[List[String]](
+                                         name = "singleCallerVcfNames", 
+                                         arg = List("--concordanceCallerNames","--singleCallerVcfNames"), 
+                                         valueName = "vcfName1,vcfName2,...",  
+                                         argDesc =  "This parameter should be a comma delimited list of names, with the same length as --singleCallerVcfs. "+
+                                                    "These names will be used in the folder-over VCF tags."
+                                        ).meta(false,"Merge Multicaller VCFs") ::
+                   new BinaryOptionArgument[List[String]](
+                                         name = "singleCallerPriority", 
+                                         arg = List("concordanceCallerPriority","--singleCallerPriority"), 
+                                         valueName = "vcfName1,vcfName2,...",  
+                                         argDesc =  "This parameter should be a comma delimited list composed of the VCF names "+
+                                                    "from the --singleCallerVcfNames parameter (or a subset of that list). Single callers can be left off this list and their calls will not be "+
+                                                    "used to determine genotype, allele depth, and genotype quality information, although their info fields will still be merged in, and they will still appear in the callerSet field. "+
+                                                    "By default: genotype calls are assigned using the most common call across "+
+                                                    "all callers. Ties are broken using the priority list above, in order of highest priority (most trusted) to lowest priority (least trusted). This behavior can be altered using the "+
+                                                    "--ensembleGenotypeDecision parameter."
+                                        ).meta(false,"Merge Multicaller VCFs") :: 
+                                       
+                    new UnaryArgument( name = "CC_ignoreSampleIds",
+                                         arg = List("--concordanceCallerIgnoreSampleIds","--ccIgnoreSampIds"), // name of value
+                                         argDesc = "This option is only used by the ConcordanceCaller variant caller merge utility. "+
+                                                   "If this parameter is raised, then the sample ID's listed in the last header line will be ignored. "+
+                                                   "Samples MUST be in the same order in each input VCF file! Without this option, this utility will halt with an error message if "+
+                                                   "the sample IDs do not match. Note that if the sample IDs are NOT in the same order, but you want to link them up by name, then " +
+                                                   "instead use the --ccAllowSampleOrderDiff option."+
+                                                   ""+
+                                                   ""
+                                       ).meta(false,"Merge Multicaller VCFs",50) ::
+                    new UnaryArgument( name = "CC_ignoreSampleOrder",
+                                         arg = List("--concordanceCallerIgnoreSampleOrder","--ccAllowSampleOrderDiff"), // name of value
+                                         argDesc = "This option is only used by the ConcordanceCaller variant caller merge utility. "+
+                                                   "If this parameter is raised, then the caller will match up the samples by sample ID, rather than "+
+                                                   "requiring that the samples all be in the same order in all of the input single-caller VCFs. " +
+                                                   "Without this option, this utility will halt with an error message if the sample IDs do not match and are not in the same order. "+
+                                                   "Note that this will STILL crash if all the files do not have the same set of samples. If the VCFs do not all have the same samples, you can "+
+                                                   "have the utility ignore the non-overlapping samples by providing the intersection sample set in the --inputKeepSamples parameter."
+                                       ).meta(false,"Merge Multicaller VCFs",50) ::
+                                  //   CC_ignoreSampleIds,   CC_ignoreSampleIds
+                                       
                     new BinaryArgument[String](name = "ensembleGenotypeDecision",
-                                           arg = List("--ensembleGenotypeDecision"),  
+                                           arg = List("--concordanceCallerGtMethod","--ensembleGenotypeDecision"),  
                                            valueName = "priority", 
                                            argDesc = "The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority_priorityOnTies. Default is simple priority.",
                                            defaultValue = Some("priority")
                                            ).meta(false,"Merge Multicaller VCFs",50) ::
                                        //"first","firstSkipMissing","majority_firstOnTies","majority_missOnTies",
                                        //"priority","prioritySkipMissing","majority_priorityOnTies"
-                                       
+                                        
                     new BinaryOptionArgument[List[String]](
                                          name = "singleCallerVcfsOld", 
                                          arg = List("--singleCallerVcfs"), 
@@ -610,22 +652,8 @@ object VcfAnnotateTX {
                                                     "It should be a comma-delimited list of single-caller VCF files."
                                         ).meta(true,"DEPRECATED") ::
 
-                   new BinaryOptionArgument[List[String]](
-                                         name = "singleCallerVcfNames", 
-                                         arg = List("--singleCallerVcfNames"), 
-                                         valueName = "",  
-                                         argDesc =  "This parameter should be a comma delimited list of names, with the same length as --singleCallerVcfs. "+
-                                                    "These names will be used in the folder-over VCF tags."
-                                        ).meta(false,"Merge Multicaller VCFs") ::
-                   new BinaryOptionArgument[List[String]](
-                                         name = "singleCallerPriority", 
-                                         arg = List("--singleCallerPriority"), 
-                                         valueName = "",  
-                                         argDesc =  "This parameter should be a comma delimited list composed of a subset of the VCF names "+
-                                                    "from the --singleCallerVcfNames parameter. Single callers can be left off this list and their calls will not be "+
-                                                    "used to determine genotype, allele depth, and genotype quality information. Genotype calls are assigned using the most common call across "+
-                                                    "all callers. Ties are broken using the priority list above, in order of highest priority (most trusted) to lowest priority (least trusted)."
-                                        ).meta(false,"Merge Multicaller VCFs") ::
+
+
                     new BinaryOptionArgument[List[String]](
                                          name = "singleCallerMaster", 
                                          arg = List("--singleCallerMaster"), 
@@ -852,6 +880,22 @@ object VcfAnnotateTX {
                                                     "before processing. This can be useful for updating a file with a new version or annotation, as it "+
                                                     "can be used to ensure a clean input."
                                         ).meta(false,"Preprocessing") ::
+                    new BinaryOptionArgument[String]( 
+                                         name = "inputDropInfoTagsFromFile", 
+                                         arg = List("--inputDropInfoTagsFromFile"), 
+                                         valueName = "tag1,tag2,...",  
+                                         argDesc =  "List of tags to DROP from the input file before processing. All other tags will be dropped "+
+                                                    "before processing. This can be useful for updating a file with a new version or annotation, as it "+
+                                                    "can be used to ensure a clean input."
+                                        ).meta(false,"Preprocessing") ::
+                    new BinaryOptionArgument[String](
+                                         name = "inputKeepInfoTagsFromFile", 
+                                         arg = List("--inputKeepInfoTagsFromFile"), 
+                                         valueName = "tag1,tag2,...",  
+                                         argDesc =  "List of tags to keep from the input file before processing. All other tags will be dropped "+
+                                                    "before processing. This can be useful for updating a file with a new version or annotation, as it "+
+                                                    "can be used to ensure a clean input."
+                                        ).meta(false,"Preprocessing") ::
                     new BinaryOptionArgument[List[String]](
                                          name = "inputDropInfoTags", 
                                          arg = List("--inputDropInfoTags"), 
@@ -860,6 +904,7 @@ object VcfAnnotateTX {
                                                     "before processing. This can be useful for updating a file with a new version or annotation, as it "+
                                                     "can be used to ensure a clean input."
                                         ).meta(false,"Preprocessing") ::
+                                        
                     new BinaryOptionArgument[List[String]](
                                          name = "renameInputInfoTags", 
                                          arg = List("--renameInputInfoTags"), 
@@ -1248,6 +1293,9 @@ object VcfAnnotateTX {
            error("ERROR: parameter --dropVariantsExpression has been replaced with --keepVariantsExpression!");
          }
          
+         
+         
+         
           runSAddTXAnno( parser.get[String]("infile"),
                        parser.get[String]("outfile"),
                        gtffile = parser.get[Option[String]]("gtfFile"),
@@ -1303,8 +1351,13 @@ object VcfAnnotateTX {
                 locusPseudoTag = parser.get[Option[String]]("locusPseudoTag"),
                 toleranceFile = parser.get[Option[String]]("toleranceFile"),
                 alphebetizeHeader = parser.get[Boolean]("alphebetizeHeader"),
-                inputKeepInfoTags = parser.get[Option[List[String]]]("inputKeepInfoTags"),
-                inputDropInfoTags = parser.get[Option[List[String]]]("inputDropInfoTags"),
+                inputKeepInfoTagsRaw = parser.get[Option[List[String]]]("inputKeepInfoTags"),
+                inputDropInfoTagsRaw = parser.get[Option[List[String]]]("inputDropInfoTags"),
+                ////inputKeepInfoTagsFromFile inputDropInfoTagsFromFile
+                inputKeepInfoTagsFromFile = parser.get[Option[String]]("inputKeepInfoTagsFromFile"),
+                inputDropInfoTagsFromFile = parser.get[Option[String]]("inputDropInfoTagsFromFile"),
+
+                
                 renameInputInfoTags = parser.get[Option[List[String]]]("renameInputInfoTags"),
                 renameInputGenoTags = parser.get[Option[List[String]]]("renameInputGenoTags"),
                 dropGenotypeData = parser.get[Boolean]("dropGenotypeData"),
@@ -1326,6 +1379,8 @@ object VcfAnnotateTX {
                 leftAlignAndTrim = parser.get[Boolean]("leftAlignAndTrim"),
                 leftAlignAndTrimWindow = parser.get[Option[Int]]("leftAlignAndTrimWindow"),
                 runEnsembleMerger = parser.get[Boolean]("runEnsembleMerger"),
+                CC_ignoreSampleIds = parser.get[Boolean]("CC_ignoreSampleIds"),
+                CC_ignoreSampleOrder = parser.get[Boolean]("CC_ignoreSampleOrder"),                
                 convertROAOtoAD = parser.get[Boolean]("convertROAOtoAD"),
                 snpSiftAnnotate = parser.get[List[String]]("snpSiftAnnotate"),
                 fixDotAltIndels = parser.get[Boolean]("fixDotAltIndels"),
@@ -1496,8 +1551,11 @@ object VcfAnnotateTX {
                 locusPseudoTag : Option[String] = None,
                 toleranceFile : Option[String] = None,
                 alphebetizeHeader : Boolean = false,
-                inputKeepInfoTags : Option[List[String]] = None,
-                inputDropInfoTags : Option[List[String]] = None,
+                inputKeepInfoTagsRaw : Option[List[String]] = None,
+                inputDropInfoTagsRaw : Option[List[String]] = None,
+                inputKeepInfoTagsFromFile : Option[String],
+                inputDropInfoTagsFromFile : Option[String],
+                
                 renameInputInfoTags : Option[List[String]] = None,
                 renameInputGenoTags : Option[List[String]] = None,
                 dropGenotypeData : Boolean = false,
@@ -1526,6 +1584,9 @@ object VcfAnnotateTX {
                 leftAlignAndTrimWindow : Option[Int] = None,
                 
                 runEnsembleMerger : Boolean = false,
+                CC_ignoreSampleIds : Boolean = false,
+                CC_ignoreSampleOrder : Boolean = false,
+                
                 convertROAOtoAD : Boolean = false,
                 snpSiftAnnotate : List[String] = List[String](),
                 snpEffAnnotate : Option[String] = None,
@@ -1716,6 +1777,33 @@ object VcfAnnotateTX {
 
     val deepDebugMode = false;
     val debugMode = true;
+    
+    var inputDropInfoTags : Option[List[String]] = inputDropInfoTagsFromFile.map{ (s) => {
+      getLinesSmartUnzip(s).map{ line => line.split("\t").head }.toList
+    }}
+    inputDropInfoTags match {
+      case Some(dit) => {
+        inputDropInfoTags = Some( dit ++ inputDropInfoTagsRaw.getOrElse(List()) )
+      }
+      case None => {
+        inputDropInfoTags = inputDropInfoTagsRaw;
+      }
+    }
+    var inputKeepInfoTags : Option[List[String]] = inputKeepInfoTagsFromFile.map{ (s) => {
+      getLinesSmartUnzip(s).map{ line => line.split("\t").head }.toList
+    }}
+    inputKeepInfoTags match {
+      case Some(dit) => {
+        inputKeepInfoTags = Some( dit ++ inputKeepInfoTagsRaw.getOrElse(List()) )
+      }
+      case None => {
+        inputKeepInfoTags = inputKeepInfoTagsRaw;
+      }
+    }
+    
+    
+    //inputDropInfoTags.isDefined || inputKeepInfoTags
+    
     
     val initWalkers : Seq[SVcfWalker] =         (
             if(debugMode){
@@ -2829,12 +2917,15 @@ object VcfAnnotateTX {
           val vcIterBuf = vcIter.buffered;
           (vcIterBuf,vcfHeader);
       }}.unzip;
-      
-      val inputNames = singleCallerVcfNames.getOrElse(headerSeq.indices.map{"C"+_.toString});
-      val (ensIter,ensHeader) = ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = singleCallerVcfNames.getOrElse(headerSeq.indices.map{"C"+_.toString}),
-                                                        genomeFA = genomeFA,windowSize = 200);
+                   
+
+      val inputNames    = singleCallerVcfNames.getOrElse(headerSeq.indices.map{"C"+_.toString});
+      val inputPriority = singleCallerPriority.getOrElse(inputNames)
+      val (ensIter,ensHeader) = ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
+                                                        genomeFA = genomeFA,windowSize = 200, singleCallerPriority = inputPriority,
+                                                        CC_ignoreSampleIds = CC_ignoreSampleIds, CC_ignoreSampleOrder=CC_ignoreSampleOrder);
       val finalWalker : SVcfWalker = chainSVcfWalkers(Seq[SVcfWalker](
-          new EnsembleMergeMetaDataWalker(inputVcfTypes = singleCallerPriority.getOrElse(inputNames),
+          new EnsembleMergeMetaDataWalker(inputVcfTypes = inputPriority,
                                           decision = ensembleGenotypeDecision)
           /*
                                     simpleMergeInfoTags : Seq[String] = Seq[String](),

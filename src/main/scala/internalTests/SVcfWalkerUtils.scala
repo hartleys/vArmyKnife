@@ -2188,13 +2188,13 @@ object SVcfWalkerUtils {
           }
         }
       }}
-      val outType = if(! Set("MULT.BY.K","SUM","MIN","MAX","DIFF","RATIO","TAG.TALLY","TAG.TALLY.IF","TAG.TALLY.IFEXPR").contains(f)){
+      val outType = if(! Set("MULT.BY.K","DIV.BY.K","SUM","MIN","MAX","DIFF","RATIO","TAG.TALLY","TAG.TALLY.IF","TAG.TALLY.IFEXPR").contains(f)){
         "String"
       } else if( Set("LEN").contains(f) ){
         "Integer"
       } else if( Set("TAG.TALLY","TAG.TALLY.IF","RANDFLAG").contains(f) || f.startsWith("TAG.TALLY")){
         "Integer"
-      } else if( Set("MULT.BY.K","RATIO").contains(f) ){
+      } else if( Set("MULT.BY.K","DIV.BY.K","RATIO").contains(f) ){
         "Float"
       } else if(paramTypes.forall(pt => pt == "Integer")){
         "Integer"
@@ -2453,6 +2453,24 @@ object SVcfWalkerUtils {
              vc.addInfo(newTag, "0" );
           }
         } else if(f == "MULT.BY.K"){
+            val k = string2double(paramTags(1));
+            v.info.get(paramTags.head).getOrElse(None) match {
+              case Some(pp) => {
+                val out = string2double(pp) * k;
+                digits match {
+                  case Some(dd) => {
+                    vc.addInfo(newTag, ("%."+dd+"f").format(out) );
+                  }
+                  case None => {
+                    vc.addInfo(newTag, ""+out);
+                  }
+                }
+              }
+              case None => {
+                vc.addInfo(newTag, ".");
+              }
+            }
+        } else if(f == "DIV.BY.K"){
             val k = string2double(paramTags(1));
             v.info.get(paramTags.head).getOrElse(None) match {
               case Some(pp) => {
@@ -11510,7 +11528,11 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
                             headers : Seq[SVcfHeader], 
                             inputVcfTypes : Seq[String], genomeFA : Option[String],
-                            windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
+                            windowSize : Int = 200, 
+                            CC_ignoreSampleIds : Boolean = false, CC_ignoreSampleOrder : Boolean = false, 
+                            singleCallerPriority : Seq[String]
+                               // CC_ignoreSampleIds,   CC_ignoreSampleOrder
+                            ) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
     val vcfCodes = VCFAnnoCodes();
 
     val genotypeOrdering = new Ordering[String]{
@@ -11599,10 +11621,82 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         vcfHeader.addFormatLine(headerLine);
       }}
     }}
-    
-    
-    val sampNames = vcfHeader.titleLine.sampleList;
+    val singleCallerPriorityFull = singleCallerPriority ++ ( inputVcfTypes.filter( ivt => ! singleCallerPriority.contains(ivt) ) )
+    val callerHeaders = singleCallerPriorityFull.zipWithIndex.map{ case (c,pi) => {
+      val vi = inputVcfTypes.indexOf(c)
+      (headers(vi),vi,pi)
+    }};
+    val callersWithSamps = callerHeaders.filter{ case (f,vi,pi) => { f.titleLine.sampleList.length > 0 }}
+      
+      //headers.zipWithIndex.filter{ case (f,x) => { f.titleLine.sampleList.length > 0 }}
+    val sampNames = if(callersWithSamps.length > 0){
+      callersWithSamps.head._1.titleLine.sampleList;
+    } else {
+      Seq[String]()
+    }
     val sampCt = sampNames.length;
+    val sampSet = sampNames.toSet;
+    
+    callersWithSamps.foreach{ case (f,vi,pi) => {
+      if( f.titleLine.sampleList.length != sampCt) {
+          error("Different number of samples found in the VCFs! ConcordanceCaller requires that the sample set be the same between the different VCFs. IF they are different and you still want to "+
+                "merge, you can specify the overlapping sample set using the --inputKeepSamples parameter. Note that you may have to also add the --ccAllowSampleOrderDiff flag, if the samples are not "+
+                "in the same order across all VCFs.")
+      }
+    }}
+    
+    val sampMatchIdx = (callersWithSamps.map{ case (f,vi,pi) => {
+      ( if(pi == 0){
+        (singleCallerPriorityFull(pi),None)
+      } else if(CC_ignoreSampleIds){
+        (singleCallerPriorityFull(pi),None)
+      } else if(CC_ignoreSampleOrder){
+        val currsamps = f.titleLine.sampleList;
+        val currset : Set[String] = currsamps.toSet; 
+        if( currset.size != f.titleLine.sampleList.length ){
+          error("FORMATTING ERROR in VCF["+singleCallerPriorityFull(pi)+"]: sample IDs are not unique!")
+        }
+        /*if( sampSet.intersect( currset ).size != sampSet.size ){
+              error("Different samples found in the VCFs! ConcordanceCaller requires that the sample set be the same between the different VCFs. IF they are different and you still want to "+
+                    "merge, you can specify the overlapping sample set using the --inputKeepSamples parameter. Note that you may have to also add the --ccAllowSampleOrderDiff flag, if the samples are not "+
+                    "in the same order across all VCFs.")
+        }*/
+        val ixx = sampNames.map{ ss => {
+          val x = currsamps.indexOf(ss)
+          if( x == -1) {
+              error("Different samples found in the VCFs! "+
+                    "Cannot find sample: "+ss+" in vcf: "+
+                    "ConcordanceCaller requires that the sample set be the same between the different VCFs. IF they are different and you still want to "+
+                    "merge, you can specify the overlapping sample set using the --inputKeepSamples parameter. Note that you may have to also add the --ccAllowSampleOrderDiff flag, if the samples are not "+
+                    "in the same order across all VCFs.")
+          }
+          x
+        }}.toSeq
+        (singleCallerPriorityFull(pi),Some(ixx))
+      } else {
+        (singleCallerPriorityFull(pi),None)
+      })
+    }}).toMap
+    
+    // sampMatchIdx, callersWithSamps , singleCallerPriorityFull
+    
+    if(sampCt > 0){
+      
+      // CC_ignoreSampleIds,   CC_ignoreSampleOrder
+      if( ! ((CC_ignoreSampleIds) | (CC_ignoreSampleOrder))) {
+        callersWithSamps.foreach{ case (f,vi,pi) => {
+          f.titleLine.sampleList.zip(sampNames).foreach{ case (s1,s2) => {
+            if(s1 != s2){
+              error("Sample IDs DO NOT MATCH! By default, ConcordanceCaller requires that the sample IDs be exactly the same and in the same order in each callers VCF file. "+
+                    "If the samples have the same IDs but are in a different order, then use the --ccIgnoreSampIds flag. If instead the samples are in the same order but just have "+
+                    "different sample IDs, then use --ccAllowSampleOrderDiff to ignore the sample IDs. The output ordering and/or names will come from the highest priority VCF "+
+                    "(or just the first VCF, if no priority list is specified).")
+            }
+          }}
+        }}
+      }
+    }
+    
     
     
     headers.zipWithIndex.foreach{ case (h,i) => {
@@ -11678,14 +11772,28 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
               vb.addInfoOpt(newTag,fieldVal);
             }}
             if( vc.genotypes.genotypeValues.nonEmpty && vc.genotypes.fmt.nonEmpty ){
+              val sampidx = sampMatchIdx.get(callerName);
+              if(sampidx.isEmpty){
+                error("IMPOSSIBLE STATE: sampidx.isEmpty! This should never happen. If you see this error, than you have somehow exposed a bug. Please submit a bug report to the issues page: \"https://github.com/hartleys/vArmyKnife/issues\"")
+              }
               vc.genotypes.fmt.zipWithIndex.foreach{ case (oldTag,idx) => {
                 if(! currFmtLines.contains(oldTag)){
                   warning("Fatal error: Tag: "+oldTag+" not found in given header!\n Found header tags: "+currFmtLines.keys.toSeq.sorted.mkString(","),"PREERROR_WARNING",-1)
                 }
                 val (newTag,fmtLine) = currFmtLines(oldTag);
-                vb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(idx));
+                sampidx.get match {
+                  case Some(sindices) => {
+                    vb.genotypes.addGenotypeArray(newTag,sindices.toArray.map{ si => {
+                      vc.genotypes.genotypeValues(idx)(si);
+                    }})
+                  }
+                  case None => {
+                    vb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(idx));
+                  }
+                }
+                
               }}
-              val currGt = vc.genotypes.genotypeValues(0);
+              /*val currGt = vc.genotypes.genotypeValues(0);
               currGt.zipWithIndex.foreach{ case (gtString,i) => {
                 val gt = gtString.split("[\\|/]").sorted(genotypeOrdering).mkString("/");
                 if(finalGt(i) == "./."){
@@ -11694,11 +11802,11 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
                   //do nothing, higher priority call takes precedence!
                 }
               }}
-              vb.genotypes.genotypeValues(0) = finalGt
+              vb.genotypes.genotypeValues(0) = finalGt*/
             }
             
           }}
-          if( vcSeq.head.genotypes.genotypeValues.nonEmpty && vcSeq.head.genotypes.fmt.nonEmpty ){
+          /*if( vcSeq.head.genotypes.genotypeValues.nonEmpty && vcSeq.head.genotypes.fmt.nonEmpty ){
             vcSeq.tail.foreach{ vc => {
               val currGt = vc.genotypes.genotypeValues(0);
               currGt.zipWithIndex.foreach{ case (gtString,i) => {
@@ -11711,7 +11819,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
               }}
               vb.genotypes.genotypeValues(0) = finalGt
             }}
-          }
+          }*/
         }}
         vb.addInfo(vcfCodes.ec_alle_callerSets,callerSupport.toVector.sorted.mkString(","));
         
