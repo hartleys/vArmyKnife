@@ -1982,7 +1982,97 @@ object SVcfWalkerUtils {
     }
   }
   
+  class generateBurdenMatrix(paramString : String, out : WriterUtil) extends internalUtils.VcfTool.SVcfWalker { 
+    val params = paramString.split(",");
+    val tagID = params(0);
+    def walkerName : String = "AddFuncTag."+tagID;
+    val geneTag = params(1);
+    val outfile = params(2);
+    val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
+    val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("|").toSet};
 
+    val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
+
+    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
+     
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagID",tagID),
+        ("filterExpressionString",filterExpressionString),
+        ("gtTag",gtTag)
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number="1",Type="Float",desc=desc.getOrElse("Simple ratio between fields "+nTag+" and "+dTag+".")));
+      //val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      //if( overwriteInfos.nonEmpty ){
+      //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      //}
+      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) ) 
+      val burdenMatrix = new scala.collection.mutable.AnyRefMap[String,Array[Int]]()
+      val varCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
+      val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
+      val fullSampList =  vcfHeader.titleLine.sampleList
+      val keepSampSet = sampSubset.getOrElse(fullSampList.toSet);
+      val sampIdxList = fullSampList.zipWithIndex.filter{ case (samp,idx)=> { keepSampSet.contains(samp) }}.map{ case (samp,idx) => idx };
+
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        if(filterExpr.keep(v)){
+          val geneList = v.info.get(geneTag).getOrElse(None).map{a => a.split(",")}.getOrElse( new Array[String](0) );
+          //geneList.foreach{ g => {
+            val cts = geneList.map{ g => { 
+              burdenMatrix.getOrElseUpdate(g,
+                 new Array[Int]( outHeader.titleLine.sampleList.length )
+              )
+            }}
+            var numAlt = 0;
+            v.genotypes.getGtTag(gtTag).map{ gta => {
+              sampIdxList.foreach{ sampIdx => {
+                val gt = gta(sampIdx);
+                if( gt.split("[|/]").contains("1")){
+                  numAlt = numAlt + 1;
+                  cts.map{ ctsCurr => {
+                    ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
+                  }}
+                  geneList.foreach{g => {
+                    val altCt =  altCounts.getOrElse(g,0);
+                    altCounts.update(g,altCt + 1);
+                  }}
+                }
+              }}
+              
+            }}
+            if(numAlt > 0){
+                  geneList.foreach{g => {
+                    val altCt =  varCounts.getOrElse(g,0);
+                    varCounts.update(g,altCt + 1);
+                  }}
+            }
+            
+          //}}
+        }
+        vc
+      }}, closeAction = (() => {
+        //val out = openWriter(outfile);
+        
+        burdenMatrix.keys.toVector.sorted.foreach{ g => {
+          val mtr = burdenMatrix(g);
+          val altCt = altCounts(g);
+          val varCt = varCounts(g);
+          out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+        }}
+        
+        //out.close();
+        //burdenMatrix.keys.toVector.sorted
+      })),outHeader)
+      
+    }
+  }
 
   class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "AddFuncTag."+newTag

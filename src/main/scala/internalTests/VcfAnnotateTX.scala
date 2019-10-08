@@ -178,6 +178,20 @@ object VcfAnnotateTX {
                                                     "The parameter must be formatted in 3 comma-delimited parts: first the prefix to "+
                                                     "append to the INFO tags, then a bar-delimited list of window sizes, and then the number of digits to include in the output."
                                         ).meta(false,"Annotation") ::
+                                        
+                    new BinaryMonoToListArgument[String](
+                                         name = "calcBurdenCounts", 
+                                         arg = List("--calcBurdenCounts"), 
+                                         valueName = "....",  
+                                         argDesc =  "BETA: not for production use!"
+                                        ).meta(true,"Sample Stats") ::
+                    new BinaryOptionArgument[String](
+                                         name = "burdenCountsFile",
+                                         arg = List("--burdenCountsFile"), 
+                                         valueName = "table.file.txt",
+                                         argDesc = "BETA: not for production use!" // description
+                                        ).meta(true,"Sample Stats") ::
+                                        
                     new BinaryOptionArgument[String](
                                          name = "gtfFile",
                                          arg = List("--gtfFile"), 
@@ -1369,8 +1383,11 @@ object VcfAnnotateTX {
                 addWiggleAnnotation = parser.get[List[String]]("addWiggleAnnotation"),
                 snpEffAnnotate = parser.get[Option[String]]("snpEffAnnotate"),
                 
-                keepVariantsExpressionPrefilter = parser.get[Option[String]]("keepVariantsExpressionPrefilter")
+                keepVariantsExpressionPrefilter = parser.get[Option[String]]("keepVariantsExpressionPrefilter"),
+                calcBurdenCounts = parser.get[List[String]]("calcBurdenCounts"),
+                burdenCountsFile = parser.get[Option[String]]("burdenCountsFile")
                 
+                // calcBurdenCounts burdenCountsFile
                 //ensembleGenotypeDecision : String = "majority_firstOnTies"
                 //dropVariantsWithNs, tallyFile   
              )
@@ -1568,7 +1585,9 @@ object VcfAnnotateTX {
                 
                 addWiggleAnnotation : List[String] = List[String](),
                 
-                keepVariantsExpressionPrefilter : Option[String] = None
+                keepVariantsExpressionPrefilter : Option[String] = None,
+                calcBurdenCounts : List[String] = List[String](),
+                burdenCountsFile : Option[String] = None
                 ){
 
                                             /*
@@ -1660,6 +1679,7 @@ object VcfAnnotateTX {
             
             
     val summaryWriter = if(summaryFile.isEmpty) None else Some(openWriterSmart(summaryFile.get));
+    val burdenWriter = burdenCountsFile.map{ bcf => openWriterSmart(bcf)};
     reportln("Initializing VCF walker ... "+getDateAndTimeString,"debug");
 
     val deepDebugMode = false;
@@ -2580,6 +2600,13 @@ object VcfAnnotateTX {
               }
             }
         ) ++ (
+                //calcBurdenCounts : List[String] = List[String](),
+               // burdenCountsFile : Option[String] = None
+            
+            calcBurdenCounts.map{ cbc => {
+              new generateBurdenMatrix(cbc, burdenWriter.get)
+            }}
+        ) ++ (
             if(addVariantIdx.isDefined){
                 val (tagString,idxPrefix) = (addVariantIdx.get.split(",").head, addVariantIdx.get.split(",").lift(1) )
                 Seq[SVcfWalker](new AddVariantIdx(tag = tagString,idxPrefix = idxPrefix))
@@ -2817,7 +2844,9 @@ object VcfAnnotateTX {
       }
     }
     
-
+    burdenWriter.foreach{ bw => {
+      bw.close();
+    }}
     if(! summaryWriter.isEmpty) summaryWriter.get.close();
   }
   
