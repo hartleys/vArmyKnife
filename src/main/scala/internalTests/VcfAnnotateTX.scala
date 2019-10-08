@@ -2609,7 +2609,7 @@ object VcfAnnotateTX {
                // burdenCountsFile : Option[String] = None
             
             calcBurdenCounts.map{ cbc => {
-              new generateBurdenMatrix(cbc, burdenWriter.get)
+              new generateBurdenMatrix(cbc, burdenWriter.get, groupFile = groupFile, groupList = None, superGroupList  = superGroupList)
             }}
         ) ++ (
             if(addVariantIdx.isDefined){

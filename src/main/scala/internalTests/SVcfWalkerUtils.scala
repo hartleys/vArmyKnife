@@ -1982,19 +1982,25 @@ object SVcfWalkerUtils {
     }
   }
   
-  class generateBurdenMatrix(paramString : String, out : WriterUtil) extends internalUtils.VcfTool.SVcfWalker { 
+  class generateBurdenMatrix(paramString : String, out : WriterUtil, groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
     val params = paramString.split(",");
     val tagID = params(0);
     def walkerName : String = "GenerateBurdenTable."+tagID;
     val geneTag = params(1);
     val outfile = params(2);
     val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
-    val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("|").toSet};
+    val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
+    val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
 
     val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
 
     val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
      
+    val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, groupList, superGroupList);
+    
+    
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("tagID",tagID),
         ("filterExpressionString",filterExpressionString),
@@ -2017,9 +2023,19 @@ object SVcfWalkerUtils {
       val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
       val fullSampList =  vcfHeader.titleLine.sampleList
       val keepSampSet = sampSubset.getOrElse(fullSampList.toSet);
-      val sampIdxList = fullSampList.zipWithIndex.filter{ case (samp,idx)=> { keepSampSet.contains(samp) }}.map{ case (samp,idx) => idx };
+      val groupSampSet = sampGroup.map{ g =>{
+        groupToSampleMap.getOrElse(g, {
+          error("sample group "+g+" not found!")
+          Set[String]();
+        });
+      }}
+      
+      val finalKeepSampSet = groupSampSet.map{ gss => {
+        keepSampSet.filter( ss => { gss.contains(ss) })
+      }}.getOrElse( keepSampSet );
+      val sampIdxList = fullSampList.zipWithIndex.filter{ case (samp,idx)=> { finalKeepSampSet.contains(samp) }}.map{ case (samp,idx) => idx };
 
-      notice("BTcount: parsed sample list, found: "+sampIdxList.length+" first 10 sample idx: ["+sampIdxList.slice(0,10).mkString("/")+"]","sampIdxListFound",10);
+      notice("BTcount: parsed sample list (sampSubset: "+sampSubset.map(_.size).getOrElse(-1)+"), (keepSampSet: "+keepSampSet.size+"), (finalKeepSampSet: "+finalKeepSampSet.size+"), (sampIdxList: "+sampIdxList.length+") first 10 sample idx: ["+sampIdxList.slice(0,10).mkString("/")+"]","sampIdxListFound",10);
       
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
@@ -2036,9 +2052,9 @@ object SVcfWalkerUtils {
             v.genotypes.getGtTag(gtTag).map{ gta => {
               sampIdxList.foreach{ sampIdx => {
                 val gt = gta(sampIdx);
-                notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
+                //notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
                 if( gt.split("[|/]").contains("1")){
-                  notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
+                  //notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
                   numAlt = numAlt + 1;
                   cts.map{ ctsCurr => {
                     ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
@@ -2057,7 +2073,7 @@ object SVcfWalkerUtils {
                     varCounts.update(g,altCt + 1);
                   }}
             }
-            
+             
           //}}
         }
         vc
@@ -2122,7 +2138,7 @@ object SVcfWalkerUtils {
         "String"
       } else if( Set("LEN").contains(f) ){
         "Integer"
-      } else if( f == "TAG.TALLY" || f == "TAG.TALLY.IF" || f.startsWith("TAG.TALLY")){
+      } else if( Set("TAG.TALLY","TAG.TALLY.IF","RANDFLAG").contains(f) || f.startsWith("TAG.TALLY")){
         "Integer"
       } else if( Set("MULT.BY.K","RATIO").contains(f) ){
         "Float"
@@ -2163,6 +2179,15 @@ object SVcfWalkerUtils {
       } else {
         None;
       }
+      val rand : scala.util.Random = (if(Set("RANDFLAG").contains(f)){
+        paramTags.lift(1).map{ pp => {
+          string2long(pp)
+        }}.map{ seed => {
+          new scala.util.Random(seed);
+        }}
+      } else {
+        None;
+      }).getOrElse(new scala.util.Random());
       
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
@@ -2365,6 +2390,14 @@ object SVcfWalkerUtils {
             } else {
               vc.addInfo(newTag, ".");
             }
+        } else if(f == "RANDFLAG"){
+          val thresh = string2double(paramTags.head);
+          //if( scala.util.
+          if(rand.nextDouble < thresh){
+             vc.addInfo(newTag, "1" );
+          } else {
+             vc.addInfo(newTag, "0" );
+          }
         } else if(f == "MULT.BY.K"){
             val k = string2double(paramTags(1));
             v.info.get(paramTags.head).getOrElse(None) match {
