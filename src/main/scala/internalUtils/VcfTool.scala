@@ -3463,9 +3463,9 @@ object VcfTool {
                           val tag2 = params(1);
                           (a : SVcfVariantLine) => {
                             if(tagMissing(tag1,a) && tagMissing(tag2,a)){
-                              true
-                            } else if(tagMissing(tag1,a) || tagMissing(tag2,a)){
                               false
+                            } else if(tagMissing(tag1,a) || tagMissing(tag2,a)){
+                              true
                             } else {
                               a.info(tag1).get != a.info(tag2).get
                             }
