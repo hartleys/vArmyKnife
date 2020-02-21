@@ -4222,7 +4222,7 @@ SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
         }
         case None => {
           if( (! tableInput) && (! tableOutput)){
-            reportln("No table input and no table output. Reading/writing in VCF format.","debug")
+            reportln("No table input and no table output. Reading/writing in VCF format. ("+getDateAndTimeString+")","debug")
             finalWalker.walkVCFFiles(vcffile,outfile, chromList, numLinesRead = numLinesRead, inputFileList = infileList, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
           } else {
             val (vcIterRaw, vcfHeader) = if(!tableInput){

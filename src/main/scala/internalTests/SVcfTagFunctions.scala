@@ -477,7 +477,7 @@ object SVcfTagFunctions {
     val outType : String = "String";
     val outNum : String = ".";
     
-    def run(vc : SVcfOutputVariantLine);
+    def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine);
     
       def checkIsInt(pp : String) : Boolean = {
         string2intOpt(pp).nonEmpty;
@@ -614,18 +614,18 @@ object SVcfTagFunctions {
               } else {
                 Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
                   case Left(ddi) => {
                     val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.sum)
+                      writeNum(vout,v.sum)
                     }
                   }
                   case Right(ddf) => {
                     val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.sum)
+                      writeNum(vout,v.sum)
                     }
                   }
                 }
@@ -659,18 +659,18 @@ object SVcfTagFunctions {
               } else {
                 Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
                   case Left(ddi) => {
                     val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.product)
+                      writeNum(vout,v.product)
                     }
                   }
                   case Right(ddf) => {
                     val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.product)
+                      writeNum(vout,v.product)
                     }
                   }
                 }
@@ -705,22 +705,22 @@ object SVcfTagFunctions {
               } else {
                 Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)})
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
                   case Left(ddi) => {
                     val v = ddi.flatMap{ d => d.get(vc) }
                     if(v.length == 2){
-                      writeNum(vc,v.product)
+                      writeNum(vout,v.product)
                     } else if(v.length == 1){
-                      writeNum(vc,0)
+                      writeNum(vout,0)
                     }
                   }
                   case Right(ddf) => {
                     val v = ddf.flatMap{ d => d.get(vc) }
                     if(v.length == 2){
-                      writeNum(vc,v.product)
+                      writeNum(vout,v.product)
                     } else if(v.length == 1){
-                      writeNum(vc,0.0)
+                      writeNum(vout,0.0)
                     }
                   }
                 }
@@ -751,10 +751,10 @@ object SVcfTagFunctions {
               override val outType = "Float";
               override val outNum = "1";
               val ddf : Vector[VcfTagFunctionParamReader[Double]]  = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)}
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                   val v = ddf.flatMap{ d => d.get(vc) }
                   if(v.length == 2){
-                    writeNum(vc,v(0) / v(1))
+                    writeNum(vout,v(0) / v(1))
                   }
               }
             }
@@ -781,34 +781,106 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params,pv,h)
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
-              val dd = if(outType == "Integer"){
+              val dd : Either[Vector[VcfTagFunctionParamReader_Int], Vector[VcfTagFunctionParamReader_Float]] = if(outType == "Integer"){ 
                 Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)})
               } else {
                 Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)})
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
                   case Left(ddi) => {
                     val v = ddi.map{ d => d.get(vc) }
                     if(v.forall(vv => vv.isDefined)){
-                      writeNum(vc,v(0).get - v(1).get)
+                      writeNum(vout,v(0).get - v(1).get)
                     } else if(v(0).isDefined){
-                      writeNum(vc,v(0).get)
+                      writeNum(vout,v(0).get)
                     } else if(v(1).isDefined){
-                      writeNum(vc,-v(1).get)
+                      writeNum(vout,-v(1).get)
                     }
                   }
                   case Right(ddf) => {
                     val v = ddf.map{ d => d.get(vc) }
                     if(v.forall(vv => vv.isDefined)){
-                      writeNum(vc,v(0).get - v(1).get)
+                      writeNum(vout,v(0).get - v(1).get)
                     } else if(v(0).isDefined){
-                      writeNum(vc,v(0).get)
+                      writeNum(vout,v(0).get)
                     } else if(v(1).isDefined){
-                      writeNum(vc,-v(1).get)
+                      writeNum(vout,-v(1).get)
                     }
                   }
                 }
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "CONVERT.TO.INT",synon = Seq(),
+              shortDesc = "",
+              desc = "Input should be an INFO field",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "defaultValue", ty = "Int",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              override val outType = "Integer"
+              override val outNum = "1";
+              val x = if( paramValues.head.startsWith("INFO:") ){
+                paramValues.head.drop(5)
+              } else {
+                paramValues.head
+              }
+              val dv = paramValues.lift(1).map{ z => string2int(z) }
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                vc.info.getOrElse(x,None).foreach{ xx => {
+                  (string2intOpt(xx) match {
+                    case Some(zz) => Some(zz);
+                    case None => dv
+                  }).foreach{ zz => {
+                    writeInt(vout,zz);
+                  }}
+                }}
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "CONVERT.TO.FLOAT",synon = Seq(),
+              shortDesc = "",
+              desc = "Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "defaultValue", ty = "Float",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              override val outType = "Float"
+              override val outNum = "1";
+              val x = if( paramValues.head.startsWith("INFO:") ){
+                paramValues.head.drop(5)
+              } else {
+                paramValues.head
+              }
+              val dv = paramValues.lift(1).map{ z => string2double(z) }
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                vc.info.getOrElse(x,None).foreach{ xx => {
+                  (string2doubleOpt(xx).filter{ zz => ! ( zz.isNaN() || zz.isInfinite() ) } match {
+                    case Some(zz) => Some(zz);
+                    case None => dv
+                  }).foreach{ zz => {
+                    writeDouble(vout,zz);
+                  }}
+                }}
               }
             }
           }
@@ -842,9 +914,9 @@ object SVcfTagFunctions {
               override val outNum = "."
               val ddi : Vector[VcfTagFunctionParamReader[Int]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)}
               //val ddf : Vector[VcfTagFunctionParamReader[Double]]  = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)}
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val v = ddi.map{ d => d.get(vc) }.zip(ppn).filter{ case (d,n) => d.map{ _ == 1 }.getOrElse(false) }.map{ _._2 }.padTo(1,".").mkString(",")
-                writeString(vc,v);
+                writeString(vout,v);
               }
             }
           }
@@ -873,7 +945,7 @@ object SVcfTagFunctions {
               val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReader_StringSeq(typeInfo.head._4,typeInfo.head._1);
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
               
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 
                 /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
                   soFar ++ curr.get(vc).getOrElse(Vector()).toSet
@@ -883,7 +955,7 @@ object SVcfTagFunctions {
                 val out = vc.info.getOrElse(pv(0).drop(5),None).map{ vv => {
                   vv.split(",").map{ vvv => { decoder.getOrElse(vvv,vvv) }}.padTo(1,".").mkString(",")
                 }}.getOrElse(".");
-                writeString(vc,out)
+                writeString(vout,out)
               }
             }
           }
@@ -922,7 +994,7 @@ object SVcfTagFunctions {
                 }
                 new scala.util.Random( seed.get )
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val outUnion = if(isInternalPick){
                   dds.head.get(vc).getOrElse(Vector("."))
                 } else {
@@ -930,9 +1002,9 @@ object SVcfTagFunctions {
                 }
                 if(outUnion.length > 0){
                   val out = outUnion( rand.nextInt( outUnion.length ) )
-                  writeString(vc,out)
+                  writeString(vout,out)
                 } else {
-                  writeString(vc,".")
+                  writeString(vout,".")
                 }
                 
               }
@@ -960,11 +1032,11 @@ object SVcfTagFunctions {
               override val outType = "String";
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
                   soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
                 }}.toVector.sorted.mkString(",")
-                writeString(vc,out)
+                writeString(vout,out)
               }
             }
           }
@@ -989,11 +1061,11 @@ object SVcfTagFunctions {
               override val outType = "String";
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
                   soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
                 }}.toVector.sorted.mkString(",")
-                writeString(vc,out)
+                writeString(vout,out)
               }
             }
           }
@@ -1023,14 +1095,14 @@ object SVcfTagFunctions {
               override val outType = "String";
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 
                 val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
                   soFar ++ curr.get(vc).getOrElse(Vector())
                 }}.toVector.mkString("")
                 //reportln("SETS.UNION.run:"+out,"deepDebug");
 
-                writeString(vc,out)
+                writeString(vout,out)
               }
             }
           }
@@ -1063,14 +1135,14 @@ object SVcfTagFunctions {
               override val outType = "String";
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 
                 val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
                   soFar ++ curr.get(vc).getOrElse(Vector()).toSet
                 }}.toVector.sorted.mkString(",")
                 //reportln("SETS.UNION.run:"+out,"deepDebug");
 
-                writeString(vc,out)
+                writeString(vout,out)
               }
             }
           }
@@ -1092,24 +1164,24 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params,pv,h)
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
-              
+               
               val dd = if(outType == "Integer"){
                 Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_IntSeq(pv,tt)})
               } else {
                 Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
                   case Left(ddi) => {
                     val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.min)
+                      writeNum(vout,v.min)
                     }
                   }
                   case Right(ddf) => {
                     val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.min)
+                      writeNum(vout,v.min)
                     }
                   }
                 }
@@ -1141,18 +1213,18 @@ object SVcfTagFunctions {
               } else {
                 Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
               }
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
                   case Left(ddi) => {
                     val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.max)
+                      writeNum(vout,v.max)
                     }
                   }
                   case Right(ddf) => {
                     val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
-                      writeNum(vc,v.max)
+                      writeNum(vout,v.max)
                     }
                   }
                 }
@@ -1183,11 +1255,11 @@ object SVcfTagFunctions {
                 new scala.util.Random(string2long(s))
               }}.getOrElse( new scala.util.Random() )
               val thresh = string2double(pv.head);
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val out = if(rand.nextDouble() < thresh ){
-                  writeNum(vc,1)
+                  writeNum(vout,1)
                 } else {
-                  writeNum(vc,0)
+                  writeNum(vout,0)
                 }
               }
             }
@@ -1215,8 +1287,8 @@ object SVcfTagFunctions {
               override val outType = h.infoLines.find{ _.ID == oldField }.map{ _.Type }.getOrElse("???")
               override val outNum = h.infoLines.find{ _.ID == oldField }.map{ _.Number }.getOrElse("???")
               val thresh = string2double(pv.head);
-              def run(vc : SVcfOutputVariantLine){
-                vc.info.getOrElse(oldField,None).foreach{ vv => writeString(vc,vv) }
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                vc.info.getOrElse(oldField,None).foreach{ vv => writeString(vout,vv) }
               }
             }
 
@@ -1255,14 +1327,14 @@ object SVcfTagFunctions {
               val expr = paramValues.head;
               val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
               val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val k = if( filter.keep(vc) ){
                   dd(0).get(vc).getOrElse(".")
                 } else {
                   dd(1).get(vc).getOrElse(".")
                 }
                 //notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag+"_"+k,1);
-                writeString(vc,k);
+                writeString(vout,k);
               }
             }
           }
@@ -1287,14 +1359,14 @@ object SVcfTagFunctions {
               val expr = paramValues.head;
               val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
               val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
-              def run(vc : SVcfOutputVariantLine){
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val k = if( filter.keep(vc) ){
                   "1"
                 } else {
                   "0"
                 }
                 notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag+"_"+k,1);
-                writeString(vc,k);
+                writeString(vout,k);
               }
             }
 
@@ -1347,7 +1419,7 @@ object SVcfTagFunctions {
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         vc.dropInfo(overwriteInfos);
-        fcn.run(vc);
+        fcn.run(v,vc);
         vc;
       }}, closeAction = (() => {
         

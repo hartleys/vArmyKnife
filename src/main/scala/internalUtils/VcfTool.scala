@@ -2201,7 +2201,8 @@ object VcfTool {
       numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, 
       infixes : Vector[String] = Vector(),
       extractInterval : Option[String] = None) : (Iterator[SVcfVariantLine],SVcfHeader) = {
-    
+      reportln("     SVCFiterator init... ("+getDateAndTimeString+")","debug")
+      reportln("     SVCFiterator-init: opening input files... ("+getDateAndTimeString+")","debug")
       val indata = if(inputFileList){
         val (infilePeek,infiles) = peekIterator(getLinesSmartUnzip(infileString),1000);
         val denominator = if(infilePeek.length < 1000) infilePeek.length.toString else "???";
@@ -2221,6 +2222,8 @@ object VcfTool {
       } else {
         getLinesSmartUnzip(infileString,allowStdin=true)
       }
+      reportln("     SVCFiterator input file open... ("+getDateAndTimeString+")","debug")
+
     
     val (vcfHeader,vcIter) = if(chromList.isEmpty){
         SVcfLine.readVcf(indata,withProgress = withProgress)
@@ -2509,6 +2512,7 @@ object VcfTool {
                     dropGenotypes : Boolean = false, infixes : Vector[String] = Vector(),
                     splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       val (vcIterRaw, vcfHeader) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = inputFileList, infixes = infixes);
+      reportln("SVcfIterators Initialized... ("+getDateAndTimeString+")","debug")
       //val (newIter,newHeader) = walkVCF(vcIterRaw,vcfHeader);
       walkToFileSplit(outfile=outfile, vcIter = vcIterRaw, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes, splitFuncOpt = splitFuncOpt);
       
@@ -2534,6 +2538,7 @@ object VcfTool {
     }
     def walkToFileSplit(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false, splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+      reportln("    walkVCF() ("+getDateAndTimeString+")","debug")
       writeToFileSplit(outfile=outfile,vcIter=newIter,vcfHeader=newHeader,dropGenotypes=dropGenotypes, splitFuncOpt=splitFuncOpt);
     }
     
