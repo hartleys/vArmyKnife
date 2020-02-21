@@ -893,7 +893,12 @@ object SVcfTagFunctions {
     }
     
     def getTypeInfo(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Seq[VcfFcnParsedParam] = {
-      fcParam.zip(params).map{ case (fpp,param) => {
+      if(fcParam.length < params.length && (! fcParam.last.dotdot)){
+        error("ERROR: Function has too many parameters: "+params);
+      } else if( fcParam.filter{ fp => fp.req }.length > params.length ){
+        error("ERROR: Function has too few parameters: "+params);
+      }
+      fcParam.padTo(params.length, fcParam.last).zip(params).map{ case (fpp,param) => {
         fpp.getParsedParam(param ,h)
       }}
     }
@@ -917,7 +922,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "SUM",synon = Seq(),
               shortDesc = "Sum of several tags or numeric constants.",
-              desc = "Input should be a set of info tags specified as INFO:tagID, and numeric constants. "+
+              desc = "Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). "+
                      "Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros "+
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
@@ -962,7 +967,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "PRODUCT.ARRAY",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a set of numeric constants or info tags specified as INFO:tagID. "+
+              desc = "Input should be a set of info fields and/or numeric constants (which must be specified as CONST:n). "+
                      "Output field will be the product of the inputs. Missing INFO fields will be treated as ones "+
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
@@ -1007,7 +1012,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "MULT",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a pair of numeric constants and/or info fields specified as INFO:tagID. "+
+              desc = "Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). "+
                      "Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS "+
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
@@ -1057,7 +1062,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "DIV",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a pair of numeric constants and/or info fields specified as INFO:tagID. "+
+              desc = "Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). "+
                      "Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS "+
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be a float.",
@@ -1088,7 +1093,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "DIFF",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a pair of numeric constants and/or info fields specified as INFO:tagID. "+
+              desc = "Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). "+
                      "Output field will be the difference of the two inputs (ie x - y). Missing INFO fields will be treated as ZEROS "+
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
@@ -1161,7 +1166,7 @@ object SVcfTagFunctions {
               }
               val dv = paramValues.lift(1).map{ z => string2int(z) }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
-                vc.info.getOrElse(x,None).foreach{ xx => {
+                vc.info.getOrElse(x,None).filter{xx => xx != "."}.foreach{ xx => {
                   (string2intOpt(xx) match {
                     case Some(zz) => Some(zz);
                     case None => dv
@@ -1173,6 +1178,8 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //xx.split(",").flatMap{zz => string2intOpt(zz)}
+                  
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "CONVERT.TO.FLOAT",synon = Seq(),
@@ -1290,7 +1297,7 @@ object SVcfTagFunctions {
               shortDesc = "Picks randomly from a given set.",
               desc = "The first parameter must be either '.' or a supplied random seed for the random number generator. "+
                      "You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter. "+
-                     "In this case the output will be chosen from this one input parameter (which is assumed to be a list of some sort), which can be a string constant list delimited with colons, an INFO field specified as INFO:fieldName, or a text file specified as FILE:filename. "+
+                     "In this case the output will be chosen from this one input parameter (which is assumed to be a list of some sort), which can be a string constant list delimited with colons and beginning with CONST:, an INFO field, or a text file specified as FILE:filename. "+
                      "Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "seed", ty = "String",req=true,dotdot=false ),
@@ -1593,10 +1600,10 @@ object SVcfTagFunctions {
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "COPY",synon = Seq(),
-              shortDesc = "",
+              shortDesc = "Copies an INFO field",
               desc = "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "oldField", ty = "INFO:Float|INFO:String",req=true,dotdot=false )//,
+                  VcfTagFunctionParam( id = "oldField", ty = "INFO:INT|INFO:Float|INFO:String",req=true,dotdot=false )//,
                   //VcfTagFunctionParam( id = "newField", ty = "String",req=true,dotdot=false )
               )
           );

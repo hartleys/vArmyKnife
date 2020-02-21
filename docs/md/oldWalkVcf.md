@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.3 (Updated Tue Feb 11 15:31:00 EST 2020)
+> Version 3.1.4 (Updated Tue Feb 11 15:57:51 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -724,21 +724,9 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### MULT\(x,y\)
 
     
-    Input should be a pair of numeric constants and/or info fields 
-    specified as INFO:tagID\. Output field will be the product of 
-    the two inputs\. Missing INFO fields will be treated as ZEROS 
-    unless all params are INFO fields and all are missing, in which 
-    case the output will be missing\. Output field type will be an 
-    integer if all inputs are integers and otherwise a float\.
-    x \(INT|FLOAT|INFO:Int|INFO:Float\)
-    y \(INT|FLOAT|INFO:Int|INFO:Float\)
-
-### DIFF\(x,y\)
-
-    
-    Input should be a pair of numeric constants and/or info fields 
-    specified as INFO:tagID\. Output field will be the difference 
-    of the two inputs \(ie x \- y\)\. Missing INFO fields will be 
+    Input should be a pair of info fields and/or numeric constants 
+    \(which must be specified as CONST:n\)\. Output field will be 
+    the product of the two inputs\. Missing INFO fields will be 
     treated as ZEROS unless all params are INFO fields and all are 
     missing, in which case the output will be missing\. Output 
     field type will be an integer if all inputs are integers and 
@@ -746,15 +734,28 @@ This utility performs a series of transformations on an input VCF file and adds 
     x \(INT|FLOAT|INFO:Int|INFO:Float\)
     y \(INT|FLOAT|INFO:Int|INFO:Float\)
 
+### DIFF\(x,y\)
+
+    
+    Input should be a pair of info fields and/or numeric constants 
+    \(which must be specified as CONST:n\)\. Output field will be 
+    the difference of the two inputs \(ie x \- y\)\. Missing INFO 
+    fields will be treated as ZEROS unless all params are INFO 
+    fields and all are missing, in which case the output will be 
+    missing\. Output field type will be an integer if all inputs 
+    are integers and otherwise a float\.
+    x \(INT|FLOAT|INFO:Int|INFO:Float\)
+    y \(INT|FLOAT|INFO:Int|INFO:Float\)
+
 ### SUM\(x\.\.\.\)
 
     
-    Input should be a set of info tags specified as INFO:tagID, and 
-    numeric constants\. Output field will be the sum of the 
-    inputs\. Missing INFO fields will be treated as zeros unless 
-    all params are INFO fields and all are missing, in which case 
-    the output will be missing\. Output field type will be an 
-    integer if all inputs are integers and otherwise a float\.
+    Input should be a set of info tags and/or numeric constants 
+    \(which must be specified as CONST:n\)\. Output field will be 
+    the sum of the inputs\. Missing INFO fields will be treated as 
+    zeros unless all params are INFO fields and all are missing, in 
+    which case the output will be missing\. Output field type will 
+    be an integer if all inputs are integers and otherwise a float\.
     x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### FLAGSET\(x\.\.\.\)
@@ -778,12 +779,12 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### DIV\(x,y\)
 
     
-    Input should be a pair of numeric constants and/or info fields 
-    specified as INFO:tagID\. Output field will be the product of 
-    the two inputs\. Missing INFO fields will be treated as ZEROS 
-    unless all params are INFO fields and all are missing, in which 
-    case the output will be missing\. Output field type will be a 
-    float\.
+    Input should be a pair of info fields and/or numeric constants 
+    \(which must be specified as CONST:n\)\. Output field will be 
+    the product of the two inputs\. Missing INFO fields will be 
+    treated as ZEROS unless all params are INFO fields and all are 
+    missing, in which case the output will be missing\. Output 
+    field type will be a float\.
     x \(INT|FLOAT|INFO:Int|INFO:Float\)
     y \(INT|FLOAT|INFO:Int|INFO:Float\)
 
@@ -837,12 +838,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 
     
-    Input should be a set of numeric constants or info tags 
-    specified as INFO:tagID\. Output field will be the product of 
-    the inputs\. Missing INFO fields will be treated as ones unless 
-    all params are INFO fields and all are missing, in which case 
-    the output will be missing\. Output field type will be an 
-    integer if all inputs are integers and otherwise a float\.
+    Input should be a set of info fields and/or numeric constants 
+    \(which must be specified as CONST:n\)\. Output field will be 
+    the product of the inputs\. Missing INFO fields will be treated 
+    as ones unless all params are INFO fields and all are missing, 
+    in which case the output will be missing\. Output field type 
+    will be an integer if all inputs are integers and otherwise a 
+    float\.
     x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### SETS\.DIFF\(x,y\)
@@ -887,8 +889,8 @@ This utility performs a series of transformations on an input VCF file and adds 
     be a randomly picked element from that parameter\. In this case 
     the output will be chosen from this one input parameter \(which 
     is assumed to be a list of some sort\), which can be a string 
-    constant list delimited with colons, an INFO field specified as 
-    INFO:fieldName, or a text file specified as FILE:filename\. 
+    constant list delimited with colons and beginning with CONST:, 
+    an INFO field, or a text file specified as FILE:filename\. 
     Alternately: you can provide several additional parameters, in 
     which case it will select randomly from the set of parameters\.
     seed \(String\)
@@ -909,7 +911,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    oldField \(INFO:Float|INFO:String\)
+    oldField \(INFO:INT|INFO:Float|INFO:String\)
 
 ### SETS\.INTERSECT\(x\.\.\.\)
 
