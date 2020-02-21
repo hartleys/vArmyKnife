@@ -249,7 +249,7 @@ object SVcfTagFunctions {
           } else if(TYA.contains("String")){
             ParamType.STRING
           } else {
-            error("Impossible State: Illegal param! "+param +" with options: "+ty)
+            error("Impossible State: Illegal param! "+param +" with options: "+ty+".TYA="+TYA.mkString("/"))
             ParamType.ERR
           }
         }
@@ -262,7 +262,7 @@ object SVcfTagFunctions {
             warning("Warning: Forcing a Float value into a Int: "+param,"FORCE_"+SRC+"_FLOAT_TO_INT",-1)
             ParamType.INT
           } else {
-            error("Impossible State: Illegal param! "+param +" with options: "+ty)
+            error("Impossible State: Illegal param! "+param +" with options: "+ty+".TYA="+TYA.mkString("/"))
             ParamType.ERR
           }
         }
@@ -276,7 +276,7 @@ object SVcfTagFunctions {
             warning("Warning: Forcing a String value into a Int: "+param,"FORCE_"+SRC+"_STRING_TO_INT",-1)
             ParamType.INT
           } else {
-            error("Impossible State: Illegal param! "+param +" with options: "+ty)
+            error("Impossible State: Illegal param! "+param +" with options: "+ty+".TYA="+TYA.mkString("/"))
             ParamType.ERR
           }
         }
