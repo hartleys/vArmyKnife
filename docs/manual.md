@@ -1,7 +1,7 @@
 # User Manual for vArmyKnife 
 
-> v2.2.305   \
-> Compiled Mon Dec  2 11:32:33 EST 2019
+> v2.2.307   \
+> Compiled Tue Dec 17 14:15:58 EST 2019
 
 ## QUICK START:
 

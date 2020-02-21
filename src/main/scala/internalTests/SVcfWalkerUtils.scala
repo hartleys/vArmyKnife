@@ -2525,46 +2525,201 @@ object SVcfWalkerUtils {
   }
 
 
+  
   case class VcfTagFunctionParam( id : String, 
                                   ty : String, 
                                   req: Boolean = true, 
                                   defval : String = "", 
-                                  dotdot : Boolean = false ){
+                                  dotdot : Boolean = false ,
+                                  num : String = "."){
+      
     
+    val tys = ty.split("[|]")
+    val TYS = tys.map{ tt => tt.toUpperCase() }
 
     
-    def checkParamType( param : String, h : SVcfHeader) : Boolean = {
+    def getFinalInputType(param : String, h : SVcfHeader) : (String,String) = {
       def checkIsInt(pp : String) : Boolean = {
         string2intOpt(pp).nonEmpty;
       }
       def checkIsFloat(pp : String) : Boolean = {
         string2doubleOpt(pp).nonEmpty;
       }
-      def checkIsInfo(pp : String) : Boolean = {
-          h.infoLines.exists{ ln => {
+      def checkIsInfo(pp : String) : Option[SVcfCompoundHeaderLine] = {
+          h.infoLines.find{ ln => {
             ln.ID == pp
           }}
       }
-      def checkIsGeno(pp : String) : Boolean = {
-          h.formatLines.exists{ ln => {
+      def checkIsGeno(pp : String) : Option[SVcfCompoundHeaderLine] = {
+          h.formatLines.find{ ln => {
             ln.ID == pp
           }}
       }
-      ty.split("[|]").exists{ tyy => {
-        if( ty.toUpperCase().startsWith("INFO") ){
-          checkIsInfo(param)
-        } else if( ty.toUpperCase().startsWith("GENO")){
-          checkIsGeno(param)
-        } else if( ty.toUpperCase().startsWith("INT")){
-          checkIsInt(param);
-        } else if( ty.toUpperCase().startsWith("FLOAT")){
-          checkIsFloat(param);
-        } else {
-          true
+      if(param.toUpperCase().startsWith("INFO:")){
+        if( ! TYS.exists{ ss => ss.startsWith("INFO_")} ){
+          error("Fatal Error: param "+id+" is not permitted to be an INFO field! It must be one of these types: "+ty);
         }
-      }}
+        checkIsInfo( param.substring(5) ).map{ ln => {
+          if(ln.Type == "String"){
+            if(TYS.contains("INFO_STRING")){
+              ("INFO","String")
+            } else if(TYS.contains("INFO_FLOAT")){
+              warning("Attempting to coerce String INFO field "+ param.substring(5)+" into a float.","COERCE_INFO_STRING_TO_FLOAT",-1)
+              ("INFO","Float")
+            } else if(TYS.contains("INFO_INT")){
+              ("INFO","Integer")
+            } else {
+              ("INFO","?")
+            }
+          } else if(ln.Type == "Float"){
+            if(TYS.contains("INFO_FLOAT")){
+              ("INFO","Float")
+            } else if(TYS.contains("INFO_STRING")){
+              ("INFO","String")
+            } else if(TYS.contains("INFO_INT")){
+              warning("Attempting to coerce Float INFO field "+ param.substring(5)+" into an INT.","COERCE_INFO_FLOAT_TO_INT",-1)
+              ("INFO","Integer")
+            } else {
+              ("INFO","?")
+            }
+          } else if(ln.Type == "Integer"){
+            if(TYS.contains("INFO_INT")){
+              ("INFO","Integer")
+            } else if(TYS.contains("INFO_FLOAT")){
+              ("INFO","Float")
+            } else if(TYS.contains("INFO_STRING")){
+              ("INFO","String")
+            } else {
+              ("INFO","?")
+            }
+          } else {
+            ("?","?")
+          }
+        }}.getOrElse( ("ERROR","String") )
+        //if( TYS.contains("INFO_FLOAT") && 
+      } else if(param.toUpperCase().startsWith("GENO:")){
+        if( ! TYS.exists{ ss => ss.startsWith("GENO_")} ){
+          error("Fatal Error: param "+id+" is not permitted to be a GENO field! It must be one of these types: "+ty);
+        }
+        checkIsGeno( param.substring(5) ).map{ ln => {
+          if(ln.Type == "String"){
+            if(TYS.contains("GENO_STRING")){
+              ("GENO","String")
+            } else if(TYS.contains("GENO_FLOAT")){
+              warning("Attempting to coerce String GENO field "+ param.substring(5)+" into a float.","COERCE_GENO_STRING_TO_FLOAT",-1)
+              ("GENO","Float")
+            } else if(TYS.contains("GENO_INT")){
+              ("GENO","Integer")
+            } else {
+              ("GENO","?")
+            }
+          } else if(ln.Type == "Float"){
+            if(TYS.contains("GENO_FLOAT")){
+              ("GENO","Float")
+            } else if(TYS.contains("GENO_STRING")){
+              ("GENO","String")
+            } else if(TYS.contains("GENO_INT")){
+              warning("Attempting to coerce Float GENO field "+ param.substring(5)+" into an INT.","COERCE_GENO_FLOAT_TO_INT",-1)
+              ("GENO","Integer")
+            } else {
+              ("GENO","?")
+            }
+          } else if(ln.Type == "Integer"){
+            if(TYS.contains("GENO_INT")){
+              ("GENO","Integer")
+            } else if(TYS.contains("GENO_FLOAT")){
+              ("GENO","Float")
+            } else if(TYS.contains("GENO_STRING")){
+              ("GENO","String")
+            } else {
+              ("GENO","?")
+            }
+          } else {
+            ("?","?")
+          }
+        }}.getOrElse( ("ERROR","String") )
+      } else if(checkIsInt(param)){
+        ("CONST","Int")
+      } else if(checkIsFloat(param)){
+        ("CONST","Float")
+      } else {
+        ("CONST","String")
+      }
+    }
+    
+    def checkParamType( param : String, h : SVcfHeader) : Boolean = {
+      getFinalInputType(param,h)._2 != "?"
     }
   }
+  
+  
+  
+  case class TFParamParser[T]( param : String, reader : VcfTagFunctionParamReader[T] ){
+    def get(v : SVcfVariantLine) : Option[T] = reader.get(v);
+  }
+
+  abstract class VcfTagFunctionParamReader[T](){
+    def get(v : SVcfVariantLine) : Option[T]
+  }
+  case class VcfTagFunctionParamReader_Int(param : String, inputType : String) extends VcfTagFunctionParamReader[Int] {
+    val x = if(inputType == "CONST"){
+      string2int(param);
+    } else {
+      -1
+    }
+    def get(v : SVcfVariantLine) : Option[Int] = if(inputType == "CONST"){
+      Some(x);
+    } else if(inputType == "INFO"){
+      v.info.getOrElse( param, None).map{ z => {
+        string2int(z)
+      }}
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReader_Float(param : String, inputType : String) extends VcfTagFunctionParamReader[Float] {
+    val x : Float = if(inputType == "CONST"){
+      string2float(param);
+    } else {
+      string2float("-1")
+    }
+    def get(v : SVcfVariantLine) : Option[Float] = if(inputType == "CONST"){
+      Some(x);
+    } else if(inputType == "INFO"){
+      v.info.getOrElse( param, None).map{ z => {
+        string2float(z)
+      }}
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReader_String(param : String, inputType : String) extends VcfTagFunctionParamReader[String] {
+    val x : String = if(inputType == "CONST"){
+      param;
+    } else {
+      "?"
+    }
+    def get(v : SVcfVariantLine) : Option[String] = if(inputType == "CONST"){
+      Some(x);
+    } else if(inputType == "INFO"){
+      v.info.getOrElse( param, None)
+    } else {
+      None
+    }
+  }
+  object VcfTagFun {
+    
+  }
+  
+  case class VcfTagFun(md : VcfTagFcnMetadata,
+                       h : SVcfHeader,
+                       pv : Seq[String],
+                       dgts : Option[Int]) {
+    
+    
+    
+  }
+  
   abstract class VcfTagFcn() {
     def md : VcfTagFcnMetadata;
     def h : SVcfHeader;
@@ -2611,7 +2766,6 @@ object SVcfWalkerUtils {
       def writeString(vc : SVcfOutputVariantLine, tag : String,dd : String){
                 vc.addInfo(tag, ""+(dd));
       }
-    
   }
   case class VcfTagFcnMetadata( id : String, synon : Seq[String],
                               shortDesc : String,
@@ -3130,6 +3284,8 @@ object SVcfWalkerUtils {
     
   }
 
+  
+  
 
   class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "AddFuncTag."+newTag
@@ -3151,11 +3307,6 @@ object SVcfWalkerUtils {
               val paramTags = cells.lift(3).map{_.split(",").toSeq}.getOrElse(Seq[String]());
               val outDigits = cells.lift(4).map{ _.toInt }
      */
-    
-    
-    
-    
-    
     
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -3253,6 +3404,7 @@ object SVcfWalkerUtils {
       } else {
         None;
       }).getOrElse(new scala.util.Random());
+      
       outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();

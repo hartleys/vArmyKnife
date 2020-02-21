@@ -34,6 +34,8 @@ import internalUtils.genomicUtils._;
 import internalUtils.commonSeqUtils._;
 import internalTests.SVcfWalkerUtils._;
 
+import internalTests.SVcfTagFunctions._;
+
 //import com.timgroup.iterata.ParIterator.Implicits._;
 
 object VcfAnnotateTX {
@@ -66,6 +68,17 @@ object VcfAnnotateTX {
            ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false)
          ))
        ),//TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...
+       //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+       ParamStrSet("addInfoTag" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided")),
+           ParamStr(id = "digits",synon=Seq(),ty="Integer",valueString="x",desc="",req=false),
+           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false)
+         ))
+       ),
+       
+       
        ParamStrSet("tagBedFile" ,  desc = "....", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "file",synon=Seq(),ty="String",valueString="mybed.bed.gz",desc="",req=true),
@@ -355,6 +368,8 @@ object VcfAnnotateTX {
 
          ))
        ),
+       
+
        
      ).map{ pss => {
        (pss.mapType,pss)
@@ -3200,6 +3215,22 @@ object VcfAnnotateTX {
                 }}.getOrElse(Seq[String]())
                 
                 Some(new AddFuncTag(func=params("func"),newTag=params("mapID"),paramTags=paramTags,digits=params.get("digits").map{d => string2int(d)},desc=Some(params("desc"))));
+
+                    //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+       /*ParamStrSet("addInfoTag" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided")),
+           ParamStr(id = "digits",synon=Seq(),ty="Integer",valueString="x",desc="",req=false),
+           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false)
+         ))
+       ),*/
+             } else if(mapType == "addInfoTag"){
+                val paramTags = params.get("params").map{ pp => {
+                  pp.split(",").toSeq;
+                }}.getOrElse(Seq[String]())
+                Some(new AddFunctionTag(func=params("func"),newTag=params("mapID"),paramTags=paramTags,digits=params.get("digits").map{d => string2int(d)},desc=Some(params("desc"))));
+                
              } else if(mapType == "genotypeFilter"){
                 Some( FilterGenotypesByStat(
                    filter = params("expr"), 
