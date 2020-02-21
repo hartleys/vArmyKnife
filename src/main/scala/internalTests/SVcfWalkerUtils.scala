@@ -3401,7 +3401,7 @@ object SVcfWalkerUtils {
             val paramVals : Seq[Set[String]] = paramTags.map{ param => {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
             }}
-            val intersect = paramTags.tail.foldLeft(paramTags.head){ case (soFar,curr) => { soFar.intersect(curr) }}
+            val intersect = paramVals.tail.foldLeft(paramVals.head){ case (soFar,curr) => { soFar.intersect(curr) }}
             vc.addInfo(newTag, (intersect).toVector.sorted.padTo(1,".").mkString(","));
         } else if(f == "LEN"){
             val sumLen = paramTags.map{ param => {
@@ -6281,6 +6281,87 @@ object SVcfWalkerUtils {
     }
   }
 
+  case class SampleRenameAdv(decoder : String, 
+                 fromToColumnNames : Option[(String,String)] = None,
+                 fromToIdx : Option[(String,String)] = None,
+                 skipFirstRow : Boolean = true,
+                       quiet : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "SampleRename"
+    val rawcelllist = getLinesSmartUnzip(decoder).map{ line => line.split("\t") }.toVector;
+    val celllist = if(skipFirstRow){
+      rawcelllist.tail
+    } else {
+      rawcelllist
+    }
+    
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](("decoder",decoder.toString),
+                                                                    ("fromToColumnNames",fromToColumnNames.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("fromToIdx",fromToIdx.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("skipFirstRow",skipFirstRow.toString),
+                                                                    ("quiet",quiet.toString)
+                                                                    );
+    
+    val sampMap : Map[String,String] = fromToColumnNames.map{ case (f,t) => {
+      val headerLine = celllist.head;
+      val fromIDX = headerLine.indexOf(f);
+      val toIDX = headerLine.indexOf(t);
+      if(fromIDX == -1){
+        error("Error in SampleRename: Cannot find column named \""+f+"\""+" in file: \""+decoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      if(toIDX == -1){
+        error("Error in SampleRename: Cannot find column named \""+t+"\""+" in file: \""+decoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      celllist.tail.map{ cells => {
+        ( cells(fromIDX), cells(toIDX) )
+      }}.toMap
+    }}.getOrElse({
+      fromToIdx.map{ case (f,t) => {
+        val fromIDX = string2intOpt(f);
+        val toIDX = string2intOpt(t);
+        if( fromIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+f+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        if( toIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+t+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        celllist.map{ cells => {
+          ( cells(fromIDX.get), cells(toIDX.get) )
+        }}.toMap
+      }}.getOrElse({
+          error("ConvertChromosomeName must specify which columns to convert to/from, using either the columnNames or columnIdx parameters.");
+          null;
+      })
+    })
+    def translateSamp(c : String) : String = {
+      sampMap.get(c) match {
+        case Some(tc) => {
+          if(! quiet) warning("CONVERTING SAMPLEID: \""+c+"\"->\""+tc+"\"","SAMPNAME_CHANGED",100);
+          tc
+        }
+        case None => {
+          if(! quiet) warning("Could not find samp: "+c,"SAMPNAME_NOT_CHANGED",100);
+          c;
+        }
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
+      val samps = outHeader.getSampleList
+      outHeader.reportAddedInfos(this)
+      outHeader.titleLine = SVcfTitleLine(outHeader.titleLine.sampleList.map{ s => {
+        translateSamp(s);
+      }})
+      (vcIter,outHeader)
+      
+    }
+  }
+  
+  
   class CmdFilterTags extends CommandLineRunUtil {
      override def priority = 1;
      val parser : CommandLineArgParser = 

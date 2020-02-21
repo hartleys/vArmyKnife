@@ -1,6 +1,6 @@
 # Frequently Asked Questions
-v2.2.297
-Revised Fri Nov 22 14:14:09 EST 2019
+v2.2.300
+Revised Mon Nov 25 13:51:08 EST 2019
 
 ## What if none of these answers solve my problem?
 
