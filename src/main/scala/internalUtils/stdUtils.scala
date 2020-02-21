@@ -64,7 +64,23 @@ object stdUtils {
                        ){
     
   }
-  case class ParamStrSet(mapType : String, desc : String, pp : Seq[ParamStr], synon : Seq[String] = Seq[String]() ) {
+  
+  object ParamStrSetDefaultOrdering extends Ordering[String] {
+    def compare(x : String, y : String) : Int = {
+      scala.math.Ordering.String.compare(x,y);
+    }
+  }
+  
+  case class ParamStrSet(mapType : String, 
+                         desc : String, 
+                         pp : Seq[ParamStr], 
+                         synon : Seq[String] = Seq[String](), 
+                         hidden : Boolean = false,
+                         deprecated : Boolean = false,
+                         alpha : Boolean = false,
+                         category : String = "General",
+                         withinCatPriority : Int = 1000,
+                         ord : Ordering[String] = ParamStrSetDefaultOrdering ) {
     val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
     val nameSetHolder = ( Set(mapType) ++ synon.toSet );
     def paramMap = pm;

@@ -211,8 +211,16 @@
     TRUE:
     Always pass
     \(Param Types: \)
+    allelesHaveNoNs:
+    FAIL iff the variant has unknown bases, ie N, in the ALT or REF 
+    alleles\.
+    \(Param Types: \)
     isSNV:
     PASS iff the variant is an SNV\.
+    \(Param Types: \)
+    isVariant:
+    FAIL iff the variant has no alt alleles, or if the only alt 
+    allele is exactly equal to the ref allele\.
     \(Param Types: \)
     simpleSNV:
     PASS iff the variant is a biallelic SNV\.

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.320 (Updated Wed Jan 22 12:25:43 EST 2020)
+> Version 2.2.321 (Updated Wed Feb  5 11:57:48 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -22,14 +22,14 @@ GENERAL SYNTAX:
 This utility performs a series of transformations on an input VCF file and adds an array of informative tags\.
 
 ## REQUIRED ARGUMENTS:
-#### variants.vcf:
+#### infile.vcf.gz:
 
-> input VCF file. Can be gzipped or in plaintext. (String)
+> input VCF file. Can be gzipped or in plaintext. Can use dash - to read from STDIN. Note that multifile processing will obviously not be available in this mode. (String)
 
 
 #### outfile.vcf.gz:
 
-> The output file. Can be gzipped or in plaintext. (String)
+> The output file. Can be gzipped or in plaintext. Can use dash - to write to STDOUT Note that multifile processing will obviously not be available in this mode. (String)
 
 
 
@@ -121,46 +121,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > Drop any variants that contain Ns in the ref or alt allele. (flag)
 
-#### --inputKeepSamples samp1,samp2,...:
-
-> If this parameter is set, all samples other than the listed samples will be removed PRIOR to processing. (CommaDelimitedListOfStrings)
-
-#### --inputKeepInfoTags tag1,tag2,...:
-
-> List of tags to keep from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (CommaDelimitedListOfStrings)
-
-#### --inputDropInfoTagsFromFile tag1,tag2,...:
-
-> List of tags to DROP from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (String)
-
-#### --inputKeepInfoTagsFromFile tag1,tag2,...:
-
-> List of tags to keep from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (String)
-
-#### --inputDropInfoTags tag1,tag2,...:
-
-> List of tags to DROP from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (CommaDelimitedListOfStrings)
-
-#### --inputSampleOrdering samp1,samp2,...:
-
-> List of samples in the order you want them to be in prior to any analysis. If you are filtering down your sample list using inputKeepSamples or renaming your samples via sampleRenameFile, then the reordering happens AFTER the renaming. (CommaDelimitedListOfStrings)
-
-#### --inputSampleOrderingAlphabetical:
-
-> This option causes the samples to be reordered into alphabetical order. See --inputSampleOrdering for more info on how and when the reordering happens. (flag)
-
-#### --inputChromDecoder chromDecoder.txt:
-
-> Assigns a chromosome name decoder file. All chromosomes will be renamed based on this decoder. By default, the first column will be the FROM column and the second column will be the TO column. The FROM and TO column numbers can be changed with the --inputChromDecoderFromCol and --inputChromDecoderToCol parameters. These parameters can be used to translate chromosome names between the chr1,chr2,... and 1,2,... style chromosome name conventions. Any chrom names not found in this file will be left as is, throwing a warning. Note: the translation will take place BEFORE any other processing. (String)
-
-#### --inputChromDecoderFromCol val:
-
-> Define the column in the chromDecoder text file that contains the chrom names found in the original input VCF. (Int)
-
-#### --inputChromDecoderToCol val:
-
-> Define the column in the chromDecoder text file that contains the chrom names that are to be used in the new output VCF. (Int)
-
 #### --universalTagPrefix VAK\_:
 
 > Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
@@ -169,51 +129,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --addSampTag N:
 
 > If this parameter is set, then a tags will be added with sample IDs that possess alt genotypes. Samples will only be printed if the number of samples that possess a given genotype are less than N.  (String)
-
-#### --calcStatGtTag GT:
-
-> The genotype tag used to calculate stats like het count, Het-AD-balance, etc. (String)
-
-### SnpEff Annotation Processing:
-#### --annTag ANN:
-
-> SnpEff ANN tag for info extract (String)
-
-#### --snpEffTagPrefix ANNEX\_:
-
-> Prefix for SnpEff extracted info tags (String)
-
-#### --snpEffBiotypeKeepList ANN:
-
-> todo desc (CommaDelimitedListOfStrings)
-
-#### --snpEffEffectKeepList ANN:
-
-> todo desc (CommaDelimitedListOfStrings)
-
-#### --snpEffKeepIdx 0,1,2,...:
-
-> todo desc (CommaDelimitedListOfStrings)
-
-#### --snpEffBiotypeIdx 7:
-
-> The index of the field in the annotation column that contains the biotype. (Int)
-
-#### --snpEffWarnIdx 7:
-
-> The index of the field in the annotation column that contains warnings or flags. (Int)
-
-#### --snpEffFieldLen 16:
-
-> The the length of an annotation entry. (Int)
-
-#### --snpEffFields Allele,Consequence,...:
-
-> The names of the fields in the annotation entries. (CommaDelimitedListOfStrings)
-
-#### --snpEffGeneListTagInfix myGeneListAbbrev:
-
-> A short abbreviation for your selected snpeff gene list, for use in the INFO tag IDs. (String)
 
 ### Filtering, Genotype-Level:
 #### --genoFilter :
@@ -287,26 +202,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > If this flag is included, then the genotype data will be stripped and replaced with a dummy column with 1 sample and 1 het genotype on every line. (flag)
 
-#### --outputKeepInfoTags tag1,tag2,...:
-
-> List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)
-
-#### --outputDropInfoTags tag1,tag2,...:
-
-> List of tags to drop from the final output (repeatable CommaDelimitedListOfStrings)
-
-#### --outputKeepGenoTags tag1,tag2,...:
-
-> List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)
-
-#### --outputDropGenoTags tag1,tag2,...:
-
-> List of tags to drop from the final output (repeatable CommaDelimitedListOfStrings)
-
-#### --outputKeepSamples samp1,samp2,...:
-
-> List of samples to include in the final output (repeatable CommaDelimitedListOfStrings)
-
 ### Output Parameters:
 #### --splitOutputByChrom:
 
@@ -349,10 +244,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > TODO DESC (repeatable String)
 
-#### --ctrlAlleFreqKeys ...:
-
-> A comma-delimited list of field IDs to use to calculate the maximum of several included allele frequency fields. Optionally, the list can be preceded by the output tag ID, followed by a colon. Can be specified more than once with different parameters and a different output tag ID. (repeatable String)
-
 #### --tallyFile file.txt:
 
 > Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
@@ -367,10 +258,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 > A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)
 
 ### OTHER OPTIONS:
-#### --snpEffWarningDropList ANN:
-
-> todo desc (CommaDelimitedListOfStrings)
-
 #### --verbose:
 
 > Flag to indicate that debugging information and extra progress information should be sent to stderr. (flag)
@@ -456,10 +343,21 @@ This utility performs a series of transformations on an input VCF file and adds 
     biotypeIdx: \(String, default=7\)
     warnIdx: \(String, default=15\)
 
+### fixSwappedRefAlt
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+    genomeFA: \(String, required\)
+
 ### convertSampleNames
 
     
-    \.\.\.\.
+    This function converts the sample IDs of the VCF file according 
+    to a decoder file that you supply\. The decoder will decode
     mapType: The function to run\.\(String, required\)
     mapID: The ID to use for this operation\. This ID will also be 
     used in the output tag IDs generated by this 
@@ -475,12 +373,23 @@ This utility performs a series of transformations on an input VCF file and adds 
     columns, and if the file has a title line, then you should use 
     skipFirstRow or else it will be read in as if it were a 
     chromosome\.\(Integer\)
-    skipFirstRow: \(Flag\)
+    skipFirstRow: If this parameter is set, then this tool will 
+    skip the first line on the decoder file\. This is useful if you 
+    are specifying the columns using column numbers but the file 
+    also has a title line\.\(Flag\)
 
 ### tagBedFile
 
     
-    \.\.\.\.
+    This function takes a BED file \(which can be gzipped if 
+    desired\) and creates a new INFO field based on whether the 
+    variant locus overlaps with a genomic region in the BED file\. 
+    The new field can be either an integer that is equal to 1 if 
+    there is overlap and 0 otherwise \(which is the default 
+    behavior\) Or, alternatively, it can copy in the title field 
+    from the bed file\. NOTE: this function only uses the first 3 
+    to 5 fields of the BED file, it does not implement the optional 
+    fields 10\-12 which can specify intron/exon blocks\.
     mapType: The function to run\.\(String, required\)
     mapID: The ID to use for this operation\. This ID will also be 
     used in the output tag IDs generated by this 
@@ -510,6 +419,18 @@ This utility performs a series of transformations on an input VCF file and adds 
     used in the output tag IDs generated by this 
     operation\.\(String, required\)
     expr: \(String\)
+
+### fixFirstBaseMismatch
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+    windowSize: Sets the size of the sliding window used\. Problems 
+    may occur if you have variants longer than this window size\. 
+    Default is 200bp\.\(Int\)
 
 ### depthStats
 
@@ -563,6 +484,15 @@ This utility performs a series of transformations on an input VCF file and adds 
     superGroupList: See the \-\-superGroupList parameter of 
     walkVcf\.\(String\)
     outfile: The output matrix file path\.\(String, required\)
+
+### splitMultiAllelics
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
 
 ### filterTags
 
@@ -641,6 +571,17 @@ This utility performs a series of transformations on an input VCF file and adds 
     used in the output tag IDs generated by this 
     operation\.\(String, required\)
     cmd: A valid SnpSift command\(String\)
+
+### getLocusDepthFromWig
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+    wigfile: \(String\)
+    desc: \(String\)
 
 ### tagVariantsFunction
 
@@ -735,9 +676,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     used in the output tag IDs generated by this 
     operation\.\(String, required\)
     geneTag: \(String, required\)
-    snpEffAnnField: NOT IMPLEMENTED\(String\)
-    snpEffGeneField: NOT IMPLEMENTED\(String\)
-    snpEffVariantTypes: NOT IMPLEMENTED\(String\)
     expr: \(String\)
     sampleSet: \(String\)
     group: \(String\)
@@ -796,7 +734,10 @@ This utility performs a series of transformations on an input VCF file and adds 
     columns, and if the file has a title line, then you should use 
     skipFirstRow or else it will be read in as if it were a 
     chromosome\.\(Integer\)
-    skipFirstRow: \(Flag\)
+    skipFirstRow: If this parameter is set, then this tool will 
+    skip the first line on the decoder file\. This is useful if you 
+    are specifying the columns using column numbers but the file 
+    also has a title line\.\(Flag\)
 
 ### addVariantIdx
 
@@ -829,6 +770,15 @@ This utility performs a series of transformations on an input VCF file and adds 
     expr: The variant expression, which is a true/false expression 
     using the variant expression syntax\.\(String\)
 
+### fixDotAltIndels
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+
 ### calcBurdenCountsByGroups
 
     
@@ -839,9 +789,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     operation\.\(String, required\)
     geneTag: \(String, required\)
     groups: \(String, required\)
-    snpEffAnnField: NOT IMPLEMENTED\(String\)
-    snpEffGeneField: NOT IMPLEMENTED\(String\)
-    snpEffVariantTypes: NOT IMPLEMENTED\(String\)
     expr: \(String\)
     sampleSet: \(String\)
     inputGT: \(String\)
@@ -855,6 +802,28 @@ This utility performs a series of transformations on an input VCF file and adds 
     this parameter\. Note that each file must be created using a 
     \-\-burdenCountsFile parameter, with the form 
     fileID:/path/to/file\.txt\(String\)
+
+### rmDup
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+
+### leftAlignAndTrim
+
+    
+    \.\.\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+    windowSize: Sets the size of the sliding window used\. Problems 
+    may occur if you have variants longer than this window size\. 
+    Default is 200bp\.\(Int\)
+    genomeFA: \(String, required\)
 
 ### sampleCounts
 
@@ -879,6 +848,24 @@ This utility performs a series of transformations on an input VCF file and adds 
     noAlleCalc: \(Flag\)
     noHetHomCalc: \(Flag\)
     noMultiHetCalc: \(Flag\)
+
+### sampleReorder
+
+    
+    This function allows you to reorder the sample columns in your 
+    VCF\. Set ONE of the parameters below to specify the desired 
+    ordering\.
+    mapType: The function to run\.\(String, required\)
+    mapID: The ID to use for this operation\. This ID will also be 
+    used in the output tag IDs generated by this 
+    operation\.\(String, required\)
+    sampleOrdering: A simple list of all the samples, in the 
+    desired order\.\(String\)
+    sampleOrderingFile: A file containing one sampleID per line\. 
+    The samples will be reordered to match the order found in the 
+    file\.\(String, required\)
+    alphabetical: If this flag is set, then the samples will be 
+    reordered alphabetically\.\(Flag\)
 
 ### genotypeFilter
 
@@ -1151,9 +1138,17 @@ expression returns FALSE\.
 
 > Always pass
 
+#### allelesHaveNoNs:
+
+> FAIL iff the variant has unknown bases, ie N, in the ALT or REF alleles\.
+
 #### isSNV:
 
 > PASS iff the variant is an SNV\.
+
+#### isVariant:
+
+> FAIL iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele\.
 
 #### simpleSNV:
 

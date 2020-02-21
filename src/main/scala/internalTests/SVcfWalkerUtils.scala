@@ -54,7 +54,8 @@ object SVcfWalkerUtils {
       //val bwf = BigWigFile.read("test.bw")
       
     }
-  
+    val DEFAULT_VCF_CODES = VCFAnnoCodes();
+    
     val SNVVARIANT_BASESWAP_LIST = Seq( (("A","C"),("T","G")),
                             (("A","T"),("T","A")),
                             (("A","G"),("T","C")),
@@ -5804,7 +5805,8 @@ object SVcfWalkerUtils {
           }};
           //val alleles = Range(0,vc.alt.length + 1).map(_.toString());
           //val alleles = Vector("0") ++ vc.alt.toVector.zipWithIndex.filter{case (a,i) => a != internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING }.map{ case (a,i) => (i + 1).toString }
-          val isSplit = vc.alt.contains(internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING) && vc.alt.length == 2;
+          //no longer a recommended method:
+          //val isSplit = vc.alt.contains(internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING) && vc.alt.length == 2;
           val numAlt = vc.alt.filter(_ != internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING).length;
           
           if(numAlt == 1){
@@ -14559,7 +14561,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     }
   }
   
-  case class VcfExpressionFilter(filterExpr : String, explainFile : Option[String] = None) extends SVcfWalker {
+  case class VcfExpressionFilter(filterExpr : String, explainFile : Option[String] = None, filterID : Option[String] = None) extends SVcfWalker {
 
     /*def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
        (vcIter, vcfHeader)
@@ -14567,6 +14569,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     def walkerName : String = "VcfExpressionFilter"
     def walkerParams : Seq[(String,String)]= Seq[(String,String)](
         ("filterExpr","\""+filterExpr+"\""),
+        ("filterID","\""+filterID.getOrElse("None")+"\""),
         ("explainFile","\""+explainFile.getOrElse("None")+"\"")
     )
     val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser; 

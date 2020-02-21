@@ -3552,6 +3552,21 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="isVariant",numParam=0,desc="FAIL iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele.",paramNames=Seq(),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          (a : SVcfVariantLine) => {
+                            val af = a.alt.filter(aa => aa != "." && aa != "*")
+                            ( af.length > 0 ) && (! ( af.length == 1 && af.head.toUpperCase() == a.ref.toUpperCase() ))
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="allelesHaveNoNs",numParam=0,desc="FAIL iff the variant has unknown bases, ie N, in the ALT or REF alleles.",paramNames=Seq(),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          (a : SVcfVariantLine) => {
+                            (! a.ref.contains("N")) && (! a.ref.contains("n")) && (! a.alt.mkString("").contains("N")) && (! a.alt.mkString("").contains("n"))
+                          }
+                        }
+                      ),
                       
         FilterFunction(funcName="FILTER.eq",numParam=1,desc="PASS iff the FILTER column is equal to k.",paramNames=Seq("k"),paramTypes=Seq("String"),
                         (params : Seq[String]) => {

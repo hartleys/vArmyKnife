@@ -30,7 +30,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 2.2.320 (Updated Wed Jan 22 12:25:43 EST 2020)</p>
+  <p>Version 2.2.321 (Updated Wed Feb  5 11:57:48 EST 2020)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -56,16 +56,16 @@ varmyknife [java_options] --CMD commandName [options]
 
 </section> <h2>REQUIRED ARGUMENTS:</h2> <section>
 
-<h4>variants.vcf:</h4>
+<h4>infile.vcf.gz:</h4>
 
 <blockquote>
-  <p>input VCF file. Can be gzipped or in plaintext. (String)</p>
+  <p>input VCF file. Can be gzipped or in plaintext. Can use dash - to read from STDIN. Note that multifile processing will obviously not be available in this mode. (String)</p>
 </blockquote>
 
 <h4>outfile.vcf.gz:</h4>
 
 <blockquote>
-  <p>The output file. Can be gzipped or in plaintext. (String)</p>
+  <p>The output file. Can be gzipped or in plaintext. Can use dash - to write to STDOUT Note that multifile processing will obviously not be available in this mode. (String)</p>
 </blockquote>
 
 </section> <h2>OPTIONAL ARGUMENTS:</h2> <section>
@@ -202,66 +202,6 @@ varmyknife [java_options] --CMD commandName [options]
   <p>Drop any variants that contain Ns in the ref or alt allele. (flag)</p>
 </blockquote>
 
-<h4>--inputKeepSamples samp1,samp2,...:</h4>
-
-<blockquote>
-  <p>If this parameter is set, all samples other than the listed samples will be removed PRIOR to processing. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--inputKeepInfoTags tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to keep from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--inputDropInfoTagsFromFile tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to DROP from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (String)</p>
-</blockquote>
-
-<h4>--inputKeepInfoTagsFromFile tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to keep from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (String)</p>
-</blockquote>
-
-<h4>--inputDropInfoTags tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to DROP from the input file before processing. All other tags will be dropped before processing. This can be useful for updating a file with a new version or annotation, as it can be used to ensure a clean input. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--inputSampleOrdering samp1,samp2,...:</h4>
-
-<blockquote>
-  <p>List of samples in the order you want them to be in prior to any analysis. If you are filtering down your sample list using inputKeepSamples or renaming your samples via sampleRenameFile, then the reordering happens AFTER the renaming. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--inputSampleOrderingAlphabetical:</h4>
-
-<blockquote>
-  <p>This option causes the samples to be reordered into alphabetical order. See --inputSampleOrdering for more info on how and when the reordering happens. (flag)</p>
-</blockquote>
-
-<h4>--inputChromDecoder chromDecoder.txt:</h4>
-
-<blockquote>
-  <p>Assigns a chromosome name decoder file. All chromosomes will be renamed based on this decoder. By default, the first column will be the FROM column and the second column will be the TO column. The FROM and TO column numbers can be changed with the --inputChromDecoderFromCol and --inputChromDecoderToCol parameters. These parameters can be used to translate chromosome names between the chr1,chr2,... and 1,2,... style chromosome name conventions. Any chrom names not found in this file will be left as is, throwing a warning. Note: the translation will take place BEFORE any other processing. (String)</p>
-</blockquote>
-
-<h4>--inputChromDecoderFromCol val:</h4>
-
-<blockquote>
-  <p>Define the column in the chromDecoder text file that contains the chrom names found in the original input VCF. (Int)</p>
-</blockquote>
-
-<h4>--inputChromDecoderToCol val:</h4>
-
-<blockquote>
-  <p>Define the column in the chromDecoder text file that contains the chrom names that are to be used in the new output VCF. (Int)</p>
-</blockquote>
-
 <h4>--universalTagPrefix VAK_:</h4>
 
 <blockquote>
@@ -274,74 +214,6 @@ varmyknife [java_options] --CMD commandName [options]
 
 <blockquote>
   <p>If this parameter is set, then a tags will be added with sample IDs that possess alt genotypes. Samples will only be printed if the number of samples that possess a given genotype are less than N.  (String)</p>
-</blockquote>
-
-<h4>--calcStatGtTag GT:</h4>
-
-<blockquote>
-  <p>The genotype tag used to calculate stats like het count, Het-AD-balance, etc. (String)</p>
-</blockquote>
-
-<h3>SnpEff Annotation Processing:</h3>
-
-<h4>--annTag ANN:</h4>
-
-<blockquote>
-  <p>SnpEff ANN tag for info extract (String)</p>
-</blockquote>
-
-<h4>--snpEffTagPrefix ANNEX_:</h4>
-
-<blockquote>
-  <p>Prefix for SnpEff extracted info tags (String)</p>
-</blockquote>
-
-<h4>--snpEffBiotypeKeepList ANN:</h4>
-
-<blockquote>
-  <p>todo desc (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--snpEffEffectKeepList ANN:</h4>
-
-<blockquote>
-  <p>todo desc (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--snpEffKeepIdx 0,1,2,...:</h4>
-
-<blockquote>
-  <p>todo desc (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--snpEffBiotypeIdx 7:</h4>
-
-<blockquote>
-  <p>The index of the field in the annotation column that contains the biotype. (Int)</p>
-</blockquote>
-
-<h4>--snpEffWarnIdx 7:</h4>
-
-<blockquote>
-  <p>The index of the field in the annotation column that contains warnings or flags. (Int)</p>
-</blockquote>
-
-<h4>--snpEffFieldLen 16:</h4>
-
-<blockquote>
-  <p>The the length of an annotation entry. (Int)</p>
-</blockquote>
-
-<h4>--snpEffFields Allele,Consequence,...:</h4>
-
-<blockquote>
-  <p>The names of the fields in the annotation entries. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--snpEffGeneListTagInfix myGeneListAbbrev:</h4>
-
-<blockquote>
-  <p>A short abbreviation for your selected snpeff gene list, for use in the INFO tag IDs. (String)</p>
 </blockquote>
 
 <h3>Filtering, Genotype-Level:</h3>
@@ -454,36 +326,6 @@ varmyknife [java_options] --CMD commandName [options]
   <p>If this flag is included, then the genotype data will be stripped and replaced with a dummy column with 1 sample and 1 het genotype on every line. (flag)</p>
 </blockquote>
 
-<h4>--outputKeepInfoTags tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--outputDropInfoTags tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to drop from the final output (repeatable CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--outputKeepGenoTags tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to include in the final output (repeatable CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--outputDropGenoTags tag1,tag2,...:</h4>
-
-<blockquote>
-  <p>List of tags to drop from the final output (repeatable CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--outputKeepSamples samp1,samp2,...:</h4>
-
-<blockquote>
-  <p>List of samples to include in the final output (repeatable CommaDelimitedListOfStrings)</p>
-</blockquote>
-
 <h3>Output Parameters:</h3>
 
 <h4>--splitOutputByChrom:</h4>
@@ -548,12 +390,6 @@ varmyknife [java_options] --CMD commandName [options]
   <p>TODO DESC (repeatable String)</p>
 </blockquote>
 
-<h4>--ctrlAlleFreqKeys ...:</h4>
-
-<blockquote>
-  <p>A comma-delimited list of field IDs to use to calculate the maximum of several included allele frequency fields. Optionally, the list can be preceded by the output tag ID, followed by a colon. Can be specified more than once with different parameters and a different output tag ID. (repeatable String)</p>
-</blockquote>
-
 <h4>--tallyFile file.txt:</h4>
 
 <blockquote>
@@ -575,12 +411,6 @@ varmyknife [java_options] --CMD commandName [options]
 </blockquote>
 
 <h3>OTHER OPTIONS:</h3>
-
-<h4>--snpEffWarningDropList ANN:</h4>
-
-<blockquote>
-  <p>todo desc (CommaDelimitedListOfStrings)</p>
-</blockquote>
 
 <h4>--verbose:</h4>
 
@@ -675,9 +505,20 @@ biotypeIdx: \(String, default=7\)
 warnIdx: \(String, default=15\)
 </code></pre>
 
+<h3>fixSwappedRefAlt</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+genomeFA: \(String, required\)
+</code></pre>
+
 <h3>convertSampleNames</h3>
 
-<pre><code>\.\.\.\.
+<pre><code>This function converts the sample IDs of the VCF file according 
+to a decoder file that you supply\. The decoder will decode
 mapType: The function to run\.\(String, required\)
 mapID: The ID to use for this operation\. This ID will also be 
 used in the output tag IDs generated by this 
@@ -693,12 +534,23 @@ start counting from 0\. If you use this parameter to set the
 columns, and if the file has a title line, then you should use 
 skipFirstRow or else it will be read in as if it were a 
 chromosome\.\(Integer\)
-skipFirstRow: \(Flag\)
+skipFirstRow: If this parameter is set, then this tool will 
+skip the first line on the decoder file\. This is useful if you 
+are specifying the columns using column numbers but the file 
+also has a title line\.\(Flag\)
 </code></pre>
 
 <h3>tagBedFile</h3>
 
-<pre><code>\.\.\.\.
+<pre><code>This function takes a BED file \(which can be gzipped if 
+desired\) and creates a new INFO field based on whether the 
+variant locus overlaps with a genomic region in the BED file\. 
+The new field can be either an integer that is equal to 1 if 
+there is overlap and 0 otherwise \(which is the default 
+behavior\) Or, alternatively, it can copy in the title field 
+from the bed file\. NOTE: this function only uses the first 3 
+to 5 fields of the BED file, it does not implement the optional 
+fields 10\-12 which can specify intron/exon blocks\.
 mapType: The function to run\.\(String, required\)
 mapID: The ID to use for this operation\. This ID will also be 
 used in the output tag IDs generated by this 
@@ -727,6 +579,18 @@ mapID: The ID to use for this operation\. This ID will also be
 used in the output tag IDs generated by this 
 operation\.\(String, required\)
 expr: \(String\)
+</code></pre>
+
+<h3>fixFirstBaseMismatch</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+windowSize: Sets the size of the sliding window used\. Problems 
+may occur if you have variants longer than this window size\. 
+Default is 200bp\.\(Int\)
 </code></pre>
 
 <h3>depthStats</h3>
@@ -780,6 +644,15 @@ parameter of walkVcf\.\(String\)
 superGroupList: See the \-\-superGroupList parameter of 
 walkVcf\.\(String\)
 outfile: The output matrix file path\.\(String, required\)
+</code></pre>
+
+<h3>splitMultiAllelics</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
 </code></pre>
 
 <h3>filterTags</h3>
@@ -856,6 +729,17 @@ mapID: The ID to use for this operation\. This ID will also be
 used in the output tag IDs generated by this 
 operation\.\(String, required\)
 cmd: A valid SnpSift command\(String\)
+</code></pre>
+
+<h3>getLocusDepthFromWig</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+wigfile: \(String\)
+desc: \(String\)
 </code></pre>
 
 <h3>tagVariantsFunction</h3>
@@ -948,9 +832,6 @@ mapID: The ID to use for this operation\. This ID will also be
 used in the output tag IDs generated by this 
 operation\.\(String, required\)
 geneTag: \(String, required\)
-snpEffAnnField: NOT IMPLEMENTED\(String\)
-snpEffGeneField: NOT IMPLEMENTED\(String\)
-snpEffVariantTypes: NOT IMPLEMENTED\(String\)
 expr: \(String\)
 sampleSet: \(String\)
 group: \(String\)
@@ -1007,7 +888,10 @@ start counting from 0\. If you use this parameter to set the
 columns, and if the file has a title line, then you should use 
 skipFirstRow or else it will be read in as if it were a 
 chromosome\.\(Integer\)
-skipFirstRow: \(Flag\)
+skipFirstRow: If this parameter is set, then this tool will 
+skip the first line on the decoder file\. This is useful if you 
+are specifying the columns using column numbers but the file 
+also has a title line\.\(Flag\)
 </code></pre>
 
 <h3>addVariantIdx</h3>
@@ -1040,6 +924,15 @@ expr: The variant expression, which is a true/false expression
 using the variant expression syntax\.\(String\)
 </code></pre>
 
+<h3>fixDotAltIndels</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+</code></pre>
+
 <h3>calcBurdenCountsByGroups</h3>
 
 <pre><code>mapType: The function to run\.\(String, required\)
@@ -1048,9 +941,6 @@ used in the output tag IDs generated by this
 operation\.\(String, required\)
 geneTag: \(String, required\)
 groups: \(String, required\)
-snpEffAnnField: NOT IMPLEMENTED\(String\)
-snpEffGeneField: NOT IMPLEMENTED\(String\)
-snpEffVariantTypes: NOT IMPLEMENTED\(String\)
 expr: \(String\)
 sampleSet: \(String\)
 inputGT: \(String\)
@@ -1064,6 +954,28 @@ can specify which functions output to which count file using
 this parameter\. Note that each file must be created using a 
 \-\-burdenCountsFile parameter, with the form 
 fileID:/path/to/file\.txt\(String\)
+</code></pre>
+
+<h3>rmDup</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+</code></pre>
+
+<h3>leftAlignAndTrim</h3>
+
+<pre><code>\.\.\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+windowSize: Sets the size of the sliding window used\. Problems 
+may occur if you have variants longer than this window size\. 
+Default is 200bp\.\(Int\)
+genomeFA: \(String, required\)
 </code></pre>
 
 <h3>sampleCounts</h3>
@@ -1088,6 +1000,24 @@ noMissCalc: \(Flag\)
 noAlleCalc: \(Flag\)
 noHetHomCalc: \(Flag\)
 noMultiHetCalc: \(Flag\)
+</code></pre>
+
+<h3>sampleReorder</h3>
+
+<pre><code>This function allows you to reorder the sample columns in your 
+VCF\. Set ONE of the parameters below to specify the desired 
+ordering\.
+mapType: The function to run\.\(String, required\)
+mapID: The ID to use for this operation\. This ID will also be 
+used in the output tag IDs generated by this 
+operation\.\(String, required\)
+sampleOrdering: A simple list of all the samples, in the 
+desired order\.\(String\)
+sampleOrderingFile: A file containing one sampleID per line\. 
+The samples will be reordered to match the order found in the 
+file\.\(String, required\)
+alphabetical: If this flag is set, then the samples will be 
+reordered alphabetically\.\(Flag\)
 </code></pre>
 
 <h3>genotypeFilter</h3>
@@ -1470,10 +1400,22 @@ expression returns FALSE.</p>
   <p>Always pass</p>
 </blockquote>
 
+<h4>allelesHaveNoNs:</h4>
+
+<blockquote>
+  <p>FAIL iff the variant has unknown bases, ie N, in the ALT or REF alleles.</p>
+</blockquote>
+
 <h4>isSNV:</h4>
 
 <blockquote>
   <p>PASS iff the variant is an SNV.</p>
+</blockquote>
+
+<h4>isVariant:</h4>
+
+<blockquote>
+  <p>FAIL iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele.</p>
 </blockquote>
 
 <h4>simpleSNV:</h4>

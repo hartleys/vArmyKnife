@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version2.2.320 (Updated Wed Jan 22 12:25:43 EST 2020)
+> Version2.2.321 (Updated Wed Feb  5 11:57:48 EST 2020)
 
 > ([back to help base](secondaryCommands.html))
 
