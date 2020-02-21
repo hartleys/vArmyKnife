@@ -346,6 +346,10 @@ object SVcfMapFunctions {
            ParamStr(id = "prefix",synon=Seq(),ty="String",valueString="prefix",desc="Prefix to prepend to the index field.",req=false)
          )),category = "Variant Annotation"
        ),//dropNullVariants
+       ParamStrSet("addVariantPosInfo" ,  desc = "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+         )),category = "Variant Annotation"
+       ),//dropNullVariants
        ParamStrSet("dropNullVariants" ,  desc = "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "Variant Filtering"
@@ -482,7 +486,7 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               COMMON_PARAMS("genomeFA")
          )), category = "Variant Reformatting"
-       ),
+       ), 
       ParamStrSet("splitMultiAllelics" ,  desc = "...", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               
@@ -552,6 +556,12 @@ object SVcfMapFunctions {
        ParamStrSet("dropSymbolicAlleles" ,  desc = "",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+         )), category = "File Formatting."
+       ),
+       ParamStrSet("copyColumnToInfo" ,  desc = "",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "columnID",synon=Seq(),ty="String",valueString="FILTER|ID|REF|ALT|etc",desc="",req=true)
          )), category = "File Formatting."
        ),
        //,
@@ -725,13 +735,18 @@ object SVcfMapFunctions {
             
            val ssseq = variantMapFunction.toSeq.map{ vmfString => {
               val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
-              if(fullcells.length < 2){
-                error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
-              }
+              
+              //if(fullcells.length < 2){
+              //  error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
+              //}
               val rawMapType = fullcells.head;
               val mapType = MAP_ID_MAP(rawMapType);
-              val mapID = fullcells(1);
-              val sc = fullcells.tail.tail
+              val mapID = fullcells.lift(1).getOrElse("")
+              if(mapID.contains('=')){
+                error("Error in mapFunction: second parameter must be the ID! Instead found: \""+mapID+"\"");
+              }
+              
+              val sc = fullcells.drop(2)
               //if( ! MAP_FUNCTIONS.contains(mapType)){
               //  error("FCN \"+mapTYPE+\" NOT FOUND!");
               //}
@@ -1037,7 +1052,9 @@ object SVcfMapFunctions {
              } else if(mapType == "addVariantIdx"){
                 //val (tagString,idxPrefix) = (addVariantIdx.get.split(",").head, addVariantIdx.get.split(",").lift(1) )
                 Seq[SVcfWalker](new AddVariantIdx(tag = params("mapID"),idxPrefix = params.get("prefix")))
-                
+             } else if(mapType == "addVariantPosInfo"){
+                //val (tagString,idxPrefix) = (addVariantIdx.get.split(",").head, addVariantIdx.get.split(",").lift(1) )
+                Seq[SVcfWalker](new AddVariantPosInfoWalker(params("mapID")))
              } else if(mapType == "calcBurdenMatrix"){
                //error("NOT YET IMPLEMENTED!")
                
@@ -1184,6 +1201,16 @@ object SVcfMapFunctions {
                Some(StripGenotypeData(addDummyGenotypeColumn=true))
              } else if(mapType == "dropSymbolicAlleleLines"){
                 Some(new FilterSymbolicAlleleLines());
+             } else if(mapType == "copyColumnToInfo"){
+               val qual = if(params("columnID") == "QUAL") Some(params("mapID")) else None
+               val filt = if(params("columnID") == "FILTER") Some(params("mapID")) else None
+               val idtag = if(params("columnID") == "ID") Some(params("mapID")) else None
+               Some(CopyFieldsToInfo( qualTag = qual, filterTag = filt, idTag = idtag ))
+               /*
+                * CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], copyFilterToGeno : Option[String],copyQualToGeno : Option[String],
+                              copyInfoToGeno : List[String])
+                */
+               
                /*
                 
                        ParamStrSet("copyAltToInfo" ,  desc = "",

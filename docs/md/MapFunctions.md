@@ -99,6 +99,12 @@
     buffer: \(Integer, default=0\)
     style: \(String, default=\+\)
 
+### copyColumnToInfo
+
+    
+    
+    columnID: \(String, required\)
+
 ### checkReferenceMatch
 
     
@@ -214,6 +220,11 @@
     using the variant expression syntax\.\(String, required\)
     desc: A description, to go in the info field 
     description\.\(String, default=No desc provided\)
+
+### addVariantPosInfo
+
+    
+    
 
 ### sanitize
 

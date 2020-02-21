@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.0.1 (Updated Mon Feb 10 15:57:08 EST 2020)
+> Version 3.0.2 (Updated Tue Feb 11 09:57:55 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -213,6 +213,12 @@ This utility performs a series of transformations on an input VCF file and adds 
     buffer: \(Integer, default=0\)
     style: \(String, default=\+\)
 
+### copyColumnToInfo
+
+    
+    
+    columnID: \(String, required\)
+
 ### checkReferenceMatch
 
     
@@ -328,6 +334,11 @@ This utility performs a series of transformations on an input VCF file and adds 
     using the variant expression syntax\.\(String, required\)
     desc: A description, to go in the info field 
     description\.\(String, default=No desc provided\)
+
+### addVariantPosInfo
+
+    
+    
 
 ### sanitize
 

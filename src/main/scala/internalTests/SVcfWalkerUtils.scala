@@ -1614,8 +1614,9 @@ object SVcfWalkerUtils {
   //               Seq(new CopyFieldsToInfo(qualTag = copyQualToInfo, filterTag = copyFilterToInfo, idTag = copyIdToInfo, copyFilterToGeno=copyFilterToGeno, copyInfoToGeno=copyInfoToGeno))
 
 
-  case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], copyFilterToGeno : Option[String],copyQualToGeno : Option[String],
-                              copyInfoToGeno : List[String]) extends SVcfWalker {
+  case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], 
+                              copyFilterToGeno : Option[String] = None,copyQualToGeno : Option[String]= None,
+                              copyInfoToGeno : List[String]= List[String]()) extends SVcfWalker {
     def walkerName : String = "CopyFieldsToInfo"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("qualTag",   qualTag.getOrElse("None")),

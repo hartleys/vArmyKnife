@@ -562,9 +562,9 @@ object SVcfWalkerMain {
         }
         val rawMapType = fullcells.head;
         val mapType = "concordanceCaller";
-        val mapID = fullcells(1);
+        val mapID = fullcells.lift(1).getOrElse("");
         val tagPrefix = if(mapID == "") "" else mapID + "_";
-        val sc = fullcells.tail.tail
+        val sc = fullcells.drop(2);
         val params = ParsedParamStrSet(sc, internalTests.SVcfMapFunctions.MAP_FUNCTIONS(mapType))
         params.set("mapID",mapID);
         params.set("mapType",mapType);
