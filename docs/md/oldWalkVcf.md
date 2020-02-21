@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.0.0 (Updated Mon Feb 10 15:17:06 EST 2020)
+> Version 3.0.1 (Updated Mon Feb 10 15:57:08 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -588,6 +588,15 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
+
+### extractRegion
+
+    
+    This function extracts a single region from the VCF\. NOTE: the 
+    VCF MUST BE SORTED\!
+    region: The genomic region to extract\.\(String, required\)
+    windowSize: The size of the window around the genomic region to 
+    extract\.\(Int\)
 
 ### calcBurdenCountsByGroups
 

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.0.0 (Updated Mon Feb 10 15:17:06 EST 2020)
+> Version 3.0.1 (Updated Mon Feb 10 15:57:08 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 

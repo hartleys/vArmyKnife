@@ -14568,6 +14568,56 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     }
   }
   
+  case class VcfExtractRegionFromSorted(region : String, windowSize : Option[Int] = None) extends SVcfWalker {
+    def walkerName : String = "VcfExtractRegionFromSorted"
+    def walkerParams : Seq[(String,String)]= Seq[(String,String)](
+        ("region","\""+region+"\""),
+        ("windowSize","\""+windowSize.getOrElse(0)+"\"")
+    )
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+       val outHeader = vcfHeader.copyHeader;
+       outHeader.addWalk(this);
+       
+       val chrom = region.split("[:]").head;
+       val start = region.split("[:]").lastOption.map{ x => {
+         x.split("-",2).head
+       }}.filter( _ != "" ).map{s => {
+         val xx = string2intOpt(s);
+         if(xx.isEmpty){
+           error("Error extracting genomic location: \""+region+"\": "+s+" is not an integer!");
+         }
+         xx.get - windowSize.getOrElse(0)
+       }}
+       val end = region.split("[:]").lastOption.flatMap{ x => {
+         x.split("-",2).lift(1);
+       }}.filter( _ != "" ).map{s => {
+         val xx = string2intOpt(s);
+         if(xx.isEmpty){
+           error("Error extracting genomic location: \""+region+"\": "+s+" is not an integer!");
+         }
+         xx.get + windowSize.getOrElse(0)
+       }}
+       
+       if(! vcIter.hasNext){
+         return (vcIter,outHeader);
+       } else {
+         val vcBiter = vcIter.buffered;
+         if(chrom.startsWith("chr") != vcBiter.head.chrom.startsWith("chr")){
+           warning("WARNING: region to extract: \""+region+"\" appears to use a different chromosome format than the VCF chromosome: "+vcBiter.head.chrom,"CHROM_FORMAT_MISMATCH",-1)
+         }
+         reportln("Scanning through VCF for region: \""+region+"\"","note")
+         skipWhile(vcBiter){ vc => {
+           vc.chrom != chrom || start.map{ s => vc.pos < s }.getOrElse(false)
+         }}
+         reportln("Entered region: \""+region+"\"","note")
+         (vcBiter.takeWhile( vc => { vc.chrom == chrom && end.map{ e => vc.pos <= e }.getOrElse(true) }), outHeader)
+       }
+       
+
+    }
+  }
+  
   case class VcfExpressionFilter(filterExpr : String, explainFile : Option[String] = None, filterID : Option[String] = None) extends SVcfWalker {
 
     /*def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {

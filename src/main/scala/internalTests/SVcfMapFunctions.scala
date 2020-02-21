@@ -240,6 +240,12 @@ object SVcfMapFunctions {
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="",req=false)
          )), category = "Variant Processing"
        ),
+       ParamStrSet("extractRegion" ,  desc = "This function extracts a single region from the VCF. NOTE: the VCF MUST BE SORTED!", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "region",synon=Seq(),ty="String",valueString="chr1:1000-2000",desc="The genomic region to extract.",req=true,initParam = true),
+           ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="0",desc="The size of the window around the genomic region to extract.",req=false,initParam = true)
+         )), category = "Variant Processing"
+       ),
        ParamStrSet("snpSiftAnno" ,  desc = "This function runs a SnpSift anno command", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
@@ -805,9 +811,9 @@ object SVcfMapFunctions {
              } else if(mapType == "genotypeExpression"){
                 error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
                 None
-             } else if(mapType == "keepVariantsExpression"){
-                error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
-                None
+            // } else if(mapType == "keepVariantsExpression"){
+            //    error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
+            //    None
              } else if(mapType == "sampleReorder"){
                val sampleOrd = (params.get("sampleOrdering") match {
                  case Some(s) => Some(s);
@@ -930,6 +936,8 @@ object SVcfMapFunctions {
                   ))
              } else if(mapType == "keepVariants"){
                 Some(VcfExpressionFilter(filterExpr = params("expr")))
+             } else if(mapType == "extractRegion"){
+                Some(VcfExtractRegionFromSorted(region = params("region"), windowSize = params.get("windowSize").map{ string2int(_)}  ))
              } else if(mapType == "snpSiftAnno"){
                 Some(SnpSiftAnnotater(params("mapID"),params("cmd")))
              } else if(mapType == "snpSiftDbnsfp"){

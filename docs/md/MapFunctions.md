@@ -440,6 +440,15 @@
     
     
 
+### extractRegion
+
+    
+    This function extracts a single region from the VCF\. NOTE: the 
+    VCF MUST BE SORTED\!
+    region: The genomic region to extract\.\(String, required\)
+    windowSize: The size of the window around the genomic region to 
+    extract\.\(Int\)
+
 ### calcBurdenCountsByGroups
 
     
