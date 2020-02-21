@@ -1,0 +1,820 @@
+package internalTests
+
+import htsjdk.variant._;
+import htsjdk.variant.variantcontext._;
+import htsjdk.variant.vcf._;
+import java.io.File;
+//import scala.collection.JavaConversions._
+import java.io._;
+import internalUtils.commandLineUI._;
+import internalUtils.Reporter._;
+
+//import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+
+import internalUtils.optionHolder._;
+import internalUtils.Reporter._;
+import internalUtils.stdUtils._;
+import internalUtils.genomicAnnoUtils._;
+import internalUtils.GtfTool._;
+import internalUtils.commandLineUI._;
+import internalUtils.fileUtils._;
+import internalUtils.TXUtil._;
+import internalUtils.TXUtil
+
+import internalUtils.VcfTool._;
+
+import internalUtils.VcfTool;
+
+import htsjdk.variant._;
+import htsjdk.variant.variantcontext._;
+import htsjdk.variant.vcf._;
+
+import internalUtils.genomicUtils._;
+import internalUtils.commonSeqUtils._;
+import internalTests.SVcfWalkerUtils._;
+
+import internalTests.SVcfTagFunctions._;
+
+//import com.timgroup.iterata.ParIterator.Implicits._;
+
+object SVcfWalkerMain {
+   
+  /*
+                        ADDME?: synon: Seq[String]
+                         hidden : Boolean = false,
+                         deprecated : Boolean = false,
+                         alpha : Boolean = false,
+                         category : String = "General",
+                         withinCatPriority : Int = 1000,
+                         ord : Ordering[String] = ParamStrSetDefaultOrdering
+   */
+      val DEFAULT_VCF_CODES = VCFAnnoCodes();
+  
+  class WalkVcf extends CommandLineRunUtil {
+     override def priority = 1;
+     
+     val vcfFilterManualTitle = "VCF Line Filter Expressions"
+     val gtFilterManualTitle = "Genotype Filter Expressions"
+     
+     val vcfFilterManualDesc = ""+
+                              ""+
+                              ""+
+                              ""+
+                              ""
+     val gtFilterManualDesc = ""+
+                              ""+
+                              ""+
+                              ""+
+                              "";
+
+
+                              
+    /* val altCommandDocText : Seq[String] = Seq("Secondary Commands:",
+                            "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
+                            "which perform other tasks. ",
+                            "These tools can be invoked with the command:",
+                            "    varmyknife --CMD commandName [options]") ++ 
+                               runner.runner.sortedCommandList.filter{ case (arg,cmdMk) => { ! cmdMk().isAlpha }}.flatMap{ case (arg,cmdMaker) => {
+                                  val parser = cmdMaker().parser;
+                                  Seq[String](arg, parser.getDescription)
+                                  //sb.append("### ["+arg+"]("+arg+".html)\n\n");
+                                  //sb.append("> "+(parser.getDescription).replaceAll("_","\\\\_") + "\n\n");
+                                }}*/
+     val altCommandDocText : Seq[String] = Seq("Secondary Commands:",
+                            "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
+                            "which perform other tasks. ",
+                            "These tools can be invoked with the command:",
+                            "    varmyknife --CMD commandName [options]",
+                            "For more information, use the command:" ,
+                            "    varmyknife --help CMD",
+                            "For a listing of all secondary commands, use the command: ",
+                            "    varmyknife --help secondaryCommands") 
+                            
+     val altCommandDocMd : Seq[String] = Seq("## Secondary Commands:",
+                            "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
+                            "which perform other tasks. ",
+                            "These tools can be invoked with the command:",
+                            "    varmyknife --CMD commandName [options]",
+                            "For more information see the [secondary command page](secondaryCommands.html), or use the command:" ,
+                            "    varmyknife --help CMD",
+                            "For a listing of all secondary commands, use the command: ",
+                            "    varmyknife --help secondaryCommands") 
+     val manualExtras = 
+                        internalTests.SVcfMapFunctions.MAPFUNCTIONS_getBlockStringManual +
+                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getBlockStringManual+
+                        sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
+                        sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +
+                        altCommandDocText.map{ acm => {
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
+                        }}.mkString("\n");
+                        
+     val markdownManualExtras = 
+                        internalTests.SVcfMapFunctions.MAPFUNCTIONS_getMarkdownStringManual +
+                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getMarkdownStringManual+
+                        sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
+                        sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +
+                        altCommandDocMd.map{ acm => {
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
+                        }}.mkString("\n");
+
+     /*
+      * 
+      * Categories:
+      * 
+      * "Input Parameters",0
+      * "Universal Parameters",1
+      * "Preprocessing",2
+      * 
+      * "Annotation", 10
+      * "Sample Stats",12
+      * "Transcript Annotation",15
+      * "SnpEff Annotation Processing",20
+      * 
+      * "Filtering, Genotype-Level",35
+      * "Filtering, Variant-Level"
+      * "Merge Multicaller VCFs",50
+      * 
+      * "Postprocessing",100
+      * 
+      * "ZZ ALPHA PARAMS, not for general use", 9000
+      * "DEPRECATED",9990
+      * "INCOMPLETE",9995
+      * 
+      * 
+      * 
+      * 
+      */
+                        
+     val parser : CommandLineArgParser = 
+       new CommandLineArgParser(
+          command = "walkVcf", 
+          aliases = Seq(),
+          quickSynopsis = "", 
+          synopsis = "", 
+          description = "This utility performs a series of transformations on an input VCF file and adds an array of informative tags.",
+          argList = 
+                    new UnaryArgument( name = "tableInput",
+                                         arg = List("--tableInput"), // name of value
+                                         argDesc = "todo write desc"+
+                                                   "" // description
+                                       ).meta(true,"ZZ ALPHA PARAMS, not for general use", 9000) ::
+                    new UnaryArgument( name = "tableOutput",
+                                         arg = List("--tableOutput"), // name of value
+                                         argDesc = "todo write desc"+
+                                                   "" // description
+                                       ).meta(true,"ZZ ALPHA PARAMS, not for general use", 9000) ::
+     
+                    new BinaryMonoToListArgument[String](
+                                         name = "burdenCountsFile",
+                                         arg = List("--burdenCountsFile"), 
+                                         valueName = "table.file.txt",
+                                         argDesc = "If multiple count files are desired for different burden counters, you must give each file an ID using the format: fileID:/path/to/file.txt" // description
+                                        ).meta(true,"Sample Stats-DEPRECATED") ::
+                                        
+                    new BinaryOptionArgument[String](
+                                         name = "genomeFA", 
+                                         arg = List("--genomeFA"), 
+                                         valueName = "genome.fa.gz",  
+                                         argDesc =  "The genome fasta file. Can be gzipped or in plaintext."
+                                        ).meta(false,"Universal Parameters",1) ::
+                    
+                    new BinaryOptionArgument[String](
+                                         name = "groupFile", 
+                                         arg = List("--groupFile"), 
+                                         valueName = "groups.txt",  
+                                         argDesc =  "File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID."
+                                        ).meta(false,"Sample Info") :: 
+                    new BinaryOptionArgument[String](
+                                         name = "superGroupList", 
+                                         arg = List("--superGroupList"), 
+                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
+                                         argDesc =  "A list of top-level supergroups. Requires the --groupFile parameter to be set."
+                                        ).meta(false,"Sample Info") :: 
+                                        
+                    new BinaryOptionArgument[List[String]](
+                                         name = "chromList", 
+                                         arg = List("--chromList"), 
+                                         valueName = "chr1,chr2,...",  
+                                         argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. "+
+                                                    "For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process "+
+                                                    "annotation data for the other chromosomes."
+                                        ).meta(false,"Preprocessing") ::
+                    
+                    new UnaryArgument( name = "infileList",
+                                         arg = List("--infileList"), // name of value
+                                         argDesc = "If this option is set, then the infile parameter is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. "+
+                                                   "Multiple VCF files will be concatenated and used as input. Note that only the first file's headers will be used, "+
+                                                   "and if any of the subsequent files have tags or fields that are not present in the first VCF file then errors may occur. "+
+                                                   "Also note that if the VCF file includes sample genotypes then the samples MUST be in the same order."+
+                                                   ""+
+                                                   "" // description
+                                       ).meta(false,"Input Parameters",0) ::
+                                       
+                    new BinaryOptionArgument[String](
+                                         name = "infileListInfix", 
+                                         arg = List("--infileListInfix"), 
+                                         valueName = "infileList.txt",  
+                                         argDesc =  "If this command is included, then all input files are treated very differently. "+
+                                                    "The input VCF file path (or multiple VCFs, if you are running a VCF merge of some sort) must contain a BAR "+
+                                                    "character. The file path string will be split at the bar character and the string infixes from the supplied "+
+                                                    "infileList.txt infix file will be inserted into the break point. This can be very useful for merging multiple "+
+                                                    "chromosomes or genomic-region-split VCFs."
+                                        ).meta(false,"Input Parameters") ::
+                                        
+                                        
+                    new UnaryArgument( name = "splitOutputByChrom",
+                                         arg = List("--splitOutputByChrom"), // name of value
+                                         argDesc = "If this option is set, the output will be split up into parts by chromosome. "+
+                                                   "NOTE: The outfile parameter must be either a file prefix (rather than a full filename), "+
+                                                   "or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being " +
+                                                   "'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'. "+
+                                                   ""// description
+                                       ).meta(false,"Output Parameters", 110) ::
+                    new BinaryOptionArgument[String]( name = "splitOutputByBed",
+                                         arg = List("--splitOutputByBed"), // name of value\
+                                         valueName = "intervalBedFile.bed",
+                                         argDesc = "If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. "+
+                                                   "An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, "+
+                                                   "and if this 'name' column contains a unique name with no special characters then this name column will be used as the "+
+                                                   "infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then "+
+                                                   "the files will simply be numbered. "+
+                                                   "NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), "+
+                                                   "or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being " +
+                                                   "'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'. "+
+                                                   ""// description
+                                       ).meta(false,"Preprocessing") ::
+                                       
+                    new BinaryOptionArgument[Int](
+                                         name = "numLinesRead", 
+                                         arg = List("--numLinesRead","--testRunLines","--test"), 
+                                         valueName = "N",  
+                                         argDesc =  "If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes."
+                                        ).meta(false,"Input Parameters") ::
+                    new UnaryArgument( name = "testRun",
+                                         arg = List("--testRun","--test","-t"), // name of value
+                                         argDesc = "Only read the first 1000 lines. Equivalent to --numLinesRead 1000. Intended for testing purposes."// description
+                                       ).meta(true,"Input Parameters") ::
+                                        
+                    new BinaryMonoToListArgument[String](
+                                         name = "variantMapFunction", 
+                                         arg = List("--variantMapFunction","--FCN","--fcn","-F"),
+                                         valueName = "FunctionType|ID|param1=p1|param2=p2|...",
+                                         argDesc =  "TODO DESC"
+                                        ).meta(false,"Annotation") :: 
+                                        
+                    new BinaryArgument[String](name = "gtTag",
+                                           arg = List("--gtTag"),  
+                                           valueName = "GT", 
+                                           argDesc = "The genotype tag to use in all functions. Note that many functions have the option to override this.",
+                                           defaultValue = Some("GT")
+                                           ).meta(true,"Sample Stats") ::
+                                        
+                    new FinalArgument[String](
+                                         name = "infile",
+                                         valueName = "infile.vcf.gz",
+                                         argDesc = "input VCF file. Can be gzipped or in plaintext. Can use dash - to read from STDIN. Note that multifile processing will obviously not be available in this mode." // description
+                                        ).meta(false,"Mandatory Inputs") ::
+
+                    new FinalArgument[String](
+                                         name = "outfile",
+                                         valueName = "outfile.vcf.gz",
+                                         argDesc = "The output file. Can be gzipped or in plaintext. Can use dash - to write to STDOUT Note that multifile processing will obviously not be available in this mode."// description
+                                        ).meta(false,"Mandatory Inputs") ::
+                    internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS,
+
+             manualExtras =  manualExtras,
+             markdownManualExtras =  markdownManualExtras
+       );
+     
+     def run(args : Array[String]) {
+       val out = parser.parseArguments(args.toList.tail);
+       if(out){
+          runSAddTXAnno( parser.get[String]("infile"),
+                       parser.get[String]("outfile"),
+                       genomeFA = parser.get[Option[String]]("genomeFA"),
+                       chromList = parser.get[Option[List[String]]]("chromList"),
+                       groupFile = parser.get[Option[String]]("groupFile"),
+                       superGroupList = parser.get[Option[String]]("superGroupList"),
+                       infileList = parser.get[Boolean]("infileList"),
+                       infileListInfix = parser.get[Option[String]]("infileListInfix"),
+                       numLinesRead = parser.get[Option[Int]]("numLinesRead"),
+                splitOutputByChrom = parser.get[Boolean]("splitOutputByChrom"),
+                splitOutputByBed = parser.get[Option[String]]("splitOutputByBed"),
+                //tagVariantsFunction = parser.get[List[String]]("tagVariantsFunction"),
+                tableInput = parser.get[Boolean]("tableInput"),
+                tableOutput = parser.get[Boolean]("tableOutput"),
+                //tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression"),
+                variantMapFunction = parser.get[List[String]]("variantMapFunction") ,
+                burdenCountsFile = parser.get[List[String]]("burdenCountsFile"),
+                calcStatGtTag = parser.get[String]("gtTag")
+             )
+       }
+     }
+  }
+
+  
+  def runSAddTXAnno(
+                vcffile : String, outfile : String, 
+                genomeFA : Option[String],
+                chromList : Option[List[String]],
+                groupFile : Option[String],
+                superGroupList : Option[String],
+                infileList : Boolean = false,
+                infileListInfix : Option[String] = None,
+                vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
+                numLinesRead : Option[Int] = None,
+                splitOutputByChrom : Boolean = false,
+                splitOutputByBed : Option[String] = None,
+                //tagVariantsFunction : List[String] = List[String](),
+                tableInput : Boolean = false,
+                tableOutput : Boolean = false,
+                //tagVariantsGtCountExpression : List[String]  = List[String](),
+                variantMapFunction : List[String] = List[String](),
+                burdenCountsFile : List[String] = List[String](),
+                calcStatGtTag : String = "GT"
+                )  {
+
+
+    
+
+    /*
+     **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     */
+    
+            val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, None, superGroupList);
+
+            
+    //val summaryWriter = if(summaryFile.isEmpty) None else Some(openWriterSmart(summaryFile.get));
+    val burdenWriterMap = burdenCountsFile.map{ bcf => 
+      val cc = bcf.split("[:]");
+      if(cc.length == 2){
+        (cc(0),openWriterSmart(cc(1)));
+      } else if(cc.length > 2){
+        error("Error: burdenCountsFile must be at most 2 elements seperated by a colon: fileID and filePath. Or just filepath");
+        ("",openWriterSmart(""))
+      } else {
+        ("",openWriterSmart(bcf))
+      }
+      
+    }.toMap;
+    
+    burdenWriterMap.foreach{ case (id,bw) => {
+      //out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+      bw.write("tagID\tgeneID\tburdenCt\taltCt\tvarCt\n");
+    }}
+    reportln("Initializing VCF walker ... "+getDateAndTimeString,"debug");
+
+    val deepDebugMode = false;
+    val debugMode = true;
+    
+    val ccFcnIdx = variantMapFunction.toSeq.indexWhere{ vmfString => {
+      val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
+      val rawMapType = fullcells.head;
+      val mapType = internalTests.SVcfMapFunctions.MAP_ID_MAP(rawMapType);
+      mapType == "concordanceCaller"
+    }}
+
+    
+    val initWalkers : Seq[SVcfWalker] =         
+        ({
+            var pprm = Seq[(String,String)]( ("infile",vcffile) );
+            chromList.foreach{ cl => {
+              pprm = pprm ++ Seq(("chromList",cl.mkString("|")));
+            }}
+            infileListInfix.foreach{ ili => {
+              pprm = pprm ++ Seq(("infileListInfix",ili));
+            }} 
+            Seq[SVcfWalker]( PassThroughSVcfWalker("inputVCF",debugMode,false,pprm) )
+        }) ++ (
+            if(deepDebugMode){
+              Seq[SVcfWalker]( DebugSVcfWalker() )
+            } else {
+              Seq[SVcfWalker]()
+            }
+        ) ++ ({
+            
+            if( ccFcnIdx >= 1){
+              SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.take(ccFcnIdx), 
+                                               chromList=chromList, 
+                                               burdenCountsFile=burdenCountsFile, 
+                                               groupFile=groupFile, 
+                                               superGroupList=superGroupList, 
+                                               genomeFA=genomeFA, 
+                                               calcStatGtTag=calcStatGtTag);
+            } else {
+              Seq[SVcfWalker]()
+            }
+        })
+        
+        
+
+        
+    val postWalkers : Seq[SVcfWalker] = 
+        ({
+            SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.drop(ccFcnIdx+1), 
+                                               chromList=chromList, 
+                                               burdenCountsFile=burdenCountsFile, 
+                                               groupFile=groupFile, 
+                                               superGroupList=superGroupList, 
+                                               genomeFA=genomeFA, 
+                                               calcStatGtTag=calcStatGtTag);
+        }) ++ ( 
+            if(debugMode){
+              Seq[SVcfWalker]( PassThroughSVcfWalker("outputVCF") )
+            } else {
+              Seq[SVcfWalker]()
+            }
+        )
+        
+        
+            /*
+             --varMatch
+               --varMatchDbName
+               --varMatchDbFile
+               --varMatchPathoExpression
+               --varMatchBenignExpression
+               --varMatchMetadataList
+            AddDatabaseMatching(txToGeneFile =txToGeneFile , refSeqFile =addCanonicalTags,
+                            chromList = chromList, 
+                            geneSet : Option[Set[String]],
+                            dbdata : Seq[(String,String,String,Option[String],Option[String],Seq[String])],
+                               //dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags
+                            tagInfix : String = ""
+                            
+                            )
+            */
+        
+      addProgressReportFunction(f = (i) => {
+        getWarningAndNoticeTallies("   ").mkString("\n      ")
+      })
+
+      val validStringRegex = java.util.regex.Pattern.compile("[^a-zA-Z0-9_ .+-]");
+      
+      val splitFuncOpt : Option[(String,Int) => Option[String]] = splitOutputByBed.map{ f => {
+              val arr : internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String] = internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String](false);
+              reportln("   Beginning bed file read: "+f+" ("+getDateAndTimeString+")","debug");
+              val lines = getLinesSmartUnzip(f);
+              var cells = lines.map{line => line.split("\t")}.toVector.map{cells => {
+                (cells(0),string2int(cells(1)),string2int(cells(2)),cells.lift(3))
+              }}
+              var names = cells.map{ case (chrom,start,end,nameOpt) => {
+                nameOpt.getOrElse(".")
+              }}
+              val namesValid = names.forall{ name => {
+                val nameValid = ! ( validStringRegex.matcher(name).find());
+                if(! nameValid){
+                  notice("","IntervalNameNotValid: \""+name+"\"",1)
+                }
+                nameValid;
+              }}
+              val namesUnique = names.distinct.length == names.length
+              if(! (namesValid && namesUnique) ){
+                val spanNumCharLen = String.valueOf( names.length ).length();
+                names = names.indices.map{ i => {
+                  "part"+zeroPad(i,spanNumCharLen)
+                }}.toVector
+              }
+              val cellsFinal = cells.zip(names).map{ case ((chrom,start,end,nameOpt),name) => {
+                (chrom,start,end,name)
+              }}
+              cellsFinal.foreach{ case (chrom,start,end,name) => {
+                  if(start != end){ 
+                    arr.addSpan(internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', start,end),name);
+                  }
+              }}
+              arr.finalizeStepVectors;
+              val outFunc : ((String,Int) => Option[String]) = ((c : String, p : Int) => {
+                val currIvNames = arr.findIntersectingSteps(internalUtils.commonSeqUtils.GenomicInterval(c, '.', p,p+1)).foldLeft(Set[String]()){ case (soFar,(iv,currSet)) => {
+                  soFar ++ currSet
+                }}.toList.sorted
+                if(currIvNames.size > 1){
+                  warning("Warning: Variant spans multiple intervals in the split interval BED file.","VariantSpansMultipleSplitterIVs",100)
+                }// else if(currIvNames.size == 0){
+                //  warning("Warning: variant found on span that is not covered by any interval in the span interval split bed! This variant will be DROPPED!","VariantSpandsNoneSplitterIVs",100);
+                //}
+                currIvNames.headOption
+              })
+          Some(outFunc)
+      }}.getOrElse({
+        if(splitOutputByChrom){
+          Some((
+              ((c : String, p : Int) => {
+                Some(c);
+              })
+          ))
+        } else {
+          None
+        }
+      })
+
+
+      
+      
+    if(ccFcnIdx >= 0){
+      val preWalker : SVcfWalker = chainSVcfWalkers(initWalkers);
+      
+      if( ! vcffile.contains(';') ) error("Error: runEnsembleMerger is set, the infile parameter must contain semicolons (\";\")");
+      val vcfList = vcffile.split(";");
+      val (iterSeq,headerSeq) = vcfList.toSeq.zipWithIndex.map{ case (vf,idx) => {
+          val (infiles,infixes) : (String,Vector[String]) = infileListInfix match {
+            case Some(ili) => {
+              val (infilePrefix,infileSuffix) = (vf.split("\\|").head,vf.split("\\|")(1));
+              val infixes = getLinesSmartUnzip(ili).toVector
+              (infixes.map{ infix => infilePrefix+infix+infileSuffix }.mkString(","), infixes)
+            }
+            case None => {
+              (vf,Vector());
+            }
+          }
+          val ifl = infileListInfix match {
+            case Some(ifi) => false;
+            case None => infileList;
+          }
+          val (vcIterRaw, vcfHeaderRaw) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = ifl, withProgress = idx == 0, infixes = infixes);
+          val (vcIter,vcfHeader) = preWalker.walkVCF(vcIterRaw,vcfHeaderRaw);
+          val vcIterBuf = vcIter.buffered;
+          (vcIterBuf,vcfHeader);
+      }}.unzip;
+      
+      val vmfString = variantMapFunction(ccFcnIdx)
+      val params = {
+        val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
+        if(fullcells.length < 2){
+          error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
+        }
+        val rawMapType = fullcells.head;
+        val mapType = "concordanceCaller";
+        val mapID = fullcells(1);
+        val tagPrefix = if(mapID == "") "" else mapID + "_";
+        val sc = fullcells.tail.tail
+        val params = ParsedParamStrSet(sc, internalTests.SVcfMapFunctions.MAP_FUNCTIONS(mapType))
+        params.set("mapID",mapID);
+        params.set("mapType",mapType);
+        params.set("tagPrefix",tagPrefix);
+        params;
+      }
+      
+      val inputNames : List[String]  = params.get("callerNames").map{ x => x.split(",").toList }.getOrElse(headerSeq.indices.toList.map{"C"+_.toString});
+      val inputPriority : List[String]  = params.get("priority").map{ x => x.split(",").toList }.getOrElse(inputNames);
+      val decision : String  = params.get("gtDecisionMethod").getOrElse("priority");
+      val CC_ignoreSampleIds = params.isSet("ignoreSampleIds")
+      val CC_ignoreSampleOrder = params.isSet("ignoreSampleOrder")
+      
+      val (ensIter,ensHeader) = ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
+                                                        //genomeFA = genomeFA,
+                                                        //windowSize = 200, 
+                                                        singleCallerPriority = inputPriority,
+                                                        CC_ignoreSampleIds = CC_ignoreSampleIds, CC_ignoreSampleOrder=CC_ignoreSampleOrder);
+      val finalWalker : SVcfWalker = chainSVcfWalkers(Seq[SVcfWalker](
+          new EnsembleMergeMetaDataWalker(inputVcfTypes = inputPriority,
+                                          decision = decision)
+          /*
+                                    simpleMergeInfoTags : Seq[String] = Seq[String](),
+                                    simpleMergeFmtTags : Seq[String] = Seq[String]("GQ|Final Ensemble genotype quality score"),
+                                    gtStyleFmtTags : Seq[String] = Seq[String]("GT|Final ensemble genotype"),
+                                    adStyleFmtTags : Seq[String] = Seq[String]("AD|Final ensemble allele depths"),
+                                    decision : String = "majority_firstOnTies") */
+      ) ++ postWalkers);
+      
+      finalWalker.walkToFileSplit(outfile,ensIter,ensHeader, splitFuncOpt = splitFuncOpt);
+      
+    } else {
+        
+      val allWalkers : Seq[SVcfWalker] = initWalkers ++ postWalkers;
+      val finalWalker : SVcfWalker = chainSVcfWalkers(allWalkers)
+      
+      reportln("All VCF Walkers initialized! "+getDateAndTimeString,"debug");
+      infileListInfix match {
+        case Some(ili) => {
+          if( ! vcffile.contains('|') ) error("Error: infileListInfix is set, the infile parameter must contain a bar symbol (\"|\")");
+          
+          val (infilePrefix,infileSuffix) = (vcffile.split("\\|").head,vcffile.split("\\|")(1));
+          val infiles = getLinesSmartUnzip(ili).map{ infix => infilePrefix+infix+infileSuffix }.mkString(",")
+          finalWalker.walkVCFFiles(infiles,outfile, chromList, numLinesRead = numLinesRead, inputFileList = false, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
+        }
+        case None => {
+          if( (! tableInput) && (! tableOutput)){
+            reportln("No table input and no table output. Reading/writing in VCF format. ("+getDateAndTimeString+")","debug")
+            finalWalker.walkVCFFiles(vcffile,outfile, chromList, numLinesRead = numLinesRead, inputFileList = infileList, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
+          } else {
+            val (vcIterRaw, vcfHeader) = if(!tableInput){
+              reportln("No --tableInput param set. Reading in VCF format.","debug")
+              getSVcfIterators(infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList);
+            } else {
+              reportln("PARAM --tableInput set. Reading in TABLE format.","debug")
+              getSVcfIteratorsFromTable(infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList);
+            }
+            val (newIter,newHeader) = finalWalker.walkVCF(vcIterRaw,vcfHeader);
+            if(tableOutput){
+              reportln("PARAM --tableOutput set. Writing in TABLE format.","debug")
+              if(splitFuncOpt.isDefined){
+                warning("Cannot write to file and split!","CANNOT_SPLIT_TABLES",-1); //note, move this check up and add more compatibility checks!
+              }
+              finalWalker.writeToTableFile(outfile = outfile, vcIter = newIter,vcfHeader = newHeader)
+            } else {
+              reportln("PARAM --tableOutput NOT set. Writing in VCF format.","debug")
+              finalWalker.writeToFileSplit(outfile=outfile, vcIter = newIter, vcfHeader = newHeader, dropGenotypes = false, splitFuncOpt = splitFuncOpt);
+            }
+          }
+          
+          /*
+           
+          val (vcIterRaw, vcfHeader) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = inputFileList, infixes = infixes);
+          val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+          writeToFileSplit(outfile=outfile,vcIter=newIter,vcfHeader=newHeader,dropGenotypes=dropGenotypes, splitFuncOpt=splitFuncOpt);
+          
+          walkToFileSplit(outfile=outfile, vcIter = vcIterRaw, vcfHeader = vcfHeader, dropGenotypes = dropGenotypes, splitFuncOpt = splitFuncOpt);
+       
+           */
+        }
+      }
+    }
+    
+    burdenWriterMap.foreach{ case (id,bw) => {
+      reportln("Closing burden count writer: "+id,"note");
+      bw.close();
+    }}
+    //if(! summaryWriter.isEmpty) summaryWriter.get.close();
+  }
+  
+  
+  
+
+  
+  /*
+   * runEnsembleMerger
+   *     def walkVCFFiles(infiles : String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int], inputFileList : Boolean, dropGenotypes : Boolean = false){
+   * 
+     def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
+                            headers : Seq[SVcfHeader], 
+                            inputVcfTypes : Seq[String], genomeFA : Option[String],
+                            windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
+   */
+  
+  
+/*
+  class CmdAddVcfInfo extends CommandLineRunUtil {
+     override def priority = 1;
+     val parser : CommandLineArgParser = 
+       new CommandLineArgParser(
+          command = "AddVcfInfo", 
+          quickSynopsis = "", 
+          synopsis = "", 
+          description = "" + ALPHA_WARNING,
+          argList = 
+                    new BinaryOptionArgument[List[String]](
+                                         name = "chromList", 
+                                         arg = List("--chromList"), 
+                                         valueName = "chr1,chr2,...",  
+                                         argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
+                                        ) ::
+                    new UnaryArgument( name = "inputFileList",
+                                         arg = List("--inputFileList"), // name of value
+                                         argDesc = ""+
+                                                   "" // description
+                                       ) ::
+                    new BinaryArgument[String](
+                                         name = "infoPrefix", 
+                                         arg = List("--infoPrefix"), 
+                                         valueName = "prefix",  
+                                         argDesc =  "",
+                                         defaultValue = Some("")
+                                        ) ::
+                    new FinalArgument[String](
+                                         name = "infile1",
+                                         valueName = "variants.vcf",
+                                         argDesc = "input VCF file. Can be gzipped or in plaintext." // description
+                                        ) ::
+                    new FinalArgument[String](
+                                         name = "infile2",
+                                         valueName = "variants.vcf",
+                                         argDesc = "input VCF file. Can be gzipped or in plaintext." // description
+                                        ) ::
+                    new FinalArgument[String](
+                                         name = "outfile",
+                                         valueName = "outfile.vcf.gz",
+                                         argDesc = "The output file. Can be gzipped or in plaintext."// description
+                                        ) ::
+                    internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS );
+
+     def run(args : Array[String]) {
+       val out = parser.parseArguments(args.toList.tail);
+       if(out){
+         AddVcfInfo(
+             infile2 = parser.get[String]("infile2")
+         ).walkVCFFiles(
+             infiles = parser.get[String]("infile1"),
+             outfile = parser.get[String]("outfile"),
+             chromList = parser.get[Option[List[String]]]("chromList"),
+             numLinesRead = None,
+             inputFileList = parser.get[Boolean]("inputFileList"),
+             dropGenotypes = false
+         )
+       }
+     }
+  }
+
+  case class AddVcfInfo(infile2 : String) extends SVcfWalker {
+    
+    //val readers = fileList.map{case (infile,t) => SVcfLine.readVcf(getLinesSmartUnzip(infile), withProgress = false)};
+    //val headers = readers.map(_._1);
+    //val iteratorArray : Array[BufferedIterator[SVcfVariantLine]] = readers.map(_._2.buffered).toArray;
+    //    val currPos = vcSeq.head.pos;
+     //   val currChrom = vcSeq.head.chrom;
+    //    iteratorArray.indices.foreach{i => {
+    //      //iteratorArray(i) = iteratorArray(i).dropWhile(vAlt => vAlt.pos < currPos);
+    //      skipWhile(iteratorArray(i))(vAlt => vAlt.chrom != currChrom);
+    //      skipWhile(iteratorArray(i))(vAlt => vAlt.pos < currPos && vAlt.chrom == currChrom);
+     //   }}
+    //    val otherVcAtPos = iteratorArray.indices.map{i => {
+     //     extractWhile(iteratorArray(i))(vAlt => vAlt.pos == currPos && vAlt.chrom == currChrom);
+    //    }}
+    
+    ////val (header2,rr) = SVcfLine.readVcf(getLinesSmartUnzip(infile2), withProgress = false);
+    
+    class vcfLineCircleIterator(f : String) extends BufferedIterator[SVcfVariantLine] {
+      var (header,currIterTemp) = SVcfLine.readVcf(getLinesSmartUnzip(f), withProgress = false)
+      var currIter = currIterTemp.buffered;
+      def head = currIter.head;
+      def hasNext : Boolean = true;
+      def next : SVcfVariantLine = if(currIter.hasNext){
+        currIter.next;
+      } else {
+        currIter = SVcfLine.readVcf(getLinesSmartUnzip(f), withProgress = false)._2.buffered;
+        currIter.next;
+      }
+    }
+    
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      
+    }
+  }*/
+
+    /*
+     **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
+     */
+  
+  
+}
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

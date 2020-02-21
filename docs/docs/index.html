@@ -30,14 +30,12 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 2.2.325 (Updated Mon Feb 10 11:41:38 EST 2020)</p>
+  <p>Version 3.0.0 (Updated Mon Feb 10 15:17:06 EST 2020)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
 
 </section> <h2>Help for vArmyKnife command "walkVcf"</h2> <section>
-
-<p>ALIASES: multiStepPipeline</p>
 
 </section> <h2>USAGE:</h2> <section>
 
@@ -90,158 +88,12 @@ varmyknife [java_options] --CMD commandName [options]
   <p>If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes. (Int)</p>
 </blockquote>
 
-<h4>--testRun:</h4>
-
-<blockquote>
-  <p>Only read the first 1000 lines. Equivalent to --numLinesRead 1000. Intended for testing purposes. (flag)</p>
-</blockquote>
-
 <h3>Universal Parameters:</h3>
 
 <h4>--genomeFA genome.fa.gz:</h4>
 
 <blockquote>
   <p>The genome fasta file. Can be gzipped or in plaintext. (String)</p>
-</blockquote>
-
-<h3>Preprocessing:</h3>
-
-<h4>--splitMultiAllelics:</h4>
-
-<blockquote>
-  <p>If this flag is used, multiallelic variants will be split into multiple separate VCF lines. In order to preserve cross-allele genotypes and multiallelic FORMAT fields, the star allele will be used to indicate a different alt allele on a different variant line. The star-allele encoding can be deactivated using the --splitMultiAllelicsNoStarAllele option instead. (flag)</p>
-</blockquote>
-
-<h4>--splitMultiAllelicsNoStarAlle:</h4>
-
-<blockquote>
-  <p>If this flag is used, multiallelic variants will be split into multiple separate VCF lines. Two copies of the AD tag will be created, AD and AD_multAlle. (flag)</p>
-</blockquote>
-
-<h4>--dropSpanIndels:</h4>
-
-<blockquote>
-  <p>Requires splitMultiAllelic. Drops spanning indels, which are marked with an asterisk allele. (flag)</p>
-</blockquote>
-
-<h4>--convertROAOtoAD:</h4>
-
-<blockquote>
-  <p>If this flag is used, then the RO/AO FORMAT fields used by certain callers (freebayes) will be merged and copied over into a new AD tag. (flag)</p>
-</blockquote>
-
-<h4>--nonNullVariantsOnly:</h4>
-
-<blockquote>
-  <p>If this flag is used, only write variants that have non-null alt alleles. (flag)</p>
-</blockquote>
-
-<h4>--chromList chr1,chr2,...:</h4>
-
-<blockquote>
-  <p>List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--extractInterval chr1:1000-5000:</h4>
-
-<blockquote>
-  <p>This tool will extract variants across the given genomic interval. All other loci will be discarded. Note: the VCF MUST be sorted! Furthermore: this extract will occur before any leftAlignAndTrim or similar preprocessing steps. (String)</p>
-</blockquote>
-
-<h4>--splitOutputByBed intervalBedFile.bed:</h4>
-
-<blockquote>
-  <p>If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)</p>
-</blockquote>
-
-<h4>--fixSwappedRefAlt:</h4>
-
-<blockquote>
-  <p>Checks if the ref allele matches the alt allele. IF they don't match, it checks if the alt allele matches and switches the ref/alt if it does. Otherwise it simply adds a warning tag. (flag)</p>
-</blockquote>
-
-<h4>--leftAlignAndTrim:</h4>
-
-<blockquote>
-  <p>Left align and trim the primary input VCF using a modified and ported version of the GATK v3.8-2 LeftAlignAndTrim walker. (flag)</p>
-</blockquote>
-
-<h4>--leftAlignAndTrimWindow N:</h4>
-
-<blockquote>
-  <p>Set the window size used for left align and trim. Indels larger than this will not be left aligned. (Int)</p>
-</blockquote>
-
-<h4>--dropSymbolicAlleleLines:</h4>
-
-<blockquote>
-  <p>Drop all variant lines that contain symbolic alleles. If this flag is used with splitMultiAllelic, then the non-symbolic alleles of mixed-type variants will be preserved. (flag)</p>
-</blockquote>
-
-<h4>--universalTagPrefix VAK_:</h4>
-
-<blockquote>
-  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
-</blockquote>
-
-<h3>Filtering, Variant-Level:</h3>
-
-<h4>--keepVariantsExpression vcfLineFilterExpression:</h4>
-
-<blockquote>
-  <p>If this parameter is set, then VCF lines will be dropped if and only if they FAIL the provided vcf line filter expression. See the section on VCF line filtering below.  (String)</p>
-</blockquote>
-
-<h3>Merge Multicaller VCFs:</h3>
-
-<h4>--concordanceCaller:</h4>
-
-<blockquote>
-  <p>This parameter is used to run the ConcordanceCaller utility, which is designed to merge the variant calls from multiple variant callers on the same sample set. If this parameter is raised, then the input VCF should instead be formatted as a comma delimited list of N VCF files. Each of the N files will be run through an initial subset of the final VCF walkers including any of the following that are indicated by the other options: addVariantIdx,nonVariantFilter,chromosome converter,inputTag filters,addVariantPosInfo,splitMultiAllelics,leftAlignAndTrim, and convertROtoAD The variant data output stream from these walkers will be merged and final GT, AD, and GQ fields will be added if the requisite information is available. Final genotypes will be assigned by plurality rule if any genotype has a simple plurality of all nonmissing caller calls, and if no genotype has a plurality then the genotype will be chosen from the highest priority caller, chosen in the order they are named in the  (flag)</p>
-</blockquote>
-
-<h4>--concordanceCallerNames vcfName1,vcfName2,...:</h4>
-
-<blockquote>
-  <p>This parameter should be a comma delimited list of names, with the same length as --singleCallerVcfs. These names will be used in the folder-over VCF tags. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--concordanceCallerPriority vcfName1,vcfName2,...:</h4>
-
-<blockquote>
-  <p>This parameter should be a comma delimited list composed of the VCF names from the --singleCallerVcfNames parameter (or a subset of that list). Single callers can be left off this list and their calls will not be used to determine genotype, allele depth, and genotype quality information, although their info fields will still be merged in, and they will still appear in the callerSet field. By default: genotype calls are assigned using the most common call across all callers. Ties are broken using the priority list above, in order of highest priority (most trusted) to lowest priority (least trusted). This behavior can be altered using the --ensembleGenotypeDecision parameter. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
-<h4>--concordanceCallerIgnoreSampleIds:</h4>
-
-<blockquote>
-  <p>This option is only used by the ConcordanceCaller variant caller merge utility. If this parameter is raised, then the sample ID's listed in the last header line will be ignored. Samples MUST be in the same order in each input VCF file! Without this option, this utility will halt with an error message if the sample IDs do not match. Note that if the sample IDs are NOT in the same order, but you want to link them up by name, then instead use the --ccAllowSampleOrderDiff option. (flag)</p>
-</blockquote>
-
-<h4>--concordanceCallerIgnoreSampleOrder:</h4>
-
-<blockquote>
-  <p>This option is only used by the ConcordanceCaller variant caller merge utility. If this parameter is raised, then the caller will match up the samples by sample ID, rather than requiring that the samples all be in the same order in all of the input single-caller VCFs. Without this option, this utility will halt with an error message if the sample IDs do not match and are not in the same order. Note that this will STILL crash if all the files do not have the same set of samples. If the VCFs do not all have the same samples, you can have the utility ignore the non-overlapping samples by providing the intersection sample set in the --inputKeepSamples parameter. (flag)</p>
-</blockquote>
-
-<h4>--concordanceCallerGtMethod priority:</h4>
-
-<blockquote>
-  <p>The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority_priorityOnTies. Default is simple priority. (String)</p>
-</blockquote>
-
-<h3>Postprocessing:</h3>
-
-<h4>--dropGenotypeData:</h4>
-
-<blockquote>
-  <p>If this flag is included, then ALL sample-level columns will be stripped from the output VCF. This greatly reduces the file size, and can be useful for making portable variant set VCFs. (flag)</p>
-</blockquote>
-
-<h4>--addDummyGenotypeColumn:</h4>
-
-<blockquote>
-  <p>If this flag is included, then the genotype data will be stripped and replaced with a dummy column with 1 sample and 1 het genotype on every line. (flag)</p>
 </blockquote>
 
 <h3>Output Parameters:</h3>
@@ -254,24 +106,6 @@ varmyknife [java_options] --CMD commandName [options]
 
 <h3>Annotation:</h3>
 
-<h4>--addAltSequence windowSize[:tagID]:</h4>
-
-<blockquote>
-  <p>Adds a field with the alt allele and [windowSize] base pairs of reference-genome flanking sequence to each side. If no tagID is specified, the tagID will be VAK_altSeq[windowsSize]. Note: requires genomeFA be set! Note: this parameter can be set more than once (with different window sizes). (repeatable String)</p>
-</blockquote>
-
-<h4>--tagVariantsExpression newTagID|desc|variantExpression:</h4>
-
-<blockquote>
-  <p>If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable String)</p>
-</blockquote>
-
-<h4>--tagVariantsGtCountExpression newTagID|desc|genotypeExpression[|type]:</h4>
-
-<blockquote>
-  <p>If this parameter is set, then additional tags will be generated based on the given GENOTYPE expression(s). Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the genotype expression. The expressions are always booleans, and follow the same rules for VCF genotype-level filtering. See the section on VCF genotype filtering, below. Optionally, a fourth element in the list can define the type which can be either FRAC, PCT, or CT, which defines the output as either a fraction, a percentage, or a count. (repeatable String)</p>
-</blockquote>
-
 <h4>--variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:</h4>
 
 <blockquote>
@@ -282,6 +116,26 @@ varmyknife [java_options] --CMD commandName [options]
 
 <blockquote>
   <p>Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)</p>
+</blockquote>
+
+<h3>Preprocessing:</h3>
+
+<h4>--chromList chr1,chr2,...:</h4>
+
+<blockquote>
+  <p>List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--splitOutputByBed intervalBedFile.bed:</h4>
+
+<blockquote>
+  <p>If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)</p>
+</blockquote>
+
+<h4>--universalTagPrefix VAK_:</h4>
+
+<blockquote>
+  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
 </blockquote>
 
 <h3>Sample Info:</h3>
@@ -445,6 +299,8 @@ expression\.
 expr: \(String\)
 </code></pre>
 
+<h3>dropNullVariants</h3>
+
 <h3>fixFirstBaseMismatch</h3>
 
 <pre><code>\.\.\.
@@ -525,8 +381,10 @@ genomeFA: \(String, required\)
 <pre><code>This is a set of functions that all take one or more input 
 parameters and outputs one new INFO field\.
 func: \(String, required\)
-desc: \(String, default=No desc provided\)
-digits: \(Integer\)
+desc: The description in the header line for the new INFO 
+field\.\(String, default=No desc provided\)
+digits: For floating point values, the number of digits to 
+include after the decimal\(Integer\)
 </code></pre>
 
 <h3>tagVariantsExpression</h3>
@@ -664,6 +522,26 @@ genomeFA: \(String, required\)
 
 <h3>addDummyGenotypeColumn</h3>
 
+<h3>concordanceCaller</h3>
+
+<pre><code>\.\.\.\.
+callerNames: Comma delimited list of caller IDs, used in the 
+callerSet INFO fields and the names of the output GT fields\. 
+By default, callers will simply be named C1,C2,\.\.\.\(String\)
+priority: Comma delimited list of caller IDs\. The list of 
+caller IDs in order of descending priority\.\(String\)
+gtDecisionMethod: The merge rule for calculating 
+ensemble\-merged GT and AD tags\. Valid options are priority, 
+prioritySkipMissing, and majority\_priorityOnTies\. Default is 
+simple priority\.\(String\)
+ignoreSampleIds: If this flag is set, then sample IDs will be 
+ignored and each VCF will be assumed to have the exact same 
+samples in the exact same order\. Use at your own risk\.\(flag\)
+ignoreSampleOrder: If this flag is set, then the sample IDs 
+will be used to match up the different VCFs, and the samples 
+may be in different orders in the different files\.\(flag\)
+</code></pre>
+
 <h3>addContextBases</h3>
 
 <pre><code>windowSize: The number of bases to include in the context 
@@ -695,6 +573,8 @@ also has a title line\.\(Flag\)
 
 <pre><code>prefix: Prefix to prepend to the index field\.\(String\)
 </code></pre>
+
+<h3>dropSpanIndels</h3>
 
 <h3>addAltSequence</h3>
 

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version2.2.325 (Updated Mon Feb 10 11:41:38 EST 2020)
+> Version3.0.0 (Updated Mon Feb 10 15:17:06 EST 2020)
 
 > ([back to help base](secondaryCommands.html))
 
@@ -116,6 +116,10 @@ These commands have not been fully tested and are not for production use. Docume
 ### [buildSummaryTracks](buildSummaryTracks.html)
 
 > UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
+
+### [oldWalkVcf](oldWalkVcf.html)
+
+> This utility performs a series of transformations on an input VCF file and adds an array of informative tags.
 
 ### [legacyTxAnno](legacyTxAnno.html)
 

@@ -1339,9 +1339,9 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        new VcfTagFcnFactory(){
+        new VcfTagFcnFactory(){ 
           val mmd =  new VcfTagFcnMetadata(
-              id = "EXPR",synon = Seq(),
+              id = "EXPR",synon = Seq("expr"),
               shortDesc = "Creates a true/false field based on an expression",
               desc = "The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise. "+
                      "See the expression format definition for more information on how the logical expression syntax works.",

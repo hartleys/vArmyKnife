@@ -74,7 +74,7 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="The variant expression, which is a true/false expression using the variant expression syntax.",req=true),
            ParamStr(id = "desc",synon=Seq(),ty="String",valueString="...",desc="A description, to go in the info field description.",req=false,defaultValue = Some("No desc provided"))
-         )), category = "Variant Annotation"
+         )), category = "Variant Annotation", hidden = true, deprecated = true
        ),
        ParamStrSet("tagVariantsFunction" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -87,11 +87,12 @@ object SVcfMapFunctions {
        //TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...
        //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
        ParamStrSet("addInfoTag" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
+           synon = Seq("addInfo"),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
-           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided")),
-           ParamStr(id = "digits",synon=Seq(),ty="Integer",valueString="x",desc="",req=false),
-           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false,hidden=true)
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="The description in the header line for the new INFO field.",req=false,defaultValue = Some("No desc provided")),
+           ParamStr(id = "digits",synon=Seq(),ty="Integer",valueString="x",desc="For floating point values, the number of digits to include after the decimal",req=false),
+           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
          )), category = "Variant Annotation"
        ),
        
@@ -338,7 +339,16 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "prefix",synon=Seq(),ty="String",valueString="prefix",desc="Prefix to prepend to the index field.",req=false)
          )),category = "Variant Annotation"
+       ),//dropNullVariants
+       ParamStrSet("dropNullVariants" ,  desc = "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+         )),category = "Variant Filtering"
        ),
+       ParamStrSet("dropSpanIndels" ,  desc = "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+         )),category = "Variant Filtering"
+       ),
+       
        ParamStrSet("checkReferenceMatch" ,  desc = "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               COMMON_PARAMS("genomeFA")
@@ -409,6 +419,44 @@ object SVcfMapFunctions {
          )),category = "Data/Table Extraction"
        ),
        
+       ParamStrSet("concordanceCaller" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "callerNames",synon=Seq(),ty="String",valueString="k",
+                                               desc="Comma delimited list of caller IDs, used in the callerSet INFO fields and the names of the output GT fields. "+
+                                                    "By default, callers will simply be named C1,C2,..."+
+                                                    "",req=false),
+              ParamStr(id = "priority",synon=Seq(),ty="String",valueString="k",
+                                               desc="Comma delimited list of caller IDs. "+
+                                                    "The list of caller IDs in order of descending priority."+
+                                                    "",req=false),
+              ParamStr(id = "gtDecisionMethod",synon=Seq(),ty="String",valueString="k",
+                                               desc="The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority_priorityOnTies. Default is simple priority."+
+                                                    ""+
+                                                    "",req=false),
+                                                    //gtDecisionMethod
+              ParamStr(id = "ignoreSampleIds",synon=Seq(),ty="flag",valueString="k",desc="If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the "+
+                                                                                         "exact same samples in the exact same order. Use at your own risk.",req=false),
+              ParamStr(id = "ignoreSampleOrder",synon=Seq(),ty="flag",valueString="k",desc="If this flag is set, then the sample IDs will be used to match up the "+
+                                                                                           "different VCFs, and the samples may be in different orders in the different files.",req=false),
+              //TODO:
+              ParamStr(id = "mergeGenotypeField_ADstyle",synon=Seq(),ty="String",valueString="k",
+                                               desc=""+
+                                                    ""+
+                                                    "",req=false,hidden=true),
+              ParamStr(id = "mergeGenotypeField_simple",synon=Seq(),ty="String",valueString="k",
+                                               desc=""+
+                                                    ""+
+                                                    "",req=false,hidden=true),
+              ParamStr(id = "mergeGenotypeField_GTstyle",synon=Seq(),ty="String",valueString="k",
+                                               desc=""+
+                                                    ""+
+                                                    "",req=false,hidden=true)
+
+                                                    
+                                                    
+                                                    
+         )),category = "Concordance Caller"
+       ),
        /*
         * UNTESTED:
         */
@@ -508,10 +556,7 @@ object SVcfMapFunctions {
 
        
        //TODO:
-       //addAltSeq
-       //dropGenotypeData
-       //addDummyGenotypeColumn
-       //dropSymbolicAlleleLines
+       //convertROAOtoAD
        
        
        
@@ -673,7 +718,7 @@ object SVcfMapFunctions {
                            Vector[String]) = getGroups(groupFile, None, superGroupList);
             
            val ssseq = variantMapFunction.toSeq.map{ vmfString => {
-             val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
+              val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
               if(fullcells.length < 2){
                 error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
               }
@@ -728,7 +773,7 @@ object SVcfMapFunctions {
                   if(pp.trim().last != ')'){
                     error("Error: hanging open paren in string: "+params("func"));
                   }
-                  pp.init.split(",").toSeq
+                  pp.init.split(",").toSeq.map{ _.trim() }
                 }} match {
                   case Some(rp) => {
                     rp;
@@ -1104,6 +1149,10 @@ object SVcfMapFunctions {
                Some(new RemoveDuplicateLinesWalker())
              } else if(mapType == "fixDotAltIndels"){
                Some( new internalUtils.GatkPublicCopy.FixDotAltVcfLines(genomeFa = params("genomeFA") ) )
+             } else if(mapType == "dropNullVariants"){
+               Some(SFilterNonVariantWalker())
+             } else if(mapType == "dropSpanIndels"){
+               Some(new DropSpanIndels())
              } else if(mapType == "getLocusDepthFromWig"){
                val wigfile = params("wigFile")
                if( ! (new File(wigfile)).exists() ){

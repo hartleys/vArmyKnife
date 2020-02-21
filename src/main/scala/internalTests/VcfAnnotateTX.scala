@@ -154,7 +154,7 @@ object VcfAnnotateTX {
                         
      val parser : CommandLineArgParser = 
        new CommandLineArgParser(
-          command = "walkVcf", 
+          command = "oldWalkVcf", 
           aliases = Seq("multiStepPipeline"),
           quickSynopsis = "", 
           synopsis = "", 
@@ -276,12 +276,12 @@ object VcfAnnotateTX {
                     new UnaryArgument( name = "dropSpanIndels",
                                          arg = List("--dropSpanIndels"), // name of value
                                          argDesc = "Requires splitMultiAllelic. Drops spanning indels, which are marked with an asterisk allele." // description
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(true,"Preprocessing") ::
                     new UnaryArgument( name = "convertROAOtoAD",
                                          arg = List("--convertROAOtoAD"), // name of value
                                          argDesc = "If this flag is used, then the RO/AO FORMAT fields used by certain callers (freebayes) "+
                                                    "will be merged and copied over into a new AD tag." // description
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(true,"Preprocessing") ::
                     new UnaryArgument( name = "splitAlleleGroupCounts",
                                          arg = List("--splitAlleleGroupCounts"), // name of value
                                          argDesc = "DEPRECATED"+
@@ -296,7 +296,7 @@ object VcfAnnotateTX {
                                          arg = List("--nonNullVariantsOnly"), // name of value
                                          argDesc = "If this flag is used, only write variants that have non-null alt alleles."+
                                                    "" // description
-                                       ).meta(false,"Preprocessing",2) ::
+                                       ).meta(true,"Preprocessing",2) ::
                     new UnaryArgument( name = "rmDup",
                                          arg = List("--rmDup"), // name of value
                                          argDesc = "If this flag is used, duplicate lines will be dropped. VCF must be sorted."+
@@ -505,7 +505,7 @@ object VcfAnnotateTX {
                     new UnaryArgument( name = "fixSwappedRefAlt",
                                          arg = List("--fixSwappedRefAlt"), // name of value
                                          argDesc = "Checks if the ref allele matches the alt allele. IF they don't match, it checks if the alt allele matches and switches the ref/alt if it does. Otherwise it simply adds a warning tag."
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(true,"Preprocessing") ::
                                        //fixSwappedRefAlt
                                        
                     new UnaryArgument(
@@ -513,7 +513,7 @@ object VcfAnnotateTX {
                                          arg = List("--leftAlignAndTrim"),
                                          argDesc =  "Left align and trim the primary input VCF using a modified "+
                                                     "and ported version of the GATK v3.8-2 LeftAlignAndTrim walker."
-                                        ).meta(false,"Preprocessing")  :: 
+                                        ).meta(true,"Preprocessing")  :: 
                                        
                     new BinaryOptionArgument[Int]( name = "leftAlignAndTrimWindow",
                                          arg = List("--leftAlignAndTrimWindow"), // name of value\
@@ -522,7 +522,7 @@ object VcfAnnotateTX {
                                                    "" +
                                                    ""+
                                                    ""// description
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(true,"Preprocessing") ::
 
                    /* new UnaryArgument( name = "leftAlignAndTrimSecondarys",
                                          arg = List("--leftAlignAndTrimSecondarys"), // name of value
@@ -619,7 +619,7 @@ object VcfAnnotateTX {
                                                    "walkers including any of the following that are indicated by the other options: addVariantIdx,nonVariantFilter,chromosome converter,inputTag filters,addVariantPosInfo,splitMultiAllelics,leftAlignAndTrim, and convertROtoAD "+
                                                    "The variant data output stream from these walkers will be merged and final GT, AD, and GQ fields will be added if the requisite information is available. Final genotypes will be assigned by plurality rule if any genotype has a simple plurality of all nonmissing caller calls, "+
                                                    "and if no genotype has a plurality then the genotype will be chosen from the highest priority caller, chosen in the order they are named in the "
-                                       ).meta(false,"Merge Multicaller VCFs",50) ::
+                                       ).meta(true,"Merge Multicaller VCFs",50) ::
                                        
                    new BinaryOptionArgument[List[String]](
                                          name = "singleCallerVcfNames", 
@@ -627,7 +627,7 @@ object VcfAnnotateTX {
                                          valueName = "vcfName1,vcfName2,...",  
                                          argDesc =  "This parameter should be a comma delimited list of names, with the same length as --singleCallerVcfs. "+
                                                     "These names will be used in the folder-over VCF tags."
-                                        ).meta(false,"Merge Multicaller VCFs") ::
+                                        ).meta(true,"Merge Multicaller VCFs") ::
                    new BinaryOptionArgument[List[String]](
                                          name = "singleCallerPriority", 
                                          arg = List("--concordanceCallerPriority","--singleCallerPriority"), 
@@ -638,7 +638,7 @@ object VcfAnnotateTX {
                                                     "By default: genotype calls are assigned using the most common call across "+
                                                     "all callers. Ties are broken using the priority list above, in order of highest priority (most trusted) to lowest priority (least trusted). This behavior can be altered using the "+
                                                     "--ensembleGenotypeDecision parameter."
-                                        ).meta(false,"Merge Multicaller VCFs") :: 
+                                        ).meta(true,"Merge Multicaller VCFs") :: 
                                        
                     new UnaryArgument( name = "CC_ignoreSampleIds",
                                          arg = List("--concordanceCallerIgnoreSampleIds","--ccIgnoreSampIds"), // name of value
@@ -649,7 +649,7 @@ object VcfAnnotateTX {
                                                    "instead use the --ccAllowSampleOrderDiff option."+
                                                    ""+
                                                    ""
-                                       ).meta(false,"Merge Multicaller VCFs",50) ::
+                                       ).meta(true,"Merge Multicaller VCFs",50) ::
                     new UnaryArgument( name = "CC_ignoreSampleOrder",
                                          arg = List("--concordanceCallerIgnoreSampleOrder","--ccAllowSampleOrderDiff"), // name of value
                                          argDesc = "This option is only used by the ConcordanceCaller variant caller merge utility. "+
@@ -658,15 +658,14 @@ object VcfAnnotateTX {
                                                    "Without this option, this utility will halt with an error message if the sample IDs do not match and are not in the same order. "+
                                                    "Note that this will STILL crash if all the files do not have the same set of samples. If the VCFs do not all have the same samples, you can "+
                                                    "have the utility ignore the non-overlapping samples by providing the intersection sample set in the --inputKeepSamples parameter."
-                                       ).meta(false,"Merge Multicaller VCFs",50) ::
+                                       ).meta(true,"Merge Multicaller VCFs",50) ::
                                   //   CC_ignoreSampleIds,   CC_ignoreSampleIds
                                        
-                    new BinaryArgument[String](name = "ensembleGenotypeDecision",
+                    new BinaryOptionArgument[String](name = "ensembleGenotypeDecision",
                                            arg = List("--concordanceCallerGtMethod","--ensembleGenotypeDecision"),  
                                            valueName = "priority", 
-                                           argDesc = "The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority_priorityOnTies. Default is simple priority.",
-                                           defaultValue = Some("priority")
-                                           ).meta(false,"Merge Multicaller VCFs",50) ::
+                                           argDesc = "The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority_priorityOnTies. Default is simple priority."
+                                           ).meta(true,"Merge Multicaller VCFs",50) ::
                                        //"first","firstSkipMissing","majority_firstOnTies","majority_missOnTies",
                                        //"priority","prioritySkipMissing","majority_priorityOnTies"
                                         
@@ -699,14 +698,14 @@ object VcfAnnotateTX {
                                         
                     new BinaryOptionArgument[Int](
                                          name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
+                                         arg = List("--numLinesRead","--testRunLines","--test"), 
                                          valueName = "N",  
                                          argDesc =  "If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes."
                                         ).meta(false,"Input Parameters") ::
                     new UnaryArgument( name = "testRun",
                                          arg = List("--testRun","--test","-t"), // name of value
                                          argDesc = "Only read the first 1000 lines. Equivalent to --numLinesRead 1000. Intended for testing purposes."// description
-                                       ).meta(false,"Input Parameters") ::
+                                       ).meta(true,"Input Parameters") ::
                                         
                     new BinaryOptionListArgument[String](
                                          name = "addInfoVcfs", 
@@ -751,7 +750,7 @@ object VcfAnnotateTX {
                     new UnaryArgument( name = "dropSymbolicAlleleLines",
                                          arg = List("--dropSymbolicAlleleLines"), // name of value
                                          argDesc = "Drop all variant lines that contain symbolic alleles. If this flag is used with splitMultiAllelic, then the non-symbolic alleles of mixed-type variants will be preserved."
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(true,"Preprocessing") ::
                     new UnaryArgument( name = "simpleCompileDuplicateLines", //RemoveDuplicateLinesWalker
                                          arg = List("--simpleCompileDuplicateLines"), // name of value
                                          argDesc = "."
@@ -1520,7 +1519,7 @@ object VcfAnnotateTX {
                 
                 duplicateTag = parser.get[Option[String]]("duplicatesTag"),
                 
-                ensembleGenotypeDecision = parser.get[String]("ensembleGenotypeDecision"),
+                ensembleGenotypeDecision = parser.get[Option[String]]("ensembleGenotypeDecision"),
                 addDummyGenotypeColumn = parser.get[Boolean]("addDummyGenotypeColumn"),
                 snpEffVarExtract = parser.get[List[String]]("snpEffVarExtract"),
                 snpEffGeneListTagInfix = parser.get[String]("snpEffGeneListTagInfix"),
@@ -1740,7 +1739,7 @@ object VcfAnnotateTX {
                 
                 duplicateTag : Option[String] = None,
                 
-                ensembleGenotypeDecision : String = "majority_firstOnTies",
+                ensembleGenotypeDecision : Option[String] = None,
                 addDummyGenotypeColumn : Boolean = false,
                 
                 snpEffVarExtract : List[String] = List[String](),
@@ -1912,6 +1911,13 @@ object VcfAnnotateTX {
     
     
     //inputDropInfoTags.isDefined || inputKeepInfoTags
+    val ccFcnIdx = variantMapFunction.toSeq.indexWhere{ vmfString => {
+      val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
+      val rawMapType = fullcells.head;
+      val mapType = internalTests.SVcfMapFunctions.MAP_ID_MAP(rawMapType);
+      mapType == "concordanceCaller"
+    }}
+    
     
     
     val initWalkers : Seq[SVcfWalker] =         
@@ -2128,7 +2134,20 @@ object VcfAnnotateTX {
               Seq[SVcfWalker]();
             }
             //FindComplexAlleles(genomeFA : String,idxTag : String,gtTag : String = "GT"
-        )
+        ) ++ ({
+            
+            if( ccFcnIdx >= 1){
+              SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.take(ccFcnIdx), 
+                                               chromList=chromList, 
+                                               burdenCountsFile=burdenCountsFile, 
+                                               groupFile=groupFile, 
+                                               superGroupList=superGroupList, 
+                                               genomeFA=genomeFA, 
+                                               calcStatGtTag=calcStatGtTag);
+            } else {
+              Seq[SVcfWalker]()
+            }
+        })
         
         
     /*
@@ -2705,7 +2724,7 @@ object VcfAnnotateTX {
             }}
             
         ) ++ ({
-            SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction, 
+            SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.drop(ccFcnIdx+1), 
                                                chromList=chromList, 
                                                burdenCountsFile=burdenCountsFile, 
                                                groupFile=groupFile, 
@@ -3054,8 +3073,11 @@ object VcfAnnotateTX {
           None
         }
       })
+
+
       
-    if(runEnsembleMerger){
+      
+    if(runEnsembleMerger || ccFcnIdx >= 0){
       val preWalker : SVcfWalker = chainSVcfWalkers(initWalkers);
       
       if( ! vcffile.contains(';') ) error("Error: runEnsembleMerger is set, the infile parameter must contain semicolons (\";\")");
@@ -3080,16 +3102,48 @@ object VcfAnnotateTX {
           val vcIterBuf = vcIter.buffered;
           (vcIterBuf,vcfHeader);
       }}.unzip;
-                   
-
-      val inputNames    = singleCallerVcfNames.getOrElse(headerSeq.indices.map{"C"+_.toString});
-      val inputPriority = singleCallerPriority.getOrElse(inputNames)
+      
+      val vmf = if(ccFcnIdx >= 0){
+        Some(variantMapFunction(ccFcnIdx));
+      } else None;
+      val paramsOpt = vmf.map{ vmfString => {
+        val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
+        if(fullcells.length < 2){
+          error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
+        }
+        val rawMapType = fullcells.head;
+        val mapType = "concordanceCaller";
+        val mapID = fullcells(1);
+        val tagPrefix = if(mapID == "") "" else mapID + "_";
+        val sc = fullcells.tail.tail
+        val params = ParsedParamStrSet(sc, internalTests.SVcfMapFunctions.MAP_FUNCTIONS(mapType))
+        params.set("mapID",mapID);
+        params.set("mapType",mapType);
+        params.set("tagPrefix",tagPrefix);
+        params;
+      }}
+      
+      val inputNames : List[String]  = (singleCallerVcfNames match {
+        case Some(ss) => Some(ss);
+        case None => paramsOpt.map{ params => params.get("callerNames").map{ x => x.split(",").toList } }.getOrElse(None);
+      }).getOrElse(headerSeq.indices.toList.map{"C"+_.toString});
+      val inputPriority : List[String]  = (singleCallerVcfNames match {
+        case Some(ss) => Some(ss);
+        case None => paramsOpt.map{ params => params.get("priority").map{ x => x.split(",").toList } }.getOrElse(None);
+      }).getOrElse(inputNames);
+      val decision : String  = (ensembleGenotypeDecision match {
+        case Some(ss) => Some(ss);
+        case None => paramsOpt.map{ params => params.get("gtDecisionMethod") }.getOrElse(None);
+      }).getOrElse("priority");
+      
       val (ensIter,ensHeader) = ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
-                                                        genomeFA = genomeFA,windowSize = 200, singleCallerPriority = inputPriority,
+                                                        //genomeFA = genomeFA,
+                                                        //windowSize = 200, 
+                                                        singleCallerPriority = inputPriority,
                                                         CC_ignoreSampleIds = CC_ignoreSampleIds, CC_ignoreSampleOrder=CC_ignoreSampleOrder);
       val finalWalker : SVcfWalker = chainSVcfWalkers(Seq[SVcfWalker](
           new EnsembleMergeMetaDataWalker(inputVcfTypes = inputPriority,
-                                          decision = ensembleGenotypeDecision)
+                                          decision = decision)
           /*
                                     simpleMergeInfoTags : Seq[String] = Seq[String](),
                                     simpleMergeFmtTags : Seq[String] = Seq[String]("GQ|Final Ensemble genotype quality score"),

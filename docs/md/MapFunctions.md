@@ -112,6 +112,11 @@
     expression\.
     expr: \(String\)
 
+### dropNullVariants
+
+    
+    
+
 ### fixFirstBaseMismatch
 
     
@@ -194,8 +199,10 @@
     This is a set of functions that all take one or more input 
     parameters and outputs one new INFO field\.
     func: \(String, required\)
-    desc: \(String, default=No desc provided\)
-    digits: \(Integer\)
+    desc: The description in the header line for the new INFO 
+    field\.\(String, default=No desc provided\)
+    digits: For floating point values, the number of digits to 
+    include after the decimal\(Integer\)
 
 ### tagVariantsExpression
 
@@ -341,6 +348,26 @@
     
     
 
+### concordanceCaller
+
+    
+    \.\.\.\.
+    callerNames: Comma delimited list of caller IDs, used in the 
+    callerSet INFO fields and the names of the output GT fields\. 
+    By default, callers will simply be named C1,C2,\.\.\.\(String\)
+    priority: Comma delimited list of caller IDs\. The list of 
+    caller IDs in order of descending priority\.\(String\)
+    gtDecisionMethod: The merge rule for calculating 
+    ensemble\-merged GT and AD tags\. Valid options are priority, 
+    prioritySkipMissing, and majority\_priorityOnTies\. Default is 
+    simple priority\.\(String\)
+    ignoreSampleIds: If this flag is set, then sample IDs will be 
+    ignored and each VCF will be assumed to have the exact same 
+    samples in the exact same order\. Use at your own risk\.\(flag\)
+    ignoreSampleOrder: If this flag is set, then the sample IDs 
+    will be used to match up the different VCFs, and the samples 
+    may be in different orders in the different files\.\(flag\)
+
 ### addContextBases
 
     
@@ -374,6 +401,11 @@
     
     
     prefix: Prefix to prepend to the index field\.\(String\)
+
+### dropSpanIndels
+
+    
+    
 
 ### addAltSequence
 

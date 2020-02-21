@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "2.2.325"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Mon Feb 10 11:41:38 EST 2020"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1581352898; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "3.0.0"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Mon Feb 10 15:17:06 EST 2020"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1581365826; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -39,13 +39,14 @@ object runner {
     
   //Command name -> (execution call, summary, syntax)
   val utilList : Seq[CommandLineRunUtil] = Seq(
-    new internalTests.VcfAnnotateTX.CmdMultiStepPipeline,
+    new internalTests.SVcfWalkerMain.WalkVcf,
     new internalTests.SVcfWalkerUtils.GenerateTxAnnotation,
     new internalTests.SVcfWalkerUtils.CommandVcfToMatrix,
     new internalTests.minorUtils.CmdMemMergeVCF
   );
   
   val depreciatedUtilList : Seq[CommandLineRunUtil] = Seq(
+     new internalTests.VcfAnnotateTX.CmdMultiStepPipeline,
     (new internalTests.SVcfWalkerUtils.AddGroupSummaries),
     (new internalTests.SVcfWalkerUtils.ConvertAminoRangeToGenoRange),
     (new internalUtils.CalcACMGVar.CmdAssessACMG),

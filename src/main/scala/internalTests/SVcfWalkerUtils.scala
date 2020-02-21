@@ -4839,7 +4839,10 @@ object SVcfWalkerUtils {
       outHeader.reportAddedInfos(this)
       
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
-        if(v.alt.head == "*"){
+        if(v.alt.length > 2 || (v.alt.length == 2 && v.alt.last != "*")){
+          error("ERROR: You must split multiallelics before attempting to drop spanning indel variants!")
+          None;
+        } else if(v.alt.head == "*"){
           notice("dropping spanning indel (star allele).","DROP_STAR_ALLE",5);
           None
         } else {
@@ -9162,8 +9165,11 @@ object SVcfWalkerUtils {
       outHeader.addWalk(this);
       
       (vcIter.filter{vc => {
-        val filt = vc.alt.filter(x => x != "." && x != internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING).length > 0
-        if(!filt){
+        val filtLen = vc.alt.filter(x => x != "." && x != internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING).length
+        if(filtLen > 1){
+          error("ERROR: must split multiallelics before attempting to drop nonvariant lines!");
+          false
+        } else if(filtLen == 0){
           notice("Filtering variant with no alt alleles:\n    "+vc.getSimpleVcfString(),"DROPPED_NOALT_VARIANT",10);
           false
         } else if(dropEqualRefAlt && vc.alt.head == vc.ref) {
@@ -13544,8 +13550,9 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
 
   def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
                             headers : Seq[SVcfHeader], 
-                            inputVcfTypes : Seq[String], genomeFA : Option[String],
-                            windowSize : Int = 200, 
+                            inputVcfTypes : Seq[String], 
+                            //genomeFA : Option[String],
+                            //windowSize : Int = 200, 
                             CC_ignoreSampleIds : Boolean = false, CC_ignoreSampleOrder : Boolean = false, 
                             singleCallerPriority : Seq[String]
                                // CC_ignoreSampleIds,   CC_ignoreSampleOrder
@@ -13897,7 +13904,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
 //INCOMPLETE!!!
   def mergeCompareVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
                             headers : Seq[SVcfHeader], 
-                            inputVcfTypes : Seq[String], genomeFA : Option[String],
+                            inputVcfTypes : Seq[String], //genomeFA : Option[String],
                             windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
     val vcfCodes = VCFAnnoCodes();
 
