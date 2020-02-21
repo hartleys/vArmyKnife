@@ -2387,7 +2387,8 @@ object SVcfWalkerUtils {
                                    sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
                                    groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
                                    groups : Vector[String],
-                                   geneList : Option[Seq[String]], pathwayList : Seq[String],
+                                   geneList : Option[Seq[String]], 
+                                   pathwayList : Seq[String],
                                    printFullGeneList : Boolean
      ) extends internalUtils.VcfTool.SVcfWalker {
 
@@ -2504,9 +2505,9 @@ object SVcfWalkerUtils {
 
         
         pathwayList.map{ pwString => {
-          val pwCells = pwString.trim().split("=",2)
+          val pwCells = pwString.trim().split(":",2)
           val id      = pwCells.head.trim();
-          val genes   = pwCells(1).split("[:]").map{ g => g.trim() }.toSet;
+          val genes   = pwCells(1).split("[,]").map{ g => g.trim() }.toSet;
           val mtr = burdenMatrix.filter{ case (g,bm) => {
             genes.contains(g);
           }}.foldLeft(new Array[Int]( outHeader.titleLine.sampleList.length )  ){ case (soFar,(g,bm)) => {

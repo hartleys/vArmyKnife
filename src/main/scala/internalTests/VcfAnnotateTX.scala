@@ -67,7 +67,8 @@ object VcfAnnotateTX {
            ParamStr(id = "digits",synon=Seq(),ty="Integer",valueString="x",desc="",req=false),
            ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false)
          ))
-       ),//TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...
+       ),
+       //TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...
        //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
        ParamStrSet("addInfoTag" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -360,7 +361,7 @@ object VcfAnnotateTX {
               ParamStr(id = "geneListFile",synon=Seq(),ty="String",valueString="k",desc="",req=false),
               ParamStr(id = "printFullGeneList",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
 
-              ParamStr(id = "pathwayList",synon=Seq(),ty="String",valueString="A=a:b:c:d,B=c:d:e:f",desc="",req=false),
+              ParamStr(id = "pathwayList",synon=Seq(),ty="String",valueString="A:a,b,c,d;B:c,d,e,f;...",desc="",req=false),
               
              COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
            
@@ -3216,15 +3217,6 @@ object VcfAnnotateTX {
                 
                 Some(new AddFuncTag(func=params("func"),newTag=params("mapID"),paramTags=paramTags,digits=params.get("digits").map{d => string2int(d)},desc=Some(params("desc"))));
 
-                    //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
-       /*ParamStrSet("addInfoTag" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
-           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-           ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true),
-           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided")),
-           ParamStr(id = "digits",synon=Seq(),ty="Integer",valueString="x",desc="",req=false),
-           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false)
-         ))
-       ),*/
              } else if(mapType == "addInfoTag"){
                 val paramTags = params.get("params").map{ pp => {
                   pp.split(",").toSeq;
@@ -3496,7 +3488,7 @@ object VcfAnnotateTX {
                   outfile=params("outfile"), 
                    sampleToGroupMap=a,groupToSampleMap=b,groups=c,
                   geneList = geneList,
-                  pathwayList = params.get("pathwayList").map{ g => g.split("[,]").toSeq }.getOrElse(Seq()),
+                  pathwayList = params.get("pathwayList").map{ g => g.split("[;]").toSeq }.getOrElse(Seq()),
                   printFullGeneList = params.isSet("printFullGeneList")
               ) )
                
