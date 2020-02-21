@@ -30,7 +30,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 3.0.2 (Updated Tue Feb 11 09:57:55 EST 2020)</p>
+  <p>Version 3.1.0 (Updated Tue Feb 11 15:05:30 EST 2020)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -736,8 +736,8 @@ the two inputs\. Missing INFO fields will be treated as ZEROS
 unless all params are INFO fields and all are missing, in which 
 case the output will be missing\. Output field type will be an 
 integer if all inputs are integers and otherwise a float\.
-x \(INT|FLOAT|INFO\_Int|INFO\_Float\)
-y \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+x \(INT|FLOAT|INFO:Int|INFO:Float\)
+y \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>DIFF(x,y)</h3>
@@ -749,8 +749,8 @@ treated as ZEROS unless all params are INFO fields and all are
 missing, in which case the output will be missing\. Output 
 field type will be an integer if all inputs are integers and 
 otherwise a float\.
-x \(INT|FLOAT|INFO\_Int|INFO\_Float\)
-y \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+x \(INT|FLOAT|INFO:Int|INFO:Float\)
+y \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>SUM(x...)</h3>
@@ -761,7 +761,7 @@ inputs\. Missing INFO fields will be treated as zeros unless
 all params are INFO fields and all are missing, in which case 
 the output will be missing\. Output field type will be an 
 integer if all inputs are integers and otherwise a float\.
-x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>FLAGSET(x...)</h3>
@@ -772,7 +772,7 @@ will be equal to the tagID\. Output field will be the set of
 names for which the respective info field is equal to 1\. Any 
 value other than 1, including missing fields, will be treated 
 as 0\.
-x\.\.\. \(INFO\_Int\)
+x\.\.\. \(INFO:Int\)
 </code></pre>
 
 <h3>RANDFLAG(x,seed)</h3>
@@ -789,19 +789,19 @@ the two inputs\. Missing INFO fields will be treated as ZEROS
 unless all params are INFO fields and all are missing, in which 
 case the output will be missing\. Output field type will be a 
 float\.
-x \(INT|FLOAT|INFO\_Int|INFO\_Float\)
-y \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+x \(INT|FLOAT|INFO:Int|INFO:Float\)
+y \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>MIN(x...)</h3>
 
-<pre><code>x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+<pre><code>x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>CONVERT.TO.INT(x,defaultValue)</h3>
 
 <pre><code>Input should be an INFO field
-x \(INFO\_String\)
+x \(INFO:String\)
 defaultValue \(Optional\) \(Int\)
 </code></pre>
 
@@ -811,7 +811,7 @@ defaultValue \(Optional\) \(Int\)
 If no defaultValue is supplied then non\-floats will be 
 dropped\. Note that NaN and Inf will be dropped / replaced with 
 the default\.
-x \(INFO\_String\)
+x \(INFO:String\)
 defaultValue \(Optional\) \(Float\)
 </code></pre>
 
@@ -826,8 +826,8 @@ expr \(STRING\)
 
 <h3>DECODE(x,decoder)</h3>
 
-<pre><code>x \(INFO\_String\)
-decoder \(FILE\_String\)
+<pre><code>x \(INFO:String\)
+decoder \(FILE:String\)
 </code></pre>
 
 <h3>CONCAT(x...)</h3>
@@ -835,7 +835,7 @@ decoder \(FILE\_String\)
 <pre><code>This simple function concatenates the values of the input 
 parameters\. Input parameters can be any combination of INFO 
 fields or constant strings\.
-x\.\.\. \(String|INFO\_String\)
+x\.\.\. \(String|INFO:String\)
 </code></pre>
 
 <h3>PRODUCT.ARRAY(x...)</h3>
@@ -846,7 +846,7 @@ the inputs\. Missing INFO fields will be treated as ones unless
 all params are INFO fields and all are missing, in which case 
 the output will be missing\. Output field type will be an 
 integer if all inputs are integers and otherwise a float\.
-x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>SETS.DIFF(x,y)</h3>
@@ -856,29 +856,29 @@ specified as INFO:tagID, text files specified as FILE:fileName,
 or a constant set delimited with colons\.Output field will be a 
 comma delimited string containing the elements in the first set 
 with the second set subtracted out\.
-x \(String|INFO\_String|INT|FLOAT|INFO\_Int|INFO\_Float|FILE\_S-
-tring\)
-y \(String|INFO\_String|INT|FLOAT|INFO\_Int|INFO\_Float|FILE\_S-
-tring\)
+x 
+\(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\)
+y 
+\(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\)
 </code></pre>
 
-<h3>SWITCH.EXPR(expr,x,y)</h3>
+<h3>SWITCH.EXPR(expr,A,B)</h3>
 
 <pre><code>Switches between two options depending on a logical 
 expression\. The 'expr' expression parameter must be formatted 
-like standard variant\-level expressions\. The x and y 
+like standard variant\-level expressions\. The A and B 
 parameters can each be either a constant or an INFO field\. The 
-output field will be equal to x if the logical expression is 
-TRUE, and otherwise will be y\.
+output field will be equal to A if the logical expression is 
+TRUE, and otherwise will be B\.
 expr \(STRING\)
-x \(INFO\_Int|INFO\_Float|INFO\_String|Int|Float|String\)
-y \(Optional\) 
-\(INFO\_Int|INFO\_Float|INFO\_String|Int|Float|String\)
+A \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\)
+B \(Optional\) 
+\(INFO:Int|INFO:Float|INFO:String|Int|Float|String\)
 </code></pre>
 
 <h3>MAX(x...)</h3>
 
-<pre><code>x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+<pre><code>x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 </code></pre>
 
 <h3>PICK.RANDOM(seed,x,y...)</h3>
@@ -894,8 +894,8 @@ INFO:fieldName, or a text file specified as FILE:filename\.
 Alternately: you can provide several additional parameters, in 
 which case it will select randomly from the set of parameters\.
 seed \(String\)
-x \(String|INFO\_String|FILE\_String\)
-y\.\.\. \(Optional\) \(String|INFO\_String\)
+x \(String|INFO:String|FILE:String\)
+y\.\.\. \(Optional\) \(String|INFO:String\)
 </code></pre>
 
 <h3>SETS.UNION(x...)</h3>
@@ -905,12 +905,12 @@ can either be INFO fields specified with 'INFO:tagName', can
 point to a text file with 'FILE:filename', or can be constants 
 \(delimited with colons\)\. The output will be the union of the 
 given parameters, in alphabetical order\.
-x\.\.\. \(String|INFO\_String|FILE\_String\)
+x\.\.\. \(String|INFO:String|FILE:String\)
 </code></pre>
 
 <h3>COPY(oldField)</h3>
 
-<pre><code>oldField \(INFO\_Float|INFO\_Double|INFO\_String\)
+<pre><code>oldField \(INFO:Float|INFO:String\)
 </code></pre>
 
 <h3>SETS.INTERSECT(x...)</h3>
@@ -920,7 +920,7 @@ specified as INFO:tagID, text files specified as FILE:fileName,
 or a constant set delimited with colons\. Output field will be 
 a comma delimited string containing the intersect between the 
 supplied sets\.
-x\.\.\. \(String|INFO\_String|FILE\_String\)## VCF Line Filter Expressions
+x\.\.\. \(String|INFO:String|FILE:String\)## VCF Line Filter Expressions
 </code></pre>
 
 <h3>BASIC SYNTAX:</h3>

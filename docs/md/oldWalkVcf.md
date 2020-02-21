@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.0.2 (Updated Tue Feb 11 09:57:55 EST 2020)
+> Version 3.1.0 (Updated Tue Feb 11 15:05:30 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -730,8 +730,8 @@ This utility performs a series of transformations on an input VCF file and adds 
     unless all params are INFO fields and all are missing, in which 
     case the output will be missing\. Output field type will be an 
     integer if all inputs are integers and otherwise a float\.
-    x \(INT|FLOAT|INFO\_Int|INFO\_Float\)
-    y \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x \(INT|FLOAT|INFO:Int|INFO:Float\)
+    y \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### DIFF\(x,y\)
 
@@ -743,8 +743,8 @@ This utility performs a series of transformations on an input VCF file and adds 
     missing, in which case the output will be missing\. Output 
     field type will be an integer if all inputs are integers and 
     otherwise a float\.
-    x \(INT|FLOAT|INFO\_Int|INFO\_Float\)
-    y \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x \(INT|FLOAT|INFO:Int|INFO:Float\)
+    y \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### SUM\(x\.\.\.\)
 
@@ -755,7 +755,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     all params are INFO fields and all are missing, in which case 
     the output will be missing\. Output field type will be an 
     integer if all inputs are integers and otherwise a float\.
-    x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### FLAGSET\(x\.\.\.\)
 
@@ -766,7 +766,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     names for which the respective info field is equal to 1\. Any 
     value other than 1, including missing fields, will be treated 
     as 0\.
-    x\.\.\. \(INFO\_Int\)
+    x\.\.\. \(INFO:Int\)
 
 ### RANDFLAG\(x,seed\)
 
@@ -784,20 +784,20 @@ This utility performs a series of transformations on an input VCF file and adds 
     unless all params are INFO fields and all are missing, in which 
     case the output will be missing\. Output field type will be a 
     float\.
-    x \(INT|FLOAT|INFO\_Int|INFO\_Float\)
-    y \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x \(INT|FLOAT|INFO:Int|INFO:Float\)
+    y \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### MIN\(x\.\.\.\)
 
     
     
-    x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
     Input should be an INFO field
-    x \(INFO\_String\)
+    x \(INFO:String\)
     defaultValue \(Optional\) \(Int\)
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
@@ -807,7 +807,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     If no defaultValue is supplied then non\-floats will be 
     dropped\. Note that NaN and Inf will be dropped / replaced with 
     the default\.
-    x \(INFO\_String\)
+    x \(INFO:String\)
     defaultValue \(Optional\) \(Float\)
 
 ### EXPR\(expr\)
@@ -823,8 +823,8 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    x \(INFO\_String\)
-    decoder \(FILE\_String\)
+    x \(INFO:String\)
+    decoder \(FILE:String\)
 
 ### CONCAT\(x\.\.\.\)
 
@@ -832,7 +832,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     This simple function concatenates the values of the input 
     parameters\. Input parameters can be any combination of INFO 
     fields or constant strings\.
-    x\.\.\. \(String|INFO\_String\)
+    x\.\.\. \(String|INFO:String\)
 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 
@@ -843,7 +843,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     all params are INFO fields and all are missing, in which case 
     the output will be missing\. Output field type will be an 
     integer if all inputs are integers and otherwise a float\.
-    x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### SETS\.DIFF\(x,y\)
 
@@ -853,30 +853,30 @@ This utility performs a series of transformations on an input VCF file and adds 
     or a constant set delimited with colons\.Output field will be a 
     comma delimited string containing the elements in the first set 
     with the second set subtracted out\.
-    x \(String|INFO\_String|INT|FLOAT|INFO\_Int|INFO\_Float|FILE\_S-
-    tring\)
-    y \(String|INFO\_String|INT|FLOAT|INFO\_Int|INFO\_Float|FILE\_S-
-    tring\)
+    x 
+    \(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\)
+    y 
+    \(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\)
 
-### SWITCH\.EXPR\(expr,x,y\)
+### SWITCH\.EXPR\(expr,A,B\)
 
     
     Switches between two options depending on a logical 
     expression\. The 'expr' expression parameter must be formatted 
-    like standard variant\-level expressions\. The x and y 
+    like standard variant\-level expressions\. The A and B 
     parameters can each be either a constant or an INFO field\. The 
-    output field will be equal to x if the logical expression is 
-    TRUE, and otherwise will be y\.
+    output field will be equal to A if the logical expression is 
+    TRUE, and otherwise will be B\.
     expr \(STRING\)
-    x \(INFO\_Int|INFO\_Float|INFO\_String|Int|Float|String\)
-    y \(Optional\) 
-    \(INFO\_Int|INFO\_Float|INFO\_String|Int|Float|String\)
+    A \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\)
+    B \(Optional\) 
+    \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\)
 
 ### MAX\(x\.\.\.\)
 
     
     
-    x\.\.\. \(INT|FLOAT|INFO\_Int|INFO\_Float\)
+    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
 
 ### PICK\.RANDOM\(seed,x,y\.\.\.\)
 
@@ -892,8 +892,8 @@ This utility performs a series of transformations on an input VCF file and adds 
     Alternately: you can provide several additional parameters, in 
     which case it will select randomly from the set of parameters\.
     seed \(String\)
-    x \(String|INFO\_String|FILE\_String\)
-    y\.\.\. \(Optional\) \(String|INFO\_String\)
+    x \(String|INFO:String|FILE:String\)
+    y\.\.\. \(Optional\) \(String|INFO:String\)
 
 ### SETS\.UNION\(x\.\.\.\)
 
@@ -903,13 +903,13 @@ This utility performs a series of transformations on an input VCF file and adds 
     point to a text file with 'FILE:filename', or can be constants 
     \(delimited with colons\)\. The output will be the union of the 
     given parameters, in alphabetical order\.
-    x\.\.\. \(String|INFO\_String|FILE\_String\)
+    x\.\.\. \(String|INFO:String|FILE:String\)
 
 ### COPY\(oldField\)
 
     
     
-    oldField \(INFO\_Float|INFO\_Double|INFO\_String\)
+    oldField \(INFO:Float|INFO:String\)
 
 ### SETS\.INTERSECT\(x\.\.\.\)
 
@@ -919,7 +919,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     or a constant set delimited with colons\. Output field will be 
     a comma delimited string containing the intersect between the 
     supplied sets\.
-    x\.\.\. \(String|INFO\_String|FILE\_String\)## VCF Line Filter Expressions
+    x\.\.\. \(String|INFO:String|FILE:String\)## VCF Line Filter Expressions
 
 
 

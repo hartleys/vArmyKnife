@@ -58,12 +58,30 @@ object SVcfTagFunctions {
       def getFromString(s : String) : ParamSrc = {
         if(s == "INFO"){
           INFO
-        } else if(s == "GENO"){
+        } else if(s == "GENO" || s == "FORMAT"){
           GENO
         } else if(s == "FILE"){
           FILE
         } else {
           CONST
+        }
+      }
+      def getString(p : ParamSrc.ParamSrc) : String = {
+        p match {
+          case ParamSrc.INFO => "INFO";
+          case ParamSrc.GENO => "GENO";
+          case ParamSrc.FILE => "FILE";
+          case ParamSrc.CONST => "CONST";
+          case ParamSrc.ERR => "ERR";
+        }
+      }
+      def getPrefix(p : ParamSrc.ParamSrc) : String = {
+        p match {
+          case ParamSrc.INFO => "INFO:";
+          case ParamSrc.GENO => "GENO:";
+          case ParamSrc.FILE => "FILE:";
+          case ParamSrc.CONST => "";
+          case ParamSrc.ERR => "ERR:";
         }
       }
     }
@@ -77,6 +95,14 @@ object SVcfTagFunctions {
           FLOAT
         } else {
           STRING
+        }
+      }
+      def getString( p : ParamType.ParamType) : String = {
+        p match {
+          case ParamType.INT => "Integer";
+          case ParamType.FLOAT => "Float";
+          case ParamType.STRING => "String";
+          case ParamType.ERR => "ERR";
         }
       }
     }
@@ -107,7 +133,10 @@ object SVcfTagFunctions {
     
     val tys = ty.split("[|]")
     val TYS = tys.map{ tt => tt.toUpperCase() }
-
+    val TYA = TYS.map{ tt => {
+        tt.split("[:]").head
+    }}.toSet
+      
     def getParsedParam(param : String, h : SVcfHeader) : VcfFcnParsedParam = {
       def checkIsInt(pp : String) : Boolean = {
         pp.split(":").forall{ p => {
@@ -138,7 +167,157 @@ object SVcfTagFunctions {
           checkIsInfo(pp)
         }
       }
+      def getHeaderLine(pp : String, PS : ParamSrc.ParamSrc) : Option[SVcfCompoundHeaderLine] = {
+        if(PS == ParamSrc.GENO){
+          checkIsGeno(pp)
+        } else {
+          checkIsInfo(pp)
+        }
+      }
       
+      val PP = if(param.toUpperCase().startsWith("FILE:")){
+        param.toUpperCase().drop(5)
+      } else if(param.toUpperCase().startsWith("CONST:")){
+        param.toUpperCase().drop(6)
+      } else if(param.toUpperCase().startsWith("GENO:")){
+        param.toUpperCase().drop(5)
+      } else if( param.toUpperCase().startsWith("FORMAT:")){
+        param.toUpperCase().drop(7)
+      } else if( param.toUpperCase().startsWith("INFO:")){
+        param.toUpperCase().drop(5)
+      } else{
+        param;
+      }
+      val PS = if(param.toUpperCase().startsWith("FILE:")){
+        ParamSrc.FILE
+      } else if(param.toUpperCase().startsWith("CONST:")){
+        ParamSrc.CONST
+      } else if(param.toUpperCase().startsWith("GENO:") || param.toUpperCase().startsWith("FORMAT:")){
+        ParamSrc.GENO
+      } else {
+        ParamSrc.INFO
+      }
+      val PTactual = PS match {
+        case ParamSrc.FILE => {
+          ParamType.STRING
+        }
+        case ParamSrc.CONST => {
+          if( PP.split(":").forall{ z => string2intOpt(z).isDefined } ){
+            ParamType.INT
+          } else if(PP.split(":").forall{ z => string2doubleOpt(z).isDefined } ){
+            ParamType.FLOAT
+          } else {
+            ParamType.STRING
+          }
+        }
+        case ParamSrc.GENO => {
+          val LN = getHeaderLine(PP,PS);
+          LN match {
+            case Some(ln) => {
+              if(ln.Type == "Float") ParamType.FLOAT
+              else if(ln.Type == "Integer") ParamType.INT
+              else ParamType.STRING
+            }
+            case None => {
+              error("ERROR: INFO field: "+PP+" NOT FOUND IN VCF HEADER!");
+              ParamType.STRING
+            }
+          }
+        }
+        case ParamSrc.INFO => {
+          val LN = getHeaderLine(PP,PS);
+          LN match {
+            case Some(ln) => {
+              if(ln.Type == "Float") ParamType.FLOAT
+              else if(ln.Type == "Integer") ParamType.INT
+              else ParamType.STRING
+            }
+            case None => {
+              error("ERROR: INFO field: "+PP+" NOT FOUND IN VCF HEADER!");
+              ParamType.STRING
+            }
+          }
+        }
+      }
+      val SRC = ParamSrc.getString(PS);
+      val PT = PTactual match {
+        case ParamType.INT => {
+          if(TYA.contains("Int")){
+            ParamType.INT
+          } else if(TYA.contains("Float")){
+            ParamType.FLOAT
+          } else if(TYA.contains("String")){
+            ParamType.STRING
+          } else {
+            error("Impossible State: Illegal param! "+param +" with options: "+ty)
+            ParamType.ERR
+          }
+        }
+        case ParamType.FLOAT => {
+          if(TYA.contains("Float")){
+            ParamType.FLOAT
+          } else if(TYA.contains("String")){
+            ParamType.STRING
+          } else if(TYA.contains("Int")){
+            warning("Warning: Forcing a Float value into a Int: "+param,"FORCE_"+SRC+"_FLOAT_TO_INT",-1)
+            ParamType.INT
+          } else {
+            error("Impossible State: Illegal param! "+param +" with options: "+ty)
+            ParamType.ERR
+          }
+        }
+        case ParamType.STRING => {
+          if(TYA.contains("String")){
+            ParamType.STRING
+          } else if(TYA.contains("Float")){
+            warning("Warning: Forcing a String value into a Float: "+param,"FORCE_"+SRC+"_STRING_TO_FLOAT",-1)
+            ParamType.FLOAT
+          } else if(TYA.contains("Int")){
+            warning("Warning: Forcing a String value into a Int: "+param,"FORCE_"+SRC+"_STRING_TO_INT",-1)
+            ParamType.INT
+          } else {
+            error("Impossible State: Illegal param! "+param +" with options: "+ty)
+            ParamType.ERR
+          }
+        }
+      }
+      val PN = PS match {
+        case ParamSrc.FILE => ".";
+        case ParamSrc.CONST => {
+          if( PP.split(":").length == 1){
+            "1"
+          } else {
+            "."
+          }
+        }
+        case ParamSrc.GENO => {
+          val LN = getHeaderLine(PP,PS);
+          LN match {
+            case Some(ln) => {
+              ln.Number
+            }
+            case None => {
+              error("ERROR: INFO field: "+PP+" NOT FOUND IN VCF HEADER!");
+              "."
+            }
+          }
+        }
+        case ParamSrc.INFO => {
+          val LN = getHeaderLine(PP,PS);
+          LN match {
+            case Some(ln) => {
+              ln.Number
+            }
+            case None => {
+              error("ERROR: INFO field: "+PP+" NOT FOUND IN VCF HEADER!");
+              "."
+            }
+          }
+        }
+      }
+      
+      return VcfFcnParsedParam(PS,PT,PN,this, PP)
+      /*
       if(param.toUpperCase().startsWith("FILE:")){
         if(! TYS.contains("FILE_STRING")){
           error("Fatal Error: param "+id+" is not permitted to be a FILE! It must be one of these types: "+ty);
@@ -214,7 +393,7 @@ object SVcfTagFunctions {
                   "Did you intend for this parameter to be an GENOTYPE/FORMAT field? If so, you must start the parameter with 'INFO:'","WARN_STRING_MIGHT_BE_INFO_FIELD",-1)
         }}
         VcfFcnParsedParam(ParamSrc.CONST,ParamType.STRING,num,this, param)
-      }
+      }*/
       
     }
 
@@ -337,6 +516,134 @@ object SVcfTagFunctions {
     def get(v : SVcfVariantLine) : Option[T]
     def isConst() : Boolean;
   }
+  
+/*
+ * 
+     case class VcfFcnParsedParam(SRC : ParamSrc.ParamSrc, 
+                                 TYPE : ParamType.ParamType, 
+                                 NUM : String, 
+                                 PARAM : VcfTagFunctionParam, 
+                                 VAL : String){
+      
+      
+      
+  }
+ */
+  case class VcfTagFunctionParamReaderFile(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[String]] {
+    def isConst() : Boolean = true;
+    if(!  (new File(pprm.VAL)).exists() ){
+      error("ERROR: File \""+pprm.VAL+"\" DOES NOT EXIST!");
+    }
+    val lines = getLinesSmartUnzip(pprm.VAL).toVector
+    def get(v : SVcfVariantLine) : Option[Vector[String]] = {
+      Some(lines);
+    }
+  }
+  
+  case class VcfTagFunctionParamReaderInt(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Int] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      string2int(pprm.VAL)
+    } else {
+      0
+    }
+    def get(v : SVcfVariantLine) : Option[Int] = if(isConst()){
+      Some(x);
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).map{ z => {
+        string2int(z)
+      }}
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReaderFloat(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Double] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      string2double(pprm.VAL)
+    } else {
+      0.0
+    }
+    def get(v : SVcfVariantLine) : Option[Double] = if(isConst()){
+      Some(x);
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).map{ z => {
+        string2double(z)
+      }}
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReaderString(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[String] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    def get(v : SVcfVariantLine) : Option[String] = if(isConst()){
+      Some(pprm.VAL)
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None)
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReaderIntSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Int]] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      pprm.VAL.split(":").map{string2int(_)}.toVector
+    } else {
+      Vector()
+    }
+    def get(v : SVcfVariantLine) : Option[Vector[Int]] = if(isConst()){
+      Some( x );
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).map{ z => {
+        z.split(",").map{string2int(_)}.toVector;
+      }}
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReaderFloatSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Double]] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      pprm.VAL.split(":").map{string2double(_)}.toVector;
+    } else {
+      Vector()
+    }
+    def get(v : SVcfVariantLine) : Option[Vector[Double]] = if(isConst()){
+      Some(x);
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).map{ z => {
+        z.split(",").map{string2double(_)}.toVector;
+      }}
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionParamReaderStringSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[String]] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      pprm.VAL.split(":").toVector;
+    } else {
+      Vector()
+    }
+    def get(v : SVcfVariantLine) : Option[Vector[String]] = if(isConst()){
+      //reportln("param:"+param+"/inputType:"+inputType+" RETURNS SOME("+x+")","deepDebug");
+      Some(x);
+    } else if(pprm.SRC == ParamSrc.INFO){
+      //reportln("param:"+param+"/inputType:"+inputType,"deepDebug");
+      v.info.getOrElse( pprm.VAL, None).map{ z => {
+        //reportln(">     "+z,"deepDebug");
+        z.split(",").toVector;
+      }}
+    } else {
+      //reportln("param:"+param+"/inputType:"+inputType+" RETURNS NONE","deepDebug");
+      None
+    }
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+  
   case class VcfTagFunctionFileReader(param : String, inputType : String) extends VcfTagFunctionParamReader[Vector[String]] {
     def isConst() : Boolean = true;
     if(!  (new File(param)).exists() ){
@@ -562,7 +869,7 @@ object SVcfTagFunctions {
   abstract class VcfTagFcnFactory(){
     
 
-    def getTypeInfo(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Vector[(String,String,VcfTagFunctionParam,String)] = {
+    def getTypeInfoOLD(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Vector[(String,String,VcfTagFunctionParam,String)] = {
      fcParam.padTo(params.length, fcParam.last).zip(params).map{ case (pp,pv) => {
             val tpair = pp.getFinalInputType(pv,h);
             val pvv = if(tpair._1 == "INFO" || tpair._1 == "GENO"){
@@ -573,7 +880,8 @@ object SVcfTagFunctions {
             (tpair._1,tpair._2,pp,pvv)
       }}.toVector
     }
-    def getSuperType(typeInfo : Vector[(String,String,VcfTagFunctionParam,String)]) : String = {
+    //def getTypeInfo(
+    def getSuperTypeOLD(typeInfo : Vector[(String,String,VcfTagFunctionParam,String)]) : String = {
       val types = typeInfo.map{_._2}
       if( types.forall( tt => tt == "Integer" ) ) {
         "Integer"
@@ -582,6 +890,22 @@ object SVcfTagFunctions {
       } else {
         "Float"
       }
+    }
+    
+    def getTypeInfo(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Seq[VcfFcnParsedParam] = {
+      fcParam.zip(params).map{ case (fpp,param) => {
+        fpp.getParsedParam(param ,h)
+      }}
+    }
+    //def getTypeInfo(
+    def getSuperType(pprm : Seq[VcfFcnParsedParam]) : String = {
+      ParamType.getString( if( pprm.forall( p => p.TYPE == ParamType.INT ) ){
+        ParamType.INT
+      } else if( pprm.forall( p => p.TYPE == ParamType.INT || p.TYPE == ParamType.FLOAT ) ){
+        ParamType.FLOAT
+      } else {
+        ParamType.STRING
+      } )
     }
     
      def metadata : VcfTagFcnMetadata;
@@ -598,7 +922,7 @@ object SVcfTagFunctions {
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -610,9 +934,9 @@ object SVcfTagFunctions {
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
               val dd = if(outType == "Integer"){
-                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_IntSeq(pv,tt)})
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
               } else {
-                Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -643,7 +967,7 @@ object SVcfTagFunctions {
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -655,9 +979,9 @@ object SVcfTagFunctions {
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
               val dd = if(outType == "Integer"){
-                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_IntSeq(pv,tt)})
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
               } else {
-                Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -688,8 +1012,8 @@ object SVcfTagFunctions {
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
                      params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -701,9 +1025,9 @@ object SVcfTagFunctions {
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
               val dd = if(outType == "Integer"){
-                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)})
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderInt(pprm)})
               } else {
-                Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloat(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -738,8 +1062,8 @@ object SVcfTagFunctions {
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be a float.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -750,7 +1074,7 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params,pv,h)
               override val outType = "Float";
               override val outNum = "1";
-              val ddf : Vector[VcfTagFunctionParamReader[Double]]  = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)}
+              val ddf : Vector[VcfTagFunctionParamReader[Double]]  = typeInfo.toVector.map{ pprm => VcfTagFunctionParamReaderFloat(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                   val v = ddf.flatMap{ d => d.get(vc) }
                   if(v.length == 2){
@@ -769,8 +1093,8 @@ object SVcfTagFunctions {
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -781,10 +1105,10 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params,pv,h)
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
-              val dd : Either[Vector[VcfTagFunctionParamReader_Int], Vector[VcfTagFunctionParamReader_Float]] = if(outType == "Integer"){ 
-                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)})
+              val dd = if(outType == "Integer"){
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderInt(pprm)})
               } else {
-                Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloat(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -819,7 +1143,7 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "Input should be an INFO field",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INFO_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "defaultValue", ty = "Int",req=false,dotdot=false )
               )
           );
@@ -855,7 +1179,7 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INFO_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "defaultValue", ty = "Float",req=false,dotdot=false )
               )
           );
@@ -893,7 +1217,7 @@ object SVcfTagFunctions {
                      "If names are omitted, then the name will be equal to the tagID. "+
                      "Output field will be the set of names for which the respective info field is equal to 1. Any value other than 1, including missing fields, will be treated as 0.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INFO_Int",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "INFO:Int",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -912,7 +1236,7 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params,ppv,h)
               override val outType = "String"
               override val outNum = "."
-              val ddi : Vector[VcfTagFunctionParamReader[Int]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)}
+              val ddi : Vector[VcfTagFunctionParamReader[Int]] = typeInfo.toVector.map{ pprm => VcfTagFunctionParamReaderInt(pprm)}
               //val ddf : Vector[VcfTagFunctionParamReader[Double]]  = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val v = ddi.map{ d => d.get(vc) }.zip(ppn).filter{ case (d,n) => d.map{ _ == 1 }.getOrElse(false) }.map{ _._2 }.padTo(1,".").mkString(",")
@@ -927,8 +1251,8 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INFO_String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "decoder", ty = "FILE_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "decoder", ty = "FILE:String",req=true,dotdot=false ),
               )
           );
           def metadata = mmd;
@@ -942,7 +1266,7 @@ object SVcfTagFunctions {
               
               //val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
               
-              val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReader_StringSeq(typeInfo.head._4,typeInfo.head._1);
+              val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo.head);
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
               
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
@@ -970,8 +1294,8 @@ object SVcfTagFunctions {
                      "Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "seed", ty = "String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|FILE_String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "String|INFO_String",req=false,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO:String|FILE:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "String|INFO:String",req=false,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -982,7 +1306,7 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
               override val outType = getSuperType(typeInfo);
               override val outNum = ".";
-              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.toVector.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               val isInternalPick = (typeInfo.length == 1)
               
               val rand = if(pv.head == "auto" || pv.head == "."){
@@ -1020,7 +1344,7 @@ object SVcfTagFunctions {
               desc = "Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons. "+
                      "Output field will be a comma delimited string containing the intersect between the supplied sets.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|FILE_String",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO:String|FILE:String",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -1031,7 +1355,7 @@ object SVcfTagFunctions {
               val typeInfo = getTypeInfo(md.params,pv,h)
               override val outType = "String";
               override val outNum = ".";
-              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.toVector.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
                   soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
@@ -1048,8 +1372,8 @@ object SVcfTagFunctions {
               desc = "Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons."+
                      "Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float|FILE_String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float|FILE_String",req=true,dotdot=false )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -1057,10 +1381,10 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               override val outType = "String";
               override val outNum = ".";
-              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
                   soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
@@ -1076,7 +1400,7 @@ object SVcfTagFunctions {
               shortDesc = "Concatenates the input",
               desc = "This simple function concatenates the values of the input parameters. Input parameters can be any combination of INFO fields or constant strings.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO:String",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -1084,7 +1408,7 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               
                 //reportln("SETS.UNION.run: ","deepDebug");
                 //reportln("  SETS.UNION.typeInfo: ","deepDebug");
@@ -1094,7 +1418,7 @@ object SVcfTagFunctions {
 
               override val outType = "String";
               override val outNum = ".";
-              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 
                 val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
@@ -1116,7 +1440,7 @@ object SVcfTagFunctions {
                       "can point to a text file with 'FILE:filename', or can be constants (delimited with colons). "+
                       "The output will be the union of the given parameters, in alphabetical order. ",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|FILE_String",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO:String|FILE:String",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -1124,7 +1448,7 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               
                 //reportln("SETS.UNION.run: ","deepDebug");
                 //reportln("  SETS.UNION.typeInfo: ","deepDebug");
@@ -1134,7 +1458,7 @@ object SVcfTagFunctions {
 
               override val outType = "String";
               override val outNum = ".";
-              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 
                 val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
@@ -1153,7 +1477,7 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -1161,14 +1485,14 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
                
               val dd = if(outType == "Integer"){
-                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_IntSeq(pv,tt)})
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
               } else {
-                Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -1196,7 +1520,7 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -1204,14 +1528,14 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
               
               val dd = if(outType == "Integer"){
-                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_IntSeq(pv,tt)})
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
               } else {
-                Right(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_FloatSeq(pv,tt)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -1248,7 +1572,7 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               override val outType = "Integer";
               override val outNum = "1";
               val rand = pv.lift(1).map{ s => {
@@ -1272,7 +1596,7 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "oldField", ty = "INFO_Float|INFO_Double|INFO_String",req=true,dotdot=false )//,
+                  VcfTagFunctionParam( id = "oldField", ty = "INFO:Float|INFO:String",req=true,dotdot=false )//,
                   //VcfTagFunctionParam( id = "newField", ty = "String",req=true,dotdot=false )
               )
           );
@@ -1281,7 +1605,7 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               val oldField = pv(0);
               //val newField = pv(1);
               override val outType = h.infoLines.find{ _.ID == oldField }.map{ _.Type }.getOrElse("???")
@@ -1300,12 +1624,12 @@ object SVcfTagFunctions {
               shortDesc = "Switches between two options depending on a logical expression.",
               desc = "Switches between two options depending on a logical expression. "+
                       "The 'expr' expression parameter must be formatted like standard variant-level expressions. "+
-                      "The x and y parameters can each be either a constant or an INFO field. The output field will be equal to x if "+
-                      "the logical expression is TRUE, and otherwise will be y.",
+                      "The A and B parameters can each be either a constant or an INFO field. The output field will be equal to A if "+
+                      "the logical expression is TRUE, and otherwise will be B.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "expr", ty = "STRING",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "x", ty = "INFO_Int|INFO_Float|INFO_String|Int|Float|String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "INFO_Int|INFO_Float|INFO_String|Int|Float|String",req=false,dotdot=false )
+                  VcfTagFunctionParam( id = "A", ty = "INFO:Int|INFO:Float|INFO:String|Int|Float|String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "B", ty = "INFO:Int|INFO:Float|INFO:String|Int|Float|String",req=false,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -1313,10 +1637,10 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
+              val typeInfo = getTypeInfo(md.params.tail,pv.tail,h).toVector
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
-              val dd = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_String(pv,tt)}.padTo(2,VcfTagFunctionParamReader_String(".","CONST"))
+              val dd = typeInfo.map{ pprm => VcfTagFunctionParamReaderString(pprm)}.padTo(2,VcfTagFunctionParamReader_String(".","CONST"))
               /*val dd = if(outType == "Integer"){
                 Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)})
               } else if(outType == "Float"){
