@@ -24,7 +24,45 @@ import scala.collection.JavaConverters._
 
 object fileUtils {
   
+  
+  def getRandomAccessBedfileReader( bedfile : String) : htsjdk.tribble.AbstractFeatureReader[htsjdk.tribble.bed.BEDFeature,htsjdk.tribble.readers.LineIterator] = {
+    val featureFile = new File(bedfile);
+    val codec = new htsjdk.tribble.bed.BEDCodec()
+    val indexFile = htsjdk.tribble.Tribble.indexFile(featureFile);
+    val index = if(indexFile.canRead()) {
+      htsjdk.tribble.index.IndexFactory.loadIndex(indexFile.getAbsolutePath());
+    } else {
+      /*
+                Index index = IndexFactory.createLinearIndex(featureFile, codec);
 
+            // try to write it to disk
+            LittleEndianOutputStream stream = new LittleEndianOutputStream(new BufferedOutputStream(new FileOutputStream(indexFile)));
+            		
+            index.write(stream);
+            stream.close();
+
+            return index;
+       */
+      val xx = htsjdk.tribble.index.IndexFactory.createLinearIndex(featureFile, codec);
+      val stream : htsjdk.tribble.util.LittleEndianOutputStream = new htsjdk.tribble.util.LittleEndianOutputStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(indexFile)));
+      xx.write(stream);
+      stream.close();
+      xx;
+    }
+    
+    val reader =   htsjdk.tribble.AbstractFeatureReader.getFeatureReader(featureFile.getAbsolutePath(), codec, index);
+    
+    return reader;
+  }
+  def queryBedPos(chrom : String, start : Int, end : Int,
+         reader : htsjdk.tribble.AbstractFeatureReader[htsjdk.tribble.bed.BEDFeature,htsjdk.tribble.readers.LineIterator]) : 
+         htsjdk.tribble.CloseableTribbleIterator[htsjdk.tribble.bed.BEDFeature] = {
+    reader.query(chrom,start,end);
+  }
+  
+  
+  
+  
   class CmdZip extends internalUtils.commandLineUI.CommandLineRunUtil {
      override def priority = 1;
      val parser : internalUtils.commandLineUI.CommandLineArgParser = 

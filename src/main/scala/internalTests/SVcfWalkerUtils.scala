@@ -13517,11 +13517,12 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       (addIteratorCloseAction( iter = groupBySpan(vcIter.buffered){ v => { (v.chrom,v.pos) } }.flatMap{vg => {
         val swaps = vg.map{ v => (v.ref,v.alt.head)}.distinct.sorted
         swaps.flatMap{ case (r,a) => {
-          val vbg = vg.filter{ v => v.ref == r && v.alt.head == a }
-          vbg.zipWithIndex.foreach{ case (v,ii) => {
+          val vbgRAW = vg.filter{ v => v.ref == r && v.alt.head == a }
+          val vbg = vbgRAW.zipWithIndex.map{ case (v,ii) => {
             val vb = v.getOutputLine()
-            vb.addInfo(cdt+"_CT",vbg.length+"");
+            vb.addInfo(cdt+"_CT",vbgRAW.length+"");
             vb.addInfo(cdt+"_IDX",ii+"");
+            vb
           }}
           if(vbg.length > 1){
             tally(cdt+"_DUPSETCT",1);
