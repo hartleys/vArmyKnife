@@ -11,14 +11,17 @@ object commandLineUI {
   case class UserManualBlock( lines : Seq[String],
                               title : Option[String] = None, 
                               level : Int = 1, isCodeBlock : Boolean = true,
-                              indentTitle : Int = 4, indentBlock : Int = 8,
-                              indentFirst:Int= 8){
+                              indentTitle : Int = 4, indentBlock : Int = 8, 
+                              indentFirst:Int= 8, 
+                              titleIndentChar : String = " ", firstLineIndentChar : String = " ", indentChar : String = " "){
     def mdBlockIndent = if(isCodeBlock) 4 else 0;
     def getBlockString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
                        baseIndent : Int = 0) : String = {
-      title.map{ t => "\n"+repString(" ",baseIndent + indentTitle)+t }.getOrElse("") + lines.map{line => {
+      title.map{ t => "\n"+repString(titleIndentChar,baseIndent + indentTitle)+t }.getOrElse("") + lines.zipWithIndex.map{ case (line,i) => {
         //wrapLineWithIndent(line,lineLen,4)
-        wrapSimpleLineWithIndent_staggered(line, width = lineLen, indent = indentBlock, firstLineIndent = indentFirst);
+        wrapSimpleLineWithIndent_staggered(line, width = lineLen, 
+                                           indent = repString(indentChar,baseIndent + indentBlock), 
+                                           firstLineIndent = repString(firstLineIndentChar,baseIndent + indentFirst));
       }}.mkString("\n");
       /*
       

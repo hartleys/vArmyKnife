@@ -2850,14 +2850,25 @@ object VcfTool {
                                   )
       );
     def logicManualFmt : Seq[UserManualBlock] = logicManualRaw.map{ case (t,ln) => {
-      UserManualBlock( Seq(ln),t );
+      UserManualBlock( Seq(ln),t , indentTitle = 0, indentBlock = 4, indentFirst = 0);
     }} ++ Seq(
         UserManualBlock(Seq(""),Some(""))
-    ) ++ this.filterFunctionSet.toVector.sortBy( x => x.funcName ).map( x => {
-        UserManualBlock(title = None,lines = Seq( x.funcName+":"+x.paramNames.mkString(":"),x.desc))
+    ) ++ this.filterFunctionSet.toVector.sortBy( x => x.funcName ).flatMap( x => {
+      Seq(   
+      UserManualBlock(title = None,lines = Seq( x.funcName+":"+x.paramNames.mkString(":")), indentBlock = 8,  indentFirst = 4),
+      UserManualBlock(title = None,lines = Seq( x.desc)                                   , indentBlock = 8,  indentFirst = 8),
+      UserManualBlock(title = None,lines = Seq( "(Param Types: "+ x.paramTypes.mkString(":") + ({ if(x.numParam == -1) ":...)" else ")" })),
+                                                                                            indentBlock = 12, indentFirst = 12)
+      )
     })
       
       /*
+         case class UserManualBlock( lines : Seq[String],
+                              title : Option[String] = None, 
+                              level : Int = 1, isCodeBlock : Boolean = true,
+                              indentTitle : Int = 4, indentBlock : Int = 8,
+                              indentFirst:Int= 8, 
+                              titleIndentChar : String = " ", firstLineIndentChar : String = " ", indentChar : String = " ")
        UserManualBlock( lines : Seq[String],
                               title : Option[String] = None, 
                               level : Int = 1, isCodeBlock : Boolean = true)

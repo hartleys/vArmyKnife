@@ -56,7 +56,7 @@ object stdUtils {
     //val sc = ss.split(delim).toSeq;
     var rawParams = sc.map{ cell => {
        val x= cell.split(innerDelim);
-       (x.head, x.lift(1) )
+       (x.head.trim(), x.lift(1).map{ _.trim() } )
     }}.map{ case ( paramID, paramValue ) => {
       if(! paramMap.contains(paramID)){
         error("Parameter \""+paramID+"\" not found! legal params are: "+paramMap.map{ _._2.id }.mkString(",")  );
@@ -1761,18 +1761,18 @@ object stdUtils {
   
   def wrapSimpleLineWithIndent_staggered(line : String, width : Int, indent : String, firstLineIndent : String) : String = {
     if(line.length + firstLineIndent.length < width) {
-      return line;
+      return firstLineIndent+line;
     } else {
-      val (firstLine,paraRemainder) = wrapLinesWithIndent_tailRecursiveHelper_buildLine("",line,width, firstLineIndent.length);
-      return firstLineIndent + firstLine + "\n" + wrapLinesWithIndent_tailRecursive(Seq(), paraRemainder, width, indent).mkString("\n");
+      val (firstLine,paraRemainder) = wrapLinesWithIndent_tailRecursiveHelper_buildLine(firstLineIndent,line,width, firstLineIndent.length);
+      return firstLine + "\n" + wrapLinesWithIndent_tailRecursive(Seq(), paraRemainder, width, indent).mkString("\n");
     }
   }
-  def wrapSimpleLineWithIndent_staggered(line : String, width : Int, indent : Int, firstLineIndent : Int) : String = {
+  def wrapSimpleLineWithIndent_staggeredCt(line : String, width : Int, indent : Int, firstLineIndent : Int) : String = {
     if(line.length + firstLineIndent < width) {
-      return line;
+      return repString(" ",firstLineIndent)+line;
     } else {
-      val (firstLine,paraRemainder) = wrapLinesWithIndent_tailRecursiveHelper_buildLine("",line,width, firstLineIndent);
-      return firstLineIndent + firstLine + "\n" + wrapLinesWithIndent_tailRecursive(Seq(), paraRemainder, width, repString(" ",indent)).mkString("\n");
+      val (firstLine,paraRemainder) = wrapLinesWithIndent_tailRecursiveHelper_buildLine(repString(" ",firstLineIndent),line,width, firstLineIndent);
+      return firstLine + "\n" + wrapLinesWithIndent_tailRecursive(Seq(), paraRemainder, width, repString(" ",indent)).mkString("\n");
     }
   }
    
@@ -1827,7 +1827,9 @@ object stdUtils {
     
     val indexOfNextSpace = para.indexOf(' ');
     val wordLen = if(indexOfNextSpace == -1) para.length; else indexOfNextSpace;
-    
+    //if(lineSoFar == ""){
+    //  return wrapLinesWithIndent_tailRecursiveHelper_buildLine(  )
+    //}
    
     
     if(indentLen + wordLen > width) {

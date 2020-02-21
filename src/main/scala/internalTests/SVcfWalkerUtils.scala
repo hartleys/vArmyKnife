@@ -2874,7 +2874,7 @@ object SVcfWalkerUtils {
         "Float"
       } else if( Set("LEN").contains(f) ){
         "Integer"
-      } else if(Set("SUM","MIN","MAX","DIFF").contains(f)){
+      } else if(Set("SUM","MIN","MAX","DIFF","MAX.WITH.DEFAULT","MIN.WITH.DEFAULT").contains(f)){
          if(paramTypes.forall(pt => pt == "Integer")){
            "Integer"
          } else {
@@ -3072,23 +3072,25 @@ object SVcfWalkerUtils {
           val out = v.info.get(paramTags.head).getOrElse(None).map{z => ( string2double(z) ).toString}.getOrElse(".");
           //val out = v.info.get(paramTags.head).getOrElse(None).map{z => string2doubleOpt(z).map{zz => zz.toString}.getOrElse(".")}.getOrElse(".");
           vc.addInfo(newTag,out);
-        } else if(f == "MIN"){
+        } else if(f == "MIN" || f == "MIN.WITH.DEFAULT"){
+          val pt = if(f == "MIN.WITH.DEFAULT"){ paramTags.tail } else { paramTags };
+          val defaultString = if( f == "MIN.WITH.DEFAULT"){ paramTags.head } else { "." };
           if(outType == "Integer"){
-            val paramVals : Seq[Int] = paramTags.flatMap{ param => {
+            val paramVals : Seq[Int] = pt.flatMap{ param => {
               v.info.get(param).getOrElse(None)
-            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
-              paramVal.toInt
+            }}.filter(paramVal => paramVal != ".").flatMap{ paramVal => {
+              paramVal.split(",").flatMap{ss => string2intOpt(ss)}
             }}
             if(paramVals.nonEmpty){
               vc.addInfo(newTag, ""+paramVals.min);
             } else {
-              vc.addInfo(newTag, ".");
+              vc.addInfo(newTag, defaultString);
             }
           } else {
-            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+            val paramVals : Seq[Double] = pt.flatMap{ param => {
               v.info.get(param).getOrElse(None)
-            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
-              paramVal.toDouble
+            }}.filter(paramVal => paramVal != ".").flatMap{ paramVal => {
+              paramVal.split(",").flatMap{ss => string2doubleOpt(ss)}
             }}
             if(paramVals.nonEmpty){
               digits match {
@@ -3100,26 +3102,28 @@ object SVcfWalkerUtils {
                 }
               }
             } else {
-              vc.addInfo(newTag, ".");
+              vc.addInfo(newTag, defaultString);
             }
           }
-        } else if(f == "MAX"){
+        } else if(f == "MAX" || f == "MIN.WITH.DEFAULT"){
+          val pt = if(f == "MIN.WITH.DEFAULT"){ paramTags.tail } else { paramTags };
+          val defaultString = if( f == "MIN.WITH.DEFAULT"){ paramTags.head } else { "." };
           if(outType == "Integer"){
-            val paramVals : Seq[Int] = paramTags.flatMap{ param => {
+            val paramVals : Seq[Int] = pt.flatMap{ param => {
               v.info.get(param).getOrElse(None)
-            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
-              paramVal.toInt
+            }}.filter(paramVal => paramVal != ".").flatMap{ paramVal => {
+              paramVal.split(",").flatMap{ss => string2intOpt(ss)}
             }}
             if(paramVals.nonEmpty){
               vc.addInfo(newTag, ""+paramVals.max);
             } else {
-              vc.addInfo(newTag, ".");
+              vc.addInfo(newTag, defaultString);
             }
           } else {
-            val paramVals : Seq[Double] = paramTags.flatMap{ param => {
+            val paramVals : Seq[Double] = pt.flatMap{ param => {
               v.info.get(param).getOrElse(None)
-            }}.filter(paramVal => paramVal != ".").map{ paramVal => {
-              paramVal.toDouble
+            }}.filter(paramVal => paramVal != ".").flatMap{ paramVal => {
+              paramVal.split(",").flatMap{ss => string2doubleOpt(ss)}
             }}
             if(paramVals.nonEmpty){
               digits match {
@@ -3131,7 +3135,7 @@ object SVcfWalkerUtils {
                 }
               }
             } else {
-              vc.addInfo(newTag, ".");
+              vc.addInfo(newTag, defaultString);
             }
           }
         } else if(f == "PROD"){
@@ -3597,7 +3601,194 @@ object SVcfWalkerUtils {
 
   }
   
+  /*
+       case class VarExtract(tagID : String, columnIx : Seq[Int], desc : String, collapseUniques : Boolean, 
+                          tagSet : Set[String] = Set[String]("HIGH","MODERATE","LOW"),
+                          listSet : Set[String] = Set[String]("ALL","onList")){
+   */
   
+  class SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
+                             fieldInfix : String,
+                             columnIx : Seq[Int], desc : String , collapseUniques : Boolean,
+                             tagSet : Seq[String] = Seq[String]("HIGH","MODERATE","LOW","NS","ANY")) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "SnpEffFieldExtract"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+           ("tagPrefix",tagPrefix),
+           ("tagPrefixOutput",tagPrefixOutput.getOrElse(tagPrefix)),
+           ("columnIx",columnIx.mkString("|")),
+           ("fieldInfix",fieldInfix),
+           ("desc",desc),
+           ("tagSet",tagSet.mkString("|"))
+           )
+    val thisWalker = this;
+    val tagOut = tagPrefixOutput.getOrElse(tagPrefix);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      val makeTags = tagSet.map{ ts => {
+          val exFromDesc = if( Seq("HIGH","MODERATE","LOW").contains(ts) ){
+            ts
+          } else if( ts == "NS"){
+            "HIGH/MODERATE"
+          } else {
+            "HIGH/MODERATE/LOW"
+          }
+          val tsFix = if(ts == "ANY"){
+            ""
+          } else {
+            ts
+          }
+          val suffixSet = if( Seq("HIGH","MODERATE","LOW").contains(ts) ){
+            ts
+          } else if( ts == "NS"){
+            "HIGH/MODERATE"
+          } else {
+            "HIGH/MODERATE/LOW"
+          }
+          val tsFixSet = if( Seq("HIGH","MODERATE","LOW").contains(ts) ){
+            Seq(ts)
+          } else if( ts == "NS"){
+            Seq("HIGH","MODERATE")
+          } else {
+            Seq("HIGH","MODERATE","LOW")
+          }
+          
+          outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagOut+"_"+fieldInfix+"_"+tsFix, ".", "String", desc+". Extracted from the columns "+columnIx.map{ _.toString }.mkString("/")+", from fields(s): "+tagPrefix+"_"+exFromDesc+". ")).addWalker(this))
+          
+          (tsFixSet.map{ tsfs => {
+            tagPrefix+"_"+tsfs
+          }}, tagOut+"_"+fieldInfix+"_"+tsFix)
+      }}
+      
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+"HIGH", ".", "String", "Extracted from ANN, high only. "+svexFullDesc)).addWalker(this))
+
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine()
+        vc.dropInfo(overwriteInfos);
+        
+        makeTags.foreach{ case (tt,outTagId) => {
+          val outS1 = tt.flatMap{ ttt => {
+            v.info.get(ttt).getOrElse(None).map{ ann => {
+              val cells = ann.split(",");
+              columnIx.map{ cix => {
+                cells.lift(cix).getOrElse(".")
+              }}.mkString("/")
+            }}
+          }}
+          val out = if(collapseUniques){
+            outS1.distinct
+          } else {
+            outS1
+          }
+          vc.addInfo( outTagId,     out.padTo(1,".").mkString(","));
+        }}
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+  }
+  
+  /*
+  class SnpEffExtractGeneList(tagPrefix : String, 
+                             geneListTagInfix : String,
+                             fieldInfix : String,
+                             columnIx : Seq[Int], desc : String , collaseUniques : Boolean,
+                             tagSet : Seq[String] = Seq[String]("HIGH","MODERATE","LOW","NS","ANY")) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "SnpEffFieldExtract"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+           ("tagPrefix",tagPrefix),
+           ("tagPrefixOutput",tagPrefixOutput.getOrElse(tagPrefix)),
+           ("geneListTagPrefix",geneListTagInfix),
+           ("columnIx",columnIx.mkString("|")),
+           ("fieldInfix",fieldInfix),
+           ("desc",desc),
+           ("tagSet",tagSet.mkString("|"))
+           )
+    val thisWalker = this;
+    val tagOut = tagPrefixOutput.getOrElse(tagPrefix);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      val makeTags = tagSet.map{ ts => {
+          val exFromDesc = if( Seq("HIGH","MODERATE","LOW").contains(ts) ){
+            ts
+          } else if( ts == "NS"){
+            "HIGH/MODERATE"
+          } else {
+            "HIGH/MODERATE/LOW"
+          }
+          val tsFix = if(ts == "ANY"){
+            ""
+          } else {
+            ts
+          }
+          val suffixSet = if( Seq("HIGH","MODERATE","LOW").contains(ts) ){
+            ts
+          } else if( ts == "NS"){
+            "HIGH/MODERATE"
+          } else {
+            "HIGH/MODERATE/LOW"
+          }
+          val tsFixSet = if( Seq("HIGH","MODERATE","LOW").contains(ts) ){
+            Seq(ts)
+          } else if( ts == "NS"){
+            Seq("HIGH","MODERATE")
+          } else {
+            Seq("HIGH","MODERATE","LOW")
+          }
+          
+          outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagOut+"_"+fieldInfix+"_"+tsFix, ".", "String", desc+". Extracted from the columns "+columnIx.map{ _.toString }.mkString("/")+", from fields(s): "+tagPrefix+"_"+exFromDesc+". ")).addWalker(this))
+          
+          (tsFixSet.map{ tsfs => {
+            tagPrefix+"_"+tsfs
+          }}, tagOut+"_"+fieldInfix+"_"+tsFix)
+      }}
+      
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+"HIGH", ".", "String", "Extracted from ANN, high only. "+svexFullDesc)).addWalker(this))
+
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine()
+        vc.dropInfo(overwriteInfos);
+        
+        makeTags.foreach{ case (tt,outTagId) => {
+          val outS1 = tt.flatMap{ ttt => {
+            v.info.get(ttt).getOrElse(None).map{ ann => {
+              val cells = ann.split(",");
+              columnIx.map{ cix => {
+                cells.lift(cix).getOrElse(".")
+              }}.mkString("/")
+            }}
+          }}
+          val out = if(collaseUniques){
+            outS1.distinct
+          } else {
+            outS1
+          }
+          vc.addInfo( outTagId,     out.padTo(1,".").mkString(","));
+        }}
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+  }*/
   
   class SnpEffInfoExtract(tagID : String = "ANN", 
                           tagPrefix : String = "ANNEX_",
