@@ -2148,6 +2148,9 @@ object SVcfWalkerUtils {
  //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
 
   
+  
+  
+  
      class calcBurdenCountsWalker( tagID : String, out : WriterUtil,
                                    geneTag : String,
                                    filterExpressionString : String,
@@ -2270,7 +2273,152 @@ object SVcfWalkerUtils {
     }
   }
 
-  
+
+     class calcBurdenMatrixWalker( tagID : String, outfile : String,
+                                   geneTag : String,
+                                   filterExpressionString : String,
+                                   sampSubset : Option[Set[String]],
+                                   sampGroup :  Option[String], gtTag : String,
+                                   groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String],
+                                   geneList : Option[Seq[String]], pathwayList : Seq[String],
+                                   printFullGeneList : Boolean
+     ) extends internalUtils.VcfTool.SVcfWalker {
+
+    def walkerName : String = "GenerateBurdenMatrix."+tagID;
+    val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, groupList, superGroupList);
+    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
+
+    
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagID",tagID),
+        ("filterExpressionString",filterExpressionString),
+        ("gtTag",gtTag)
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+       checkSVcfFilterLogicParse( filterLogic = filterExpr, vcfHeader = vcfHeader );
+
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number="1",Type="Float",desc=desc.getOrElse("Simple ratio between fields "+nTag+" and "+dTag+".")));
+      //val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      //if( overwriteInfos.nonEmpty ){
+      //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      //}
+      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) ) 
+      val burdenMatrix = new scala.collection.mutable.AnyRefMap[String,Array[Int]]()
+      val varCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
+      val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
+      val fullSampList =  vcfHeader.titleLine.sampleList
+      val keepSampSet = sampSubset.getOrElse(fullSampList.toSet);
+      val groupSampSet = sampGroup.map{ g =>{
+        groupToSampleMap.getOrElse(g, {
+          error("sample group "+g+" not found!")
+          Set[String]();
+        });
+      }}
+      
+      val finalKeepSampSet = groupSampSet.map{ gss => {
+        keepSampSet.filter( ss => { gss.contains(ss) })
+      }}.getOrElse( keepSampSet );
+      val sampIdxList = fullSampList.zipWithIndex.filter{ case (samp,idx)=> { finalKeepSampSet.contains(samp) }}.map{ case (samp,idx) => idx };
+      val sampct = sampIdxList.length
+
+      notice("BTcount: parsed sample list (sampSubset: "+sampSubset.map(_.size).getOrElse(-1)+"), (keepSampSet: "+keepSampSet.size+"), (finalKeepSampSet: "+finalKeepSampSet.size+"), (sampIdxList: "+sampIdxList.length+") first 10 sample idx: ["+sampIdxList.slice(0,10).mkString("/")+"]","sampIdxListFound",10);
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        if(filterExpr.keep(v)){
+          val geneList = v.info.get(geneTag).getOrElse(None).map{a => a.split(",")}.getOrElse( new Array[String](0) );
+          //geneList.foreach{ g => {
+            val cts = geneList.map{ g => {
+              burdenMatrix.getOrElseUpdate(g,
+                 new Array[Int]( outHeader.titleLine.sampleList.length )
+              )
+            }}
+            notice("genelist found: \""+geneList.mkString("/")+"\"","GENELIST_FOUND",25);
+            var numAlt = 0;
+            v.genotypes.getGtTag(gtTag).map{ gta => {
+              sampIdxList.foreach{ sampIdx => {
+                val gt = gta(sampIdx);
+                //notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
+                if( gt.split("[|/]").contains("1")){
+                  //notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
+                  numAlt = numAlt + 1;
+                  cts.map{ ctsCurr => {
+                    ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
+                  }}
+                  geneList.foreach{g => {
+                    val altCt =  altCounts.getOrElse(g,0);
+                    altCounts.update(g,altCt + 1);
+                  }}
+                }
+              }}
+              
+            }}
+            if(numAlt > 0){
+                  geneList.foreach{g => {
+                    val altCt =  varCounts.getOrElse(g,0);
+                    varCounts.update(g,altCt + 1);
+                  }}
+            }
+             
+          //}}
+        }
+        vc
+      }}, closeAction = (() => {
+        //val out = openWriter(outfile);
+        //out.write("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length+"\n");
+        //reportln("#counts\t"+tagID+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"sampCt="+sampIdxList.length,"note")
+        val tagIdPrefix = if(tagID == ""){
+          ""
+        } else {
+          tagID + "\t"
+        }
+        val out = openWriterSmart(outfile);
+        out.write(tagIdPrefix+"geneID\t"+outHeader.titleLine.sampleList.zipWithIndex.filter{ case (g,i) => sampIdxList.contains(i) }.map{ case (g,i) => g}.mkString("\t")+"\n");
+        
+        if(printFullGeneList){
+          geneList.get.foreach{ g => {
+            val mtr = burdenMatrix.getOrElse(g,new Array[Int](outHeader.titleLine.sampleList.length)).zipWithIndex.filter{ case (g,i) => sampIdxList.contains(i) }.map{ case (g,i) => g}
+            out.write( tagIdPrefix + g+"\t"+mtr.mkString("\t") +"\n" );
+          }}
+        } else {
+        burdenMatrix.keys.toVector.sorted.foreach{ g => {
+            val mtr = burdenMatrix(g).zipWithIndex.filter{ case (g,i) => sampIdxList.contains(i) }.map{ case (g,i) => g}
+            //val altCt = altCounts(g);
+            //val varCt = varCounts(g);
+            if(geneList.isEmpty || geneList.get.contains(g)){
+              out.write( tagIdPrefix + g+"\t"+mtr.mkString("\t") +"\n" );
+            }
+          }}
+        }
+
+        
+        pathwayList.map{ pwString => {
+          val pwCells = pwString.trim().split("=",2)
+          val id      = pwCells.head.trim();
+          val genes   = pwCells(1).split("[:]").map{ g => g.trim() }.toSet;
+          val mtr = burdenMatrix.filter{ case (g,bm) => {
+            genes.contains(g);
+          }}.foldLeft(new Array[Int]( outHeader.titleLine.sampleList.length )  ){ case (soFar,(g,bm)) => {
+            soFar.zip(bm).map{ case (a,b) => {
+              a+b
+            }}
+          }}.zipWithIndex.filter{ case (g,i) => sampIdxList.contains(i) }.map{ case (g,i) => g}
+          out.write( tagIdPrefix + id+"\t"+mtr.mkString("\t") +"\n" );
+        }}
+        
+        out.close();
+        //burdenMatrix.keys.toVector.sorted
+      })),outHeader)
+      
+    }
+  }
+
 
   case class VcfTagFunctionParam( id : String, 
                                   ty : String, 
@@ -2850,7 +2998,32 @@ object SVcfWalkerUtils {
     def run(vc : SVcfOutputVariantLine)
   }*/
   
-  
+  class SanitizeVcf(fixInfo : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "sanitize";
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        
+        );
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      return ( vcMap(vcIter)(vc => {
+        val vb = vc.getOutputLine()
+        
+        vc.info.foreach{ case (infoTag,infoValue) => {
+          val newvalue = infoValue.map{ vv => {
+            vv.replace(" ","_").replace("=","&eq");
+          }}
+          vb.in_info = vb.info.updated(infoTag,newvalue); 
+          
+        }}
+        
+        vb;
+      }), outHeader)
+    }
+    
+  }
 
 
   class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
@@ -3102,6 +3275,23 @@ object SVcfWalkerUtils {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
             }}.toSet
             vc.addInfo(newTag, (paramVals).toVector.sorted.padTo(1,".").mkString(","));
+        } else if(f == "SWITCH.AB"){
+            val switchParam = v.info.get(paramTags(0))
+            val A = v.info.getOrElse(paramTags(1),None);
+            val B = v.info.getOrElse(paramTags(2),None);
+            
+            switchParam.foreach{ s => {
+              if( s == "1"){
+                A.foreach{ a => {
+                  vc.addInfo(newTag,a);
+                }}
+              } else if(s == "0"){
+                B.foreach{ b => {
+                  vc.addInfo(newTag,b);
+                }}
+              }
+            }}
+            
         } else if(f == "SETS.INTERSECT"){
             val paramVals : Seq[Set[String]] = paramTags.map{ param => {
               v.info.get(param).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
@@ -3124,7 +3314,7 @@ object SVcfWalkerUtils {
         } else if(f == "MERGE.BOOLEAN.TAGS"){
           val tagNames = paramTags.lift(1).getOrElse(paramTags.head).split("[:]").toSeq;
           val out = paramTags.head.split("[:]").toSeq.zip(tagNames).flatMap{ case (pp,nn) => {
-            v.info.get(pp).filter(vv => vv == "1").map{ vv => nn }
+            v.info.getOrElse(pp,None).filter(vv => vv == "1").map{ vv => nn }
           }}.toSeq.padTo(1,".").mkString(",")
           vc.addInfo(newTag,out);
           
@@ -5813,7 +6003,95 @@ object SVcfWalkerUtils {
     }
   }
     
+  case class ChromosomeConverterAdv(chromDecoder : String, 
+                 fromToColumnNames : Option[(String,String)] = None,
+                 fromToIdx : Option[(String,String)] = None,
+                 skipFirstRow : Boolean = true,
+                       quiet : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "ConvertChromosomeName"
+    val rawcelllist = getLinesSmartUnzip(chromDecoder).map{ line => line.split("\t") }.toVector;
+    val celllist = if(skipFirstRow){
+      rawcelllist.tail
+    } else {
+      rawcelllist
+    }
     
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](("chromDecoder",chromDecoder.toString),
+                                                                    ("fromToColumnNames",fromToColumnNames.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("fromToIdx",fromToIdx.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("skipFirstRow",skipFirstRow.toString),
+                                                                    ("quiet",quiet.toString)
+                                                                    );
+    
+    val chromMap : Map[String,String] = fromToColumnNames.map{ case (f,t) => {
+      val headerLine = celllist.head;
+      val fromIDX = celllist.indexOf(f);
+      val toIDX = celllist.indexOf(t);
+      if(fromIDX == -1){
+        error("Error in ConvertChromosomeName: Cannot find column named \""+f+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      if(toIDX == -1){
+        error("Error in ConvertChromosomeName: Cannot find column named \""+t+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      celllist.tail.map{ cells => {
+        ( cells(fromIDX), cells(toIDX) )
+      }}.toMap
+    }}.getOrElse({
+      fromToIdx.map{ case (f,t) => {
+        val fromIDX = string2intOpt(f);
+        val toIDX = string2intOpt(t);
+        if( fromIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+f+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        if( toIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+t+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        celllist.map{ cells => {
+          ( cells(fromIDX.get), cells(toIDX.get) )
+        }}.toMap
+      }}.getOrElse({
+          error("ConvertChromosomeName must specify which columns to convert to/from, using either the columnNames or columnIdx parameters.");
+          null;
+      })
+    })
+    def translateChrom(c : String) : String = {
+      chromMap.get(c) match {
+        case Some(tc) => {
+          tc
+        }
+        case None => {
+          if(! quiet) warning("Could not find chrom: "+c,"CHROM_NOT_FOUND",100);
+          c;
+        }
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
+      val samps = outHeader.getSampleList
+      outHeader.otherHeaderLines = outHeader.otherHeaderLines.map{ hl => {
+        if(hl.tag == "contig"){
+          val chl = hl.convertToContigHeaderLine().get;
+          SVcfContigHeaderLine(translateChrom(chl.ID),chl.length);
+        } else {
+          hl
+        }
+      }}
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcIter.flatMap{v => {
+        val vc = v.getOutputLine()
+        vc.in_chrom = translateChrom(vc.in_chrom);
+        Some(vc)
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
 
   class CmdFilterTags extends CommandLineRunUtil {
      override def priority = 1;

@@ -74,6 +74,14 @@ object VcfAnnotateTX {
            ParamStr(id = "style",synon=Seq(),ty="String",valueString="Either +, -, or LABEL",desc="",req=false,defaultValue=Some("+"))
          ))
        ),
+       ParamStrSet("convertChromNames" ,  desc = "....", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="myChromDecoder.txt",desc="A tab delimited file with the from/to chromosome names.",req=true),
+           ParamStr(id = "columnNames",synon=Seq(),ty="String",valueString="fromCol,toCol",desc="The column titles for the old chrom names and the new chrom names, in that order. If this parameter is used, the decoder file must have a title line.",req=false),
+           ParamStr(id = "columnIdx",synon=Seq(),ty="Integer",valueString="fromColNum,toColNum",desc="The column number of the current chromosome names then the new chromosome names, in that order. Column indices start counting from 0. If you use this parameter to set the columns, and if the file has a title line, then you should use skipFirstRow or else it will be read in as if it were a chromosome.",req=false),
+           ParamStr(id = "skipFirstRow",synon=Seq(),ty="Flag",valueString="If this parameter is set, then this tool will skip the first line on the decoder file. This is useful if you are specifying the columns using column numbers but the file also has a title line.",desc="",req=false)
+         ))
+       ),
        
        ParamStrSet("genotypeFilter" ,  desc = "This function filters a genotype field based on a given genotype expression. The new filtered genotype can replace the GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -228,6 +236,11 @@ object VcfAnnotateTX {
               COMMON_PARAMS("genomeFA")
          ))
        ),
+       ParamStrSet("sanitize" ,  desc = "", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         ))
+       ),
        ParamStrSet("calcBurdenCounts" ,  desc = "", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
@@ -246,7 +259,28 @@ object VcfAnnotateTX {
            ParamStr(id = "countFileID",synon=Seq(),ty="String",valueString="k",desc="If multiple output count files are desired, you can specify which functions output to which count file using this parameter. Note that each file must be created using a --burdenCountsFile parameter, with the form fileID:/path/to/file.txt",req=false)
 
          ))
-       )
+       ),
+       ParamStrSet("calcBurdenMatrix" ,  desc = "....", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
+              ParamStr(id = "expr",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "sampleSet",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "group",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              
+              ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "geneListFile",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "printFullGeneList",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
+
+              ParamStr(id = "pathwayList",synon=Seq(),ty="String",valueString="A=a:b:c:d,B=c:d:e:f",desc="",req=false),
+              
+             COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
+           
+             ParamStr(id = "outfile",synon=Seq(),ty="String",valueString="k",desc="The output matrix file path.",req=true)
+
+         ))
+       ),
+       
      ).map{ pss => {
        (pss.mapType,pss)
      }}.toMap;
@@ -3038,10 +3072,10 @@ object VcfAnnotateTX {
           
 
      
-
+ 
      
            val ssseq = variantMapFunction.toSeq.map{ vmfString => {
-             val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }
+             val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
               if(fullcells.length < 2){
                 error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
               }
@@ -3233,6 +3267,25 @@ object VcfAnnotateTX {
                Some(AddContextBases(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), len = params("windowSize").toInt))
              } else if(mapType == "gcContext"){
                Some(localGcInfoWalker(tagPrefix=params("tagPrefix"),windows=params("windowSize").split(",").toSeq.map{_.toInt},genomeFa=params("genomeFA"), roundDigits = params.get("digits").map{_.toInt}))
+             } else if(mapType == "convertChromNames"){
+               //Seq[SVcfWalker](ChromosomeConverter(chromDecoder = icd, fromCol= inputChromDecoderFromCol, toCol = inputChromDecoderToCol))
+               /*
+                ChromosomeConverterAdv(chromDecoder : String, 
+                 fromToColumnNames : Option[(String,String)] = None,
+                 fromToIdx : Option[(String,String)] = None,
+                 hasTitleColumn : Boolean = true,
+                       quiet : Boolean = false)
+                */
+               Some(ChromosomeConverterAdv(chromDecoder = params("file"),
+                                           fromToColumnNames = params.get("columnNames").map{ s => (s.split(",")(0),s.split(",")(1)) },
+                                           fromToIdx = params.get("columnIdx").map{ s => (s.split(",")(0),s.split(",")(1)) },
+                                           skipFirstRow = params.isSet("skipFirstRow")));
+               None;
+             } else if(mapType == "sanitize"){
+               //error("NOT YET IMPLEMENTED!");
+               //None;
+               Some(new SanitizeVcf());
+             
              } else if(mapType == "snpEffExtract"){
                Some(
                    new SnpEffInfoExtract(tagID = params("annTag"),
@@ -3263,6 +3316,54 @@ object VcfAnnotateTX {
              } else if(mapType == "checkReferenceMatch"){
                //checkReferenceMatch
                Some(new internalUtils.GatkPublicCopy.CheckReferenceMatch(genomeFa = params("genomeFA"), infotag = params("mapID")));
+             } else if(mapType == "calcBurdenMatrix"){
+               //error("NOT YET IMPLEMENTED!")
+               
+              //ParamStr(id = "geneListFile",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              //ParamStr(id = "printFullGeneList",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
+              val geneList  = params.get("geneList").map{ g => {
+                Some( g.split("[,]").toSeq ++ params.get("geneListFile").map{ gf => {
+                  getLinesSmartUnzip(gf).toSeq
+                }}.getOrElse(Seq()) )
+              }}.getOrElse(
+                params.get("geneListFile").map{ gf => {
+                  getLinesSmartUnzip(gf).toSeq
+                }}
+              )
+               
+              Some(new calcBurdenMatrixWalker(tagID=params("mapID"),
+                  geneTag=params("geneTag"),
+                  filterExpressionString=params.getOrElse("expr","TRUE"),
+                  sampSubset=params.get("sampleSet").map{ x => x.split(",").toSet},
+                  sampGroup=params.get("group"),
+                  gtTag=params("inputGT"), 
+                  outfile=params("outfile"), 
+                  groupFile = params.get("groupFile"), 
+                  groupList = None, 
+                  superGroupList  = params.get("superGroupList"),
+                  geneList = geneList,
+                  pathwayList = params.get("pathwayList").map{ g => g.split("[,]").toSeq }.getOrElse(Seq()),
+                  printFullGeneList = params.isSet("printFullGeneList")
+              ) )
+               
+               
+               
+                    /*  ParamStrSet("calcBurdenMatrix" ,  desc = "....", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
+              ParamStr(id = "expr",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "sampleSet",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "group",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              
+              ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="k",desc="",req=true),
+              ParamStr(id = "pathwayList",synon=Seq(),ty="String",valueString="A=a:b:c:d,B=c:d:e:f",desc="",req=true),
+              
+             COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
+           
+             ParamStr(id = "countFileID",synon=Seq(),ty="String",valueString="k",desc="If multiple output count files are desired, you can specify which functions output to which count file using this parameter. Note that each file must be created using a --burdenCountsFile parameter, with the form fileID:/path/to/file.txt",req=false)
+*/
+               
              } else if(mapType == "calcBurdenCounts"){
                
               val writerID = params.getOrElse("countFileID","");

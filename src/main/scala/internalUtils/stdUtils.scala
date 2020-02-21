@@ -59,7 +59,7 @@ object stdUtils {
     val paramMap = pss.paramMap;
     //val sc = ss.split(delim).toSeq;
     var rawParams = sc.map{ cell => {
-       val x= cell.split(innerDelim);
+       val x= cell.split(innerDelim,2);
        (x.head.trim(), x.lift(1).map{ _.trim() } )
     }}.map{ case ( paramID, paramValue ) => {
       if(! paramMap.contains(paramID)){
