@@ -242,11 +242,11 @@ object SVcfTagFunctions {
       val SRC = ParamSrc.getString(PS);
       val PT = PTactual match {
         case ParamType.INT => {
-          if(TYA.contains("Int")){
+          if(TYA.contains("INT")){
             ParamType.INT
-          } else if(TYA.contains("Float")){
+          } else if(TYA.contains("FLOAT")){
             ParamType.FLOAT
-          } else if(TYA.contains("String")){
+          } else if(TYA.contains("STRING")){
             ParamType.STRING
           } else {
             error("Impossible State: Illegal param! "+param +" with options: "+ty+".TYA="+TYA.mkString("/"))
@@ -254,11 +254,11 @@ object SVcfTagFunctions {
           }
         }
         case ParamType.FLOAT => {
-          if(TYA.contains("Float")){
+          if(TYA.contains("FLOAT")){
             ParamType.FLOAT
-          } else if(TYA.contains("String")){
+          } else if(TYA.contains("STRING")){
             ParamType.STRING
-          } else if(TYA.contains("Int")){
+          } else if(TYA.contains("INT")){
             warning("Warning: Forcing a Float value into a Int: "+param,"FORCE_"+SRC+"_FLOAT_TO_INT",-1)
             ParamType.INT
           } else {
@@ -267,12 +267,12 @@ object SVcfTagFunctions {
           }
         }
         case ParamType.STRING => {
-          if(TYA.contains("String")){
+          if(TYA.contains("STRING")){
             ParamType.STRING
-          } else if(TYA.contains("Float")){
+          } else if(TYA.contains("FLOAT")){
             warning("Warning: Forcing a String value into a Float: "+param,"FORCE_"+SRC+"_STRING_TO_FLOAT",-1)
             ParamType.FLOAT
-          } else if(TYA.contains("Int")){
+          } else if(TYA.contains("INT")){
             warning("Warning: Forcing a String value into a Int: "+param,"FORCE_"+SRC+"_STRING_TO_INT",-1)
             ParamType.INT
           } else {
