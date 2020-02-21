@@ -134,7 +134,7 @@ object SVcfTagFunctions {
     val tys = ty.split("[|]")
     val TYS = tys.map{ tt => tt.toUpperCase() }
     val TYA = TYS.map{ tt => {
-        tt.split("[:]").head
+        tt.split("[:]").last
     }}.toSet
       
     def getParsedParam(param : String, h : SVcfHeader) : VcfFcnParsedParam = {
@@ -550,7 +550,7 @@ object SVcfTagFunctions {
     def get(v : SVcfVariantLine) : Option[Int] = if(isConst()){
       Some(x);
     } else if(pprm.SRC == ParamSrc.INFO){
-      v.info.getOrElse( pprm.VAL, None).map{ z => {
+      v.info.getOrElse( pprm.VAL, None).filter{ s => s != "." }.map{ z => {
         string2int(z)
       }}
     } else {
@@ -567,7 +567,7 @@ object SVcfTagFunctions {
     def get(v : SVcfVariantLine) : Option[Double] = if(isConst()){
       Some(x);
     } else if(pprm.SRC == ParamSrc.INFO){
-      v.info.getOrElse( pprm.VAL, None).map{ z => {
+      v.info.getOrElse( pprm.VAL, None).filter{ s => s != "." }.map{ z => {
         string2double(z)
       }}
     } else {
@@ -579,7 +579,7 @@ object SVcfTagFunctions {
     def get(v : SVcfVariantLine) : Option[String] = if(isConst()){
       Some(pprm.VAL)
     } else if(pprm.SRC == ParamSrc.INFO){
-      v.info.getOrElse( pprm.VAL, None)
+      v.info.getOrElse( pprm.VAL, None).filter{ s => s != "." }
     } else {
       None
     }
@@ -594,8 +594,8 @@ object SVcfTagFunctions {
     def get(v : SVcfVariantLine) : Option[Vector[Int]] = if(isConst()){
       Some( x );
     } else if(pprm.SRC == ParamSrc.INFO){
-      v.info.getOrElse( pprm.VAL, None).map{ z => {
-        z.split(",").map{string2int(_)}.toVector;
+      v.info.getOrElse( pprm.VAL, None).filter{z => z != "."}.map{ z => {
+        z.split(",").filter{a => a != "."}.map{string2int(_)}.toVector;
       }}
     } else {
       None
@@ -611,8 +611,8 @@ object SVcfTagFunctions {
     def get(v : SVcfVariantLine) : Option[Vector[Double]] = if(isConst()){
       Some(x);
     } else if(pprm.SRC == ParamSrc.INFO){
-      v.info.getOrElse( pprm.VAL, None).map{ z => {
-        z.split(",").map{string2double(_)}.toVector;
+      v.info.getOrElse( pprm.VAL, None).filter{z => z != "."}.map{ z => {
+        z.split(",").filter{a => a != "."}.map{string2double(_)}.toVector;
       }}
     } else {
       None
@@ -630,7 +630,7 @@ object SVcfTagFunctions {
       Some(x);
     } else if(pprm.SRC == ParamSrc.INFO){
       //reportln("param:"+param+"/inputType:"+inputType,"deepDebug");
-      v.info.getOrElse( pprm.VAL, None).map{ z => {
+      v.info.getOrElse( pprm.VAL, None).filter{z => z != "."}.map{ z => {
         //reportln(">     "+z,"deepDebug");
         z.split(",").toVector;
       }}
