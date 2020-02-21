@@ -190,12 +190,51 @@ object VcfAnnotateTX {
               ParamStr(id = "bioTypeKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
               ParamStr(id = "effectKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
               ParamStr(id = "warningDropList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
-              ParamStr(id = "keepIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
+              //ParamStr(id = "keepIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
               ParamStr(id = "geneListName",synon=Seq(),ty="String",valueString="myGeneListName",desc="",req=false),
-              ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false)
+              ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
+              
+              ParamStr(id = "severityList",synon=Seq(),ty="String",valueString="...",desc="Must be a list of severity levels, listed as some combination of effectseverity types delimited with slashes. "+
+                                 "Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which are standard SnpEFF effect types, and also: "+
+                                 "NS (HIGH and MODERATE), NonNS (LOW and MODIFIER), and ANY (any type).",
+                                 req=false, defaultValue = Some("HIGH/MODERATE/LOW")),
+              ParamStr(id = "extractFields",synon=Seq(),ty="String",valueString="...",desc="This is a complex multi-part field that allows flexible extraction of "+
+                    "information from SnpEff ANN tags. This field must be in the colon-delimited format tagInfix:ANN_idx:description:severityList[:noCollapse]. "+
+                    "severityList must be in the same format as the severityList parameter above, but can override the default if desired. "+
+                    "ANN_idx must be a slash-delimited list of field indices counting from zero in the ANN tag. "+
+                    "The standard ANN field indices are: "+ Seq("allele","effect","impact","geneName","geneID","txType","txID","txBiotype","rank","HGVS.c","HGVS.p","cDNAposition","cdsPosition","proteinPosition","distToFeature","warnings","errors").zipWithIndex.map{ case (a,i) => i+":"+a  }.mkString(",")+" "+
+                    "If multiple fields are selected then the output fields will have the format first:second:third:etc. "+
+                    "For example, to create two new fields containing a list of all genes for which the current variant has HIGH and MODERATE impact respectively, use the format: "+
+                    "myNewField:4:my description:HIGH/MODERATE. " +
+                    "This will generate two new fields: myNewField_HIGH and myNewField_MODERATE. Note that if this function as a whole has a mapID set, then "+
+                    "both field names will be prefixed by that overall ID."
+                    ,req=false),
+              //(tagPrefix+svexOutTag+"_",svexIdx,svexFullDesc,svexSevSet, noCollapse)
+             ParamStr(id = "geneNameIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false,defaultValue = Some("4") ),
+             ParamStr(id = "biotypeIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false,defaultValue = Some("7") ),
+             ParamStr(id = "warnIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false,defaultValue = Some("15") )
               //TODO: figure out how to include snpEffVarExtracts!
          ))
        ),
+       /*
+                           new SnpEffInfoExtract(tagID = params("annTag"),
+                                         tagPrefix = params("tagPrefix"),
+                                         snpEffBiotypeKeepList = params.get("bioTypeKeepList").map{ _.split(",").toList },
+                                         snpEffEffectKeepList  = params.get("effectKeepList").map{ _.split(",").toList },
+                                         snpEffWarningDropList = params.get("warningDropList").map{ _.split(",").toList },
+                                         //snpEffKeepIdx         = params.get("keepIdx").map{ _.split(",").toList },
+                                         geneListTagInfix      = params.getOrElse("geneListName","onList_"),
+                                         geneList              = params.get("geneList").map{ _.split(",").toList },
+                                         
+                                         snpEffFields    = params.get("extractFields").map{ x => x.split(",") },
+                                         severityListSet = Some(params("severityList")),
+                                         
+                                         snpEffGeneNameIdx   = Some(string2int(params("geneNameIdx"))),
+                                         snpEffBiotypeIdx    = (string2int(params("biotypeIdx"))),
+                                         snpEffWarnIdx       = (string2int(params("warnIdx")))
+        */
+       
+       
        ParamStrSet("snpEffExtractField" ,  desc = "", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "tagPrefix",synon=Seq(),ty="String",valueString="tag",desc="",req=true),
@@ -3309,16 +3348,47 @@ object VcfAnnotateTX {
                Some(new SanitizeVcf());
              
              } else if(mapType == "snpEffExtract"){
+               /*
+                  
+  class SnpEffInfoExtract(tagID : String = "ANN", 
+                          tagPrefix : String = "ANNEX_",
+                          geneList : Option[List[String]] = None,
+                          snpEffBiotypeKeepList : Option[List[String]] = None,
+                          snpEffEffectKeepList : Option[List[String]] = None,
+                          snpEffWarningDropList : Option[List[String]] = None,
+                          snpEffKeepIdx : Option[List[String]] = None,
+                          geneListName : Option[String] = None,
+                          snpEffVarExtract : List[String] = List[String](),
+                          snpEffInfoExtract : List[String] = List[String](),
+                          geneListTagInfix : String = "onList_",
+                          snpEffBiotypeIdx : Int = 7,
+                          snpEffWarnIdx : Int = 15,
+                          snpEffFieldLen : Int = 16,
+                          snpEffFields : Option[List[String]] = None,
+                          snpEffGeneNameIdx : Option[Int] = None,
+                          severityListSet : Option[String] = None
+                          ) 
+                */
+               
+               
+               
                Some(
                    new SnpEffInfoExtract(tagID = params("annTag"),
                                          tagPrefix = params("tagPrefix"),
                                          snpEffBiotypeKeepList = params.get("bioTypeKeepList").map{ _.split(",").toList },
                                          snpEffEffectKeepList  = params.get("effectKeepList").map{ _.split(",").toList },
                                          snpEffWarningDropList = params.get("warningDropList").map{ _.split(",").toList },
-                                         snpEffKeepIdx         = params.get("keepIdx").map{ _.split(",").toList },
-                                         
+                                         //snpEffKeepIdx         = params.get("keepIdx").map{ _.split(",").toList },
                                          geneListTagInfix      = params.getOrElse("geneListName","onList_"),
-                                         geneList              = params.get("geneList").map{ _.split(",").toList }
+                                         geneList              = params.get("geneList").map{ _.split(",").toList },
+                                         
+                                         snpEffVarExtract    = params.get("extractFields").map{ x => x.split(",").toList }.getOrElse(List()),
+                                         severityListSet = Some(params("severityList")),
+                                         
+                                         snpEffGeneNameIdx   = Some(string2int(params("geneNameIdx"))),
+                                         snpEffBiotypeIdx    = (string2int(params("biotypeIdx"))),
+                                         snpEffWarnIdx       = (string2int(params("warnIdx")))
+                                         
                        )
                )
              } else if(mapType == "snpEffExtractField"){

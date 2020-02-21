@@ -2172,7 +2172,7 @@ object SVcfWalkerUtils {
         ("filterExpressionString",filterExpressionString),
         ("gtTag",gtTag)
     );
-    
+    reportln("burden counter initialized: "+tagID,"note");
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
        checkSVcfFilterLogicParse( filterLogic = filterExpr, vcfHeader = vcfHeader );
@@ -2190,6 +2190,8 @@ object SVcfWalkerUtils {
       val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
       val fullSampList =  vcfHeader.titleLine.sampleList
       outHeader.reportAddedInfos(this)
+      
+      reportln("burden counter setup complete: "+tagID,"note");
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         if(filterExpr.keep(v)){
@@ -4337,7 +4339,9 @@ object SVcfWalkerUtils {
                           snpEffBiotypeIdx : Int = 7,
                           snpEffWarnIdx : Int = 15,
                           snpEffFieldLen : Int = 16,
-                          snpEffFields : Option[List[String]] = None
+                          snpEffFields : Option[List[String]] = None,
+                          snpEffGeneNameIdx : Option[Int] = None,
+                          severityListSet : Option[String] = None
                           ) extends internalUtils.VcfTool.SVcfWalker { 
     
     
@@ -4355,7 +4359,7 @@ object SVcfWalkerUtils {
     val annidxEffect = 1 
     val annidxImpact = 2
     val annidxGeneName = 3
-    val annidxGeneID  = 4
+    val annidxGeneID  = snpEffGeneNameIdx.getOrElse(4)
     //val annidxTxType = 5
     //val annidxTxID = 6
     val annidxTxBiotype=snpEffBiotypeIdx
@@ -4376,11 +4380,17 @@ object SVcfWalkerUtils {
       ki.map(string2int(_)).toSet
     }}.getOrElse( Range(0,snpEffFieldLen).toSet )
     
+    def getSevSet(s : Option[String]) : Set[String] = {
+      val ss = s.getOrElse(severityListSet.getOrElse("HIGH/MODERATE/LOW"))
+      ss.split("/").toSet
+    }
+    //val sevListSet = getSevSet(severityListSet)
     //good default keepIdx set: 1,2,3,4,7,10,15,16
     
-    //                           0       1        2        3           4      5        6      7           8      9         10        11           12             13                14                 15     16
+    //  
+    //                                                0       1        2        3           4      5        6      7           8      9         10        11           12             13                14                 15     16
     val snpEffIdxDesc = snpEffFields.getOrElse(Seq("allele","effect","impact","geneName","geneID","txType","txID","txBiotype","rank","HGVS.c","HGVS.p","cDNAposition","cdsPosition","proteinPosition","distToFeature","warnings","errors"));
-    val snpEffFmtDescString = "A comma delimited list with bar-delimited entries in the format: "+keepIdx.map{i => snpEffIdxDesc(i)}.mkString("|") +"."
+    val snpEffFmtDescString = "A comma delimited list with bar-delimited entries in the format: "+snpEffIdxDesc.mkString("|") +"."
     val bioTypeDesc = snpEffBiotypeKeepList.map{ blist => {
       "Limited to the following biotypes: "+blist.mkString(",")+". "
     }}.getOrElse("all biotypes. ")
@@ -4396,75 +4406,105 @@ object SVcfWalkerUtils {
     
     val annFmtDesc = snpEffFmtDescString + bioTypeDesc + effectListDesc + warnListDesc
     
-    val svexInfo = snpEffVarExtract.map{ svex => {
-      val svexCells = svex.split("[|]")
-      val (svexOutTag,svexIdxList,svexDesc) = (svexCells(0),svexCells(1),svexCells(2));
-      val svexIdx = svexIdxList.split(",").map{xx => string2int(xx)}.toVector
-      val svexFmtDescString = svexDesc+". Formatted as a comma delimited list with bar-delimited entries in the format: "+svexIdx.map{i => snpEffIdxDesc(i)}.mkString("|") +". "
-      val svexFullDesc = snpEffFmtDescString + bioTypeDesc + effectListDesc + warnListDesc
-      (svexOutTag+"_",svexIdx,svexFullDesc)
-    }}
+    val snpEffVarExtractFinal = snpEffVarExtract :+ ("GENES:"+annidxGeneName+":Extracted variant gene list. :"+severityListSet.getOrElse("HIGH/MODERATE/LOW"))
     
-    val thisWalker = this;
-    /*
-    object VarExtract {
-      def getVarExtract( s : String ){
-        
-      }
-    }
-    case class VarExtract(tagID : String, columnIx : Seq[Int], desc : String, collapseUniques : Boolean, 
-                          tagSet : Set[String] = Set[String]("HIGH","MODERATE","LOW"),
-                          listSet : Set[String] = Set[String]("ALL","onList")){
+    val svexIdxStringsDesc = Map( ("EFFECT","(Effects with the effects that are not in the effectSet removed.)"),
+                                  ("FIRSTEFFECT","(The first effect in each entry)"))
+    val svexIdxStrings = svexIdxStringsDesc.keys.toVector;
+
+    val severityList = Vector[Set[String]](Set("HIGH"),Set("MODERATE"),Set("LOW","MODIFIER"))
+    val severityNames = Vector[String]("HIGH","MODERATE","LOW")
+    
+    val severitySets = Vector[(String,Set[String])](
+          ("HIGH",Set("HIGH")),
+          ("MODERATE",Set("MODERATE")),
+          ("LOW",Set("LOW")),
+          ("MODIFIER",Set("MODIFIER")),
+          ("NonNS",Set("LOW","MODIFIER")),
+          ("NS",Set("HIGH","MODERATE")),
+          ("ANY",Set("HIGH","MODERATE","LOW","MODIFIER"))
+        )
+    val severityMap = severitySets.toMap;
+    val effSevList = Vector("HIGH","MODERATE","LOW","MODIFIER");
+    
+    
+    val svexInfo = snpEffVarExtractFinal.map{ svexRAW => {
+      val svex = svexRAW.trim();
+      val svexCellsRaw = svex.split("[:]").map{ svxs => svxs.trim() }
+      val noCollapse = svexCellsRaw.contains("noCollapseUniques");
+      val svexCells = svexCellsRaw.filter( svr => svr != "noCollapseUniques" );
+      val (svexOutTag,svexIdxList,svexDesc,svexSevSet) = (svexCells(0),svexCells(1),svexCells.lift(2).getOrElse("(Extracted from "+tagID+")"), getSevSet(svexCells.lift(3)));
       
-      def getInfoLine() : SVcfCompoundHeaderLine = {
-        (new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", snpEffFmtDescString +{
-          if(collapseUniques){
-            "(collapsing unique entries) "
-          } else {
-            ""
+      val svexIdx : Vector[Either[String,Int]] = svexIdxList.split("/").map{xx => {
+        try {
+          Right(xx.toInt)
+        } catch {
+          case e : Exception => {
+            if( ! svexIdxStrings.contains(xx)){
+              error("ERROR: extractFields element 2 must be a slash delimited list of either integer indices or one of the following strings: "+svexIdxStrings.mkString(","))
+            }
+            Left(xx)
           }
-        } + bioTypeDesc + effectListDesc + warnListDesc)).addWalker(thisWalker)
-      }
-      
-      def init(){
-        
-      }
-    }*/
+        }
+      }}.toVector
+      val svexFmtDescString = svexDesc+". Formatted as a comma delimited list with colon-delimited entries in the format: "+svexIdx.map{i => {
+        i match {
+          case Left(xx) => svexIdxStringsDesc(xx)
+          case Right(i) => snpEffIdxDesc(i)
+        }
+      }}.mkString(":") +". "
+      val svexFullDesc = snpEffFmtDescString + bioTypeDesc + effectListDesc + warnListDesc
+      (tagPrefix+svexOutTag+"_",svexIdx,svexFullDesc,svexSevSet, noCollapse)
+    }}
+
+    val thisWalker = this;
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", "Shortened info extracted from ANN, high only. "+annFmtDesc)).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"MODERATE", ".", "String", "Extract from ANN, moderate only. "+annFmtDesc)).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"LOW", ".", "String", "Extract from ANN, LOW or MODIFIER only. "+annFmtDesc)).addWalker(this))
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"HIGH", ".", "String", "Shortened info extracted from ANN, high only. "+annFmtDesc)).addWalker(this))
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"MODERATE", ".", "String", "Extract from ANN, moderate only. "+annFmtDesc)).addWalker(this))
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"LOW", ".", "String", "Extract from ANN, LOW or MODIFIER only. "+annFmtDesc)).addWalker(this))
       
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-      outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_LOW", ".", "String", "Gene list with LOW or MODIFIER effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-      
-      
-      geneList.foreach{ gl => {
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"HIGH", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"MODERATE", ".", "String", "Extracted from ANN, moderate effects only. "+geneListDesc+annFmtDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"LOW", ".", "String", "Extracted from ANN, low or modifier effects only. "+geneListDesc+annFmtDesc)).addWalker(this))
-
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_LOW", ".", "String", "Gene list with LOW effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
-      
-      }}
-      svexInfo.foreach{ case (svexTag,svexIdx,svexFullDesc) => {
-        
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+"HIGH", ".", "String", "Extracted from ANN, high only. "+svexFullDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+"MODERATE", ".", "String", "Extracted from ANN, moderate only. "+svexFullDesc)).addWalker(this))
-        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+"LOW", ".", "String", "Extracted from ANN, low only. "+svexFullDesc)).addWalker(this))
-        
+      /*sevListSet.map{ sev => {
+        val sevNote = if(sev != severityMap(sev).mkString("?")){
+          sev + " (including "+severityMap(sev).mkString("/")+")";
+        } else {
+          sev
+        }
+        outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_"+sev, ".", "String", "Gene list with "+sevNote+" effect, extracted from "+tagID+". "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
         geneList.foreach{ gl => {
-          outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+geneListTagInfix+"HIGH", ".", "String", "Extracted from ANN, high only. "+svexFullDesc)).addWalker(this))
-          outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+geneListTagInfix+"MODERATE", ".", "String", "Extracted from ANN, moderate only. "+svexFullDesc)).addWalker(this))
-          outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+geneListTagInfix+"LOW", ".", "String", "Extracted from ANN, low only. "+svexFullDesc)).addWalker(this))
+          outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_"+sev, ".", "String", "Gene list with "+sevNote+" effect. "+geneListDesc+" Extracted from "+tagID+". "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
         }}
+      }}*/
+      
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+"GENES_LOW", ".", "String", "Gene list with LOW or MODIFIER effect. "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      
+      //geneList.foreach{ gl => {
+        //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"HIGH", ".", "String", "Extracted from ANN, high only. "+geneListDesc+annFmtDesc)).addWalker(this))
+        //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"MODERATE", ".", "String", "Extracted from ANN, moderate effects only. "+geneListDesc+annFmtDesc)).addWalker(this))
+        //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"LOW", ".", "String", "Extracted from ANN, low or modifier effects only. "+geneListDesc+annFmtDesc)).addWalker(this))
+
+        //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_HIGH", ".", "String", "Gene list with HIGH effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+        //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_MODERATE", ".", "String", "Gene list with MODERATE effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+        //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = tagPrefix+geneListTagInfix+"GENES_LOW", ".", "String", "Gene list with LOW effect. "+geneListDesc+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+      
+      //}}
+      svexInfo.foreach{ case (svexTag,svexIdx,svexFullDesc,svexSevSet, noCollapse) => {
+          svexSevSet.map{ sev => {
+            val sevNote = if(sev != severityMap(sev).mkString("?")){
+              sev + " (including "+severityMap(sev).mkString("/")+")";
+            } else {
+              sev
+            }
+            outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+sev, ".", "String", " with "+sevNote+" effect, extracted from "+tagID+". "+bioTypeDesc+effectListDesc+warnListDesc)).addWalker(this))
+            geneList.foreach{ gl => {
+              outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,ID = svexTag+geneListTagInfix+sev, ".", "String", "With "+sevNote+" effect, "+geneListDesc+svexFullDesc)).addWalker(this))
+            }}
+          }}
       }}
       
       val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
@@ -4473,13 +4513,16 @@ object SVcfWalkerUtils {
       }
       //vc.dropInfo(overwriteInfos);
  
-      val severityList = Vector[Set[String]](Set("HIGH"),Set("MODERATE"),Set("LOW","MODIFIER"))
-      val severityNames = Vector[String]("HIGH","MODERATE","LOW")
 
       outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine()
         vc.dropInfo(overwriteInfos);
+        val anndata = effSevList.toArray.map{ es => {
+          Vector[Array[String]]();
+        }}
+          //Array.fill[Vector[Array[String]]](effSevList.length)
+        /*
         var annHi = Vector[Array[String]]();
         var annMd = Vector[Array[String]]();
         var annLo = Vector[Array[String]]();
@@ -4492,90 +4535,132 @@ object SVcfWalkerUtils {
         var gLo = Vector[String]();
         var gHiG = Vector[String]();
         var gMdG = Vector[String]();
-        var gLoG = Vector[String]();
+        var gLoG = Vector[String]();*/
         
-        val svexData       : Array[Array[Vector[String]]] = svexInfo.map{ x => Array[Vector[String]]( Vector[String](),Vector[String](),Vector[String]() ) }.toArray;
-        val svexDataOnList : Array[Array[Vector[String]]] = svexInfo.map{ x => Array[Vector[String]]( Vector[String](),Vector[String](),Vector[String]() ) }.toArray;
+        val svexData       : Array[Array[Vector[String]]] = svexInfo.map{ x => effSevList.toArray.map{ z => Vector[String]() } }.toArray;
+        val svexDataOnList : Array[Array[Vector[String]]] = svexInfo.map{ x => effSevList.toArray.map{ z => Vector[String]() } }.toArray;
 
+        //reportln("###################################################################","debug");
+        //reportln("###################################################################","debug");
+        
         v.info.get(tagID).getOrElse(None).foreach{ ann => {
           val annCells = ann.split(",").map{ aa => aa.split("[|]",-1) }
+          
           annCells.foreach{ cells => {
+            //reportln("ANN: "+cells.mkString("|"),"debug");
             val impact = cells(annidxImpact);
-            val effects = cells.lift(annidxEffect).map(_.split("&").toSet).getOrElse(Set());
+            val effects = cells.lift(annidxEffect).map(_.split("&").toVector).getOrElse(Vector());
             val warnings = cells.lift(annidxWarn).map(_.split("&").toSet).getOrElse(Set());
             val biotype = cells(annidxTxBiotype)
             val geneid = cells.lift(annidxGeneID).getOrElse("")
+            val effectsToKeep = effects.filter{ ee => snpEffEffectKeepSet.map{ ks => ks.contains(ee) }.getOrElse(true) }
+              //snpEffEffectKeepSet.map{ ks => ks.intersect(effects) }.getOrElse( effects ).toVector.sorted
             
-            val keepEffect = snpEffEffectKeepSet.map{ ks => ks.intersect(effects).nonEmpty }.getOrElse(true)
+            val keepEffect = snpEffEffectKeepSet.map{ ks => effectsToKeep.nonEmpty }.getOrElse(true)
             val keepGene = geneSet.map{ gg =>  gg.contains(geneid) }.getOrElse(false)
             val dropWarn = snpEffWarningDropSet.map{ kk => kk.intersect(warnings).nonEmpty }.getOrElse(false);
             val keepbt = snpEffBiotypeKeepList.map{ kk => kk.contains(biotype) }.getOrElse(true);
             val geneName = cells.lift(annidxGeneName).getOrElse(".")
             if( keepEffect && ( ! dropWarn) && keepbt ){
-              val outCells = cells.zipWithIndex.filter{ case (c,i) => keepIdx.contains(i) }.map{_._1}
-              val svexCells = svexInfo.map{ case (svexTag,svexIdx,svexDesc) => {
-                svexIdx.map{i => cells(i)}.mkString("|")
-              }}
-              val severityIdx = severityList.indexWhere(ss => ss.contains(impact))
-              svexData.indices.map{ ssx => {
-                  svexData(ssx)(severityIdx) = svexData(ssx)(severityIdx) :+ svexCells(ssx)
-              }}
-              if(impact == "HIGH"){
-                annHi = annHi :+ outCells
-                gHi = gHi :+ geneName
-              } else if(impact == "MODERATE"){
-                annMd = annMd :+ outCells
-                gMd = gMd :+ geneName
-              } else if(impact == "LOW" || impact == "MODIFIER"){
-                annLo = annLo :+ outCells
-                gLo = gLo :+ geneName
-              }
-              if(keepGene){
-                svexData.indices.map{ ssx => {
-                  svexDataOnList(ssx)(severityIdx) = svexDataOnList(ssx)(severityIdx) :+ svexCells(ssx)
-                }}
-                if(impact == "HIGH"){
-                  annHiG = annHiG :+ outCells
-                  gHiG = gHiG :+ geneName
-                } else if(impact == "MODERATE"){
-                  annMdG = annMdG :+ outCells
-                  gMdG = gMdG :+ geneName
-                } else if(impact == "LOW" || impact == "MODIFIER"){
-                  annLoG = annLoG :+ outCells
-                  gLoG = gLoG :+ geneName
+              //val outCells = cells.zipWithIndex.filter{ case (c,i) => keepIdx.contains(i) }.map{_._1}
+              //val svexCells = svexInfo.map{ case (svexTag,svexIdx,svexDesc,svexSevSet, noCollapse) => {
+              //  svexIdx.map{i => cells(i)}.mkString(":")
+              //}}
+              svexInfo.zipWithIndex.foreach{ case ((svexTag,svexIdx,svexDesc,svexSevSet, noCollapse),i) => {
+                val sevidx = effSevList.indexOf(impact);
+                if(sevidx >= 0){
+                  val ss = svexIdx.map{k => {
+                    k match {
+                      case Left(xx) => {
+                        if(xx == "EFFECT"){
+                          effectsToKeep.mkString("&");
+                        } else if(xx == "FIRSTEFFECT"){
+                          effectsToKeep.head
+                        } else {
+                          error("SnpEff Info Extract: "+xx+" not implemented!");
+                          "???"
+                        }
+                      }
+                      case Right(kk) => cells(kk)
+                    }
+                  }}.mkString(":")
+                  svexData(i)(sevidx) = svexData(i)(sevidx) :+ ss
+                  if(keepGene){
+                    svexDataOnList(i)(sevidx) = svexDataOnList(i)(sevidx) :+ ss
+                  }
                 }
-              }
+              }}
             }
           }}
+
+          /*svexData.zipWithIndex.foreach{ case (svd,i) => {
+            reportln("--------------------------------------------------","debug");
+            reportln("svexData["+i+"].length = "+svd.length,"debug");
+          }}
+          svexData.zipWithIndex.foreach{ case (svd,i) => {
+            reportln("--------------------------------------------------","debug");
+            reportln("svexData["+i+"]:","debug");
+            svd.zipWithIndex.foreach{ case (svv,j) => {
+              reportln("svexData["+i+"]["+j+"].length = "+svv.length,"debug");
+            }}
+            svd.zipWithIndex.foreach{ case (svv,j) => {
+              reportln("svexData["+i+"]["+j+"]: "+svv.mkString(","),"debug");
+            }}
+          }}*/
           
-          svexData.zip(svexInfo).foreach{ case (ssdat, (svexTag,svexIdx,svexDesc)) => {
-            ssdat.zip(severityNames).foreach{ case (ssd,sev) => {
-              vc.addInfo( svexTag+sev,     ssd.padTo(1,".").mkString(","));
+          svexData.zip(svexInfo).foreach{ case (ssdat, (svexTag,svexIdx,svexDesc,svexSevSet, noCollapse)) => {
+            severitySets.filter{ case (sev,sevset) => {
+              svexSevSet.contains(sev);
+            }}.foreach{ case (sev,sevset) => {
+              val ss = ssdat.zip(effSevList).filter{ case (ssd,esev) => {
+                sevset.contains(esev)
+              }}.map{ case (ssd,esev) => {
+                ssd
+              }}.toVector.flatten.padTo(1,".");
+              val sso = if(noCollapse){
+                ss.mkString(",");
+              } else {
+                ss.distinct.sorted.mkString(",")
+              }
+              vc.addInfo( svexTag+sev,sso);
             }}
           }}
+          
           geneList.foreach{ gl => {
-            svexDataOnList.zip(svexInfo).foreach{ case (ssdat, (svexTag,svexIdx,svexDesc)) => {
-              ssdat.zip(severityNames).foreach{ case (ssd,sev) => {
-                vc.addInfo( svexTag+geneListTagInfix+sev,     ssd.padTo(1,".").mkString(","));
+            svexDataOnList.zip(svexInfo).foreach{ case (ssdat, (svexTag,svexIdx,svexDesc,svexSevSet, noCollapse)) => {
+              severitySets.filter{ case (sev,sevset) => {
+                svexSevSet.contains(sev);
+              }}.foreach{ case (sev,sevset) => {
+                val ss = ssdat.zip(effSevList).filter{ case (ssd,esev) => {
+                  sevset.contains(esev)
+                }}.map{ case (ssd,esev) => {
+                  ssd
+                }}.toVector.flatten.padTo(1,".")
+                val sso = if(noCollapse){
+                  ss.mkString(",");
+                } else {
+                  ss.distinct.sorted.mkString(",")
+                }
+                vc.addInfo( svexTag+geneListTagInfix+sev,sso);
               }}
             }}
           }}
           
-          vc.addInfo( tagPrefix+"HIGH",     annHi.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"MODERATE", annMd.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"LOW",      annLo.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-          vc.addInfo( tagPrefix+"GENES_HIGH",     gHi.padTo(1,".").distinct.sorted.mkString(","));
-          vc.addInfo( tagPrefix+"GENES_MODERATE", gMd.padTo(1,".").distinct.sorted.mkString(","));
-          vc.addInfo( tagPrefix+"GENES_LOW",      gLo.padTo(1,".").distinct.sorted.mkString(","));
+          //vc.addInfo( tagPrefix+"HIGH",     annHi.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+          //vc.addInfo( tagPrefix+"MODERATE", annMd.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+          //vc.addInfo( tagPrefix+"LOW",      annLo.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+          //vc.addInfo( tagPrefix+"GENES_HIGH",     gHi.padTo(1,".").distinct.sorted.mkString(","));
+          //vc.addInfo( tagPrefix+"GENES_MODERATE", gMd.padTo(1,".").distinct.sorted.mkString(","));
+          //vc.addInfo( tagPrefix+"GENES_LOW",      gLo.padTo(1,".").distinct.sorted.mkString(","));
           
-          geneList.foreach{ gl => {
-            vc.addInfo( tagPrefix+geneListTagInfix+"HIGH",     annHiG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-            vc.addInfo( tagPrefix+geneListTagInfix+"MODERATE", annMdG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-            vc.addInfo( tagPrefix+geneListTagInfix+"LOW",      annLoG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
-            vc.addInfo( tagPrefix+geneListTagInfix+"GENES_HIGH",     gHiG.padTo(1,".").distinct.sorted.mkString(","));
-            vc.addInfo( tagPrefix+geneListTagInfix+"GENES_MODERATE", gMdG.padTo(1,".").distinct.sorted.mkString(","));
-            vc.addInfo( tagPrefix+geneListTagInfix+"GENES_LOW",      gLoG.padTo(1,".").distinct.sorted.mkString(","));
-          }}
+          //geneList.foreach{ gl => {
+            //vc.addInfo( tagPrefix+geneListTagInfix+"HIGH",     annHiG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+            //vc.addInfo( tagPrefix+geneListTagInfix+"MODERATE", annMdG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+            //vc.addInfo( tagPrefix+geneListTagInfix+"LOW",      annLoG.map{ xx => xx.mkString("|") }.padTo(1,".").mkString(","));
+          //  vc.addInfo( tagPrefix+geneListTagInfix+"GENES_HIGH",     gHiG.padTo(1,".").distinct.sorted.mkString(","));
+          //  vc.addInfo( tagPrefix+geneListTagInfix+"GENES_MODERATE", gMdG.padTo(1,".").distinct.sorted.mkString(","));
+          //  vc.addInfo( tagPrefix+geneListTagInfix+"GENES_LOW",      gLoG.padTo(1,".").distinct.sorted.mkString(","));
+          //}}
           
         }}
         vc

@@ -27,9 +27,37 @@
     bioTypeKeepList: \(String\)
     effectKeepList: \(String\)
     warningDropList: \(String\)
-    keepIdx: \(String\)
     geneListName: \(String\)
     geneList: \(String\)
+    severityList: Must be a list of severity levels, listed as some 
+    combination of effectseverity types delimited with slashes\. 
+    Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which are 
+    standard SnpEFF effect types, and also: NS \(HIGH and 
+    MODERATE\), NonNS \(LOW and MODIFIER\), and ANY \(any 
+    type\)\.\(String, default=HIGH/MODERATE/LOW\)
+    extractFields: This is a complex multi\-part field that allows 
+    flexible extraction of information from SnpEff ANN tags\. This 
+    field must be in the colon\-delimited format 
+    tagInfix:ANN\_idx:description:severityList\[:noCollapse\]\. 
+    severityList must be in the same format as the severityList 
+    parameter above, but can override the default if desired\. 
+    ANN\_idx must be a slash\-delimited list of field indices 
+    counting from zero in the ANN tag\. The standard ANN field 
+    indices are: 0:allele,1:effect,2:impact,3:geneName,4:geneID,5:t-
+    xType,6:txID,7:txBiotype,8:rank,9:HGVS\.c,10:HGVS\.p,11:cDNApos-
+    ition,12:cdsPosition,13:proteinPosition,14:distToFeature,15:war-
+    nings,16:errors If multiple fields are selected then the output 
+    fields will have the format first:second:third:etc\. For 
+    example, to create two new fields containing a list of all 
+    genes for which the current variant has HIGH and MODERATE 
+    impact respectively, use the format: myNewField:4:my 
+    description:HIGH/MODERATE\. This will generate two new fields: 
+    myNewField\_HIGH and myNewField\_MODERATE\. Note that if this 
+    function as a whole has a mapID set, then both field names will 
+    be prefixed by that overall ID\.\(String\)
+    geneNameIdx: \(String, default=4\)
+    biotypeIdx: \(String, default=7\)
+    warnIdx: \(String, default=15\)
 
 ### tagBedFile
 
