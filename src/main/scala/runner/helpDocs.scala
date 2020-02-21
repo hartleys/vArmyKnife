@@ -61,7 +61,7 @@ object helpDocs {
   }
   
   val helpTopics : Seq[HelpTopic] = Seq[HelpTopic](
-      HelpTopic("VarFunctions","Functions that perform a single operation on a variant file.",internalTests.VcfAnnotateTX.MAPFUNCTIONS_USERMANUALBLOCKS),
+      HelpTopic("MapFunctions","Functions that perform a single operation on a variant file.",internalTests.SVcfMapFunctions.MAPFUNCTIONS_USERMANUALBLOCKS),
       HelpTopic("VariantExpressions","Syntax for logical Expressions that return either true or false for a variant. Used by various other functions.",internalUtils.VcfTool.sVcfFilterLogicParser.logicManualFmt ),
       HelpTopic("GenotypeExpressions","Syntax for logical Expressions that return either true or false for a given sample and a given variant. Used by various other functions.",internalUtils.VcfTool.sGenotypeFilterLogicParser.logicManualFmt )
   )

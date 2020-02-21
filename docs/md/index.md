@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.324 (Updated Mon Feb 10 08:44:27 EST 2020)
+> Version 2.2.325 (Updated Mon Feb 10 11:41:38 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -77,10 +77,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > If this flag is used, only write variants that have non-null alt alleles. (flag)
 
-#### --rmDup:
-
-> If this flag is used, duplicate lines will be dropped. VCF must be sorted. (flag)
-
 #### --chromList chr1,chr2,...:
 
 > List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)
@@ -105,60 +101,18 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > Set the window size used for left align and trim. Indels larger than this will not be left aligned. (Int)
 
-#### --fixDotAltIndels:
-
-> Some callers return variant lines that use a dot or dashin the alt column, especially if the VCFs were converted over from ANNOVAR files. technically per the VCF spec this should be interpreted as the absence of any variant alleles (an allele list of length 0). But some tools seem to sometimes use this encoding when they actually mean to indicate an indel. If you use this parameter, then dot-alt indels will be converted to proper form before any other processing. Note: the genomeFA parameter is required in order to use this option, as we need to be able to find the reference sequence for the previous base. (flag)
-
-#### --unPhaseAndSortGenotypes GT,GT\_PREFILT,etc:
-
-> Replace phased genotypes with unphased and reorder genotypes so that heterozygote alleles are always written in ascending order. (CommaDelimitedListOfStrings)
-
 #### --dropSymbolicAlleleLines:
 
 > Drop all variant lines that contain symbolic alleles. If this flag is used with splitMultiAllelic, then the non-symbolic alleles of mixed-type variants will be preserved. (flag)
-
-#### --dropVariantsWithNs:
-
-> Drop any variants that contain Ns in the ref or alt allele. (flag)
 
 #### --universalTagPrefix VAK\_:
 
 > Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
 
-### Sample Stats:
-#### --addSampTag N:
-
-> If this parameter is set, then a tags will be added with sample IDs that possess alt genotypes. Samples will only be printed if the number of samples that possess a given genotype are less than N.  (String)
-
-### Filtering, Genotype-Level:
-#### --genoFilter :
-
-> A genotype filter expression. See the help section on genotype filtering expressions, below. (String)
-
-#### --filterTag :
-
-> This sets the field ID for a new FORMAT field that will be 0 when the --genoFilter PASSES and 1 otherwise. (String)
-
-#### --filterInputGtTag :
-
-> Requires that --genoFilter be set. This parameter indicates which FORMAT (genotype) field should be used as the raw genotype for the purposes of genotype filtering via --genoFilter. By default the genotype filter will take the GT field and copy it to GT\_PREFILT and then replace GT with the post-filtering version. (String)
-
-#### --filterOutputGtTag :
-
-> Requires that --genoFilter be set. This parameter indicates which FORMAT field should be used to store the post-filtered genotypes. Note that genotypes that fail the --genoFilter filters will be set to missing. By default the GT field will be overwritten with post-filtered genotypes. (String)
-
-#### --unfilteredGtTag :
-
-> This parameter indicates where the raw genotypes should be copied before filtering the genotypes with the --genoFilter expression. (String)
-
 ### Filtering, Variant-Level:
 #### --keepVariantsExpression vcfLineFilterExpression:
 
 > If this parameter is set, then VCF lines will be dropped if and only if they FAIL the provided vcf line filter expression. See the section on VCF line filtering below.  (String)
-
-#### --keepVariantsExpressionPrefilter vcfLineFilterExpression:
-
-> If this parameter is set, then VCF lines will be parsed in if and only if they pass the given line filter expression. Note that this will be performed BEFORE other processing, so all referenced tags must be in the input VCF.See the section on VCF line filtering below.  (String)
 
 ### Merge Multicaller VCFs:
 #### --concordanceCaller:
@@ -186,14 +140,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 > The merge rule for calculating ensemble-merged GT and AD tags. Valid options are priority, prioritySkipMissing, and majority\_priorityOnTies. Default is simple priority. (String)
 
 ### Postprocessing:
-#### --alphebetizeHeader:
-
-> Alphebetizes the INFO and FORMAT header lines. (flag)
-
-#### --convertToStandardVcf:
-
-> Final output file will be a standard VCF that does not use the asterisk to indicate multiallelic variants. Some utilities do not implement the full VCF standard and may have trouble with asterisk alleles. (flag)
-
 #### --dropGenotypeData:
 
 > If this flag is included, then ALL sample-level columns will be stripped from the output VCF. This greatly reduces the file size, and can be useful for making portable variant set VCFs. (flag)
@@ -212,33 +158,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > Adds a field with the alt allele and [windowSize] base pairs of reference-genome flanking sequence to each side. If no tagID is specified, the tagID will be VAK\_altSeq[windowsSize]. Note: requires genomeFA be set! Note: this parameter can be set more than once (with different window sizes). (repeatable String)
 
-#### --addInfoVcfs vcfTitle:vcfFilename:List|of|tags:
-
-> A comma delimited list with each element containing 3 colon-delimited parts consisting of the title, filename, and the desired tags for a secondary VCF file. The indicated tags from each VCF file will be copied over. Deprecated: we recommend using the snpEffAnnotate function instead. (repeatable CommaDelimitedListOfStrings)
-
-#### --thirdAlleleChar tag:
-
-> Some users may not prefer the use of the star allele to indicate an other allele in multiallelic variants. If this tag is raised, then the star allele will be removed from multiallelics. In addition, in the GT field all other-allele For multiallelic-split variants, this defines the character used for the 'other' allele. If this is used, the original version will be copied as a backup. (String)
-
-#### --addVariantIdx tag:
-
-> . (String)
-
 #### --tagVariantsExpression newTagID|desc|variantExpression:
 
 > If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable String)
 
-#### --duplicatesTag duplicateTagPrefix:
-
-> If this parameter is set, duplicates will be detected and two new tags will be added: duplicateTagPrefix\_CT and duplicateTagPrefix\_IDX. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0. All nonduplicates will be marked with CT=1 and IDX=0. (String)
-
 #### --tagVariantsGtCountExpression newTagID|desc|genotypeExpression[|type]:
 
 > If this parameter is set, then additional tags will be generated based on the given GENOTYPE expression(s). Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the genotype expression. The expressions are always booleans, and follow the same rules for VCF genotype-level filtering. See the section on VCF genotype filtering, below. Optionally, a fourth element in the list can define the type which can be either FRAC, PCT, or CT, which defines the output as either a fraction, a percentage, or a count. (repeatable String)
-
-#### --tagVariantsFunction newTagID|desc|funcName|param1,param2,...:
-
->  (repeatable String)
 
 #### --variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:
 
@@ -303,10 +229,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     annTag: A valid SnpSift command\(String, default=ANN\)
     bioTypeKeepList: \(String\)
     effectKeepList: \(String\)
@@ -347,10 +269,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     genomeFA: \(String, required\)
 
 ### convertSampleNames
@@ -358,10 +276,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This function converts the sample IDs of the VCF file according 
     to a decoder file that you supply\. The decoder will decode
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     file: A tab delimited file with the from/to chromosome 
     names\.\(String, required\)
     columnNames: The column titles for the old chrom names and the 
@@ -390,10 +304,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     from the bed file\. NOTE: this function only uses the first 3 
     to 5 fields of the BED file, it does not implement the optional 
     fields 10\-12 which can specify intron/exon blocks\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     file: \(String, required\)
     desc: \(String, default=No desc provided\)
     buffer: \(Integer, default=0\)
@@ -403,10 +313,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     genomeFA: \(String, required\)
 
 ### keepVariants
@@ -414,20 +320,12 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This function drops variants based on a given true/false 
     expression\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     expr: \(String\)
 
 ### fixFirstBaseMismatch
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     windowSize: Sets the size of the sliding window used\. Problems 
     may occur if you have variants longer than this window size\. 
     Default is 200bp\.\(Int\)
@@ -437,10 +335,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This function calculates various statistics on total read depth 
     and hetAB\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     inputGT: The input genotype FORMAT field\.\(String\)
     inputAD: \(String\)
     inputDP: \(String\)
@@ -455,20 +349,12 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     This function runs the SnpSift dbnsfp command
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     cmd: A valid SnpSift command\(String\)
 
 ### calcBurdenMatrix
 
     
     \.\.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     geneTag: \(String, required\)
     expr: \(String\)
     sampleSet: \(String\)
@@ -489,10 +375,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
 
 ### filterTags
 
@@ -500,10 +382,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     This function can be used to remove unwanted INFO or FORMAT 
     fields, or remove unwanted samples\. This can substantially 
     reduce file sizes\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     FORMAT\.keep: \(String\)
     FORMAT\.drop: \(String\)
     INFO\.keep: \(String\)
@@ -515,10 +393,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     windowSize: The number of bases to include in the context 
     window for determining local gc content\.\(String, required\)
     digits: Number of digits to round to\.\(String, default=4\)
@@ -529,14 +403,9 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This is a set of functions that all take one or more input 
     parameters and outputs one new INFO field\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     func: \(String, required\)
     desc: \(String, default=No desc provided\)
     digits: \(Integer\)
-    params: \(String\)
 
 ### tagVariantsExpression
 
@@ -544,10 +413,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     This function takes a variant expression and creates a new INFO 
     field that is 1 if and only if that expression returns TRUE, 
     and 0 otherwise\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     expr: The variant expression, which is a true/false expression 
     using the variant expression syntax\.\(String, required\)
     desc: A description, to go in the info field 
@@ -557,29 +422,17 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
 
 ### snpEff
 
     
     This function runs SnpEff
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     cmd: A valid SnpSift command\(String\)
 
 ### getLocusDepthFromWig
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     wigfile: \(String\)
     desc: \(String\)
 
@@ -588,23 +441,23 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This is a set of functions that all take one or more input 
     parameters and outputs one new INFO field\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     func: \(String, required\)
     desc: \(String, default=No desc provided\)
     digits: \(Integer\)
     params: \(String\)
 
+### convertToStdVcf
+
+    
+    Certain utilities \(eg GATK\) do not allow certain optional 
+    features of the VCFv4\.2 format standard \(For example: 
+    additional tag\-pairs in the INFO or FORMAT header lines\)\. 
+    This function strips out this additional metadata\.
+
 ### snpEffExtractField
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     tagPrefix: \(String, required\)
     outputTagPrefix: \(String\)
     columns: \(String\)
@@ -616,20 +469,12 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     This function runs a SnpSift anno command
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     cmd: A valid SnpSift command\(String\)
 
 ### unPhaseAndSortGenotypes
 
     
     This function removes phasing and sorts genotypes\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     inputGT: The input/output genotype FORMAT field\.\(String\)
     groupFile: A tab\-delimited file containing sample ID's and a 
     list of group IDs for each sample\. See the \-\-groupFile 
@@ -642,10 +487,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This function combines the functions sampleCounts, sampleLists, 
     and depthStats, performing all three\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     groupFile: A tab\-delimited file containing sample ID's and a 
     list of group IDs for each sample\. See the \-\-groupFile 
     parameter of walkVcf\.\(String\)
@@ -671,10 +512,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     geneTag: \(String, required\)
     expr: \(String\)
     sampleSet: \(String\)
@@ -691,26 +528,33 @@ This utility performs a series of transformations on an input VCF file and adds 
     \-\-burdenCountsFile parameter, with the form 
     fileID:/path/to/file\.txt\(String\)
 
+### markDup
+
+    
+    This map function will detect duplicate variant lines and add 
+    two new INFO fields: mapID\_CT and mapID\_IDX\. The CT will 
+    indicate how many duplicates were found matching the current 
+    variant, and the IDX will number each duplicate with a unique 
+    identifier, counting from 0\. All nonduplicates will be marked 
+    with CT=1 and IDX=0\.
+
 ### homopolymerRunStats
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     runSize: The number of repeated bases required to count as a 
     homopolymer run\(String, required\)
     genomeFA: \(String, required\)
+
+### addDummyGenotypeColumn
+
+    
+    
 
 ### addContextBases
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     windowSize: The number of bases to include in the context 
     window\(String, required\)
     genomeFA: \(String, required\)
@@ -719,10 +563,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     \.\.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     file: A tab delimited file with the from/to chromosome 
     names\.\(String, required\)
     columnNames: The column titles for the old chrom names and the 
@@ -743,12 +583,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    windowSize: The number of bases to include in the context 
-    window for determining local gc content\.\(String, required\)
+    prefix: Prefix to prepend to the index field\.\(String\)
+
+### addAltSequence
+
+    
+    
+    windowSize: The number of flanking bases to include on each 
+    side of the alt sequence\.\(String, default=10\)
     genomeFA: \(String, required\)
 
 ### sampleLists
@@ -756,10 +598,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     This function generates sample list fields which contain 
     comma\-delimited lists of samples that are het or hom\-alt\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     inputGT: The input genotype FORMAT field\.\(String\)
     samplePrintLimit: \(String\)
     groupFile: A tab\-delimited file containing sample ID's and a 
@@ -774,19 +612,16 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
+
+### dropGenotypeData
+
+    
+    
 
 ### calcBurdenCountsByGroups
 
     
     
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     geneTag: \(String, required\)
     groups: \(String, required\)
     expr: \(String\)
@@ -807,19 +642,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
 
 ### leftAlignAndTrim
 
     
     \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     windowSize: Sets the size of the sliding window used\. Problems 
     may occur if you have variants longer than this window size\. 
     Default is 200bp\.\(Int\)
@@ -832,10 +659,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     alt genotypes, missing genotypes, ref genotypes, and so on\. 
     Note that there are several calc\- flags\. If none of these are 
     included, then this function does nothing\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     groupFile: A tab\-delimited file containing sample ID's and a 
     list of group IDs for each sample\. See the \-\-groupFile 
     parameter of walkVcf\.\(String\)
@@ -849,16 +672,17 @@ This utility performs a series of transformations on an input VCF file and adds 
     noHetHomCalc: \(Flag\)
     noMultiHetCalc: \(Flag\)
 
+### dropSymbolicAlleles
+
+    
+    
+
 ### sampleReorder
 
     
     This function allows you to reorder the sample columns in your 
     VCF\. Set ONE of the parameters below to specify the desired 
     ordering\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     sampleOrdering: A simple list of all the samples, in the 
     desired order\.\(String\)
     sampleOrderingFile: A file containing one sampleID per line\. 
@@ -874,624 +698,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     genotype expression\. The new filtered genotype can replace the 
     GT field or can be set to a different field, so multiple 
     filtering strategies can be included in a single VCF\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    expr: A Genotype Expression, using the genotype expression 
-    syntax\.\(String, required\)
-    desc: A description, to go in the new FORMAT fields\.\(String\)
-    filterTag: The name of a new FORMAT field, which will be a flag 
-    equal to 1 if and only if the genotype passes the 
-    filter\.\(String\)
-    outputGT: The output genotype FORMAT field\. If this is the 
-    same as the input genotype field then the genotype field will 
-    be overwritten\.\(String\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    inputGtNewName: If this parameter is set, the input genotype 
-    field will be copied to a new tag with this name before 
-    filtering\. This can be useful if overwriting the input 
-    genotype field\.\(\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-# VARIANT OPERATIONS
-
-    
-    Variant Operations or Variant Map Functions are a set of 
-    sub\-utilities that perform operations on a variant set one 
-    variant at a time\. When more than one function is specified in 
-    a run, these functions are performed in the order that they 
-    appear in the command line, after all other operations have 
-    been carried out \(excluding output ops\)\.
-    Basic Syntax:
-        \-\-FCN functionName|ID|param1=p1|param2=p2|\.\.\.
-
-## Available Functions:
-
-    
-
-### snpEffExtract
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    annTag: A valid SnpSift command\(String, default=ANN\)
-    bioTypeKeepList: \(String\)
-    effectKeepList: \(String\)
-    warningDropList: \(String\)
-    geneListName: \(String\)
-    geneList: \(String\)
-    severityList: Must be a list of severity levels, listed as some 
-    combination of effectseverity types delimited with slashes\. 
-    Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which are 
-    standard SnpEFF effect types, and also: NS \(HIGH and 
-    MODERATE\), NonNS \(LOW and MODIFIER\), and ANY \(any 
-    type\)\.\(String, default=HIGH/MODERATE/LOW\)
-    extractFields: This is a complex multi\-part field that allows 
-    flexible extraction of information from SnpEff ANN tags\. This 
-    field must be in the colon\-delimited format 
-    tagInfix:ANN\_idx:description:severityList\[:noCollapse\]\. 
-    severityList must be in the same format as the severityList 
-    parameter above, but can override the default if desired\. 
-    ANN\_idx must be a slash\-delimited list of field indices 
-    counting from zero in the ANN tag\. The standard ANN field 
-    indices are: 0:allele,1:effect,2:impact,3:geneName,4:geneID,5:t-
-    xType,6:txID,7:txBiotype,8:rank,9:HGVS\.c,10:HGVS\.p,11:cDNApos-
-    ition,12:cdsPosition,13:proteinPosition,14:distToFeature,15:war-
-    nings,16:errors If multiple fields are selected then the output 
-    fields will have the format first:second:third:etc\. For 
-    example, to create two new fields containing a list of all 
-    genes for which the current variant has HIGH and MODERATE 
-    impact respectively, use the format: myNewField:4:my 
-    description:HIGH/MODERATE\. This will generate two new fields: 
-    myNewField\_HIGH and myNewField\_MODERATE\. Note that if this 
-    function as a whole has a mapID set, then both field names will 
-    be prefixed by that overall ID\.\(String\)
-    geneNameIdx: \(String, default=4\)
-    biotypeIdx: \(String, default=7\)
-    warnIdx: \(String, default=15\)
-
-### fixSwappedRefAlt
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    genomeFA: \(String, required\)
-
-### convertSampleNames
-
-    
-    This function converts the sample IDs of the VCF file according 
-    to a decoder file that you supply\. The decoder will decode
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    file: A tab delimited file with the from/to chromosome 
-    names\.\(String, required\)
-    columnNames: The column titles for the old chrom names and the 
-    new chrom names, in that order\. If this parameter is used, the 
-    decoder file must have a title line\.\(String\)
-    columnIdx: The column number of the current chromosome names 
-    then the new chromosome names, in that order\. Column indices 
-    start counting from 0\. If you use this parameter to set the 
-    columns, and if the file has a title line, then you should use 
-    skipFirstRow or else it will be read in as if it were a 
-    chromosome\.\(Integer\)
-    skipFirstRow: If this parameter is set, then this tool will 
-    skip the first line on the decoder file\. This is useful if you 
-    are specifying the columns using column numbers but the file 
-    also has a title line\.\(Flag\)
-
-### tagBedFile
-
-    
-    This function takes a BED file \(which can be gzipped if 
-    desired\) and creates a new INFO field based on whether the 
-    variant locus overlaps with a genomic region in the BED file\. 
-    The new field can be either an integer that is equal to 1 if 
-    there is overlap and 0 otherwise \(which is the default 
-    behavior\) Or, alternatively, it can copy in the title field 
-    from the bed file\. NOTE: this function only uses the first 3 
-    to 5 fields of the BED file, it does not implement the optional 
-    fields 10\-12 which can specify intron/exon blocks\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    file: \(String, required\)
-    desc: \(String, default=No desc provided\)
-    buffer: \(Integer, default=0\)
-    style: \(String, default=\+\)
-
-### checkReferenceMatch
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    genomeFA: \(String, required\)
-
-### keepVariants
-
-    
-    This function drops variants based on a given true/false 
-    expression\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    expr: \(String\)
-
-### fixFirstBaseMismatch
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    windowSize: Sets the size of the sliding window used\. Problems 
-    may occur if you have variants longer than this window size\. 
-    Default is 200bp\.\(Int\)
-
-### depthStats
-
-    
-    This function calculates various statistics on total read depth 
-    and hetAB\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    inputAD: \(String\)
-    inputDP: \(String\)
-    restrictToGroup: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-
-### snpSiftDbnsfp
-
-    
-    This function runs the SnpSift dbnsfp command
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    cmd: A valid SnpSift command\(String\)
-
-### calcBurdenMatrix
-
-    
-    \.\.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    geneTag: \(String, required\)
-    expr: \(String\)
-    sampleSet: \(String\)
-    group: \(String\)
-    inputGT: \(String\)
-    geneList: \(String\)
-    geneListFile: \(String\)
-    printFullGeneList: \(flag\)
-    pathwayList: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    outfile: The output matrix file path\.\(String, required\)
-
-### splitMultiAllelics
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-
-### filterTags
-
-    
-    This function can be used to remove unwanted INFO or FORMAT 
-    fields, or remove unwanted samples\. This can substantially 
-    reduce file sizes\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    FORMAT\.keep: \(String\)
-    FORMAT\.drop: \(String\)
-    INFO\.keep: \(String\)
-    INFO\.drop: \(String\)
-    SAMPLES\.keep: \(String\)
-    SAMPLES\.drop: \(String\)
-
-### gcContext
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    windowSize: The number of bases to include in the context 
-    window for determining local gc content\.\(String, required\)
-    digits: Number of digits to round to\.\(String, default=4\)
-    genomeFA: \(String, required\)
-
-### addInfoTag
-
-    
-    This is a set of functions that all take one or more input 
-    parameters and outputs one new INFO field\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    func: \(String, required\)
-    desc: \(String, default=No desc provided\)
-    digits: \(Integer\)
-    params: \(String\)
-
-### tagVariantsExpression
-
-    
-    This function takes a variant expression and creates a new INFO 
-    field that is 1 if and only if that expression returns TRUE, 
-    and 0 otherwise\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    expr: The variant expression, which is a true/false expression 
-    using the variant expression syntax\.\(String, required\)
-    desc: A description, to go in the info field 
-    description\.\(String, default=No desc provided\)
-
-### sanitize
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-
-### snpEff
-
-    
-    This function runs SnpEff
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    cmd: A valid SnpSift command\(String\)
-
-### getLocusDepthFromWig
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    wigfile: \(String\)
-    desc: \(String\)
-
-### tagVariantsFunction
-
-    
-    This is a set of functions that all take one or more input 
-    parameters and outputs one new INFO field\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    func: \(String, required\)
-    desc: \(String, default=No desc provided\)
-    digits: \(Integer\)
-    params: \(String\)
-
-### snpEffExtractField
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    tagPrefix: \(String, required\)
-    outputTagPrefix: \(String\)
-    columns: \(String\)
-    desc: \(String\)
-    collapseUniques: \(Flag\)
-    tagSet: \(String\)
-
-### snpSiftAnno
-
-    
-    This function runs a SnpSift anno command
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    cmd: A valid SnpSift command\(String\)
-
-### unPhaseAndSortGenotypes
-
-    
-    This function removes phasing and sorts genotypes\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    inputGT: The input/output genotype FORMAT field\.\(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-
-### calcStats
-
-    
-    This function combines the functions sampleCounts, sampleLists, 
-    and depthStats, performing all three\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    inputAD: \(String\)
-    inputDP: \(\)
-    noCountsCalc: \(Flag\)
-    noFreqCalc: \(Flag\)
-    noMissCalc: \(Flag\)
-    noAlleCalc: \(Flag\)
-    noHetHomCalc: \(Flag\)
-    noMultiHetCalc: \(Flag\)
-    samplePrintLimit: \(String\)
-    noDepthStats: \(Flag\)
-    noSampleLists: \(Flag\)
-    noSampleCounts: \(Flag\)
-    expr: The variant expression, which is a true/false expression 
-    using the variant expression syntax\.\(String\)
-
-### calcBurdenCounts
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    geneTag: \(String, required\)
-    expr: \(String\)
-    sampleSet: \(String\)
-    group: \(String\)
-    inputGT: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    countFileID: If multiple output count files are desired, you 
-    can specify which functions output to which count file using 
-    this parameter\. Note that each file must be created using a 
-    \-\-burdenCountsFile parameter, with the form 
-    fileID:/path/to/file\.txt\(String\)
-
-### homopolymerRunStats
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    runSize: The number of repeated bases required to count as a 
-    homopolymer run\(String, required\)
-    genomeFA: \(String, required\)
-
-### addContextBases
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    windowSize: The number of bases to include in the context 
-    window\(String, required\)
-    genomeFA: \(String, required\)
-
-### convertChromNames
-
-    
-    \.\.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    file: A tab delimited file with the from/to chromosome 
-    names\.\(String, required\)
-    columnNames: The column titles for the old chrom names and the 
-    new chrom names, in that order\. If this parameter is used, the 
-    decoder file must have a title line\.\(String\)
-    columnIdx: The column number of the current chromosome names 
-    then the new chromosome names, in that order\. Column indices 
-    start counting from 0\. If you use this parameter to set the 
-    columns, and if the file has a title line, then you should use 
-    skipFirstRow or else it will be read in as if it were a 
-    chromosome\.\(Integer\)
-    skipFirstRow: If this parameter is set, then this tool will 
-    skip the first line on the decoder file\. This is useful if you 
-    are specifying the columns using column numbers but the file 
-    also has a title line\.\(Flag\)
-
-### addVariantIdx
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    windowSize: The number of bases to include in the context 
-    window for determining local gc content\.\(String, required\)
-    genomeFA: \(String, required\)
-
-### sampleLists
-
-    
-    This function generates sample list fields which contain 
-    comma\-delimited lists of samples that are het or hom\-alt\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    samplePrintLimit: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    expr: The variant expression, which is a true/false expression 
-    using the variant expression syntax\.\(String\)
-
-### fixDotAltIndels
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-
-### calcBurdenCountsByGroups
-
-    
-    
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    geneTag: \(String, required\)
-    groups: \(String, required\)
-    expr: \(String\)
-    sampleSet: \(String\)
-    inputGT: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    countFileID: If multiple output count files are desired, you 
-    can specify which functions output to which count file using 
-    this parameter\. Note that each file must be created using a 
-    \-\-burdenCountsFile parameter, with the form 
-    fileID:/path/to/file\.txt\(String\)
-
-### rmDup
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-
-### leftAlignAndTrim
-
-    
-    \.\.\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    windowSize: Sets the size of the sliding window used\. Problems 
-    may occur if you have variants longer than this window size\. 
-    Default is 200bp\.\(Int\)
-    genomeFA: \(String, required\)
-
-### sampleCounts
-
-    
-    This function generates counts and frequencies for alt alleles, 
-    alt genotypes, missing genotypes, ref genotypes, and so on\. 
-    Note that there are several calc\- flags\. If none of these are 
-    included, then this function does nothing\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    noCountsCalc: \(Flag\)
-    noFreqCalc: \(Flag\)
-    noMissCalc: \(Flag\)
-    noAlleCalc: \(Flag\)
-    noHetHomCalc: \(Flag\)
-    noMultiHetCalc: \(Flag\)
-
-### sampleReorder
-
-    
-    This function allows you to reorder the sample columns in your 
-    VCF\. Set ONE of the parameters below to specify the desired 
-    ordering\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
-    sampleOrdering: A simple list of all the samples, in the 
-    desired order\.\(String\)
-    sampleOrderingFile: A file containing one sampleID per line\. 
-    The samples will be reordered to match the order found in the 
-    file\.\(String, required\)
-    alphabetical: If this flag is set, then the samples will be 
-    reordered alphabetically\.\(Flag\)
-
-### genotypeFilter
-
-    
-    This function filters a genotype field based on a given 
-    genotype expression\. The new filtered genotype can replace the 
-    GT field or can be set to a different field, so multiple 
-    filtering strategies can be included in a single VCF\.
-    mapType: The function to run\.\(String, required\)
-    mapID: The ID to use for this operation\. This ID will also be 
-    used in the output tag IDs generated by this 
-    operation\.\(String, required\)
     expr: A Genotype Expression, using the genotype expression 
     syntax\.\(String, required\)
     desc: A description, to go in the new FORMAT fields\.\(String\)

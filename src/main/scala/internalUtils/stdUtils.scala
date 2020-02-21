@@ -88,12 +88,23 @@ object stdUtils {
     def isMatch(s : String) : Boolean = nameSetHolder.contains(s);
     
   }
-  case class ParsedParamStrSet( sc : Seq[String], pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
+  case class ParsedParamStrSet( sc : Seq[String], pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]", parenDelim : String = "()"){
     val paramMap = pss.paramMap;
     //val sc = ss.split(delim).toSeq;
-    var rawParams = sc.map{ cell => {
-       val x= cell.split(innerDelim,2);
-       (x.head.trim(), x.lift(1).map{ _.trim() } )
+    val allInitParams = pss.pp.filter{ pp => pp.initParam };
+    var initParamsLeft = allInitParams;
+    var rawParams = sc.zipWithIndex.map{ case (cell,cix) => {
+       val x= cell.split(innerDelim,2).map{ _.trim() }
+       if( x.head.contains(parenDelim.head) || x.length == 1 ){
+         if(initParamsLeft.length == 0){
+           error("ERROR: unnamed parameter in position "+cix+"="+cell+"!\nThis function does not accept an unnamed parameter at this position! Parameter must be named in form paramID=paramValue!");
+         }
+         val xx = initParamsLeft.head.id;
+         initParamsLeft = initParamsLeft.tail;
+         (xx,Some(x.head))
+       } else {
+         (x.head, x.lift(1) )
+       }
     }}.map{ case ( paramID, paramValue ) => {
       if(! paramMap.contains(paramID)){
         error("Parameter \""+paramID+"\" not found! legal params are: "+paramMap.map{ _._2.id }.mkString(",")  );
