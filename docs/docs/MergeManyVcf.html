@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+		<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<title>vArmyKnife: Variant Army Knife Toolkit</title>
+
+		<link rel="stylesheet" href="stylesheets/styles.2.css">
+		<link rel="stylesheet" href="stylesheets/pygment_trac.css">
+		<script src="javascripts/scale.fix.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+		<!--[if lt IE 9]>
+		<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+<div class="wrapper">
+
+
+<header>
+			<h1><a href="index.html">vArmyKnife</a></h1>
+			<p>Variant Army Knife</p>
+</header>
+
+
+<section>
+<h1>vArmyKnife</h1>
+
+<blockquote>
+  <p>Version 2.2.254 (Updated Thu Oct 10 15:43:23 EDT 2019)</p>
+
+<p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
+</blockquote>
+
+</section> <h2>Help for vArmyKnife command "MergeManyVcf"</h2> <section>
+
+</section> <h2>USAGE:</h2> <section>
+
+<p>GENERAL SYNTAX:</p>
+
+<pre><code>varmyknife [java_options] --CMD MergeManyVcf [options]
+</code></pre>
+
+</section> <h2>DESCRIPTION:</h2> <section>
+
+<p>UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!</p>
+
+</section> <h2>REQUIRED ARGUMENTS:</h2> <section>
+
+<h4>infilePrefix:</h4>
+
+<blockquote>
+  <p>Input file prefix (String)</p>
+</blockquote>
+
+<h4>infileSuffix:</h4>
+
+<blockquote>
+  <p>Input file suffix (String)</p>
+</blockquote>
+
+<h4>outvcf:</h4>
+
+<blockquote>
+  <p>The output vcf file. (String)</p>
+</blockquote>
+
+</section> <h2>OPTIONAL ARGUMENTS:</h2> <section>
+
+<h3>Annotation:</h3>
+
+<h4>--tallyFile file.txt:</h4>
+
+<blockquote>
+  <p>Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)</p>
+</blockquote>
+
+<h3>Preprocessing:</h3>
+
+<h4>--universalTagPrefix VAK_:</h4>
+
+<blockquote>
+  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
+</blockquote>
+
+<h3>OTHER OPTIONS:</h3>
+
+<h4>--sumInfoFields tag1,tag2,tag3,...:</h4>
+
+<blockquote>
+  <p>(CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--splitInfoFields tag1,tag2,tag3,...:</h4>
+
+<blockquote>
+  <p>(CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--firstInfoFields tag1,tag2,tag3,...:</h4>
+
+<blockquote>
+  <p>(CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--gtInfoFields tag1,tag2,tag3,...:</h4>
+
+<blockquote>
+  <p>(CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--chromList chromList.txt:</h4>
+
+<blockquote>
+  <p>(String)</p>
+</blockquote>
+
+<h4>--genomeFA genome.fa:</h4>
+
+<blockquote>
+  <p>(String)</p>
+</blockquote>
+
+<h4>--leftAlignAndTrimWindow 200:</h4>
+
+<blockquote>
+  <p>(Int)</p>
+</blockquote>
+
+<h4>--infixList infix1,infix2,...:</h4>
+
+<blockquote>
+  <p>(CommaDelimitedListOfStrings)</p>
+</blockquote>
+
+<h4>--infixFile infixlist.txt:</h4>
+
+<blockquote>
+  <p>(String)</p>
+</blockquote>
+
+<h4>--verbose:</h4>
+
+<blockquote>
+  <p>Flag to indicate that debugging information and extra progress information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--quiet:</h4>
+
+<blockquote>
+  <p>Flag to indicate that only errors and warnings should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--paramFile paramFile.txt:</h4>
+
+<blockquote>
+  <p>A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)</p>
+</blockquote>
+
+<h4>--debugMode:</h4>
+
+<blockquote>
+  <p>Flag to indicate that much more debugging information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--createRunningFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create when this utility starts, to be deleted on a clean exit. The file WILL be deleted even if errors are caught. It will only remain if uncaught errors are thrown or if the process is killed externally. (String)</p>
+</blockquote>
+
+<h4>--successfulCompletionFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create if and when this utility successfully completes without fatal errors. (String)</p>
+</blockquote>
+
+</section> <h2>AUTHORS:</h2> <section>
+
+<p>Stephen W. Hartley, Ph.D. stephen.hartley (at nih dot gov)</p>
+
+</section> <h2>LEGAL:</h2> <section>
+
+<p>Written 2017-2019 by Stephen Hartley, PhD  National Cancer Institute (NCI), Division of Cancer Epidemiology and Genetics (DCEG), Human Genetics Program As a work of the United States Government, this software package and all related documentation and information is in the public domain within the United States. Additionally, the National Institutes of Health and the National Cancer Institute waives copyright and related rights in the work worldwide through the CC0 1.0 Universal Public Domain Dedication (which can be found at https://creativecommons.org/publicdomain/zero/1.0/). Although all reasonable efforts have been taken to ensure the accuracy and reliability of the software and data, the National Human Genome Research Institute (NHGRI), the National Cancer Institute (NCI) and the U.S. Government does not and cannot warrant the performance or results that may be obtained by using this software or data. NHGRI, NCI and the U.S. Government disclaims all warranties as to performance, merchantability or fitness for any particular purpose. In work or products derived from this material, proper attribution of the authors as the source of the software or data may be made using "NCI Division of Cancer Epidemiology and Genetics, Human Genetics Program" as the citation. This package uses (but is not derived from) several externally-developed, open-source libraries which have been distributed under various open-source licenses. vArmyKnife is distributed with compiled versions of these packages. Additional License information can be accessed using the command:     vArmyKnife --help LICENSES And can also found in the distributed source code in:     src/main/resources/library.LICENSES.txt</p>
+
+</div></body></html>

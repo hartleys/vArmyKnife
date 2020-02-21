@@ -10,11 +10,15 @@ object commandLineUI {
 
   case class UserManualBlock( lines : Seq[String],
                               title : Option[String] = None, 
-                              level : Int = 1, isCodeBlock : Boolean = true){
+                              level : Int = 1, isCodeBlock : Boolean = true,
+                              indentTitle : Int = 4, indentBlock : Int = 8,
+                              indentFirst:Int= 8){
     def mdBlockIndent = if(isCodeBlock) 4 else 0;
-    def getBlockString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH) : String = {
-      title.map{ "  "+_+"\n" }.getOrElse("") + lines.map{line => {
-        wrapLineWithIndent(line,lineLen,4)
+    def getBlockString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
+                       baseIndent : Int = 0) : String = {
+      title.map{ t => "\n"+repString(" ",baseIndent + indentTitle)+t }.getOrElse("") + lines.map{line => {
+        //wrapLineWithIndent(line,lineLen,4)
+        wrapSimpleLineWithIndent_staggered(line, width = lineLen, indent = indentBlock, firstLineIndent = indentFirst);
       }}.mkString("\n");
       /*
       
@@ -25,8 +29,9 @@ object commandLineUI {
         }) + wrapLineWithIndent(escapeToMarkdown(lmrd),internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,0)+"\n"
       }}.mkString("\n")+*/
     }
-    def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH) : String = {
-      title.map{ tx => "### "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + lines.map{line => {
+    def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
+                          baseLevel : Int = 0) : String = {
+      title.map{ tx => "\n"+repString("#",baseLevel + level)+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + lines.map{line => {
         wrapLineWithIndent(escapeToMarkdown(line),lineLen, mdBlockIndent );
       }}.mkString("\n");
     }

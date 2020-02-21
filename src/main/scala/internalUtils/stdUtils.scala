@@ -99,10 +99,13 @@ object stdUtils {
           }
         }
       }}.toMap;
-      params.find{ case (paramid,(ps,pv,isSet)) => {
-        ps.req && (! isSet)
+      params.filter{ case (paramid,(ps,pv,ss)) => {
+        ps.req && (! ss)
       }}.foreach{ case (paramid,(ps,pv,isSet)) => {
-        error("ERROR: parameter "+paramid+" is REQUIRED for function "+pss.mapType)
+        error("ERROR: parameter "+paramid+" is REQUIRED for function "+pss.mapType + 
+                           "\n     Set params: ["+params.filter{ case (pid,(ps,pv,ss)) => ss }.map{ case (pid,(ps,pv,ss)) => pid }.mkString(",")+"] "+
+                           "\n     avail params: ["+pss.pp.map{p => p.id}.mkString(",")+"]"+
+                           "\n     paramMap: ["+params.map{ case (a,b) => a+":"+b}.mkString(",")+"]");
       }}
       
       
@@ -112,7 +115,8 @@ object stdUtils {
       rawParams.contains(pid);
     }
     def set(paramID : String, paramValue : String){
-      params = params.updated(paramID, ( pss.paramMap(paramID),Some(paramValue), true)  )
+      reportln("Setting param: "+paramID+" for fcn "+pss.mapType,"debug")
+      rawParams = rawParams.updated(paramID, ( pss.paramMap(paramID),Some(paramValue) )  )
     }
     def isSet(paramID : String) : Boolean = {
       params.get(paramID).map{ _._3}.getOrElse(false);
@@ -1763,9 +1767,17 @@ object stdUtils {
       return firstLineIndent + firstLine + "\n" + wrapLinesWithIndent_tailRecursive(Seq(), paraRemainder, width, indent).mkString("\n");
     }
   }
+  def wrapSimpleLineWithIndent_staggered(line : String, width : Int, indent : Int, firstLineIndent : Int) : String = {
+    if(line.length + firstLineIndent < width) {
+      return line;
+    } else {
+      val (firstLine,paraRemainder) = wrapLinesWithIndent_tailRecursiveHelper_buildLine("",line,width, firstLineIndent);
+      return firstLineIndent + firstLine + "\n" + wrapLinesWithIndent_tailRecursive(Seq(), paraRemainder, width, repString(" ",indent)).mkString("\n");
+    }
+  }
    
   def wrapLineWithIndent(line : String, width : Int, indent : Int) : String = {
-    wrapLinesWithIndent(line, width, whiteSpaceString.substring(0,indent), false);
+    wrapLinesWithIndent(line, width, repString(" ",indent), false);
   } 
   
   def wrapLinesWithIndent(lines : String, width : Int, indent : String, removeExistingWrapBreaks : Boolean) : String = {

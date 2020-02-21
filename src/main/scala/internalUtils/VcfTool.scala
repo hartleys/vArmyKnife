@@ -2192,7 +2192,11 @@ object VcfTool {
       }
       (vcIter2,vcfHeader);
   }
-  def getSVcfIterators(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, infixes : Vector[String] = Vector()) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+  def getSVcfIterators(infileString : String, chromList : Option[List[String]],
+      numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, 
+      infixes : Vector[String] = Vector(),
+      extractInterval : Option[String] = None) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+    
       val indata = if(inputFileList){
         val (infilePeek,infiles) = peekIterator(getLinesSmartUnzip(infileString),1000);
         val denominator = if(infilePeek.length < 1000) infilePeek.length.toString else "???";
@@ -2226,16 +2230,46 @@ object VcfTool {
         (vh,vi.filter(line => { chromSet.contains(line.chrom) }))
       }
       
+      val vcIter1p5 = extractInterval.map{ ivString => {
+        val cells = ivString.split("[:-]");
+        val chrom = cells(0);
+        val start = string2int(cells(1));
+        val end = string2int(cells(2));
+        //(chrom,start,end);
+        new Iterator[SVcfVariantLine]{
+          val itr = vcIter.buffered;
+          var hasHitInterval = false;
+          while( itr.hasNext && itr.head.chrom == chrom && itr.head.pos < start){
+            itr.next;
+          }
+          if(itr.hasNext){
+            reportln("Arrived at interval: \""+ivString+"\": "+itr.head.chrom+":"+itr.head.pos,"note");
+          } else {
+            reportln("VCF does not contain interval: \""+ivString+"\"!","note");
+          }
+          
+          def hasNext : Boolean = {
+            itr.hasNext && itr.head.chrom == chrom && itr.head.pos < end;
+          }
+          def next : SVcfVariantLine = {
+            itr.next;
+          }
+        }
+      }}.getOrElse(vcIter);
+    
       val vcIter2 = if(numLinesRead.isDefined){
-        vcIter.take(numLinesRead.get);
+        vcIter1p5.take(numLinesRead.get);
       } else {
-        vcIter
+        vcIter1p5
       }
+      
       (vcIter2,vcfHeader);
   }
   
   
-  def getSVcfIteratorsFromTable(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, infixes : Vector[String] = Vector()) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+  def getSVcfIteratorsFromTable(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int], 
+      inputFileList : Boolean = false, withProgress : Boolean = true, infixes : Vector[String] = Vector(),
+      extractInterval : Option[String] = None) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val indata = if(inputFileList){
         val (infilePeek,infiles) = peekIterator(getLinesSmartUnzip(infileString),1000);
         val denominator = if(infilePeek.length < 1000) infilePeek.length.toString else "???";
@@ -2269,10 +2303,37 @@ object VcfTool {
         (vh,vi.filter(line => { chromSet.contains(line.chrom) }))
       }
       
+      val vcIter1p5 = extractInterval.map{ ivString => {
+        val cells = ivString.split("[:-]");
+        val chrom = cells(0);
+        val start = string2int(cells(1));
+        val end = string2int(cells(2));
+        //(chrom,start,end);
+        new Iterator[SVcfVariantLine]{
+          val itr = vcIter.buffered;
+          var hasHitInterval = false;
+          while( itr.hasNext && itr.head.chrom == chrom && itr.head.pos < start){
+            itr.next;
+          }
+          if(itr.hasNext){
+            reportln("Arrived at interval: \""+ivString+"\": "+itr.head.chrom+":"+itr.head.pos,"note");
+          } else {
+            reportln("VCF does not contain interval: \""+ivString+"\"!","note");
+          }
+          
+          def hasNext : Boolean = {
+            itr.hasNext && itr.head.chrom == chrom && itr.head.pos < end;
+          }
+          def next : SVcfVariantLine = {
+            itr.next;
+          }
+        }
+      }}.getOrElse(vcIter);
+    
       val vcIter2 = if(numLinesRead.isDefined){
-        vcIter.take(numLinesRead.get);
+        vcIter1p5.take(numLinesRead.get);
       } else {
-        vcIter
+        vcIter1p5
       }
       (vcIter2,vcfHeader);
   }
@@ -3058,7 +3119,7 @@ object VcfTool {
     
     //Map(funcID) = (numParam,desc,metaFunction(params) => function(vc))
     val filterFunctionSetVal : Set[FilterFunction[SVcfVariantLine]] = Set[FilterFunction[SVcfVariantLine]]( 
-        FilterFunction(funcName="INFO.eq",numParam=2,desc="PASS iff INFO field t is nonmissing and equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.eq",numParam=2,desc="PASS iff INFO field t is nonmissing and equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3067,7 +3128,7 @@ object VcfTool {
                           }
                         }
                       ), 
-        FilterFunction(funcName="INFO.ne",numParam=2,desc="PASS iff INFO field t is either missing or not equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.ne",numParam=2,desc="PASS iff INFO field t is either missing or not equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3092,7 +3153,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3101,7 +3162,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3110,7 +3171,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.ge",numParam=2,desc="PASS iff INFO field t is nonmissing and greater than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.ge",numParam=2,desc="PASS iff INFO field t is nonmissing and greater than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3119,7 +3180,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.le",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.le",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3156,7 +3217,7 @@ object VcfTool {
                         }
                       ),
 
-        FilterFunction(funcName="INFO.any.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info"),
+        FilterFunction(funcName="INFO.any.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3165,7 +3226,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.any.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info"),
+        FilterFunction(funcName="INFO.any.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3175,7 +3236,7 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="INFO.gtm",numParam=2,desc="PASS iff INFO field t is missing or greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.gtm",numParam=2,desc="PASS iff INFO field t is missing or greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3184,7 +3245,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.ltm",numParam=2,desc="PASS iff INFO field t is missing or less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.ltm",numParam=2,desc="PASS iff INFO field t is missing or less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3193,7 +3254,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.gem",numParam=2,desc="PASS iff INFO field t is missing or greater than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.gem",numParam=2,desc="PASS iff INFO field t is missing or greater than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3202,7 +3263,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.lem",numParam=2,desc="PASS iff INFO field t is missing or less than or equal to k",paramNames=Seq("t","k"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.lem",numParam=2,desc="PASS iff INFO field t is missing or less than or equal to k",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));

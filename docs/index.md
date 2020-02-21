@@ -1,5 +1,5 @@
-v2.2.87
-Revised Mon Jan 28 16:51:20 EST 2019
+v2.2.254
+Revised Thu Oct 10 15:43:23 EDT 2019
 
 The [vArmyKnife software package](http://hartleys.github.io/vArmyKnife/) is a fast, efficient, and portable 
 multifunction toolkit designed to assist in
@@ -19,19 +19,15 @@ Simply download the vArmyKnife.tar.gz file and extract it to your preferred loca
 
 If you are running either Linux or OSX, you can install the software onto your PATH using the command:
 
-    export PATH=/my/install/directory/:$PATH
+    export PATH=$PATH:/my/install/directory/bin/
 
-Then you can test vArmyKnife and see the basic syntax using either of the commands:
+Then you can test vArmyKnife and see the basic syntax using the command:
 
     varmyknife help
-       or
-    java -jar /my/install/directory/vArmyKnife.jar help
 
 ## Documentation:
 
 [The full set of command-line tools included in vArmyKnife are listed here](docs/index.html)
-
-Almost all the functions have been folded into the walkVcf command. [See the full documentation for this command](docs/walkVcf.html)
 
 ##LEGAL:
 

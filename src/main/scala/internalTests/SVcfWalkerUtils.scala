@@ -4633,7 +4633,8 @@ object SVcfWalkerUtils {
           ("countMissing",countMissing.toString),
           ("noMultiAllelics",noMultiAllelics.toString),
           ("GTTag",GTTag),
-          ("tagPrefix",if(tagPrefix == "") "None" else tagPrefix)
+          ("tagPrefix",if(tagPrefix == "") "None" else tagPrefix),
+          ("vcfCodesInfix",vcfCodes.CT_INFIX)
         );
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -13409,7 +13410,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         ("filterExpr","\""+filterExpr+"\""),
         ("explainFile","\""+explainFile.getOrElse("None")+"\"")
     )
-    val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+    val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser; 
     val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(filterExpr);
     //val parser = internalUtils.VcfTool.SVcfFilterLogicParser();
     //val filter = parser.parseString(filterExpr);
@@ -13418,6 +13419,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
        val outHeader = vcfHeader.copyHeader;
        outHeader.addWalk(this);
+       checkSVcfFilterLogicParse( filterLogic = filter, vcfHeader = vcfHeader );
+
        (vcFlatMap(vcIter){ vc => {
          val k = filter.keep(vc);
          if(!k){
@@ -13635,7 +13638,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   }
 
   
-  
+  //checkSVcfFilterLogicParse[A]( filterLogic : SFilterLogic[A], vcfHeader : SVcfHeader )
   case class VcfExpressionTag(expr : String, tagID : String, tagDesc : String, geneTagString : Option[String] = None, subGeneTagString : Option[String] = None, geneList : Option[List[String]] = None) extends SVcfWalker {
 
     /*def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
@@ -13697,6 +13700,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
        val outHeader = vcfHeader.copyHeader;
        initNotice("TAGGED_"+tagID+"_0")
        initNotice("TAGGED_"+tagID+"_1")
+       
+       checkSVcfFilterLogicParse( filterLogic = filter, vcfHeader = vcfHeader );
        
        if(isGeneTagExpr){
            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = ".", Type="String",desc=tagDesc).addWalker(this));
