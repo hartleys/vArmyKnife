@@ -1265,6 +1265,11 @@ object VcfTool {
                         var metadataLines : Seq[SVcfCompoundHeaderLine] = Seq()){
     def getVcfLines : Seq[String] = (otherHeaderLines ++ sStatLine ++ walkLines ++ infoLines ++ formatLines :+ titleLine).map(_.getVcfString);
     
+    def reportAddedInfos(walker : SVcfWalker){
+      reportln("    "+walker.walkerName+" adds INFO lines:   "+addedInfos.toVector.sorted.padTo(1,"(NONE)").mkString(","),"debug")
+      reportln("    "+walker.walkerName+" adds FORMAT lines: "+addedFmts.toVector.sorted.padTo(1,"(NONE)").mkString(","),"debug")
+    }
+    
     def addStat(statID : String, statVal : String){
       sStatLine = Some(sStatLine.getOrElse( SVcfSStatLine() ).add( statID, statVal ))
     }
@@ -3407,7 +3412,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="REF.eq", numParam = 1,desc="PASS iff the REF allele equals k.",paramNames=Seq("k"),paramTypes=Seq("int"),
+        FilterFunction(funcName="REF.eq", numParam = 1,desc="PASS iff the REF allele equals k.",paramNames=Seq("k"),paramTypes=Seq("string"),
                         (params : Seq[String]) => {
                           val gt = (params(0));
                           (a : SVcfVariantLine) => {
@@ -3415,7 +3420,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="ALT.eq", numParam = 1,desc="PASS iff the first ALT allele equals k.",paramNames=Seq("k"),paramTypes=Seq("int"),
+        FilterFunction(funcName="ALT.eq", numParam = 1,desc="PASS iff the first ALT allele equals k.",paramNames=Seq("k"),paramTypes=Seq("string"),
                         (params : Seq[String]) => {
                           val gt = (params(0));
                           (a : SVcfVariantLine) => {

@@ -47,9 +47,13 @@ object stdUtils {
                        ){
     
   }
-  case class ParamStrSet(mapType : String, desc : String, pp : Seq[ParamStr] ) {
+  case class ParamStrSet(mapType : String, desc : String, pp : Seq[ParamStr], synon : Seq[String] = Seq[String]() ) {
     val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
+    val nameSetHolder = ( Set(mapType) ++ synon.toSet );
     def paramMap = pm;
+    def nameSet : Set[String] = nameSetHolder
+    def isMatch(s : String) : Boolean = nameSetHolder.contains(s);
+    
   }
   case class ParsedParamStrSet( sc : Seq[String], pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]"){
     val paramMap = pss.paramMap;
@@ -81,6 +85,7 @@ object stdUtils {
     def setDefaults() {
       setDefaults(defaultParamKV = Map[String,String]())
     }
+    //defaults added as a defaultParamKV are counted as SET for the purposes of required params!
     def setDefaults(defaultParamKV : Map[String,String]) {
       params = pss.pp.map{ ps => {
         rawParams.get(ps.id) match {
@@ -90,7 +95,7 @@ object stdUtils {
           case None => {
             defaultParamKV.get(ps.id) match {
               case Some(dpv) => {
-                (ps.id,(ps,Some(dpv),false));
+                (ps.id,(ps,Some(dpv),true));
               }
               case None => {
                 (ps.id,(ps,ps.defaultValue,false))

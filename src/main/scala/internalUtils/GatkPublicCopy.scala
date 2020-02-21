@@ -147,7 +147,7 @@ object GatkPublicCopy {
       val sampRango = Range(0,vcfHeader.titleLine.sampleList.length);
       
       var bufferMap = new scala.collection.immutable.TreeMap[Int,SVcfVariantLine]();
-
+       outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
         //val vc = v.getOutputLine()
         val startPos = v.start;
@@ -341,7 +341,7 @@ object GatkPublicCopy {
       var currChrom = vcIterBuf.head.chrom;
       
       val zeroString = repString("0",sampCt);
-
+       outHeader.reportAddedInfos(this)
       
       (addIteratorCloseAction( iter = vcFlatMap(vcIterBuf){v => {
         //val vc = v.getOutputLine()
@@ -569,6 +569,7 @@ object GatkPublicCopy {
       newHeader.addWalk(this);
       var noticeShownA = true;
       var noticeShownR = true;
+       newHeader.reportAddedInfos(this)
       (vcMap(vcIter){ vc => {
         val vb = vc.getOutputLine();
         if(vb.ref == VcfTool.MISSING_VALUE_STRING || vb.ref == "-"){
@@ -677,6 +678,7 @@ object GatkPublicCopy {
       }}
       
       newHeader.addWalk(this);
+       newHeader.reportAddedInfos(this)
       var noticeShownA = true;
       (vcMap(vcIter){ vc => {
         val vb = vc.getOutputLine();
@@ -829,6 +831,7 @@ object GatkPublicCopy {
         newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=crt,Number = "1", Type = "String", desc = "If the ref alle and the reference genome mismatch, this tag will contain the correct reference allele").addWalker(this));
       }}
       newHeader.addWalk(this);
+       newHeader.reportAddedInfos(this)
       var noticeShownA = true;
       (vcMap(vcIter){ vc => {
         val vb = vc.getOutputLine();
@@ -875,6 +878,7 @@ object GatkPublicCopy {
         newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tag,Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the original VCF line contained an indel in which the first bases dont match up. Some tools do not accept variants in this form.").addWalker(this));
       }}
       newHeader.addWalk(this);
+       newHeader.reportAddedInfos(this)
       var noticeShownA = true;
       (vcMap(vcIter){ vc => {
         val vb = vc.getOutputLine();
@@ -1066,6 +1070,7 @@ object GatkPublicCopy {
       tally("SHIFTED_LEFTALIGN",0)
       tally("TRIMMED",0)
       tally("CHANGE_LEFTALIGNANDTRIM",0)
+       newHeader.reportAddedInfos(this)
       ((addIteratorCloseAction(bufferedGroupedResorting(vcMap(vcIter){ vc => {
         if(vc.alt.length == 2){
           if(vc.alt.last != "*"){

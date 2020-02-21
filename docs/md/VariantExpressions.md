@@ -20,7 +20,7 @@
     
     ALT\.eq:k
     PASS iff the first ALT allele equals k\.
-    \(Param Types: int\)
+    \(Param Types: string\)
     ALT\.isOneOf:k1:k2:\.\.\.
     PASS iff the first ALT allele is one of k1,k2,\.\.\.
     \(Param Types: string:\.\.\.\)
@@ -181,7 +181,7 @@
     \(Param Types: String\)
     REF\.eq:k
     PASS iff the REF allele equals k\.
-    \(Param Types: int\)
+    \(Param Types: string\)
     REF\.isOneOf:k1:k2:\.\.\.
     PASS iff the REF allele is one of k1,k2,\.\.\.
     \(Param Types: string:\.\.\.\)

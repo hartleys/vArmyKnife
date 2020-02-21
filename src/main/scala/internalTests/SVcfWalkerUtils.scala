@@ -1660,6 +1660,7 @@ object SVcfWalkerUtils {
       if( overwriteInfos.nonEmpty ){
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         //vc.dropInfo(overwriteInfos);
@@ -1708,6 +1709,7 @@ object SVcfWalkerUtils {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tag,Number="1",Type="Float",desc=desc+"(value from wiggle file:"+wigFile+")"));
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         val c = v.chrom
@@ -1743,6 +1745,7 @@ object SVcfWalkerUtils {
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagPrefix+"_gcPct_"+currWin,Number="1",Type="Float",desc="GC percentage found within "+currWin+" bases in either direction. (note: If the variant is an insdel or a deletion, it will count the GC from the center of the ref allele. Also: does not count N bases.)"));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagPrefix+"_nPct_"+currWin,Number="1",Type="Float",desc="Reference-N percentage found within "+currWin+" bases in either direction. (note: If the variant is an insdel or a deletion, it will count the GC from the center of the ref allele.)"));
       }}
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -1795,6 +1798,7 @@ object SVcfWalkerUtils {
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("ADD"),Number="1",Type="Integer",desc="Equal to 1 iff the variant adds to an existing homopolymer run of length "+lenThreshold));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("DEL"),Number="1",Type="Integer",desc="Equal to 1 iff the variant deletes part of an existing homopolymer run of length "+lenThreshold));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("STAT"),Number="1",Type="String",desc="Homopolymer run warning status (homopolymer runs defined as length >="+lenThreshold+")"));
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -1923,7 +1927,7 @@ object SVcfWalkerUtils {
       outHeader.addWalk(this);
       //internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid,Number="1",Type="String",desc="The sequence of the alt allele, with "+len + " flanking bp on each side."));
-
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -1976,7 +1980,7 @@ object SVcfWalkerUtils {
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",Number="1",Type="String",desc="The "+len+" ref bases before the variant"));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",Number="1",Type="String",desc="The "+len+" ref bases after the variant"));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len,Number="1",Type="String",desc="The context around the variant in a window of size "+len));
-
+     outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -2023,7 +2027,7 @@ object SVcfWalkerUtils {
       outHeader.addWalk(this);
       var idx = 0;
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagPrefix,Number=".",Type="String",desc="Original Chrom:Pos:Alle from VCF line"));
-
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -2047,6 +2051,7 @@ object SVcfWalkerUtils {
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
       var dropct = 0;
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {        
         if(v.ref.startsWith("<") || v.alt.exists{ a => a.startsWith("<")}){
           dropct = dropct + 1;
@@ -2074,6 +2079,7 @@ object SVcfWalkerUtils {
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number=".",Type="String",desc="Merge of boolean tags: "+mergeTags.mkString(",")));
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {        
         val vc = v.getOutputLine();
         
@@ -2205,7 +2211,7 @@ object SVcfWalkerUtils {
       val sampIdxList = fullSampList.zipWithIndex.filter{ case (samp,idx)=> { finalKeepSampSet.contains(samp) }}.map{ case (samp,idx) => idx };
 
       notice("BTcount: parsed sample list (sampSubset: "+sampSubset.map(_.size).getOrElse(-1)+"), (keepSampSet: "+keepSampSet.size+"), (finalKeepSampSet: "+finalKeepSampSet.size+"), (sampIdxList: "+sampIdxList.length+") first 10 sample idx: ["+sampIdxList.slice(0,10).mkString("/")+"]","sampIdxListFound",10);
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         if(filterExpr.keep(v)){
@@ -2969,7 +2975,7 @@ object SVcfWalkerUtils {
       } else {
         None;
       }).getOrElse(new scala.util.Random());
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         vc.dropInfo(overwriteInfos);
@@ -3115,6 +3121,13 @@ object SVcfWalkerUtils {
           val out = v.info.get(paramTags.head).getOrElse(None).map{z => ( string2double(z) ).toString}.getOrElse(".");
           //val out = v.info.get(paramTags.head).getOrElse(None).map{z => string2doubleOpt(z).map{zz => zz.toString}.getOrElse(".")}.getOrElse(".");
           vc.addInfo(newTag,out);
+        } else if(f == "MERGE.BOOLEAN.TAGS"){
+          val tagNames = paramTags.lift(1).getOrElse(paramTags.head).split("[:]").toSeq;
+          val out = paramTags.head.split("[:]").toSeq.zip(tagNames).flatMap{ case (pp,nn) => {
+            v.info.get(pp).filter(vv => vv == "1").map{ vv => nn }
+          }}.toSeq.padTo(1,".").mkString(",")
+          vc.addInfo(newTag,out);
+          
         } else if(f == "MIN" || f == "MIN.WITH.DEFAULT"){
           val pt = if(f == "MIN.WITH.DEFAULT"){ paramTags.tail } else { paramTags };
           val defaultString = if( f == "MIN.WITH.DEFAULT"){ paramTags.head } else { "." };
@@ -3148,9 +3161,9 @@ object SVcfWalkerUtils {
               vc.addInfo(newTag, defaultString);
             }
           }
-        } else if(f == "MAX" || f == "MIN.WITH.DEFAULT"){
-          val pt = if(f == "MIN.WITH.DEFAULT"){ paramTags.tail } else { paramTags };
-          val defaultString = if( f == "MIN.WITH.DEFAULT"){ paramTags.head } else { "." };
+        } else if(f == "MAX" || f == "MAX.WITH.DEFAULT"){
+          val pt = if(f == "MAX.WITH.DEFAULT"){ paramTags.tail } else { paramTags };
+          val defaultString = if( f == "MAX.WITH.DEFAULT"){ paramTags.head } else { "." };
           if(outType == "Integer"){
             val paramVals : Seq[Int] = pt.flatMap{ param => {
               v.info.get(param).getOrElse(None)
@@ -3431,7 +3444,7 @@ object SVcfWalkerUtils {
       } else {
         None;
       }
-
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         //vc.dropInfo(overwriteInfos);
@@ -3558,7 +3571,7 @@ object SVcfWalkerUtils {
       if( overwriteInfos.nonEmpty ){
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         vc.dropInfo(overwriteInfos);
@@ -3604,6 +3617,7 @@ object SVcfWalkerUtils {
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tag,Number="1",Type="String",desc=desc));
       }
 
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -3636,7 +3650,7 @@ object SVcfWalkerUtils {
       val ohl = vcfHeader.formatLines.find( xx => xx.ID == oldTag ).get
       
       outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",newTag,Number=ohl.Number,Type=ohl.Type,desc=ohl.desc));
-
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -3762,7 +3776,7 @@ object SVcfWalkerUtils {
           outHeader.addInfoLine(
             new SVcfCompoundHeaderLine("FORMAT" ,ID = tagPrefix+"CALL", ".", "String", "Final call from Intervar field "+intervarTag).addWalker(this)
           )
-          
+          outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         
@@ -3894,7 +3908,7 @@ object SVcfWalkerUtils {
       if( overwriteInfos.nonEmpty ){
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine()
         vc.dropInfo(overwriteInfos);
@@ -4169,7 +4183,7 @@ object SVcfWalkerUtils {
       val severityList = Vector[Set[String]](Set("HIGH"),Set("MODERATE"),Set("LOW","MODIFIER"))
       val severityNames = Vector[String]("HIGH","MODERATE","LOW")
 
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine()
         vc.dropInfo(overwriteInfos);
@@ -4290,6 +4304,7 @@ object SVcfWalkerUtils {
       initNotice("DROP_STAR_ALLE");
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
+      outHeader.reportAddedInfos(this)
       
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
         if(v.alt.head == "*"){
@@ -4313,7 +4328,7 @@ object SVcfWalkerUtils {
       initNotice("DROP_VAR_N");
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
         if(v.alt.head.contains('N') || v.ref.contains('N')){
           notice("dropping variant with Ns: "+v.chrom+":"+v.pos+":"+v.ref+">"+v.alt.head,"DROP_VAR_N",5);
@@ -4360,7 +4375,7 @@ object SVcfWalkerUtils {
           new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT" + multAlleSuffix, "1", "String", "Raw GT tag, prior to conversion to universally readable VCF")
       )
       
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         if(v.genotypes.genotypeValues.length > 0){
@@ -4529,7 +4544,7 @@ object SVcfWalkerUtils {
           }))
         }}
       }
-      
+      outHeader.reportAddedInfos(this)
 
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
@@ -4813,7 +4828,7 @@ object SVcfWalkerUtils {
       //    val groupIdx : Vector[Int] = (groups.zipWithIndex.flatMap{ case (g,i) => if(groupSet.contains(g)){ Some(i) } else None } :+ groups.length).toVector;
       //    groupIdx
       //}}
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine()
         vc.dropInfo( overwriteInfos );
@@ -5607,6 +5622,7 @@ object SVcfWalkerUtils {
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
       //vc.dropInfo(overwriteInfos);
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine()
         vc.dropInfo(overwriteInfos);
@@ -5785,7 +5801,7 @@ object SVcfWalkerUtils {
           hl
         }
       }}
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcIter.flatMap{v => {
         val vc = v.getOutputLine()
         vc.in_chrom = translateChrom(vc.in_chrom);
@@ -6125,7 +6141,7 @@ object SVcfWalkerUtils {
           //do nothing
         }
       }
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcIter.flatMap{v => {
         val vc = v.getOutputLine()
         //if(alphebetizeINFO){
@@ -6322,7 +6338,7 @@ object SVcfWalkerUtils {
       }
       
       val samps = outHeader.getSampleList
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcIter.flatMap{v => {
         val vc = v.getOutputLine()
         val gtidx = vc.genotypes.fmt.indexOf(gttag);
@@ -7628,7 +7644,7 @@ object SVcfWalkerUtils {
       var errCt = 0;
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
-      
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcIter.map{v => {
         val vc = v.getOutputLine()
         if(vc.in_info.exists{ case (tag, value) => {
@@ -8861,7 +8877,7 @@ object SVcfWalkerUtils {
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
       //vc.dropInfo(overwriteInfos);
-      
+       newHeader.reportAddedInfos(this)
       return (vcFlatMap(vcIter)(v => {
              annotateSVcfStreamOpt(v,summaryWriter,vcfCodes,bufferSize,txgaos,TXSeq,txToGene,geneVariantsOnly=geneVariantsOnly,bedTags=bedTags,overwriteInfos=overwriteInfos)
         }),
@@ -10040,6 +10056,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       newHeaderLines.foreach{ case (tag,outTag,hl) => {
         newHeader.addInfoLine(hl);
       }}
+      newHeader.reportAddedInfos(this)
       var neverAddedAnno = true;
       (vcMap(vcIter){ v => {
         val vb = v.getOutputLine();
@@ -10093,7 +10110,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val newHeader = vcfHeader.copyHeader;
-
+       newHeader.reportAddedInfos(this)
       (vcFlatMap(vcIter){ v => {
         val vb = v.getLazyOutputLine();
         val ve = vb.makeSnpeffVariantEntry(dummyIter);
@@ -10200,6 +10217,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         newHeader.addInfoLine(hl);
       }}
       var neverAddedAnno = true;
+      newHeader.reportAddedInfos(this)
       (vcMap(vcIter){ v => {
         val vb = v.getOutputLine();
         val ve = vb.makeSnpeffVariantEntry(dummyIter);
@@ -10302,6 +10320,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         newHeader.addInfoLine(hl);
       }}
       var neverAddedAnno = true;
+      newHeader.reportAddedInfos(this)
       (vcMap(vcIter){ v => {
         val vb = v.getOutputLine();
         val ve = vb.makeSnpeffVariantEntry(dummyIter);
@@ -10548,8 +10567,9 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       for( i <- Range(1,10)){
         tally("multiAlleSplit_nAlle"+i,0)
       }
-      
+      newHeader.reportAddedInfos(this)
       val sampNames = vcfHeader.titleLine.sampleList;
+      newHeader.reportAddedInfos(this)
       return (addIteratorCloseAction(vcFlatMap(vcIter)(vc => {
         
         var warningSet = Set[String]();
@@ -11282,13 +11302,13 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         newHeader.addInfoLine(hl);
       }}
       newHeader.addWalk(this);
-      
+       newHeader.reportAddedInfos(this)
     val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect(newHeader.addedInfos );
       if( overwriteInfos.nonEmpty ){
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       }
     
-      
+     
       return (vcMap(vcIter){ vc => {
         val vv = vc.getOutputLine();
         vv.dropInfo(overwriteInfos)
@@ -11404,6 +11424,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       //vcfHeader.addFormatLine(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = rawGtTag, Number = "1", Type = "String", desc = "The original GT genotype, prior to genotype-level filtering.") );
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
+       outHeader.reportAddedInfos(this)
       val outIter = vcMap(vcIter){ vc => {
         vc
       }}
@@ -11552,6 +11573,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       
       val addRawGt = (! noRawGt) && (rawGtTag != gtTag);
       val rango = Range(0,vcfHeader.sampleCt);
+       outHeader.reportAddedInfos(this)
       val outIter = vcMap(vcIter){ vc => {
         val gtIdx = vc.genotypes.fmt.indexOf(gtTag);
         if(gtIdx > -1){
@@ -12233,7 +12255,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       newHeader.addWalk(this);
       newHeader.addFormatLine(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = adTag, Number = "R", Type = "Integer", desc = desc.padTo(1,'.'), subType = Some(VcfTool.subtype_AlleleCountsUnsplit)).addWalker(this));
       
-      
+       newHeader.reportAddedInfos(this)
       ((vcMap(vcIter){v => {
         val vb = v.getOutputLine();
         /*
@@ -12323,7 +12345,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       
       val sampCt = vcfHeader.titleLine.sampleList.length;
       val rango = Range(0,sampCt);
-      
+       newHeader.reportAddedInfos(this)
       ((vcMap(vcIter){v => {
         val vb = v.getOutputLine();
         if(! v.genotypes.fmt.isEmpty){
@@ -12790,6 +12812,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       }}*/
       tally(cdt+"_DUPSETCT",0)
       tally(cdt+"_DUPCT",0)
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = groupBySpan(vcIter.buffered){ v => { (v.chrom,v.pos) } }.flatMap{vg => {
         val swaps = vg.map{ v => (v.ref,v.alt.head)}.distinct.sorted
         swaps.flatMap{ case (r,a) => {
@@ -13853,7 +13876,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
        val outHeader = vcfHeader.copyHeader;
        outHeader.addWalk(this);
        checkSVcfFilterLogicParse( filterLogic = filter, vcfHeader = vcfHeader );
-
+       
        (vcFlatMap(vcIter){ vc => {
          val k = filter.keep(vc);
          if(!k){
@@ -13977,7 +14000,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
                "     GTTAGANDCOUNT: adds new FORMAT field as the GTTAG function and also creates a count INFO field as the CT function. The info field will be named tagID_CT"
        }
        outHeader.addWalk(this);
-       
+        outHeader.reportAddedInfos(this)
        (vcMap(vcIter){ vc => {
              vc.genotypes.sampList = sampList;
              vc.genotypes.sampGrp = Some(sampleToGroupMap);
@@ -14139,6 +14162,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
        if(isGeneTagExpr){
            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = ".", Type="String",desc=tagDesc).addWalker(this));
            outHeader.addWalk(this);
+            outHeader.reportAddedInfos(this)
            (vcMap(vcIter){ vc => {
              val vb = vc.getOutputLine();
              val k = if(filter.keep(vc)) "1" else "0";
@@ -14154,6 +14178,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
        } else {
            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type="Integer",desc=tagDesc).addWalker(this));
            outHeader.addWalk(this);
+            outHeader.reportAddedInfos(this)
            (vcMap(vcIter){ vc => {
              val vb = vc.getOutputLine();
              val k = if(filter.keep(vc)) "1" else "0";
