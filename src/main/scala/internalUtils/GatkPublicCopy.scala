@@ -795,6 +795,61 @@ object GatkPublicCopy {
     }
   }
   
+
+  case class CheckReferenceMatch(genomeFa : String, infotag : String = "VAK_REFERENCE_OK", correctRefTag : Option[String] = None) extends SVcfWalker {
+    def walkerName : String = "CheckReferenceMatch"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa),("infoTag",infotag));
+    
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
+    def getBases(chrom : String, start : Int, end : Int) : String = {
+      if(start < 1 || end > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      //  def bufferedResorting[A](iter : Iterator[A], bufferSize : Int)(f : (A => Int)) : Iterator[A] = {
+      val newHeader = vcfHeader.copyHeader;
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=infotag,Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the REF allele matches the genome reference.").addWalker(this));
+      correctRefTag.foreach{ crt => {
+        newHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=crt,Number = "1", Type = "String", desc = "If the ref alle and the reference genome mismatch, this tag will contain the correct reference allele").addWalker(this));
+      }}
+      newHeader.addWalk(this);
+      var noticeShownA = true;
+      (vcMap(vcIter){ vc => {
+        val vb = vc.getOutputLine();
+        val ref = getBases(vc.chrom,vc.pos,vc.pos+vc.ref.length());
+        if( vc.ref == ref){
+          vb.addInfo(infotag,"1");
+          tally("REFERENCE_MATCH_1",1,10)
+        } else {
+          vb.addInfo(infotag,"0");
+          tally("REFERENCE_MATCH_0",1,10)
+          warning("WARNING: REFERENCE ALLELE DOES NOT MATCH REF GENOME ("+ref+" vs "+vc.ref+"):\n     "+vc.getSimpleVcfString(),"REFERENCE_MATCH_FAIL",10)
+          correctRefTag.foreach{ crt => {
+            vb.addInfo(crt,ref);
+          }}
+        }
+        vb;
+      }},newHeader);
+      
+    }
+  }
+  
   case class FixFirstBaseMismatch(genomeFa : String, windowSize : Int = 200, changeTag : Option[String] = Some("GATK_LAT_FIRSTBASEMM")) extends SVcfWalker {
     def walkerName : String = "FixFirstBaseMismatch"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa));

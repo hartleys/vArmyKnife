@@ -2177,7 +2177,8 @@ object SVcfWalkerUtils {
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
-      
+       checkSVcfFilterLogicParse( filterLogic = filterExpr, vcfHeader = vcfHeader );
+
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number="1",Type="Float",desc=desc.getOrElse("Simple ratio between fields "+nTag+" and "+dTag+".")));
@@ -10356,7 +10357,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     } else {
         Set[String]();
     }
-    mergeSecondaryVcf
+    //mergeSecondaryVcf
     val alleCtCt = new scala.collection.mutable.HashMap[Int, Int]().withDefaultValue(0)
     val badCtCt = new scala.collection.mutable.HashMap[Int, Int]().withDefaultValue(0)
     

@@ -45,13 +45,13 @@ object VcfAnnotateTX {
            ParamStr(id = "tagPrefix",synon=Seq(),ty="String",valueString="s",desc="",req=true,initParam = true, hidden=true)
          )
      val MAP_FUNCTIONS : Map[String,ParamStrSet] = Seq(
-       ParamStrSet("tagVariantsExpression" , desc = "", 
+       ParamStrSet("tagVariantsExpression" , desc = "This function takes a variant expression and creates a new INFO field that is 1 if and only if that expression returns TRUE, and 0 otherwise.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="The variant expression, which is a true/false expression using the variant expression syntax.",req=true),
            ParamStr(id = "desc",synon=Seq(),ty="String",valueString="...",desc="A description, to go in the info field description.",req=false,defaultValue = Some("No desc provided"))
          ))
        ),
-       ParamStrSet("tagVariantsFunction" ,  desc = "", 
+       ParamStrSet("tagVariantsFunction" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true),
            ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided")),
@@ -59,7 +59,7 @@ object VcfAnnotateTX {
            ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="",req=false)
          ))
        ),
-       ParamStrSet("genotypeFilter" ,  desc = "", 
+       ParamStrSet("genotypeFilter" ,  desc = "This function filters a genotype field based on a given genotype expression. The new filtered genotype can replace the GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A Genotype Expression, using the genotype expression syntax.",req=true),
            ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="A description, to go in the new FORMAT fields.",req=false),
@@ -71,7 +71,7 @@ object VcfAnnotateTX {
            ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc=" See the --superGroupList parameter of walkVcf.",req=false)
          ))
        ),
-       ParamStrSet("sampleCounts" ,  desc = "", 
+       ParamStrSet("sampleCounts" ,  desc = "This function generates counts and frequencies for alt alleles, alt genotypes, missing genotypes, ref genotypes, and so on. Note that there are several calc- flags. If none of these are included, then this function does nothing.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
            ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc=" See the --superGroupList parameter of walkVcf.",req=false),
@@ -84,7 +84,7 @@ object VcfAnnotateTX {
            ParamStr(id = "calcMultiHet",synon=Seq(),ty="Flag",valueString="",desc="",req=false)
          ))
        ),
-       ParamStrSet("sampleLists" ,  desc = "", 
+       ParamStrSet("sampleLists" ,  desc = "This function generates sample list fields which contain comma-delimited lists of samples that are het or hom-alt.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
            ParamStr(id = "samplePrintLimit",synon=Seq(),ty="String",valueString="",desc="",req=false),
@@ -94,7 +94,7 @@ object VcfAnnotateTX {
 
            ))
        ),
-       ParamStrSet("depthStats" ,  desc = "", 
+       ParamStrSet("depthStats" ,  desc = "This function calculates various statistics on total read depth and hetAB.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
            ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="",desc="",req=false),
@@ -106,7 +106,7 @@ object VcfAnnotateTX {
            //restrictToGroup
            ))
        ),
-       ParamStrSet("calcStats" ,  desc = "", 
+       ParamStrSet("calcStats" ,  desc = "This function combines the functions sampleCounts, sampleLists, and depthStats, performing all three.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
            ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc=" See the --superGroupList parameter of walkVcf.",req=false),
@@ -143,7 +143,7 @@ object VcfAnnotateTX {
        ),
        
        
-       ParamStrSet("filterTags" ,  desc = "", 
+       ParamStrSet("filterTags" ,  desc = "This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples. This can substantially reduce file sizes.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "FORMAT.keep",synon=Seq(),ty="String",valueString="expr",desc="",req=false),
            ParamStr(id = "FORMAT.drop",synon=Seq(),ty="String",valueString="",desc="",req=false),
@@ -158,22 +158,22 @@ object VcfAnnotateTX {
        /*
         * UNIMPLEMENTED FUNCTIONS: TODO!
         */
-       ParamStrSet("keepVariants" ,  desc = "", 
+       ParamStrSet("keepVariants" ,  desc = "This function drops variants based on a given true/false expression.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="",req=false)
          ))
        ),
-       ParamStrSet("snpSiftAnno" ,  desc = "", 
+       ParamStrSet("snpSiftAnno" ,  desc = "This function runs a SnpSift anno command", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
          ))
        ),
-       ParamStrSet("snpSiftDbnsfp" ,  desc = "", 
+       ParamStrSet("snpSiftDbnsfp" ,  desc = "This function runs the SnpSift dbnsfp command", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
          ))
        ),
-       ParamStrSet("snpEff" ,  desc = "", 
+       ParamStrSet("snpEff" ,  desc = "This function runs SnpEff", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
          ))
@@ -206,7 +206,7 @@ object VcfAnnotateTX {
               ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="myGenomeFile.fa",desc="A genome fasta file, if different from the global --genomeFA parameter",req=false)
          ))
        ),
-       ParamStrSet("contextBases" ,  desc = "", 
+       ParamStrSet("addContextBases" ,  desc = "", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window",req=true),
               ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="myGenomeFile.fa",desc="A genome fasta file, if different from the global --genomeFA parameter",req=false)
@@ -225,6 +225,11 @@ object VcfAnnotateTX {
               ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="myGenomeFile.fa",desc="A genome fasta file, if different from the global --genomeFA parameter",req=false)
          ))
        ),
+       ParamStrSet("checkReferenceMatch" ,  desc = "", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="myGenomeFile.fa",desc="A genome fasta file, if different from the global --genomeFA parameter",req=false)
+         ))
+       ),
        ParamStrSet("calcBurdenCounts" ,  desc = "", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
@@ -235,7 +240,9 @@ object VcfAnnotateTX {
               //
               ParamStr(id = "expr",synon=Seq(),ty="String",valueString="k",desc="",req=false),
               ParamStr(id = "sampleSet",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "group",synon=Seq(),ty="String",valueString="k",desc="",req=false),
               ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              
            ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
            ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc=" See the --superGroupList parameter of walkVcf.",req=false),
            
@@ -248,7 +255,13 @@ object VcfAnnotateTX {
      }}.toMap;
             
      /*
-
+} else if(mapType == "homopolymerRunStats"){
+               Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
+             } else if(mapType == "addContextBases"){
+               Some(AddContextBases(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), len = params("windowSize").toInt))
+             } else if(mapType == "gcContext"){
+               Some(localGcInfoWalker(tagPrefix=params("tagPrefix"),windows=params("windowSize").split(",").toSeq.map{_.toInt},genomeFa=params("genomeFA"), roundDigits = params.get("digits").map{_.toInt}))
+             
               Some(new calcBurdenCountsWalker(tagID=params("mapID"),
                   geneTag=params("geneTag"),
                   filterExpressionString=params.getOrElse("expr","TRUE"),
@@ -3055,6 +3068,10 @@ object VcfAnnotateTX {
                 ppss.set("mapID",mapID);
                 ppss.set("mapType",mapType);
                 ppss.set("tagPrefix",tagPrefix);
+                genomeFA.foreach{ gfa => {
+                  ppss.set("genomeFA",gfa);
+                }}
+                
                 ppss.setDefaults(defaultFcnParams)
                 (mapType, ppss)
            }}
@@ -3190,11 +3207,11 @@ object VcfAnnotateTX {
              } else if(mapType == "snpEff"){
                 Some(SnpEffAnnotater(params("mapID"),params("cmd"),params("mapID")))
              } else if(mapType == "homopolymerRunStats"){
-               Some(HomopolymerRunStats(tagPrefix=params("mapID"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
+               Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
              } else if(mapType == "addContextBases"){
-               Some(AddContextBases(tagPrefix=params("mapID"),genomeFa=params("genomeFA"), len = params("windowSize").toInt))
+               Some(AddContextBases(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), len = params("windowSize").toInt))
              } else if(mapType == "gcContext"){
-               Some(localGcInfoWalker(tagPrefix=params("mapID"),windows=params("windowSize").split(",").toSeq.map{_.toInt},genomeFa=params("genomeFA"), roundDigits = params.get("digits").map{_.toInt}))
+               Some(localGcInfoWalker(tagPrefix=params("tagPrefix"),windows=params("windowSize").split(",").toSeq.map{_.toInt},genomeFa=params("genomeFA"), roundDigits = params.get("digits").map{_.toInt}))
              } else if(mapType == "snpEffExtract"){
                Some(
                    new SnpEffInfoExtract(tagID = params("annTag"),
@@ -3222,7 +3239,9 @@ object VcfAnnotateTX {
                        tagSet = params.getOrElse("tagSet","HIGH,MODERATE,LOW,NS,ANY").split(",").toSeq
                    )
                 )
-                
+             } else if(mapType == "checkReferenceMatch"){
+               //checkReferenceMatch
+               Some(new internalUtils.GatkPublicCopy.CheckReferenceMatch(genomeFa = params("genomeFA"), infotag = params("mapID")));
              } else if(mapType == "calcBurdenCounts"){
                
               val writerID = params.getOrElse("countFileID","");
