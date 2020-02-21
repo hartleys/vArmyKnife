@@ -659,24 +659,32 @@ object VcfAnnotateTX {
                             "    varmyknife --help CMD",
                             "For a listing of all secondary commands, use the command: ",
                             "    varmyknife --help secondaryCommands") 
-     val manualExtras = sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
+     val manualExtras = 
+                        MAPFUNCTIONS_getBlockStringManual +
+                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getBlockStringManual+
+                        sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
                         sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +
                         altCommandDocText.map{ acm => {
                           wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
                         }}.mkString("\n");
                         
-     val markdownManualExtras = sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
+     val markdownManualExtras = 
+                        MAPFUNCTIONS_getMarkdownStringManual +
+                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getMarkdownStringManual+
+                        sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
                         sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +
                         altCommandDocMd.map{ acm => {
                           wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
                         }}.mkString("\n");
-     
-                        
 
-       
-     
-     
      /*
+   def MAPFUNCTIONS_getBlockStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getBlockString()
+   }}.mkString("\n")
+   def MAPFUNCTIONS_getMarkdownStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getMarkdownString();
+   }}.mkString("\n")
+      * 
       * Categories:
       * 
       * "Input Parameters",0

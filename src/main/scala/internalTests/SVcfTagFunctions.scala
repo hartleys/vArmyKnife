@@ -465,7 +465,7 @@ object SVcfTagFunctions {
     
     
     
-  }
+  } 
   
   abstract class VcfTagFcn() {
     def md : VcfTagFcnMetadata;
@@ -1434,12 +1434,11 @@ object SVcfTagFunctions {
       
    val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("INFO TAG FUNCTIONS"),
-                                                   lines = Seq("","Info Tag Functions are simple functions that take  "+
-                                                               "one variant at a time. When more than one function is specified in a run, these functions are performed in the order "+
-                                                               "that they appear in the command line, after all other operations have been carried out (excluding output ops). "+
+                                                   lines = Seq("","Info Tag Functions are simple modular functions that take  "+
+                                                               "one variant at a time and add a new INFO field. "+
                                                                "",
                                                                "Basic Syntax:",
-                                                               "    --FCN addIntoTag|newTagID|fcn=infoTagFunction|params=p1,p2,..."), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+                                                               "    --FCN addInfoTag|newTagID|fcn=infoTagFunction|params=p1,p2,..."), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2)
    ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
@@ -1457,13 +1456,14 @@ object SVcfTagFunctions {
                                                             }}+"("+pp.ty+")" ), indentTitle = 4, indentBlock = 12, indentFirst=8)
       }}
    }}
-     /*
-   def MAPFUNCTIONS_getBlockStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+   
+     
+   def TAGFUNCTIONS_getBlockStringManual : String = TAGFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
      umb.getBlockString()
    }}.mkString("\n")
-   def MAPFUNCTIONS_getMarkdownStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+   def TAGFUNCTIONS_getMarkdownStringManual : String = TAGFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
      umb.getMarkdownString();
-   }}.mkString("\n")*/
+   }}.mkString("\n")
       
       
       
