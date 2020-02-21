@@ -6009,16 +6009,18 @@ object SVcfWalkerUtils {
         if(gtIdx == -1 || (! filterExpr.map{fe => fe.keep(vc)}.getOrElse(true))){
           warning("Missing genotype tag ("+gtIdx+")","MISSING_GT_TAG",10);
         } else {
-          val gt : Vector[String] = v.genotypes.genotypeValues(gtIdx).toVector;
+          val gt : Vector[Array[String]] = v.genotypes.genotypeValues(gtIdx).toVector.map{ g => g.split("[/|]") }
           val simpleClass : Vector[Int] = gt.map{ genoString => {
-            if(genoString.contains('.')){
+            if(genoString.contains(".")){
               OTHER
-            } else if(genoString == "0/1"){
-              HET
-            } else if(genoString == "1/1"){
-              HOMALT
-            } else if(genoString == "1/2"){
-              MALLE
+            } else if(genoString.contains("1")){
+              if(genoString.contains("0")){
+                HET
+              } else if(genoString.contains("2")){
+                MALLE
+              } else{
+                HOMALT
+              }
             } else {
               OTHER
             }

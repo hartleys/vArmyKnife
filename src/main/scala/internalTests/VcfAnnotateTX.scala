@@ -91,6 +91,14 @@ object VcfAnnotateTX {
          ))
        ),
        
+       //unPhaseAndSortGenotypes
+       ParamStrSet("unPhaseAndSortGenotypes" ,  desc = "This function removes phasing and sorts genotypes.", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input/output genotype FORMAT field.",req=false),
+           COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
+         ))
+       ),
+       
        ParamStrSet("genotypeFilter" ,  desc = "This function filters a genotype field based on a given genotype expression. The new filtered genotype can replace the GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A Genotype Expression, using the genotype expression syntax.",req=true),
@@ -3204,6 +3212,10 @@ object VcfAnnotateTX {
                    groupList = None, 
                    superGroupList  = params.get("superGroupList")
                 ))
+             } else if(mapType == "unPhaseAndSortGenotypes"){
+                 Some( FilterTags(
+                     unPhaseAndSortGenotypes = params.get("inputGT").map{s => s.split(",").toList }
+                  ))
              } else if(mapType == "genotypeExpression"){
                 error("variantMapFunction TYPE: \""+mapType+"\" is NOT YET IMPLEMENTED!");
                 None
