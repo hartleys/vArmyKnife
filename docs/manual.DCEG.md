@@ -1,7 +1,7 @@
 # User Manual for vArmyKnife 
 
-> v2.2.319   \
-> Compiled Thu Jan 16 10:58:39 EST 2020
+> v2.2.320   \
+> Compiled Wed Jan 22 12:25:43 EST 2020
 
 TODO: write more!
 

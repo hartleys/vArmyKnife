@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.319 (Updated Thu Jan 16 10:58:39 EST 2020)
+> Version 2.2.320 (Updated Wed Jan 22 12:25:43 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -37,7 +37,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### Input Parameters:
 #### --infileList:
 
-> If this option is set, then the input file is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. Multiple VCF files will be concatenated and used as input. Note that only the first file's headers will be used, and if any of the subsequent files have tags or fields that are not present in the first VCF file then errors may occur. Also note that if the VCF file includes sample genotypes then the samples MUST be in the same order. (flag)
+> If this option is set, then the infile parameter is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. Multiple VCF files will be concatenated and used as input. Note that only the first file's headers will be used, and if any of the subsequent files have tags or fields that are not present in the first VCF file then errors may occur. Also note that if the VCF file includes sample genotypes then the samples MUST be in the same order. (flag)
 
 #### --infileListInfix infileList.txt:
 
@@ -165,100 +165,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
 
-### Annotation:
-#### --addLocalGcInfo tagPrefix,windowsize1|ws2|...,numDigits:
-
-> Will add VCF INFO tags that indicate the GC fraction of flanking bases. Requires an indexed genome fasta to be set with the --genomeFA option. The parameter must be formatted in 3 comma-delimited parts: first the prefix to append to the INFO tags, then a bar-delimited list of window sizes, and then the number of digits to include in the output. (repeatable String)
-
-#### --snpSiftAnnotate tagPrefix,snpSiftParameters:
-
-> Options for a SnpSift annotate run. Provide all the options for the standard run.  Do not include the annotate command itself or the input VCF. This will call the internal SnpSift annotate methods, not merely run an external instance of SnpSift.  (repeatable String)
-
-#### --snpSiftFilter filter Name|KEEP\_MATCH or DROP\_MATCH|SnpSift command:
-
-> Options for a SnpSift annotate run. Filters based on the results of this run.  (repeatable String)
-
-#### --snpEffAnnotate tagPrefix,snpEffParameters:
-
-> Options for a SnpEff ann run. Provide all the options for the standard run.  Do not include the annotate command itself or the input VCF. This will call the internal SnpEff ann methods, not merely run an external instance of SnpEff.  (String)
-
-#### --snpSiftDbnsfp ...:
-
-> Options for a SnpSift Dbnsfp run. Provide all the options for the standard run. Do not include the Dbnsfp command itself or the input VCF. This will call the internal SnpSift annotate commands, not merely run an external instance of SnpSift.  (repeatable String)
-
-#### --addBedTags TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...:
-
-> List of tags and bed files that define said tags. For each tag, the variant will have a tag value of 1 iff the variant appears on the bed file region, and 0 otherwise. This should be a comma-delimited list consisting of one or more colon-delimited lists. Each element in the comma delimited list must have 4 colon-delimited sub-elements: the tag title (ie, the tag that will be added to the VCF file, the buffer distance, the tag description (for the VCF header), and the bedfile path. Bed files may be gzipped or zipped. (repeatable CommaDelimitedListOfStrings)
-
-#### --addContextBases windowSize[:tagInfix]:
-
-> Adds fields containing the sequence flanking the variant with the assigned windowsize. Note: requires genomeFA be set! (repeatable String)
-
-#### --addAltSequence windowSize[:tagID]:
-
-> Adds a field with the alt allele and [windowSize] base pairs of reference-genome flanking sequence to each side. If no tagID is specified, the tagID will be VAK\_altSeq[windowsSize]. Note: requires genomeFA be set! Note: this parameter can be set more than once (with different window sizes). (repeatable String)
-
-#### --homopolymerRunStats tagID|bedfile.bed|hrunThreshold:
-
-> Adds a new tag that indicates when a variant adds to or deletes from a homopolymer run. Requires a homopolymer run bed file. (String)
-
-#### --addVariantPosInfo tagPrefix:
-
-> Copies the chrom, start, ref, and alt columns into an info field. This can be useful for keeping track of variants before and after variant transformations such as leftAlignAndTrim or multiallelic splits. (String)
-
-#### --addInfoVcfs vcfTitle:vcfFilename:List|of|tags:
-
-> A comma delimited list with each element containing 3 colon-delimited parts consisting of the title, filename, and the desired tags for a secondary VCF file. The indicated tags from each VCF file will be copied over. Deprecated: we recommend using the snpEffAnnotate function instead. (repeatable CommaDelimitedListOfStrings)
-
-#### --thirdAlleleChar tag:
-
-> Some users may not prefer the use of the star allele to indicate an other allele in multiallelic variants. If this tag is raised, then the star allele will be removed from multiallelics. In addition, in the GT field all other-allele For multiallelic-split variants, this defines the character used for the 'other' allele. If this is used, the original version will be copied as a backup. (String)
-
-#### --addVariantIdx tag:
-
-> . (String)
-
-#### --tagVariantsExpression newTagID|desc|variantExpression:
-
-> If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable String)
-
-#### --duplicatesTag duplicateTagPrefix:
-
-> If this parameter is set, duplicates will be detected and two new tags will be added: duplicateTagPrefix\_CT and duplicateTagPrefix\_IDX. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0. All nonduplicates will be marked with CT=1 and IDX=0. (String)
-
-#### --tagVariantsGtCountExpression newTagID|desc|genotypeExpression[|type]:
-
-> If this parameter is set, then additional tags will be generated based on the given GENOTYPE expression(s). Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the genotype expression. The expressions are always booleans, and follow the same rules for VCF genotype-level filtering. See the section on VCF genotype filtering, below. Optionally, a fourth element in the list can define the type which can be either FRAC, PCT, or CT, which defines the output as either a fraction, a percentage, or a count. (repeatable String)
-
-#### --tagVariantsFunction newTagID|desc|funcName|param1,param2,...:
-
->  (repeatable String)
-
-#### --variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:
-
-> TODO DESC (repeatable String)
-
-#### --ctrlAlleFreqKeys ...:
-
-> A comma-delimited list of field IDs to use to calculate the maximum of several included allele frequency fields. Optionally, the list can be preceded by the output tag ID, followed by a colon. Can be specified more than once with different parameters and a different output tag ID. (repeatable String)
-
-#### --tallyFile file.txt:
-
-> Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
-
 ### Sample Stats:
-#### --groupFile groups.txt:
-
-> File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID. (String)
-
-#### --superGroupList sup1,grpA,grpB,...;sup2,grpC,grpD,...:
-
-> A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)
-
-#### --addSampCountWithMultVector tagID|desc|sampMultFile.txt:
-
-> Beta feature: not for general use. (repeatable String)
-
 #### --addSampTag N:
 
 > If this parameter is set, then a tags will be added with sample IDs that possess alt genotypes. Samples will only be printed if the number of samples that possess a given genotype are less than N.  (String)
@@ -266,27 +173,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --calcStatGtTag GT:
 
 > The genotype tag used to calculate stats like het count, Het-AD-balance, etc. (String)
-
-### Transcript Annotation:
-#### --inputSavedTxFile txdata.data.txt.gz:
-
-> Loads a saved TXdata file in order to add transcript annotation. To generate TX annotation, either this parameter OR the --genomeFA parameter must be set. Using this file will be much faster than regenerating the tx data from the gtf/fasta. this TXdata file must be generated using the GenerateTranscriptAnnotation command (String)
-
-#### --txTypes protein\_coding,...:
-
-> List of transcript biotypes to include. Only works if biotype info is available in the TX annotation. (CommaDelimitedListOfStrings)
-
-#### --gtfFile gtfFile.gtf.gz:
-
-> A gene annotation GTF file. Can be gzipped or in plaintext. (String)
-
-#### --addCanonicalTags knownCanonical.txt:
-
-> Supply a list of canonical transcripts, add tags that indicate canonical-transcript-only variant info. (String)
-
-#### --txToGeneFile txToGene.txt:
-
-> File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line. (String)
 
 ### SnpEff Annotation Processing:
 #### --annTag ANN:
@@ -425,6 +311,60 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --splitOutputByChrom:
 
 > If this option is set, the output will be split up into parts by chromosome. NOTE: The outfile parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (flag)
+
+### Annotation:
+#### --addAltSequence windowSize[:tagID]:
+
+> Adds a field with the alt allele and [windowSize] base pairs of reference-genome flanking sequence to each side. If no tagID is specified, the tagID will be VAK\_altSeq[windowsSize]. Note: requires genomeFA be set! Note: this parameter can be set more than once (with different window sizes). (repeatable String)
+
+#### --addInfoVcfs vcfTitle:vcfFilename:List|of|tags:
+
+> A comma delimited list with each element containing 3 colon-delimited parts consisting of the title, filename, and the desired tags for a secondary VCF file. The indicated tags from each VCF file will be copied over. Deprecated: we recommend using the snpEffAnnotate function instead. (repeatable CommaDelimitedListOfStrings)
+
+#### --thirdAlleleChar tag:
+
+> Some users may not prefer the use of the star allele to indicate an other allele in multiallelic variants. If this tag is raised, then the star allele will be removed from multiallelics. In addition, in the GT field all other-allele For multiallelic-split variants, this defines the character used for the 'other' allele. If this is used, the original version will be copied as a backup. (String)
+
+#### --addVariantIdx tag:
+
+> . (String)
+
+#### --tagVariantsExpression newTagID|desc|variantExpression:
+
+> If this parameter is set, then additional tags will be generated based on the given expression(s). The list of expressions must be comma delimited. Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the expression. The expressions are always booleans, and follow the same rules for VCF line filtering. See the section on VCF line filtering, below. (repeatable String)
+
+#### --duplicatesTag duplicateTagPrefix:
+
+> If this parameter is set, duplicates will be detected and two new tags will be added: duplicateTagPrefix\_CT and duplicateTagPrefix\_IDX. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0. All nonduplicates will be marked with CT=1 and IDX=0. (String)
+
+#### --tagVariantsGtCountExpression newTagID|desc|genotypeExpression[|type]:
+
+> If this parameter is set, then additional tags will be generated based on the given GENOTYPE expression(s). Each element in the comma-delimited list must begin with the tag ID, then a bar-symbol, followed by the tag description, then a bar-symbol, and finally with the genotype expression. The expressions are always booleans, and follow the same rules for VCF genotype-level filtering. See the section on VCF genotype filtering, below. Optionally, a fourth element in the list can define the type which can be either FRAC, PCT, or CT, which defines the output as either a fraction, a percentage, or a count. (repeatable String)
+
+#### --tagVariantsFunction newTagID|desc|funcName|param1,param2,...:
+
+>  (repeatable String)
+
+#### --variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:
+
+> TODO DESC (repeatable String)
+
+#### --ctrlAlleFreqKeys ...:
+
+> A comma-delimited list of field IDs to use to calculate the maximum of several included allele frequency fields. Optionally, the list can be preceded by the output tag ID, followed by a colon. Can be specified more than once with different parameters and a different output tag ID. (repeatable String)
+
+#### --tallyFile file.txt:
+
+> Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
+
+### Sample Info:
+#### --groupFile groups.txt:
+
+> File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID. (String)
+
+#### --superGroupList sup1,grpA,grpB,...;sup2,grpC,grpD,...:
+
+> A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)
 
 ### OTHER OPTIONS:
 #### --snpEffWarningDropList ANN:

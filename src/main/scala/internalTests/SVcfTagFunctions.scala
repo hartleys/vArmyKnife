@@ -40,6 +40,9 @@ import jigwig.BigWigFile;
 object SVcfTagFunctions {
 
   
+  
+  
+  
     val SNVVARIANT_BASESWAP_LIST = Seq( (("A","C"),("T","G")),
                             (("A","T"),("T","A")),
                             (("A","G"),("T","C")),
@@ -49,20 +52,63 @@ object SVcfTagFunctions {
                           );
 
   
-  
+    object ParamSrc extends Enumeration {
+      type ParamSrc = Value;
+      val INFO, GENO, FILE, CONST,ERR = Value;
+      def getFromString(s : String) : ParamSrc = {
+        if(s == "INFO"){
+          INFO
+        } else if(s == "GENO"){
+          GENO
+        } else if(s == "FILE"){
+          FILE
+        } else {
+          CONST
+        }
+      }
+    }
+    object ParamType extends Enumeration {
+      type ParamType = Value;
+      val INT,FLOAT,STRING,ERR = Value;
+      def getFromString(s : String) : ParamType = {
+        if(s == "Integer"){
+          INT
+        } else if(s == "Float"){
+          FLOAT
+        } else {
+          STRING
+        }
+      }
+    }
+    object ParamNum extends Enumeration {
+      type ParamNum = Value;
+      val dot,A,R,G = Value;
+    }
+    
+    case class VcfFcnParsedParam(SRC : ParamSrc.ParamSrc, 
+                                 TYPE : ParamType.ParamType, 
+                                 NUM : String, 
+                                 PARAM : VcfTagFunctionParam, 
+                                 VAL : String){
+      
+      
+      
+  }
+    
+    
   case class VcfTagFunctionParam( id : String, 
                                   ty : String, 
                                   req: Boolean = true, 
                                   defval : String = "", 
                                   dotdot : Boolean = false ,
-                                  num : String = "."){
+                                  desc : String = "",
+                                  num : String = ".", hidden : Boolean = false){
       
     
     val tys = ty.split("[|]")
     val TYS = tys.map{ tt => tt.toUpperCase() }
 
-    
-    def getFinalInputType(param : String, h : SVcfHeader) : (String,String) = {
+    def getParsedParam(param : String, h : SVcfHeader) : VcfFcnParsedParam = {
       def checkIsInt(pp : String) : Boolean = {
         pp.split(":").forall{ p => {
           string2intOpt(p).nonEmpty;
@@ -74,6 +120,7 @@ object SVcfTagFunctions {
         }}
         //string2doubleOpt(pp).nonEmpty;
       }
+      
       def checkIsInfo(pp : String) : Option[SVcfCompoundHeaderLine] = {
           h.infoLines.find{ ln => {
             ln.ID == pp
@@ -84,97 +131,194 @@ object SVcfTagFunctions {
             ln.ID == pp
           }}
       }
-      if(param.toUpperCase().startsWith("INFO:")){
+      def checkIsInfoOrGeno(pp : String, paramSubstring : String) : Option[SVcfCompoundHeaderLine] = {
+        if(paramSubstring == "GENO"){
+          checkIsGeno(pp)
+        } else {
+          checkIsInfo(pp)
+        }
+      }
+      
+      if(param.toUpperCase().startsWith("FILE:")){
+        if(! TYS.contains("FILE_STRING")){
+          error("Fatal Error: param "+id+" is not permitted to be a FILE! It must be one of these types: "+ty);
+        }
+        VcfFcnParsedParam(ParamSrc.FILE,ParamType.STRING,".",this, param.drop(5))
+      } else if(param.toUpperCase().startsWith("INFO:") || param.toUpperCase().startsWith("GENO:")){
+        val SRC = param.toUpperCase().take(4)
+        val SRCSRC = ParamSrc.getFromString( SRC );
+        if( ! TYS.exists{ ss => ss.startsWith(SRC+"_")} ){
+          error("Fatal Error: param "+id+" is not permitted to be an "+SRC+" field! It must be one of these types: "+ty);
+        }
+        checkIsInfoOrGeno( param.substring(5), SRC).map{ ln => {
+          val num = ln.Number;
+          if(ln.Type == "String"){
+            //if(TYS.contains("FILE_STRING")){
+            //  ("FILE","String",num)
+            //} else 
+            if(TYS.contains(SRC+"_STRING")){
+              VcfFcnParsedParam(SRCSRC,ParamType.STRING,num,this, param.drop(5))
+            } else if(TYS.contains(SRC+"_FLOAT")){
+              warning("Attempting to coerce String "+SRC+" field "+ param.substring(5)+" into a float.","COERCE_"+SRC+"_STRING_TO_FLOAT",-1)
+              VcfFcnParsedParam(SRCSRC,ParamType.FLOAT,num,this, param.drop(5))
+            } else if(TYS.contains(SRC+"_INT")){
+              warning("Attempting to coerce String "+SRC+" field "+ param.substring(5)+" into an int.","COERCE_"+SRC+"_STRING_TO_INT",-1)
+              VcfFcnParsedParam(SRCSRC,ParamType.INT,num,this, param.drop(5))
+            } else {
+              VcfFcnParsedParam(SRCSRC,ParamType.ERR,num,this, param.drop(5))
+            }
+          } else if(ln.Type == "Float"){
+            if(TYS.contains(SRC+"_FLOAT")){
+              VcfFcnParsedParam(SRCSRC,ParamType.FLOAT,num,this, param.drop(5))
+            } else if(TYS.contains(SRC+"_STRING")){
+              VcfFcnParsedParam(SRCSRC,ParamType.STRING,num,this, param.drop(5))
+            } else if(TYS.contains(SRC+"_INT")){
+              warning("Attempting to coerce Float "+SRC+" field "+ param.substring(5)+" into an INT.","COERCE_"+SRC+"_FLOAT_TO_INT",-1)
+              VcfFcnParsedParam(SRCSRC,ParamType.INT,num,this, param.drop(5))
+            } else {
+              VcfFcnParsedParam(SRCSRC,ParamType.ERR,num,this, param.drop(5))
+            }
+          } else if(ln.Type == "Integer"){
+            if(TYS.contains(SRC+"_INT")){
+              VcfFcnParsedParam(SRCSRC,ParamType.INT,num,this, param.drop(5))
+            } else if(TYS.contains(SRC+"_FLOAT")){
+              VcfFcnParsedParam(SRCSRC,ParamType.FLOAT,num,this, param.drop(5))
+            } else if(TYS.contains(SRC+"_STRING")){
+              VcfFcnParsedParam(SRCSRC,ParamType.STRING,num,this, param.drop(5))
+            } else {
+              VcfFcnParsedParam(SRCSRC,ParamType.ERR,num,this, param.drop(5))
+            }
+          } else if(ln.Type == "Flag"){
+              VcfFcnParsedParam(SRCSRC,ParamType.INT,num,this, param.drop(5))
+          } else {
+              VcfFcnParsedParam(SRCSRC,ParamType.ERR,num,this, param.drop(5))
+          }
+        }}.getOrElse({
+          error(param.substring(5) + " field not found in header!");
+          VcfFcnParsedParam(SRCSRC,ParamType.ERR,num,this, param.drop(5))
+        })
+      } else if(checkIsInt(param)){
+        val num = param.split(":").length.toString;
+        VcfFcnParsedParam(ParamSrc.CONST,ParamType.INT,num,this, param)
+      } else if(checkIsFloat(param)){
+        val num = param.split(":").length.toString;
+        VcfFcnParsedParam(ParamSrc.CONST,ParamType.FLOAT,num,this, param)
+      } else {
+        val num = param.split(":").length.toString;
+        checkIsInfo(param).foreach{ ln => {
+          warning("WARNING: parameter "+param+" is being interpreted as a string constant, but also matches the name of an INFO field! "+
+                  "Did you intend for this parameter to be an INFO field? If so, you must start the parameter with 'INFO:'","WARN_STRING_MIGHT_BE_INFO_FIELD",-1)
+        }}
+        checkIsGeno(param).foreach{ ln => {
+          warning("WARNING: parameter "+param+" is being interpreted as a string constant, but also matches the name of an GENOTYPE/FORMAT field! "+
+                  "Did you intend for this parameter to be an GENOTYPE/FORMAT field? If so, you must start the parameter with 'INFO:'","WARN_STRING_MIGHT_BE_INFO_FIELD",-1)
+        }}
+        VcfFcnParsedParam(ParamSrc.CONST,ParamType.STRING,num,this, param)
+      }
+      
+    }
+
+    
+    def getFinalInputType(param : String, h : SVcfHeader) : (String,String,String) = {
+      def checkIsInt(pp : String) : Boolean = {
+        pp.split(":").forall{ p => {
+          string2intOpt(p).nonEmpty;
+        }}
+      }
+      def checkIsFloat(pp : String) : Boolean = {
+        pp.split(":").forall{ p => {
+          string2doubleOpt(p).nonEmpty;
+        }}
+        //string2doubleOpt(pp).nonEmpty;
+      }
+      
+      def checkIsInfo(pp : String) : Option[SVcfCompoundHeaderLine] = {
+          h.infoLines.find{ ln => {
+            ln.ID == pp
+          }}
+      }
+      def checkIsGeno(pp : String) : Option[SVcfCompoundHeaderLine] = {
+          h.formatLines.find{ ln => {
+            ln.ID == pp
+          }}
+      }
+      def checkIsInfoOrGeno(pp : String, paramSubstring : String) : Option[SVcfCompoundHeaderLine] = {
+        if(paramSubstring == "GENO"){
+          checkIsGeno(pp)
+        } else {
+          checkIsInfo(pp)
+        }
+      }
+      
+      if(param.toUpperCase().startsWith("FILE:")){
+        if(! TYS.contains("FILE_STRING")){
+          error("Fatal Error: param "+id+" is not permitted to be a FILE! It must be one of these types: "+ty);
+        }
+        ("FILE","String",".");
+      } else if(param.toUpperCase().startsWith("INFO:") || param.toUpperCase().startsWith("GENO:")){
+        val SRC = param.toUpperCase().take(4);
         if( ! TYS.exists{ ss => ss.startsWith("INFO_")} ){
           error("Fatal Error: param "+id+" is not permitted to be an INFO field! It must be one of these types: "+ty);
         }
-        checkIsInfo( param.substring(5) ).map{ ln => {
+        checkIsInfoOrGeno( param.substring(5), SRC).map{ ln => {
+          val num = ln.Number;
           if(ln.Type == "String"){
-            if(TYS.contains("FILE_STRING")){
-              ("FILE","String")
-            } else if(TYS.contains("INFO_STRING")){
-              ("INFO","String")
-            } else if(TYS.contains("INFO_FLOAT")){
-              warning("Attempting to coerce String INFO field "+ param.substring(5)+" into a float.","COERCE_INFO_STRING_TO_FLOAT",-1)
-              ("INFO","Float")
-            } else if(TYS.contains("INFO_INT")){
-              ("INFO","Integer")
+            //if(TYS.contains("FILE_STRING")){
+            //  ("FILE","String",num)
+            //} else 
+            if(TYS.contains(SRC+"_STRING")){
+              (SRC,"String",num)
+            } else if(TYS.contains(SRC+"_FLOAT")){
+              warning("Attempting to coerce String "+SRC+" field "+ param.substring(5)+" into a float.","COERCE_"+SRC+"_STRING_TO_FLOAT",-1)
+              (SRC,"Float",num)
+            } else if(TYS.contains(SRC+"_INT")){
+              (SRC,"Integer",num)
             } else {
-              ("INFO","?")
+              (SRC,"?",num)
             }
           } else if(ln.Type == "Float"){
-            if(TYS.contains("INFO_FLOAT")){
-              ("INFO","Float")
-            } else if(TYS.contains("INFO_STRING")){
-              ("INFO","String")
-            } else if(TYS.contains("INFO_INT")){
-              warning("Attempting to coerce Float INFO field "+ param.substring(5)+" into an INT.","COERCE_INFO_FLOAT_TO_INT",-1)
-              ("INFO","Integer")
+            if(TYS.contains(SRC+"_FLOAT")){
+              (SRC,"Float",num)
+            } else if(TYS.contains(SRC+"_STRING")){
+              (SRC,"String",num)
+            } else if(TYS.contains(SRC+"_INT")){
+              warning("Attempting to coerce Float "+SRC+" field "+ param.substring(5)+" into an INT.","COERCE_"+SRC+"_FLOAT_TO_INT",-1)
+              (SRC,"Integer",num)
             } else {
-              ("INFO","?")
+              (SRC,"?",num)
             }
           } else if(ln.Type == "Integer"){
-            if(TYS.contains("INFO_INT")){
-              ("INFO","Integer")
-            } else if(TYS.contains("INFO_FLOAT")){
-              ("INFO","Float")
-            } else if(TYS.contains("INFO_STRING")){
-              ("INFO","String")
+            if(TYS.contains(SRC+"_INT")){
+              (SRC,"Integer",num)
+            } else if(TYS.contains(SRC+"_FLOAT")){
+              (SRC,"Float",num)
+            } else if(TYS.contains(SRC+"_STRING")){
+              (SRC,"String",num)
             } else {
-              ("INFO","?")
+              (SRC,"?",num)
             }
           } else {
-            ("?","?")
+            ("?","?",num)
           }
-        }}.getOrElse( ("ERROR","String") )
+        }}.getOrElse( ("ERROR","String",".") )
         //if( TYS.contains("INFO_FLOAT") && 
-      } else if(param.toUpperCase().startsWith("GENO:")){
-        if( ! TYS.exists{ ss => ss.startsWith("GENO_")} ){
-          error("Fatal Error: param "+id+" is not permitted to be a GENO field! It must be one of these types: "+ty);
-        }
-        checkIsGeno( param.substring(5) ).map{ ln => {
-          if(ln.Type == "String"){
-            if(TYS.contains("GENO_STRING")){
-              ("GENO","String")
-            } else if(TYS.contains("GENO_FLOAT")){
-              warning("Attempting to coerce String GENO field "+ param.substring(5)+" into a float.","COERCE_GENO_STRING_TO_FLOAT",-1)
-              ("GENO","Float")
-            } else if(TYS.contains("GENO_INT")){
-              ("GENO","Integer")
-            } else {
-              ("GENO","?")
-            }
-          } else if(ln.Type == "Float"){
-            if(TYS.contains("GENO_FLOAT")){
-              ("GENO","Float")
-            } else if(TYS.contains("GENO_STRING")){
-              ("GENO","String")
-            } else if(TYS.contains("GENO_INT")){
-              warning("Attempting to coerce Float GENO field "+ param.substring(5)+" into an INT.","COERCE_GENO_FLOAT_TO_INT",-1)
-              ("GENO","Integer")
-            } else {
-              ("GENO","?")
-            }
-          } else if(ln.Type == "Integer"){
-            if(TYS.contains("GENO_INT")){
-              ("GENO","Integer")
-            } else if(TYS.contains("GENO_FLOAT")){
-              ("GENO","Float")
-            } else if(TYS.contains("GENO_STRING")){
-              ("GENO","String")
-            } else {
-              ("GENO","?")
-            }
-          } else {
-            ("?","?")
-          }
-        }}.getOrElse( ("ERROR","String") )
       } else if(checkIsInt(param)){
-        ("CONST","Int")
+        val num = param.split(":").length.toString;
+        ("CONST","Int",num)
       } else if(checkIsFloat(param)){
-        ("CONST","Float")
+        val num = param.split(":").length.toString;
+        ("CONST","Float",num)
       } else {
-        ("CONST","String")
+        val num = param.split(":").length.toString;
+        checkIsInfo(param).foreach{ ln => {
+          warning("WARNING: parameter "+param+" is being interpreted as a string constant, but also matches the name of an INFO field! "+
+                  "Did you intend for this parameter to be an INFO field? If so, you must start the parameter with 'INFO:'","WARN_STRING_MIGHT_BE_INFO_FIELD",-1)
+        }}
+        checkIsGeno(param).foreach{ ln => {
+          warning("WARNING: parameter "+param+" is being interpreted as a string constant, but also matches the name of an GENOTYPE/FORMAT field! "+
+                  "Did you intend for this parameter to be an GENOTYPE/FORMAT field? If so, you must start the parameter with 'INFO:'","WARN_STRING_MIGHT_BE_INFO_FIELD",-1)
+        }}
+        ("CONST","String",num)
       }
     }
     
@@ -408,7 +552,15 @@ object SVcfTagFunctions {
      def getParams :  Seq[VcfTagFunctionParam] = params;
   }
   
+  //object VcfFcnTypeInfo {
+
+  //}
+  
+  //("FILE","String",num)
+
+  
   abstract class VcfTagFcnFactory(){
+    
 
     def getTypeInfo(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Vector[(String,String,VcfTagFunctionParam,String)] = {
      fcParam.padTo(params.length, fcParam.last).zip(params).map{ case (pp,pv) => {
@@ -739,10 +891,15 @@ object SVcfTagFunctions {
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "PICK.RANDOM",synon = Seq(),
-              shortDesc = "",
-              desc = "",
+              shortDesc = "Picks randomly from a given set.",
+              desc = "The first parameter must be either '.' or a supplied random seed for the random number generator. "+
+                     "You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter. "+
+                     "In this case the output will be chosen from this one input parameter (which is assumed to be a list of some sort), which can be a string constant list delimited with colons, an INFO field specified as INFO:fieldName, or a text file specified as FILE:filename. "+
+                     "Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "seed", ty = "String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|FILE_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "String|INFO_String",req=false,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -750,19 +907,27 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
-              override val outType = "String";
+              val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
+              override val outType = getSuperType(typeInfo);
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
-              //val rand = pv.lift(1).map{ s => {
-              //  new scala.util.Random(string2long(s))
-              //}}.getOrElse( new scala.util.Random() )
-              val rand =  new scala.util.Random()
+              val isInternalPick = (typeInfo.length == 1)
+              
+              val rand = if(pv.head == "auto" || pv.head == "."){
+                new scala.util.Random()
+              } else {
+                val seed = string2intOpt(pv.head);
+                if(seed.isEmpty){
+                  error("ERROR: malformatted seed: seed must be an int, or else 'auto' or '.' to autoselect a seed.");
+                }
+                new scala.util.Random( seed.get )
+              }
               def run(vc : SVcfOutputVariantLine){
-                
-                val outUnion = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
-                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
-                }}.toVector
+                val outUnion = if(isInternalPick){
+                  dds.head.get(vc).getOrElse(Vector("."))
+                } else {
+                  dds.map{ ss => ss.get(vc).getOrElse(Vector(".")).mkString(",") }
+                }
                 if(outUnion.length > 0){
                   val out = outUnion( rand.nextInt( outUnion.length ) )
                   writeString(vc,out)
@@ -780,10 +945,10 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "SETS.INTERSECT",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a series of Info fields, specified as INFO:tagID, or set constants delimited with colons. "+
+              desc = "Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons. "+
                      "Output field will be a comma delimited string containing the intersect between the supplied sets.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|FILE_String",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -808,11 +973,11 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "SETS.DIFF",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a pair of sets that are either INFO fields specified as INFO:tagID or a constant set delimited with colons."+
+              desc = "Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons."+
                      "Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out.",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "y", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float|FILE_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float|FILE_String",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -836,8 +1001,8 @@ object SVcfTagFunctions {
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "CONCAT",synon = Seq(),
-              shortDesc = "Concatenates ",
-              desc = "",
+              shortDesc = "Concatenates the input",
+              desc = "This simple function concatenates the values of the input parameters. Input parameters can be any combination of INFO fields or constant strings.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "String|INFO_String",req=true,dotdot=true )
               )
@@ -870,13 +1035,16 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "SETS.UNION",synon = Seq(),
-              shortDesc = "",
-              desc = "",
+              shortDesc = "Takes the union from input sets.",
+              desc = "The new field will be equal to the union of the inputs. Inputs can either be INFO fields specified with 'INFO:tagName', "+
+                      "can point to a text file with 'FILE:filename', or can be constants (delimited with colons). "+
+                      "The output will be the union of the given parameters, in alphabetical order. ",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String",req=true,dotdot=true )
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|FILE_String",req=true,dotdot=true )
               )
           );
           def metadata = mmd;
@@ -1032,8 +1200,8 @@ object SVcfTagFunctions {
               shortDesc = "",
               desc = "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "oldField", ty = "INFO_Float|INFO_Double|INFO_String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "newField", ty = "String",req=true,dotdot=false )
+                  VcfTagFunctionParam( id = "oldField", ty = "INFO_Float|INFO_Double|INFO_String",req=true,dotdot=false )//,
+                  //VcfTagFunctionParam( id = "newField", ty = "String",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
@@ -1043,7 +1211,7 @@ object SVcfTagFunctions {
               def init : Boolean = true;
               val typeInfo = getTypeInfo(md.params,pv,h)
               val oldField = pv(0);
-              val newField = pv(1);
+              //val newField = pv(1);
               override val outType = h.infoLines.find{ _.ID == oldField }.map{ _.Type }.getOrElse("???")
               override val outNum = h.infoLines.find{ _.ID == oldField }.map{ _.Number }.getOrElse("???")
               val thresh = string2double(pv.head);
@@ -1056,9 +1224,55 @@ object SVcfTagFunctions {
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
+              id = "SWITCH.EXPR",synon = Seq(),
+              shortDesc = "Switches between two options depending on a logical expression.",
+              desc = "Switches between two options depending on a logical expression. "+
+                      "The 'expr' expression parameter must be formatted like standard variant-level expressions. "+
+                      "The x and y parameters can each be either a constant or an INFO field. The output field will be equal to x if "+
+                      "the logical expression is TRUE, and otherwise will be y.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "expr", ty = "STRING",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "INFO_Int|INFO_Float|INFO_String|Int|Float|String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "INFO_Int|INFO_Float|INFO_String|Int|Float|String",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
+              override val outType = getSuperType(typeInfo);
+              override val outNum = "1";
+              val dd = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_String(pv,tt)}.padTo(2,VcfTagFunctionParamReader_String(".","CONST"))
+              /*val dd = if(outType == "Integer"){
+                Left(typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Int(pv,tt)})
+              } else if(outType == "Float"){
+                Right(Left( typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_Float(pv,tt)} ))
+              } else {
+                Right(Right( typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_String(pv,tt)} ))
+              }*/
+              val expr = paramValues.head;
+              val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
+              def run(vc : SVcfOutputVariantLine){
+                val k = if( filter.keep(vc) ){
+                  dd(0).get(vc).getOrElse(".")
+                } else {
+                  dd(1).get(vc).getOrElse(".")
+                }
+                //notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag+"_"+k,1);
+                writeString(vc,k);
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
               id = "EXPR",synon = Seq(),
-              shortDesc = "",
-              desc = "",
+              shortDesc = "Creates a true/false field based on an expression",
+              desc = "The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise. "+
+                     "See the expression format definition for more information on how the logical expression syntax works.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "expr", ty = "STRING",req=true,dotdot=false ),
               )
@@ -1141,6 +1355,51 @@ object SVcfTagFunctions {
     }
   }
   
+      
+      
+      
+      
+      
+   val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
+       internalUtils.commandLineUI.UserManualBlock(title=Some("INFO TAG FUNCTIONS"),
+                                                   lines = Seq("","Info Tag Functions are simple functions that take  "+
+                                                               "one variant at a time. When more than one function is specified in a run, these functions are performed in the order "+
+                                                               "that they appear in the command line, after all other operations have been carried out (excluding output ops). "+
+                                                               "",
+                                                               "Basic Syntax:",
+                                                               "    --FCN addIntoTag|newTagID|fcn=infoTagFunction|params=p1,p2,..."), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+       internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
+                                                   lines = Seq(""), level = 2,indentTitle = 2)
+   ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
+      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
+                                                   lines = Seq("",
+                                                               mf.metadata.desc), 
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=4)
+      Seq(fcnTitleLine) ++
+          mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
+        internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+
+                                                            pp.desc +{ if(pp.req){
+                                                              ""
+                                                            } else {
+                                                              "(Optional) "
+                                                            }}+"("+pp.ty+")" ), indentTitle = 4, indentBlock = 12, indentFirst=8)
+      }}
+   }}
+     /*
+   def MAPFUNCTIONS_getBlockStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getBlockString()
+   }}.mkString("\n")
+   def MAPFUNCTIONS_getMarkdownStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getMarkdownString();
+   }}.mkString("\n")*/
+      
+      
+      
+      
+      
+      
+      
+      
 }
 
 

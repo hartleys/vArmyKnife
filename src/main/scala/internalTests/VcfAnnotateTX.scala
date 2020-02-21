@@ -369,7 +369,12 @@ object VcfAnnotateTX {
 
          ))
        ),
-       
+       //makeFirstBaseMatch
+       //fixSwappedRefAlt
+       //leftAlignAndTrim
+       //splitMultiAllelics
+       //fixDotAltIndels
+       //rmDup
 
        
      ).map{ pss => {
@@ -629,7 +634,7 @@ object VcfAnnotateTX {
                                          valueName = "txdata.data.txt.gz",  
                                          argDesc =  "Loads a saved TXdata file in order to add transcript annotation. To generate TX annotation, either this parameter OR the --genomeFA parameter must be set. Using this file will be much faster than regenerating the tx data from the gtf/fasta. "+
                                                     "this TXdata file must be generated using the GenerateTranscriptAnnotation command"
-                                        ).meta(false,"Transcript Annotation") ::
+                                        ).meta(true,"Transcript Annotation") ::
                     new BinaryOptionArgument[List[String]](
                                          name = "geneList", 
                                          arg = List("--geneList"), 
@@ -647,7 +652,7 @@ object VcfAnnotateTX {
                                          arg = List("--txTypes"), 
                                          valueName = "protein_coding,...",  
                                          argDesc =  "List of transcript biotypes to include. Only works if biotype info is available in the TX annotation."
-                                        ).meta(false,"Transcript Annotation") ::
+                                        ).meta(true,"Transcript Annotation") ::
                                         
                     new BinaryMonoToListArgument[String](
                                          name = "addLocalGcInfo", 
@@ -657,27 +662,27 @@ object VcfAnnotateTX {
                                                     "Requires an indexed genome fasta to be set with the --genomeFA option. "+
                                                     "The parameter must be formatted in 3 comma-delimited parts: first the prefix to "+
                                                     "append to the INFO tags, then a bar-delimited list of window sizes, and then the number of digits to include in the output."
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation-DEPRECATED") ::
                                         
                     new BinaryMonoToListArgument[String](
                                          name = "calcBurdenCounts", 
                                          arg = List("--calcBurdenCounts"), 
                                          valueName = "....",  
                                          argDesc =  "BETA: not for production use!"
-                                        ).meta(true,"Sample Stats") ::
+                                        ).meta(true,"Sample Stats-DEPRECATED") ::
                     new BinaryMonoToListArgument[String](
                                          name = "burdenCountsFile",
                                          arg = List("--burdenCountsFile"), 
                                          valueName = "table.file.txt",
                                          argDesc = "If multiple count files are desired for different burden counters, you must give each file an ID using the format: fileID:/path/to/file.txt" // description
-                                        ).meta(true,"Sample Stats") ::
+                                        ).meta(true,"Sample Stats-DEPRECATED") ::
                                         
                     new BinaryOptionArgument[String](
                                          name = "gtfFile",
                                          arg = List("--gtfFile"), 
                                          valueName = "gtfFile.gtf.gz",
                                          argDesc = "A gene annotation GTF file. Can be gzipped or in plaintext." // description
-                                        ).meta(false,"Transcript Annotation") ::
+                                        ).meta(true,"Transcript Annotation-DEPRECATED") ::
                     new BinaryOptionArgument[String](
                                          name = "genomeFA", 
                                          arg = List("--genomeFA"), 
@@ -712,7 +717,7 @@ object VcfAnnotateTX {
                                          valueName = "knownCanonical.txt",
                                          argDesc = "Supply a list of canonical transcripts, add tags that indicate canonical-transcript-only variant info."+
                                                    ""// description
-                                       ).meta(false,"Transcript Annotation") ::
+                                       ).meta(true,"Transcript Annotation-DEPRECATED") ::
                     new UnaryArgument( name = "splitMultiAllelics",
                                          arg = List("--splitMultiAllelics"), // name of value
                                          argDesc = "If this flag is used, multiallelic variants will be split into multiple separate VCF lines. "+
@@ -739,12 +744,12 @@ object VcfAnnotateTX {
                                          arg = List("--splitAlleleGroupCounts"), // name of value
                                          argDesc = "DEPRECATED"+
                                                    "" // description
-                                       ).meta(true,"Preprocessing") ::
+                                       ).meta(true,"Preprocessing-DEPRECATED") ::
                     new UnaryArgument( name = "geneVariantsOnly",
                                          arg = List("--geneVariantsOnly"), // name of value
                                          argDesc = "If this flag is used, only output variants that fall on or near known genes. This is only functional when gene annotation is supplied."+
                                                    "" // description
-                                       ).meta(true,"Transcript Annotation",15) ::
+                                       ).meta(true,"Transcript Annotation-DEPRECATED",15) ::
                     new UnaryArgument( name = "nonNullVariantsOnly",
                                          arg = List("--nonNullVariantsOnly"), // name of value
                                          argDesc = "If this flag is used, only write variants that have non-null alt alleles."+
@@ -766,13 +771,13 @@ object VcfAnnotateTX {
                                          argDesc =  "Options for a SnpSift annotate run. Provide all the options for the standard run. "+
                                                     " Do not include the annotate command itself or the input VCF. "+
                                                     "This will call the internal SnpSift annotate methods, not merely run an external instance of SnpSift. "
-                                        ).meta(false,"Annotation", 10) ::
+                                        ).meta(true,"Annotation-DEPRECATED", 10) ::
                     new BinaryMonoToListArgument[String](
                                          name = "snpSiftFilter", 
                                          arg = List("--snpSiftFilter"), 
                                          valueName = "filter Name|KEEP_MATCH or DROP_MATCH|SnpSift command",  
                                          argDesc =  "Options for a SnpSift annotate run. Filters based on the results of this run. "
-                                        ).meta(false,"Annotation", 10) ::
+                                        ).meta(true,"Annotation-DEPRECATED", 10) ::
                                         
                                         
                     new BinaryOptionArgument[String](
@@ -782,7 +787,7 @@ object VcfAnnotateTX {
                                          argDesc =  "Options for a SnpEff ann run. Provide all the options for the standard run. "+
                                                     " Do not include the annotate command itself or the input VCF. "+
                                                     "This will call the internal SnpEff ann methods, not merely run an external instance of SnpEff. "
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation-DEPRECATED") ::
                                         
                     new BinaryMonoToListArgument[String](
                                          name = "snpSiftDbnsfp", 
@@ -790,7 +795,7 @@ object VcfAnnotateTX {
                                          valueName = "...",  
                                          argDesc =  "Options for a SnpSift Dbnsfp run. Provide all the options for the standard run. Do not include the Dbnsfp command itself or the input VCF. "+
                                                     "This will call the internal SnpSift annotate commands, not merely run an external instance of SnpSift. "
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation-DEPRECATED") ::
                     new BinaryMonoToListArgument[String](
                                          name = "copyFmtTag", 
                                          arg = List("--copyFmtTag"), 
@@ -811,14 +816,14 @@ object VcfAnnotateTX {
                                                     "must have 4 colon-delimited sub-elements: the tag title (ie, the tag that "+
                                                     "will be added to the VCF file, the buffer distance, the tag description (for the VCF header), and the bedfile path. "+
                                                     "Bed files may be gzipped or zipped."
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation--DEPRECATED") ::
                                         
                     new BinaryMonoToListArgument[String](
                                          name = "addContextBases", 
                                          arg = List("--addContextBases"), 
                                          valueName = "windowSize[:tagInfix]",  
                                          argDesc =  "Adds fields containing the sequence flanking the variant with the assigned windowsize. Note: requires genomeFA be set!"
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation--DEPRECATED") ::
                                         
                     new BinaryMonoToListArgument[String](
                                          name = "addAltSequence", 
@@ -834,7 +839,7 @@ object VcfAnnotateTX {
                                          arg = List("--homopolymerRunStats"), 
                                          valueName = "tagID|bedfile.bed|hrunThreshold",  
                                          argDesc =  "Adds a new tag that indicates when a variant adds to or deletes from a homopolymer run. Requires a homopolymer run bed file."
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation-DEPRECATED") ::
                                         
                                         //homopolymerRunStats
                                         
@@ -851,7 +856,7 @@ object VcfAnnotateTX {
                                          argDesc =  "Copies the chrom, start, ref, and alt columns into an info field. This "+
                                                     "can be useful for keeping track of variants before and after variant transformations "+
                                                     "such as leftAlignAndTrim or multiallelic splits."
-                                        ).meta(false,"Annotation") ::
+                                        ).meta(true,"Annotation-DEPRECATED") ::
                     /*new BinaryOptionArgument[String](
                                          name = "outputSavedTxFile", 
                                          arg = List("--outputSavedTxFile"), 
@@ -863,7 +868,7 @@ object VcfAnnotateTX {
                                          arg = List("--txToGeneFile"), 
                                          valueName = "txToGene.txt",  
                                          argDesc =  "File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line."
-                                        ).meta(false,"Transcript Annotation") :: 
+                                        ).meta(true,"Transcript Annotation-DEPRECATED") :: 
                     new UnaryArgument(
                                          name = "noGroupStats", 
                                          arg = List("--noGroupStats"), 
@@ -874,13 +879,13 @@ object VcfAnnotateTX {
                                          arg = List("--groupFile"), 
                                          valueName = "groups.txt",  
                                          argDesc =  "File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID."
-                                        ).meta(false,"Sample Stats") :: 
+                                        ).meta(false,"Sample Info") :: 
                     new BinaryOptionArgument[String](
                                          name = "superGroupList", 
                                          arg = List("--superGroupList"), 
                                          valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
                                          argDesc =  "A list of top-level supergroups. Requires the --groupFile parameter to be set."
-                                        ).meta(false,"Sample Stats") :: 
+                                        ).meta(false,"Sample Info") :: 
                                         
                                         //SAddSampCountWithMultVector(tagID : String, gtTag : String, desc : String, vectorFile : String)
                     new BinaryMonoToListArgument[String](
@@ -888,7 +893,7 @@ object VcfAnnotateTX {
                                          arg = List("--addSampCountWithMultVector"), 
                                          valueName = "tagID|desc|sampMultFile.txt",  
                                          argDesc =  "Beta feature: not for general use."
-                                        ).meta(false,"Sample Stats") ::
+                                        ).meta(true,"ZZ-ALPHA not for general use!") ::
                                         
                     new BinaryOptionArgument[List[String]](
                                          name = "chromList", 
@@ -907,7 +912,7 @@ object VcfAnnotateTX {
                                         ).meta(false,"Preprocessing") ::
                     new UnaryArgument( name = "infileList",
                                          arg = List("--infileList"), // name of value
-                                         argDesc = "If this option is set, then the input file is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. "+
+                                         argDesc = "If this option is set, then the infile parameter is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. "+
                                                    "Multiple VCF files will be concatenated and used as input. Note that only the first file's headers will be used, "+
                                                    "and if any of the subsequent files have tags or fields that are not present in the first VCF file then errors may occur. "+
                                                    "Also note that if the VCF file includes sample genotypes then the samples MUST be in the same order."+
