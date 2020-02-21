@@ -98,7 +98,12 @@ object VcfAnnotateTX {
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
            ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "inputDP",synon=Seq(),ty="String",valueString="",desc="",req=false)           
+           ParamStr(id = "inputDP",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "restrictToGroup",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
+           ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc=" See the --superGroupList parameter of walkVcf.",req=false)
+ 
+           //restrictToGroup
            ))
        ),
        ParamStrSet("calcStats" ,  desc = "", 
@@ -219,13 +224,44 @@ object VcfAnnotateTX {
               ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window for determining local gc content.",req=true),
               ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="myGenomeFile.fa",desc="A genome fasta file, if different from the global --genomeFA parameter",req=false)
          ))
+       ),
+       ParamStrSet("calcBurdenCounts" ,  desc = "", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
+              //
+              ParamStr(id = "snpEffAnnField",synon=Seq(),ty="String",valueString="k",desc="NOT IMPLEMENTED",req=false),
+              ParamStr(id = "snpEffGeneField",synon=Seq(),ty="String",valueString="k",desc="NOT IMPLEMENTED",req=false),
+              ParamStr(id = "snpEffVariantTypes",synon=Seq(),ty="String",valueString="k",desc="NOT IMPLEMENTED",req=false),
+              //
+              ParamStr(id = "expr",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "sampleSet",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+           ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
+           ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc=" See the --superGroupList parameter of walkVcf.",req=false),
+           
+           ParamStr(id = "countFileID",synon=Seq(),ty="String",valueString="k",desc="If multiple output count files are desired, you can specify which functions output to which count file using this parameter. Note that each file must be created using a --burdenCountsFile parameter, with the form fileID:/path/to/file.txt",req=false)
+
+         ))
        )
-       
      ).map{ pss => {
        (pss.mapType,pss)
      }}.toMap;
             
      /*
+
+              Some(new calcBurdenCountsWalker(tagID=params("mapID"),
+                  geneTag=params("geneTag"),
+                  filterExpressionString=params.getOrElse("expr","TRUE"),
+                  sampSubset=params.get("sampleSet").map{ x => x.split(",").toSet},
+                  sampGroup=params.get("group"),
+                  gtTag=params("inputGT"), 
+                  out=burdenWriter.get, 
+                  groupFile = params.get("groupFile"), 
+                  groupList = None, 
+                  superGroupList  = params.get("superGroupList")))
+
+
+
     def MAPFUNCTIONS_logicManualRaw : Seq[(Option[String],String)] = 
       Seq[(Option[String],String)](
                                   (Some("Variant Map Functions"),
@@ -488,11 +524,11 @@ object VcfAnnotateTX {
                                          valueName = "....",  
                                          argDesc =  "BETA: not for production use!"
                                         ).meta(true,"Sample Stats") ::
-                    new BinaryOptionArgument[String](
+                    new BinaryMonoToListArgument[String](
                                          name = "burdenCountsFile",
                                          arg = List("--burdenCountsFile"), 
                                          valueName = "table.file.txt",
-                                         argDesc = "BETA: not for production use!" // description
+                                         argDesc = "If multiple count files are desired for different burden counters, you must give each file an ID using the format: fileID:/path/to/file.txt" // description
                                         ).meta(true,"Sample Stats") ::
                                         
                     new BinaryOptionArgument[String](
@@ -1814,7 +1850,7 @@ object VcfAnnotateTX {
                 
                 keepVariantsExpressionPrefilter = parser.get[Option[String]]("keepVariantsExpressionPrefilter"),
                 calcBurdenCounts = parser.get[List[String]]("calcBurdenCounts"),
-                burdenCountsFile = parser.get[Option[String]]("burdenCountsFile"),
+                burdenCountsFile = parser.get[List[String]]("burdenCountsFile"),
                 
                 fixSwappedRefAlt = parser.get[Boolean]("fixSwappedRefAlt"),
                 
@@ -2036,7 +2072,7 @@ object VcfAnnotateTX {
                 
                 keepVariantsExpressionPrefilter : Option[String] = None,
                 calcBurdenCounts : List[String] = List[String](),
-                burdenCountsFile : Option[String] = None,
+                burdenCountsFile : List[String] = List[String](),
                 
                 fixSwappedRefAlt : Boolean = false,
                 
@@ -2139,9 +2175,20 @@ object VcfAnnotateTX {
             
             
     val summaryWriter = if(summaryFile.isEmpty) None else Some(openWriterSmart(summaryFile.get));
-    val burdenWriter = burdenCountsFile.map{ bcf => openWriterSmart(bcf)};
+    val burdenWriterMap = burdenCountsFile.map{ bcf => 
+      val cc = bcf.split("[:]");
+      if(cc.length == 2){
+        (cc(0),openWriterSmart(cc(1)));
+      } else if(cc.length > 2){
+        error("Error: burdenCountsFile must be at most 2 elements seperated by a colon: fileID and filePath. Or just filepath");
+        ("",openWriterSmart(""))
+      } else {
+        ("",openWriterSmart(bcf))
+      }
+      
+    }.toMap;
     
-    burdenWriter.foreach{ bw => {
+    burdenWriterMap.foreach{ case (id,bw) => {
       //out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
       bw.write("tagID\tgeneID\tburdenCt\taltCt\tvarCt\n");
     }}
@@ -2779,8 +2826,7 @@ object VcfAnnotateTX {
                 Seq[SVcfWalker](AddStatDistributionTags(tagAD = Some(tagAD), 
                                             tagGT = tagGT, tagDP = tagDP,
                                             tagSingleCallerAlles = tagSingleCallerAlles,
-                                            outputTagPrefix=outputTagPrefix,
-                                            variantStatExpression = variantStatExpression
+                                            outputTagPrefix=outputTagPrefix
                                             
                 ))
               }
@@ -3069,7 +3115,11 @@ object VcfAnnotateTX {
                                             tagDP = params.get("inputDP"),
                                             tagSingleCallerAlles = None,
                                             outputTagPrefix= params("mapID")+"_",
-                                            variantStatExpression = None
+                                            variantStatExpression = None,
+                                            restrictToGroup = params.get("restrictToGroup"),
+                                                groupFile = params.get("groupFile"),
+                                                groupList = None,
+                                                superGroupList  = params.get("superGroupList")
                 ))
              } else if(mapType == "calcStats"){
                
@@ -3172,6 +3222,36 @@ object VcfAnnotateTX {
                        tagSet = params.getOrElse("tagSet","HIGH,MODERATE,LOW,NS,ANY").split(",").toSeq
                    )
                 )
+                
+             } else if(mapType == "calcBurdenCounts"){
+               
+              val writerID = params.getOrElse("countFileID","");
+              if(! burdenWriterMap.contains(writerID)){
+                error("Error: countfile not specified! You must specify a countfile using --burdenCountsMap ("+writerID+")");
+              }
+               
+              Some(new calcBurdenCountsWalker(tagID=params("mapID"),
+                  geneTag=params("geneTag"),
+                  filterExpressionString=params.getOrElse("expr","TRUE"),
+                  sampSubset=params.get("sampleSet").map{ x => x.split(",").toSet},
+                  sampGroup=params.get("group"),
+                  gtTag=params("inputGT"), 
+                  out=burdenWriterMap( writerID ), 
+                  groupFile = params.get("groupFile"), 
+                  groupList = None, 
+                  superGroupList  = params.get("superGroupList")))
+
+                /*
+                 * 
+              val params = cbc.split(",");
+              val tagID = params(0);
+              val geneTag = params(1);
+              val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
+              val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
+              val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
+              val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
+              new calcBurdenCountsWalker(tagID=tagID,geneTag=geneTag,filterExpressionString=filterExpressionString,sampSubset=sampSubset,sampGroup=sampGroup,gtTag=gtTag, out=burdenWriter.get, groupFile = groupFile, groupList = None, superGroupList  = superGroupList)
+                */
              } else {
                 error("variantMapFunction TYPE: \""+mapType+"\" DOES NOT EXIST!");
                 None
@@ -3421,7 +3501,39 @@ SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
                // burdenCountsFile : Option[String] = None
             
             calcBurdenCounts.map{ cbc => {
-              new generateBurdenMatrix(cbc, burdenWriter.get, groupFile = groupFile, groupList = None, superGroupList  = superGroupList)
+                /*
+    val params = paramString.split(",");
+    val tagID = params(0);
+    def walkerName : String = "GenerateBurdenTable."+tagID;
+    val geneTag = params(1);
+    //val outfile = params(2);
+    val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
+    val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
+    val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
+
+    val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
+
+    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
+
+ // class generateBurdenMatrix(paramString : String, out : WriterUtil, 
+ //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
+
+  
+     class calcBurdenCountsWalker( tagID : String, out : WriterUtil,
+                                   geneTag : String,
+                                   filterExpressionString : String,
+                                   sampSubset : Option[String],
+                                   sampGroup :  Option[String],
+                                   groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { */
+              
+              val params = cbc.split(",");
+              val tagID = params(0);
+              val geneTag = params(1);
+              val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
+              val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
+              val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
+              val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
+              new calcBurdenCountsWalker(tagID=tagID,geneTag=geneTag,filterExpressionString=filterExpressionString,sampSubset=sampSubset,sampGroup=sampGroup,gtTag=gtTag, out=burdenWriterMap(""), groupFile = groupFile, groupList = None, superGroupList  = superGroupList)
             }}
         ) ++ (
             if(addVariantIdx.isDefined){
@@ -3664,8 +3776,8 @@ SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
       }
     }
     
-    burdenWriter.foreach{ bw => {
-      reportln("Closing burden count writer...","note");
+    burdenWriterMap.foreach{ case (id,bw) => {
+      reportln("Closing burden count writer: "+id,"note");
       bw.close();
     }}
     if(! summaryWriter.isEmpty) summaryWriter.get.close();

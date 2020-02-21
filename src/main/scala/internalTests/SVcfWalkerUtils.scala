@@ -2119,7 +2119,8 @@ object SVcfWalkerUtils {
     }
   }
   
-  class generateBurdenMatrix(paramString : String, out : WriterUtil, groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
+  /*
+
     val params = paramString.split(",");
     val tagID = params(0);
     def walkerName : String = "GenerateBurdenTable."+tagID;
@@ -2132,11 +2133,41 @@ object SVcfWalkerUtils {
     val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
 
     val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
-     
+
+
+
+   */
+  
+ // class generateBurdenMatrix(paramString : String, out : WriterUtil, 
+ //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
+
+  
+     class calcBurdenCountsWalker( tagID : String, out : WriterUtil,
+                                   geneTag : String,
+                                   filterExpressionString : String,
+                                   sampSubset : Option[Set[String]],
+                                   sampGroup :  Option[String], gtTag : String,
+                                   groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
+    /*
+    val params = paramString.split(",");
+    val tagID = params(0);
+    def walkerName : String = "GenerateBurdenTable."+tagID;
+    val geneTag = params(1);
+    //val outfile = params(2);
+    val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
+    val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
+    val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
+
+    val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
+
+    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
+     */
+    def walkerName : String = "GenerateBurdenTable."+tagID;
     val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String]) = getGroups(groupFile, groupList, superGroupList);
-    
+    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
+
     
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("tagID",tagID),
@@ -2814,7 +2845,7 @@ object SVcfWalkerUtils {
   
   
 
-  
+
   class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "AddFuncTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
@@ -2892,8 +2923,19 @@ object SVcfWalkerUtils {
       if(f == "DIFF" && paramTags.length != 2){
         error("ERROR: function DIFF requires exactly 2 params");
       }
-              
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number=outNum,Type=outType,desc=desc.getOrElse("Result of performing function "+func+" on tags: "+paramTags.mkString(",")+".")));
+      if(Set("COPY","RENAME").contains(f)){
+        val oldName = paramTags.head;
+        val oldLine = vcfHeader.infoLines.find{ln => {ln.ID == oldName }}.getOrElse({
+            error("ERROR: attempting to "+f+" an INFO field: \""+oldName+"\" which DOES NOT EXIST!");
+            null;
+        })
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number=outNum,Type=outType,desc=desc.getOrElse(oldLine.desc+" (Result of performing function "+func+" on tags: "+paramTags.mkString(",")+".)")));
+        if(f == "RENAME"){
+          outHeader.infoLines = outHeader.infoLines.filter{ ln => ln.ID != oldName }
+        }
+      } else {
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number=outNum,Type=outType,desc=desc.getOrElse("Result of performing function "+func+" on tags: "+paramTags.mkString(",")+".")));
+      }
       val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
       if( overwriteInfos.nonEmpty ){
         notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
@@ -3210,6 +3252,189 @@ object SVcfWalkerUtils {
             }
         } else if(f == "TAG.TALLY.IFEXPR"){
 
+            filterExpr.foreach{ fe =>{
+              if( fe.keep(v) ){
+                warning("", newTag+":TOTAL_1",1 ) 
+                val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+                
+                if(outType == "Integer"){
+                  val vv : Int = paramTags.lift(2).map{ ss => v.info.get(ss).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0) }.getOrElse(1);
+                    //v.info.get(paramTags(2)).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+                  if(vv > 0){
+                    g.foreach{ gg => {
+                      countMap.update( gg, countMap(gg) + vv );
+                      varcountMap.update( gg, varcountMap(gg) + 1 );
+                    }}
+                    
+                  }
+                } else {
+                  val vv : Double = paramTags.lift(2).map{ ss => v.info.get(ss).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2double(ss) }.getOrElse(0.0) }.getOrElse(1.0);
+                    //v.info.get(paramTags(2)).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+                  if(vv > 0){
+                    g.foreach{ gg => {
+                      countMapFloat.update( gg, countMapFloat(gg) + vv );
+                      varcountMap.update( gg, varcountMap(gg) + 1 );
+                    }}
+                    
+                  }
+                }
+              } else {
+                warning("", newTag+":TOTAL_0",1 ) 
+              }
+            }}
+            
+        } else if(f == "TAG.TALLY.IF" && paramTags.length >= 2){
+            val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            val tagif : Int = v.info.get(paramTags(1)).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+            val vv : Int = paramTags.lift(2).map{ ss => v.info.get(ss).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0) }.getOrElse(1);
+            if(tagif == 1 && vv > 0){
+               g.foreach{ gg => {
+                 countMap.update( gg, countMap(gg) + vv );
+               }}
+            }
+        } else if(f == "TAG.TALLY" && paramTags.length > 1){
+            val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            val vv : Int = v.info.get(paramTags.last).getOrElse(None).filter{ ss => ss != "." }.map{ ss => string2int(ss) }.getOrElse(0)
+            g.foreach{ gg => {
+              countMap.update( gg, countMap(gg) + vv );
+            }}
+        } else if(f == "TAG.TALLY" && paramTags.length == 1){
+            val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
+            g.foreach{ gg => {
+              countMap.update( gg, countMap(gg) + 1 );
+            }}
+        } else if(Set("COPY","RENAME").contains(f)){
+          val oldName = paramTags.head;
+          val newName = paramTags.last;
+          v.info.getOrElse( oldName, None ).foreach{ ii => {
+              vc.addInfo(newTag, ii);
+          }}
+          if(f == "RENAME"){
+            vc.dropInfo(Set(oldName));
+          }
+        } else {
+          error("Unrecognized function: " +f);
+        }
+        
+        /*v.info.getOrElse(nTag,None).foreach{ nStr => {
+          v.info.getOrElse(dTag,None).foreach{ dStr => {
+            if(nStr == "." || dStr == "."){
+              vc.addInfo(newTag, "0");
+            } else {
+              val (n,d) = (string2float(nStr),string2float(dStr));
+              val ratio = n/d
+              vc.addInfo(newTag, ("%."+digits+"f").format(ratio));
+            }
+
+          }}
+        }}*/
+         
+        vc
+      }}, closeAction = (() => {
+        if(f == "TAG.TALLY" || f == "TAG.TALLY.IF" || f.startsWith("TAG.TALLY")){
+          if(outType == "Integer"){
+            countMap.foreach{ case (gg, vv) => {
+              varcountMap.get( gg ) match {
+                case Some(vvv) => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
+                }
+                case None => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv); 
+                }
+              } 
+              
+            }} 
+          } else {
+            countMapFloat.foreach{ case (gg, vv) => {
+              varcountMap.get( gg ) match {
+                case Some(vvv) => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
+                }
+                case None => {
+                  tally(newTag+":"+paramTags.head+":"+gg,vv);
+                }
+              }
+              
+            }}
+          }
+        }
+      })),outHeader)
+      
+    }
+  } 
+    
+  class TallyFuncTagLEGACY(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "AddFuncTag."+newTag
+    //keywords: tagVariantFunction tagVariantsFunction Variant Function
+    val f : String = func.toUpperCase;
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("newTag",newTag),
+        ("func",func),
+        ("paramTags",paramTags.mkString("|"))
+    );
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      
+      val paramTypes = paramTags.zipWithIndex.map{ case (param,pidx) => {
+        vcfHeader.infoLines.find(infoline => infoline.ID == param) match {
+          case Some(paramLine) => {
+            paramLine.Type
+          }
+          case None => {
+            if(! (Set("STATICSET.INTERSECT").contains(func) && pidx > 0)){
+              warning("WARN: cannot find tag: \""+param+"\"")
+            }
+            "?"
+          }
+        }
+      }}
+      
+      val outType = 
+      if(Set("TAG.TALLY.IFEXPR").contains(f)){
+        if( paramTypes.lift(2).map{pp => pp == "Float"}.getOrElse(false) ){
+          "Float"
+        } else {
+          "Integer"
+        }
+      } else  if(Set("CONVERT.TO.INT","TAG.TALLY","TAG.TALLY.IF","RANDFLAG","LEN").contains(f)  || f.startsWith("TAG.TALLY") ){
+        "Integer"
+      } else if(Set("CONVERT.TO.FLOAT","MULT.BY.K","DIV.BY.K","RATIO","PROD").contains(f)){
+        "Float"
+      } else if( Set("LEN").contains(f) ){
+        "Integer"
+      } else if(Set("SUM","MIN","MAX","DIFF","MAX.WITH.DEFAULT","MIN.WITH.DEFAULT").contains(f)){
+         if(paramTypes.forall(pt => pt == "Integer")){
+           "Integer"
+         } else {
+           "Float"
+         }
+      } else {
+        "String"
+      }
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      val countMap = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ) )
+      val countMapFloat = new scala.collection.mutable.AnyRefMap[String,Double](defaultEntry = ( (s : String) => 0.0 ) )
+      val varcountMap = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ) )
+      
+      val filterExpr : Option[SFilterLogic[SVcfVariantLine]] = if(f == "TAG.TALLY.IFEXPR"){
+            if( paramTags.length != 2 && paramTags.length != 3){
+              error("TAG.TALLY.IFEXPR requires 2 or 3 comma-delimited parameters: (geneListTag,expression,[countVariable])")
+            }
+        Some(
+           internalUtils.VcfTool.sVcfFilterLogicParser.parseString( paramTags(1) )
+        )
+      } else {
+        None;
+      }
+
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        //vc.dropInfo(overwriteInfos);
+        if(f == "TAG.TALLY.IFEXPR"){
             filterExpr.foreach{ fe =>{
               if( fe.keep(v) ){
                 warning("", newTag+":TOTAL_1",1 ) 
@@ -3873,7 +4098,7 @@ object SVcfWalkerUtils {
     }}
     
     val thisWalker = this;
-    
+    /*
     object VarExtract {
       def getVarExtract( s : String ){
         
@@ -3896,7 +4121,7 @@ object SVcfWalkerUtils {
       def init(){
         
       }
-    }
+    }*/
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
@@ -4417,7 +4642,8 @@ object SVcfWalkerUtils {
                                      outputTagPrefix : String = OPTION_TAGPREFIX+"STAT_",
                                      variantStatExpression : Option[List[String]] = None,
                                      depthCutoffs : Option[List[Int]] = Some(List(10,20,40)),
-                                     groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None
+                                     groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None,
+                                     restrictToGroup : Option[String] = None
                                      ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "AddStatDistributionTags" 
       val MISS : Int = 0;
@@ -4439,7 +4665,7 @@ object SVcfWalkerUtils {
     val (sampleToGroupMap,groupToSampleMap,groups) = getGroups(groupFile,groupList,superGroupList);
     val logicParser : internalUtils.VcfTool.SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
     
-    val genoStatExpressionInfo : List[(String,String,SFilterLogic[(SVcfVariantLine,Int)])] = variantStatExpression match {
+    /*val genoStatExpressionInfo : List[(String,String,SFilterLogic[(SVcfVariantLine,Int)])] = variantStatExpression match {
       case Some(gseList) => {
         gseList.map{ gseString => {
           val cells = gseString.split("\\|");
@@ -4452,9 +4678,11 @@ object SVcfWalkerUtils {
       case None => {
         List();
       }
-    }
+    }*/
     val fullGroupList = (groups.map{g => Some(g)} :+ None )
 
+    
+    
     var medianIdx = -1
     var lqIdx = -1
     var uqIdx = -1
@@ -4466,22 +4694,26 @@ object SVcfWalkerUtils {
       //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
       samps = outHeader.getSampleList
       
-      medianIdx = samps.length / 2;
-      lqIdx = samps.length / 4;
-      uqIdx = math.min(samps.length-1,math.ceil( samps.length.toDouble * 3.toDouble / 4.toDouble ).toInt)
+      val keepsampct = restrictToGroup.map{ rg => {vcfHeader.titleLine.sampleList.toArray.count{ ss => {
+            sampleToGroupMap.get(ss).map{ gg => { gg.contains(rg) }}.getOrElse(false)
+      }}}}.getOrElse(samps.length);
+      
+      medianIdx = keepsampct / 2;
+      lqIdx = keepsampct / 4;
+      uqIdx = math.min(keepsampct-1,math.ceil( keepsampct.toDouble * 3.toDouble / 4.toDouble ).toInt)
       
       //val fixList = Seq("GL","PL","QA","AO","AD");
       
       val hetFracTagDesc = "(Based on tags: "+tagAD.getOrElse(".")+"/"+tagSingleCallerAlles.getOrElse(".")+")"
       
-      genoClasses.zip(genoClassDesc).foreach{ case (gClass,desc) => {
+      /*genoClasses.zip(genoClassDesc).foreach{ case (gClass,desc) => {
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,//NEWTAGS
                                                          outputTagPrefix+"AD_SAMPCT_"+gClass, 
                                                          "1", 
                                                          "Integer", 
                                                          desc)).addWalker(this)
         )
-      }}
+      }}*/
       
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
                                                          outputTagPrefix+"AD_HET_FRAC_MIN", 
@@ -4555,16 +4787,16 @@ object SVcfWalkerUtils {
         (tagGT,tagGT)
       }
       
-      val groupAnno = fullGroupList.zipWithIndex.map{ case (g,i) => g match {
+      /*val groupAnno = fullGroupList.zipWithIndex.map{ case (g,i) => g match {
           case Some(gg) => {
             (g,i,"_GRP_"+gg," for samples in group "+gg,groupToSampleMap(gg).size)
           }
           case None => {
             (g,i,""," across all samples",samps.length)
           }
-      }}
+      }}*/
 
-      groupAnno.foreach{ case (grp,i,gtag,groupDesc,groupSize) => {
+      /*groupAnno.foreach{ case (grp,i,gtag,groupDesc,groupSize) => {
         genoStatExpressionInfo.foreach{ case (tagCore,descCore,expr) => {
           outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO" ,
                                                          tagCore+gtag, 
@@ -4573,13 +4805,13 @@ object SVcfWalkerUtils {
                                                          descCore+groupDesc
                                                          ))
         }}
-      }}
-      val nsamp = samps.length;
-      val sampGroupIdx : Vector[Vector[Int]] = samps.toVector.map{ sampid => {
-          val groupSet : Set[String] = sampleToGroupMap(sampid);
-          val groupIdx : Vector[Int] = (groups.zipWithIndex.flatMap{ case (g,i) => if(groupSet.contains(g)){ Some(i) } else None } :+ groups.length).toVector;
-          groupIdx
-      }}
+      }}*/
+      //val nsamp = samps.length;
+      //val sampGroupIdx : Vector[Vector[Int]] = samps.toVector.map{ sampid => {
+      //    val groupSet : Set[String] = sampleToGroupMap(sampid);
+      //    val groupIdx : Vector[Int] = (groups.zipWithIndex.flatMap{ case (g,i) => if(groupSet.contains(g)){ Some(i) } else None } :+ groups.length).toVector;
+      //    groupIdx
+      //}}
       
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine()
@@ -4589,7 +4821,18 @@ object SVcfWalkerUtils {
         if(gtIdx == -1) {
           warning("Cannot find \""+splitGtTag+"\" or \""+stdGtTag+"\" in fmt line: \""+vc.genotypes.fmt.mkString(",")+"\"","NO_GENO_FIELD_WARNING",25);
         } else {
-        val gt : Vector[String] = v.genotypes.genotypeValues(gtIdx).toVector;
+        val extractSamples : (Array[String] => Array[String]) = restrictToGroup.map{ rg => {
+          val ix : Array[Boolean] = vcfHeader.titleLine.sampleList.toArray.map{ ss => {
+            sampleToGroupMap.get(ss).map{ gg => { gg.contains(rg) }}.getOrElse(false);
+          }}
+          (g : Array[String]) => {
+            g.zip(ix).filter{ case (gg,tf) => tf }.map{_._1}
+          }
+        }}.getOrElse({ (g : Array[String]) => {
+          g;
+        }})
+          
+        val gt : Vector[String] = extractSamples(v.genotypes.genotypeValues(gtIdx)).toVector;
         val simpleClass : Vector[Int] = gt.map{ genoString => {
           val gc = genoString.split("[/\\|]")
           if( gc.exists( g => g == ".")){
@@ -4605,7 +4848,7 @@ object SVcfWalkerUtils {
           }
         }}
         val altAlle = v.alt.head;
-        
+        /*
         genoStatExpressionInfo.foreach{ case (tagCore,descCore,expr) => {
           val cts = Array.fill[Int](fullGroupList.length)(0);
           var i = 0
@@ -4621,7 +4864,7 @@ object SVcfWalkerUtils {
             val tag = tagCore+gtag;
             vc.addInfo(tag,cts(i).toString);
           }}
-        }}
+        }}*/
         
 
         if(tagAD.isDefined){
@@ -4662,7 +4905,7 @@ object SVcfWalkerUtils {
           } */
           val adIdx = v.genotypes.fmt.indexOf(tagAD.get);
           if(alleIdx != -1 && adIdx != -1){
-            val ads = v.genotypes.genotypeValues(adIdx).map{ a => {
+            val ads = extractSamples(v.genotypes.genotypeValues(adIdx)).map{ a => {
               if(a == "."){
                 (0,0)
               } else {
@@ -4681,7 +4924,6 @@ object SVcfWalkerUtils {
               case Some(tad) => v.genotypes.fmt.indexOf(tad);
               case None => -2;
             }
-            
             //val sumDepthSorted = ads.map{case (r,a) => {r + a}}.sorted;
             
             val sumDepthSorted = if(dpIdx == -2){
@@ -4689,7 +4931,7 @@ object SVcfWalkerUtils {
             } else if(dpIdx == -1) {
               ads.map{case (r,a) => 0}
             } else {
-              v.genotypes.genotypeValues(dpIdx).zip(ads).map{ case (d,(r,a)) => {
+              extractSamples(v.genotypes.genotypeValues(dpIdx)).zip(ads).map{ case (d,(r,a)) => {
                 if(d == "."){
                   0 
                 } else {
@@ -4737,18 +4979,17 @@ object SVcfWalkerUtils {
             //val hetMinRatio = simpleClass.zip(ads).foreach{ case (c,(refCt,altCt)) => {
             if(hetMinRatio == 2.0) hetMinRatio = -1.0;
             
-            genoClasses.zipWithIndex.foreach{ case (c,i) => {
-              vc.addInfo(outputTagPrefix+"AD_SAMPCT_"+c,sampCts(i).toString);
+            //genoClasses.zipWithIndex.foreach{ case (c,i) => {
+            //  vc.addInfo(outputTagPrefix+"AD_SAMPCT_"+c,sampCts(i).toString);
               //vc.addInfo(outputTagPrefix+"AD_"+c+"_REF",refCts(i));
               //vc.addInfo(outputTagPrefix+"AD_"+c+"_ALT",altCts(i));
               //vc.addInfo(outputTagPrefix+"AD_"+c+"_ALT",altCts(i));
-            }}
+            //}}
             if(sampCts(HET) > 0){
               vc.addInfo(outputTagPrefix+"AD_HET_REF",refCts(HET).toString);
               vc.addInfo(outputTagPrefix+"AD_HET_ALT",altCts(HET).toString);
               vc.addInfo(outputTagPrefix+"AD_HET_FRAC",(math.floor(10000 * altCts(HET).toDouble / (refCts(HET).toDouble+altCts(HET).toDouble)) / 10000.toDouble).toString);
               vc.addInfo(outputTagPrefix+"AD_HET_FRAC_MIN",(math.floor(10000 * hetMinRatio) / 10000.toDouble).toString);
-
             }
             
           }
