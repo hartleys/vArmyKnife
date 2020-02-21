@@ -32,6 +32,23 @@ object stdUtils {
     val ps = pss.
   }*/
   
+  abstract class Threither[A,B,C] extends AnyRef {
+    def isLeft : Boolean = false;
+    def isRight : Boolean = false;
+    def isMid : Boolean = false;
+  }
+  case class TLeft[A,B,C](x : A) extends Threither[A,B,C] {
+    override def isLeft : Boolean = true;
+  }
+  case class TRight[A,B,C](x : B) extends Threither[A,B,C] {
+    override def isRight : Boolean = true;
+  }
+  case class TMid[A,B,C](x : C) extends Threither[A,B,C] {
+    override def isMid : Boolean = true;
+  }
+  
+  
+  
   
   //Types: Flag, String, Int, Double
   case class ParamStr( id : String, 

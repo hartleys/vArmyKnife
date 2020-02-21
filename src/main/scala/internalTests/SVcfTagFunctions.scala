@@ -64,10 +64,15 @@ object SVcfTagFunctions {
     
     def getFinalInputType(param : String, h : SVcfHeader) : (String,String) = {
       def checkIsInt(pp : String) : Boolean = {
-        string2intOpt(pp).nonEmpty;
+        pp.split(":").forall{ p => {
+          string2intOpt(p).nonEmpty;
+        }}
       }
       def checkIsFloat(pp : String) : Boolean = {
-        string2doubleOpt(pp).nonEmpty;
+        pp.split(":").forall{ p => {
+          string2doubleOpt(p).nonEmpty;
+        }}
+        //string2doubleOpt(pp).nonEmpty;
       }
       def checkIsInfo(pp : String) : Option[SVcfCompoundHeaderLine] = {
           h.infoLines.find{ ln => {
@@ -277,16 +282,16 @@ object SVcfTagFunctions {
       Vector()
     }
     def get(v : SVcfVariantLine) : Option[Vector[String]] = if(inputType == "CONST"){
-      reportln("param:"+param+"/inputType:"+inputType+" RETURNS SOME("+x+")","deepDebug");
+      //reportln("param:"+param+"/inputType:"+inputType+" RETURNS SOME("+x+")","deepDebug");
       Some(x);
     } else if(inputType == "INFO"){
-      reportln("param:"+param+"/inputType:"+inputType,"deepDebug");
+      //reportln("param:"+param+"/inputType:"+inputType,"deepDebug");
       v.info.getOrElse( param, None).map{ z => {
-        reportln(">     "+z,"deepDebug");
+        //reportln(">     "+z,"deepDebug");
         z.split(",").toVector;
       }}
     } else {
-      reportln("param:"+param+"/inputType:"+inputType+" RETURNS NONE","deepDebug");
+      //reportln("param:"+param+"/inputType:"+inputType+" RETURNS NONE","deepDebug");
       None
     }
   }
@@ -681,6 +686,80 @@ object SVcfTagFunctions {
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
+              id = "DECODE",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO_String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "decoder", ty = "String",req=true,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params,pv,h)
+              
+              val decoder = getLines(pv(1)).map{ s => s.split("\t") }.map{ ss => (ss(0),ss(1)) }.toVector.toMap;
+              
+              def run(vc : SVcfOutputVariantLine){
+                
+                /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector.sorted.mkString(",")*/
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+                //error("NOT YET IMPLEMENTED!");
+                val out = vc.info.getOrElse(pv(0).drop(5),None).map{ vv => {
+                  vv.split(",").map{ vvv => { decoder.getOrElse(vvv,vvv) }}.padTo(1,".").mkString(",")
+                }}.getOrElse(".");
+                writeString(vc,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "PICK.RANDOM",synon = Seq(),
+              shortDesc = "",
+              desc = "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = "String";
+              override val outNum = ".";
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              //val rand = pv.lift(1).map{ s => {
+              //  new scala.util.Random(string2long(s))
+              //}}.getOrElse( new scala.util.Random() )
+              val rand =  new scala.util.Random()
+              def run(vc : SVcfOutputVariantLine){
+                
+                val outUnion = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector
+                if(outUnion.length > 0){
+                  val out = outUnion( rand.nextInt( outUnion.length ) )
+                  writeString(vc,out)
+                } else {
+                  writeString(vc,".")
+                }
+                
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
               id = "SETS.INTERSECT",synon = Seq(),
               shortDesc = "",
               desc = "Input should be a series of Info fields, specified as INFO:tagID, or set constants delimited with colons. "+
@@ -707,6 +786,36 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "SETS.DIFF",synon = Seq(),
+              shortDesc = "",
+              desc = "Input should be a pair of sets that are either INFO fields specified as INFO:tagID or a constant set delimited with colons."+
+                     "Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "String|INFO_String|INT|FLOAT|INFO_Int|INFO_Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = "String";
+              override val outNum = ".";
+              val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ case (tt,tp,pp,pv) => VcfTagFunctionParamReader_StringSeq(pv,tt)}
+              def run(vc : SVcfOutputVariantLine){
+                val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
+                  soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
+                }}.toVector.sorted.mkString(",")
+                writeString(vc,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "SETS.UNION",synon = Seq(),
@@ -737,7 +846,7 @@ object SVcfTagFunctions {
                 val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
                   soFar ++ curr.get(vc).getOrElse(Vector()).toSet
                 }}.toVector.sorted.mkString(",")
-                reportln("SETS.UNION.run:"+out,"deepDebug");
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
 
                 writeString(vc,out)
               }
