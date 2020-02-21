@@ -260,6 +260,26 @@ object VcfAnnotateTX {
 
          ))
        ),
+       ParamStrSet("calcBurdenCountsByGroups" ,  desc = "", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
+              ParamStr(id = "groups",synon=Seq(),ty="String",valueString="k",desc="",req=true),
+
+              ParamStr(id = "snpEffAnnField",synon=Seq(),ty="String",valueString="k",desc="NOT IMPLEMENTED",req=false),
+              ParamStr(id = "snpEffGeneField",synon=Seq(),ty="String",valueString="k",desc="NOT IMPLEMENTED",req=false),
+              ParamStr(id = "snpEffVariantTypes",synon=Seq(),ty="String",valueString="k",desc="NOT IMPLEMENTED",req=false),
+              //
+              ParamStr(id = "expr",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "sampleSet",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="k",desc="",req=false),
+              
+           COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
+           
+           ParamStr(id = "countFileID",synon=Seq(),ty="String",valueString="k",desc="If multiple output count files are desired, you can specify which functions output to which count file using this parameter. Note that each file must be created using a --burdenCountsFile parameter, with the form fileID:/path/to/file.txt",req=false)
+
+         ))
+       ),
+       
        ParamStrSet("calcBurdenMatrix" ,  desc = "....", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
@@ -2162,7 +2182,9 @@ object VcfAnnotateTX {
      * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
      */
     
-    
+            val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, None, superGroupList);
 
             def getMergeBooleanTags(mbt : String) : SVcfWalker = {
               val cells : Array[String] = mbt.split(",")
@@ -3331,6 +3353,15 @@ object VcfAnnotateTX {
                 }}
               )
                
+              /*
+               * sampleToGroupMap,groupToSampleMap,groups
+               */
+              val (a,b,c) = if( params.get("groupFile") == groupFile & params.get("superGroupList") == superGroupList ){
+                (sampleToGroupMap,groupToSampleMap,groups)
+              } else { 
+                  getGroups(params.get("groupFile"), None, params.get("superGroupList"));
+              }
+              
               Some(new calcBurdenMatrixWalker(tagID=params("mapID"),
                   geneTag=params("geneTag"),
                   filterExpressionString=params.getOrElse("expr","TRUE"),
@@ -3338,9 +3369,7 @@ object VcfAnnotateTX {
                   sampGroup=params.get("group"),
                   gtTag=params("inputGT"), 
                   outfile=params("outfile"), 
-                  groupFile = params.get("groupFile"), 
-                  groupList = None, 
-                  superGroupList  = params.get("superGroupList"),
+                   sampleToGroupMap=a,groupToSampleMap=b,groups=c,
                   geneList = geneList,
                   pathwayList = params.get("pathwayList").map{ g => g.split("[,]").toSeq }.getOrElse(Seq()),
                   printFullGeneList = params.isSet("printFullGeneList")
@@ -3370,7 +3399,11 @@ object VcfAnnotateTX {
               if(! burdenWriterMap.contains(writerID)){
                 error("Error: countfile not specified! You must specify a countfile using --burdenCountsMap ("+writerID+")");
               }
-               
+              val (a,b,c) = if( params.get("groupFile") == groupFile & params.get("superGroupList") == superGroupList ){
+                (sampleToGroupMap,groupToSampleMap,groups)
+              } else { 
+                  getGroups(params.get("groupFile"), None, params.get("superGroupList"));
+              }
               Some(new calcBurdenCountsWalker(tagID=params("mapID"),
                   geneTag=params("geneTag"),
                   filterExpressionString=params.getOrElse("expr","TRUE"),
@@ -3378,9 +3411,7 @@ object VcfAnnotateTX {
                   sampGroup=params.get("group"),
                   gtTag=params("inputGT"), 
                   out=burdenWriterMap( writerID ), 
-                  groupFile = params.get("groupFile"), 
-                  groupList = None, 
-                  superGroupList  = params.get("superGroupList")))
+                  sampleToGroupMap=a,groupToSampleMap=b,groups=c))
 
                 /*
                  * 
@@ -3393,6 +3424,25 @@ object VcfAnnotateTX {
               val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
               new calcBurdenCountsWalker(tagID=tagID,geneTag=geneTag,filterExpressionString=filterExpressionString,sampSubset=sampSubset,sampGroup=sampGroup,gtTag=gtTag, out=burdenWriter.get, groupFile = groupFile, groupList = None, superGroupList  = superGroupList)
                 */
+             } else if(mapType == "calcBurdenCountsByGroups"){
+               
+              val writerID = params.getOrElse("countFileID","");
+              if(! burdenWriterMap.contains(writerID)){
+                error("Error: countfile not specified! You must specify a countfile using --burdenCountsMap ("+writerID+")");
+              }
+              val (a,b,c) = if( params.get("groupFile") == groupFile & params.get("superGroupList") == superGroupList ){
+                (sampleToGroupMap,groupToSampleMap,groups)
+              } else { 
+                  getGroups(params.get("groupFile"), None, params.get("superGroupList"));
+              }
+              Some(new calcBurdenCountsSetWalker(tagID=params("mapID"),
+                  geneTag=params("geneTag"),
+                  filterExpressionString=params.getOrElse("expr","TRUE"),
+                  sampGroups=params("groups").split(",").toSeq,
+                  gtTag=params("inputGT"), 
+                  out=burdenWriterMap( writerID ), 
+                  sampleToGroupMap=a,groupToSampleMap=b,groups=c))
+                  
              } else {
                 error("variantMapFunction TYPE: \""+mapType+"\" DOES NOT EXIST!");
                 None
@@ -3640,33 +3690,8 @@ SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
         ) ++ (
                 //calcBurdenCounts : List[String] = List[String](),
                // burdenCountsFile : Option[String] = None
-            
+            /*
             calcBurdenCounts.map{ cbc => {
-                /*
-    val params = paramString.split(",");
-    val tagID = params(0);
-    def walkerName : String = "GenerateBurdenTable."+tagID;
-    val geneTag = params(1);
-    //val outfile = params(2);
-    val filterExpressionString = params.find( pp => pp.startsWith("keepVariantsExpression=")).map{pp => pp.drop( "keepVariantsExpression=".length )}.getOrElse("TRUE");
-    val sampSubset = params.find( pp => pp.startsWith("samples=")).map{pp => pp.drop( "samples=".length ).split("[|]").toSet};
-    val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
-
-    val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
-
-    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
-
- // class generateBurdenMatrix(paramString : String, out : WriterUtil, 
- //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
-
-  
-     class calcBurdenCountsWalker( tagID : String, out : WriterUtil,
-                                   geneTag : String,
-                                   filterExpressionString : String,
-                                   sampSubset : Option[String],
-                                   sampGroup :  Option[String],
-                                   groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { */
-              
               val params = cbc.split(",");
               val tagID = params(0);
               val geneTag = params(1);
@@ -3675,7 +3700,8 @@ SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
               val sampGroup  = params.find( pp => pp.startsWith("group=")).map{pp => pp.drop( "group=".length )}
               val gtTag = params.find( pp => pp.startsWith("gtTag=")).map{pp => pp.drop( "gtTag=".length )}.getOrElse("GT");
               new calcBurdenCountsWalker(tagID=tagID,geneTag=geneTag,filterExpressionString=filterExpressionString,sampSubset=sampSubset,sampGroup=sampGroup,gtTag=gtTag, out=burdenWriterMap(""), groupFile = groupFile, groupList = None, superGroupList  = superGroupList)
-            }}
+            }}*/
+            Seq[SVcfWalker]()
         ) ++ (
             if(addVariantIdx.isDefined){
                 val (tagString,idxPrefix) = (addVariantIdx.get.split(",").head, addVariantIdx.get.split(",").lift(1) )

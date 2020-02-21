@@ -2148,15 +2148,121 @@ object SVcfWalkerUtils {
  //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
 
   
-  
-  
+  /*
+   *             val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, None, superGroupList);
+   * 
+   */
+
+     class calcBurdenCountsSetWalker( tagID : String, out : WriterUtil,
+                                   geneTag : String,
+                                   filterExpressionString : String,
+                                   sampGroups :  Seq[String], 
+                                   gtTag : String,
+                                   sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
+                                   groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
+                                   groups : Vector[String]) extends internalUtils.VcfTool.SVcfWalker {
+
+    def walkerName : String = "GenerateBurdenTable."+tagID;
+    val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
+
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagID",tagID),
+        ("filterExpressionString",filterExpressionString),
+        ("gtTag",gtTag)
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+       checkSVcfFilterLogicParse( filterLogic = filterExpr, vcfHeader = vcfHeader );
+
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",newTag,Number="1",Type="Float",desc=desc.getOrElse("Simple ratio between fields "+nTag+" and "+dTag+".")));
+      //val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      //if( overwriteInfos.nonEmpty ){
+      //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      //}
+      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) ) 
+      val burdenMatrix = new scala.collection.mutable.AnyRefMap[String,Array[Int]]()
+      val varCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
+      val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
+      val fullSampList =  vcfHeader.titleLine.sampleList
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        if(filterExpr.keep(v)){
+          val geneList = v.info.get(geneTag).getOrElse(None).map{a => a.split(",")}.getOrElse( new Array[String](0) );
+          //geneList.foreach{ g => {
+            val cts = geneList.map{ g => {
+              burdenMatrix.getOrElseUpdate(g,
+                 new Array[Int]( outHeader.titleLine.sampleList.length )
+              )
+            }}
+            notice("genelist found: \""+geneList.mkString("/")+"\"","GENELIST_FOUND",25);
+            var numAlt = 0;
+            v.genotypes.getGtTag(gtTag).map{ gta => {
+              gta.indices.foreach{ sampIdx => {
+                val gt = gta(sampIdx);
+                //notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
+                if( gt.split("[|/]").contains("1")){
+                  //notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
+                  numAlt = numAlt + 1;
+                  cts.map{ ctsCurr => {
+                    ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
+                  }}
+                  geneList.foreach{g => {
+                    val altCt =  altCounts.getOrElse(g,0);
+                    altCounts.update(g,altCt + 1);
+                  }}
+                }
+              }}
+            }}
+            if(numAlt > 0){
+                  geneList.foreach{g => {
+                    val altCt =  varCounts.getOrElse(g,0);
+                    varCounts.update(g,altCt + 1);
+                  }}
+            }
+        }
+        vc
+      }}, closeAction = (() => {
+        //val out = openWriter(outfile);
+        
+        val groupSampSet = sampGroups.map{ g =>{
+          groupToSampleMap.getOrElse(g, {
+            error("sample group "+g+" not found!")
+            Set[String]();
+          });
+        }}
+        
+        groupSampSet.zip(sampGroups).foreach{ case (gss,grp) => {
+          out.write("#counts\t"+tagID+"/"+grp+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"grp="+grp+"\n");
+          reportln("#counts\t"+tagID+"/"+grp+"gtTag="+gtTag+"\t"+"filter="+filterExpressionString+"\t"+"grp="+grp,"note")
+          burdenMatrix.keys.toVector.sorted.foreach{ g => {
+            val mtr = burdenMatrix(g).zip(fullSampList).filter{ case (ct,ss) => gss.contains(ss) }.map{ case (ct,ss) => ct}
+            val altCt = mtr.sum
+            val varCt = varCounts(g);
+            out.write(tagID +"/"+grp+ "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+          }}
+        }}
+        
+        //out.close();
+        //burdenMatrix.keys.toVector.sorted
+      })),outHeader)
+      
+    }
+  }
   
      class calcBurdenCountsWalker( tagID : String, out : WriterUtil,
                                    geneTag : String,
                                    filterExpressionString : String,
                                    sampSubset : Option[Set[String]],
                                    sampGroup :  Option[String], gtTag : String,
-                                   groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
+                                   sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
+                                   groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
+                                   groups : Vector[String]) extends internalUtils.VcfTool.SVcfWalker { 
     /*
     val params = paramString.split(",");
     val tagID = params(0);
@@ -2172,9 +2278,6 @@ object SVcfWalkerUtils {
     val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
      */
     def walkerName : String = "GenerateBurdenTable."+tagID;
-    val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
-                           scala.collection.mutable.AnyRefMap[String,Set[String]],
-                           Vector[String]) = getGroups(groupFile, groupList, superGroupList);
     val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
 
     
@@ -2279,15 +2382,15 @@ object SVcfWalkerUtils {
                                    filterExpressionString : String,
                                    sampSubset : Option[Set[String]],
                                    sampGroup :  Option[String], gtTag : String,
-                                   groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String],
+                                   sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
+                                   groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
+                                   groups : Vector[String],
                                    geneList : Option[Seq[String]], pathwayList : Seq[String],
                                    printFullGeneList : Boolean
      ) extends internalUtils.VcfTool.SVcfWalker {
 
     def walkerName : String = "GenerateBurdenMatrix."+tagID;
-    val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
-                           scala.collection.mutable.AnyRefMap[String,Set[String]],
-                           Vector[String]) = getGroups(groupFile, groupList, superGroupList);
+
     val filterExpr : SFilterLogic[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser.parseString( filterExpressionString )
 
     
@@ -14471,6 +14574,42 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
 
   
   
+
+  //checkSVcfFilterLogicParse[A]( filterLogic : SFilterLogic[A], vcfHeader : SVcfHeader )
+  case class VcfSimpleExpressionTag(expr : String, tagID : String, tagDesc : String) extends SVcfWalker {
+
+    def walkerName : String = "VcfExpressionTag."+tagID;
+    def walkerParams : Seq[(String,String)]= Seq[(String,String)](
+        ("expr","\""+expr+"\""),
+        ("tagID","\""+tagID+"\""),
+        ("tagDesc","\""+tagDesc+"\"")
+    )
+
+    val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+    val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
+    //val parser = internalUtils.VcfTool.SVcfFilterLogicParser();
+    //val filter = parser.parseString(filterExpr);
+    reportln("Parsed filter:\n   "+filter.printTree(),"note");
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+       val outHeader = vcfHeader.copyHeader;
+       initNotice("TAGGED_"+tagID+"_0")
+       initNotice("TAGGED_"+tagID+"_1")
+       
+       checkSVcfFilterLogicParse( filterLogic = filter, vcfHeader = vcfHeader );
+           outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number = "1", Type="Integer",desc=tagDesc).addWalker(this));
+           outHeader.addWalk(this);
+            outHeader.reportAddedInfos(this)
+           (vcMap(vcIter){ vc => {
+             val vb = vc.getOutputLine();
+             val k = if(filter.keep(vc)) "1" else "0";
+             notice(tagID+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+tagID+"_"+k,1);
+             vb.addInfo(tagID,k);
+             vb
+           }}, outHeader)
+
+    }
+  }
 
   
 }

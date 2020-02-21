@@ -2947,12 +2947,12 @@ object VcfTool {
       if(str == "("){
         val closeIdx = findMatchedParenIdx(strs);
         val parenStr = strs.take(closeIdx).tail.init;
-        parseDebugReport("Entering Parenthetical: [\"" + parenStr.mkString("\",\"") + "\"]" + " with remainder: [\"" + strs.drop(closeIdx).mkString("\",\"")+"\"]");
+        //parseDebugReport("Entering Parenthetical: [\"" + parenStr.mkString("\",\"") + "\"]" + " with remainder: [\"" + strs.drop(closeIdx).mkString("\",\"")+"\"]");
         parseLogicFunc(parseStringArray(parenStr),strs.drop(closeIdx));
       } else if(str == "NOT"){
         SFilterNOT[A](parseStringArray(strs.tail));
       } else { //if(strs.head.startsWith("FILT:")) {
-        parseDebugReport("Parsing Binary: [" + strs.head +"]");
+        //parseDebugReport("Parsing Binary: [" + strs.head +"]");
         parseLogicFunc(parseFilter(strs.head),strs.drop(1));
       } //else {
         //null;
@@ -3619,7 +3619,7 @@ object VcfTool {
                       ),
                       
                       
-        FilterFunction(funcName="AnyGtPass", numParam = -1,desc="PASS iff any one of the samples pass the supplied GT filter.",paramNames=Seq("simpleGtFiltExpression","k1","..."),paramTypes=Seq("geno","String"),
+        FilterFunction(funcName="AnyGtPass", numParam = -1,desc="PASS iff any one of the samples pass the supplied GT filter.",paramNames=Seq("simpleGtFiltExpression","k1","..."),paramTypes=Seq("String","String"),
                         (params : Seq[String]) => {
                           val gtFiltName = params.head;
                           val gtParams = params.tail;

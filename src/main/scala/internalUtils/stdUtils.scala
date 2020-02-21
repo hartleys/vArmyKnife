@@ -120,7 +120,7 @@ object stdUtils {
       rawParams.contains(pid);
     }
     def set(paramID : String, paramValue : String){
-      reportln("Setting param: "+paramID+" for fcn "+pss.mapType,"debug")
+      //reportln("Setting param: "+paramID+" for fcn "+pss.mapType,"debug")
       rawParams = rawParams.updated(paramID, ( pss.paramMap(paramID),Some(paramValue) )  )
     }
     def isSet(paramID : String) : Boolean = {
