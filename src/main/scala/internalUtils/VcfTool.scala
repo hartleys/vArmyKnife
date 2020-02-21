@@ -3600,6 +3600,52 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="CHROM.inAnyOf",numParam = -1,desc="True iff the variant is one one of the given chromosomes",paramNames=Seq("chrX","..."),paramTypes=Seq("String","String"),
+                        (params : Seq[String]) => {
+                          //val tag = params(0);
+                          val v = params.toSet;
+                          (a : SVcfVariantLine) => {
+                            v.contains( a.chrom );
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="LOCUS.eq",numParam=2,desc="True if the variant is at the given chromosome and position",paramNames=Seq("chrom","pos"),paramTypes=Seq("String","number"),
+                        (params : Seq[String]) => {
+                          val chrom = params.head;
+                          val pos = string2int(params(1));
+                          (a : SVcfVariantLine) => {
+                            a.chrom == chrom && a.pos == pos;
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="LOCUS.range",numParam=3,desc="True if the variant is at the given chromosome and between the given positions (0-based)",paramNames=Seq("chrom","from","to"),paramTypes=Seq("String","number"),
+                        (params : Seq[String]) => {
+                          val chrom = params.head;
+                          val pfrom = string2int(params(1));
+                          val pto   = string2int(params(2));
+                          (a : SVcfVariantLine) => {
+                            a.chrom == chrom && a.pos >= pfrom && a.pos < pto;
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="POS.inAnyOf",numParam = -1,desc="True iff the variant is at one of the given positions",paramNames=Seq("pos1","..."),paramTypes=Seq("String","String"),
+                        (params : Seq[String]) => {
+                          val v = params.map{ss => string2int(ss)}.toSet;
+                          (a : SVcfVariantLine) => {
+                            v.contains( a.pos );
+                          }
+                        }
+                      ),
+        FilterFunction(funcName="POS.gt",numParam=1,desc="True iff the variant is at a position greater than the given position",paramNames=Seq("pos"),paramTypes=Seq("number"),
+                        (params : Seq[String]) => {
+                          val v = string2int(params.head);
+                          (a : SVcfVariantLine) => {
+                            v < a.pos;
+                          }
+                        }
+                      ),
+                      
+                      
         FilterFunction(funcName="GTAG.any.gt", numParam = -1,desc="PASS iff any one of the samples have a value for their genotype-tag entry greater than k.",paramNames=Seq("gtTag","k"),paramTypes=Seq("geno","number"),
                         (params : Seq[String]) => {
                           val gtTag = params.head;

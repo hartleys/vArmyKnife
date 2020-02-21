@@ -30,7 +30,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 2.2.302 (Updated Tue Nov 26 09:46:42 EST 2019)</p>
+  <p>Version 2.2.305 (Updated Mon Dec  2 11:32:33 EST 2019)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -1252,6 +1252,12 @@ expression returns FALSE.</p>
   <p>PASS iff any one of the samples pass the supplied GT filter.</p>
 </blockquote>
 
+<h4>CHROM.inAnyOf:chrX:...</h4>
+
+<blockquote>
+  <p>True iff the variant is one one of the given chromosomes</p>
+</blockquote>
+
 <h4>FALSE:</h4>
 
 <blockquote>
@@ -1472,6 +1478,30 @@ expression returns FALSE.</p>
 
 <blockquote>
   <p>PASS iff the INFO-field t1 and t2 are both found on a given line but are not equal.</p>
+</blockquote>
+
+<h4>LOCUS.eq:chrom:pos</h4>
+
+<blockquote>
+  <p>True if the variant is at the given chromosome and position</p>
+</blockquote>
+
+<h4>LOCUS.range:chrom:from:to</h4>
+
+<blockquote>
+  <p>True if the variant is at the given chromosome and between the given positions (0-based)</p>
+</blockquote>
+
+<h4>POS.gt:pos</h4>
+
+<blockquote>
+  <p>True iff the variant is at a position greater than the given position</p>
+</blockquote>
+
+<h4>POS.inAnyOf:pos1:...</h4>
+
+<blockquote>
+  <p>True iff the variant is at one of the given positions</p>
 </blockquote>
 
 <h4>QUAL.gt:k</h4>

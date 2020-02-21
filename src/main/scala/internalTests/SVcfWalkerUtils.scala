@@ -6361,7 +6361,7 @@ object SVcfWalkerUtils {
       (vcIter,outHeader)
       
     }
-  }
+  } 
   
   
   class CmdFilterTags extends CommandLineRunUtil {

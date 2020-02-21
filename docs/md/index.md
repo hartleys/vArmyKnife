@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 2.2.302 (Updated Tue Nov 26 09:46:42 EST 2019)
+> Version 2.2.305 (Updated Mon Dec  2 11:32:33 EST 2019)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1001,6 +1001,10 @@ expression returns FALSE\.
 
 > PASS iff any one of the samples pass the supplied GT filter\.
 
+#### CHROM\.inAnyOf:chrX:...
+
+> True iff the variant is one one of the given chromosomes
+
 #### FALSE:
 
 > Never pass
@@ -1148,6 +1152,22 @@ expression returns FALSE\.
 #### INFO\.tagsMismatch:t1:t2
 
 > PASS iff the INFO\-field t1 and t2 are both found on a given line but are not equal\.
+
+#### LOCUS\.eq:chrom:pos
+
+> True if the variant is at the given chromosome and position
+
+#### LOCUS\.range:chrom:from:to
+
+> True if the variant is at the given chromosome and between the given positions \(0\-based\)
+
+#### POS\.gt:pos
+
+> True iff the variant is at a position greater than the given position
+
+#### POS\.inAnyOf:pos1:...
+
+> True iff the variant is at one of the given positions
 
 #### QUAL\.gt:k
 

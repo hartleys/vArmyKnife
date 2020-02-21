@@ -36,6 +36,9 @@
     AnyGtPass:simpleGtFiltExpression:k1:\.\.\.
     PASS iff any one of the samples pass the supplied GT filter\.
     \(Param Types: String:String:\.\.\.\)
+    CHROM\.inAnyOf:chrX:\.\.\.
+    True iff the variant is one one of the given chromosomes
+    \(Param Types: String:String:\.\.\.\)
     FALSE:
     Never pass
     \(Param Types: \)
@@ -173,6 +176,20 @@
     PASS iff the INFO\-field t1 and t2 are both found on a given 
     line but are not equal\.
     \(Param Types: info:info\)
+    LOCUS\.eq:chrom:pos
+    True if the variant is at the given chromosome and position
+    \(Param Types: String:number\)
+    LOCUS\.range:chrom:from:to
+    True if the variant is at the given chromosome and between the 
+    given positions \(0\-based\)
+    \(Param Types: String:number\)
+    POS\.gt:pos
+    True iff the variant is at a position greater than the given 
+    position
+    \(Param Types: number\)
+    POS\.inAnyOf:pos1:\.\.\.
+    True iff the variant is at one of the given positions
+    \(Param Types: String:String:\.\.\.\)
     QUAL\.gt:k
     PASS iff the QUAL column is greater than k\.
     \(Param Types: String\)
