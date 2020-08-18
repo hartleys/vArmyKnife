@@ -115,7 +115,7 @@ object SVcfWalkerMain {
                         sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
                         sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +
                         altCommandDocMd.map{ acm => {
-                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "", false) 
                         }}.mkString("\n");
 
      /*

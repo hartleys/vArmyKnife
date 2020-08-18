@@ -677,14 +677,15 @@ object SVcfMapFunctions {
                                                                "that they appear in the command line, after all other operations have been carried out (excluding output ops)."+
                                                                "",
                                                                "Basic Syntax:",
-                                                               "    --FCN functionName|ID|param1=p1|param2=p2|..."), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+                                                               "    --FCN functionName|ID|param1=p1|param2=p2|..."), level = 2, indentTitle = 0, indentBlock = 2, indentFirst = 2),
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2)
    ) ++ MAP_FUNCTIONS.flatMap{ case (fcnID,mf) => {
-      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID +": "+mf.desc ),
-                                                   lines = Seq(), level = 3, indentTitle = 4, indentBlock = 12, indentFirst=4)
+      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID ),subtitle = Some(mf.desc),
+                                                   lines = Seq(), level = 3, indentTitle = 4, indentBlock = 12, indentFirst=4, 
+                                                   mdCaret=true,mdBold=true)
       Seq(fcnTitleLine) ++ mf.pp.filter{ pp => ! pp.hidden }.map{ pp => {
-        internalUtils.commandLineUI.UserManualBlock(lines = Seq("-"+pp.id+": "+
+        internalUtils.commandLineUI.UserManualBlock(lines = Seq(""+pp.id+": "+
                                                             pp.desc +"("+pp.ty+""+ { if(pp.req){
                                                               ", required)"
                                                             } else {
@@ -695,8 +696,8 @@ object SVcfMapFunctions {
                                                                    ", default="+dfv+")"
                                                                  }}.getOrElse(")")
                                                               )
-                                                            }}), indentTitle = 4, indentBlock = 12, indentFirst=8)
-      }}.padTo(1,internalUtils.commandLineUI.UserManualBlock(lines = Seq("(This function takes no parameters)"), indentTitle = 4, indentBlock = 12, indentFirst=8))
+                                                            }}), indentTitle = 4, indentBlock = 12, indentFirst=8,mdCaret=true)
+      }}.padTo(1,internalUtils.commandLineUI.UserManualBlock(lines = Seq("(This function takes no parameters)"), indentTitle = 4, indentBlock = 12, indentFirst=8,mdCaret=true))
    }}
      
    def MAPFUNCTIONS_getBlockStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {

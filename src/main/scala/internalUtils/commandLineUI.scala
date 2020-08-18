@@ -9,15 +9,19 @@ import internalUtils.stdUtils._;
 object commandLineUI {
 
   case class UserManualBlock( lines : Seq[String],
-                              title : Option[String] = None, 
+                              title : Option[String] = None, subtitle : Option[String] = None,
                               level : Int = 1, isCodeBlock : Boolean = true,
                               indentTitle : Int = 4, indentBlock : Int = 8, 
                               indentFirst:Int= 8, 
-                              titleIndentChar : String = " ", firstLineIndentChar : String = " ", indentChar : String = " "){
+                              titleIndentChar : String = " ", firstLineIndentChar : String = " ", indentChar : String = " ",
+                              mdCaret : Boolean = false,
+                              mdBold : Boolean = false){
     def mdBlockIndent = if(isCodeBlock) 4 else 0;
     def getBlockString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
                        baseIndent : Int = 0) : String = {
-      title.map{ t => "\n"+repString(titleIndentChar,baseIndent + indentTitle)+t }.getOrElse("") + lines.zipWithIndex.map{ case (line,i) => {
+      title.map{ t => "\n"+repString(titleIndentChar,baseIndent + indentTitle)+t }.getOrElse("") + 
+        subtitle.map{ t => ": "+t }.getOrElse("") + 
+        lines.zipWithIndex.map{ case (line,i) => {
         //wrapLineWithIndent(line,lineLen,4)
         wrapSimpleLineWithIndent_staggered(line, width = lineLen, 
                                            indent = repString(indentChar,baseIndent + indentBlock), 
@@ -34,10 +38,23 @@ object commandLineUI {
     }
     def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
                           baseLevel : Int = 0) : String = {
-      title.map{ tx => "\n"+repString("#",baseLevel + level)+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + lines.map{line => {
-        //wrapLineWithIndent(escapeToMarkdown(line),lineLen, mdBlockIndent );
-        escapeToMarkdown(line)
+      val LPrefS = if(mdCaret) "> " else "";
+      val LPrefE = if(mdCaret) "\n" else "";
+      //val TLn = title.map{ tx => "\n"+repString("#",baseLevel + level)+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") 
+      
+      title.map{ tx => "\n"+repString("#",baseLevel + level)+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + 
+      subtitle.map{ tx => "> "+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + 
+        lines.zipWithIndex.map{ case (line,i) => {
+        //wrapLineWithIndent(line,lineLen,4)
+        wrapSimpleLineWithIndent_staggered(line, width = lineLen, 
+                                           indent = repString(" ",8), 
+                                           firstLineIndent = repString(" ",4));
       }}.mkString("\n");
+      
+      /*lines.map{line => {
+        //wrapLineWithIndent(escapeToMarkdown(line),lineLen, mdBlockIndent );
+        LPrefS+escapeToMarkdown(line)+LPrefE
+      }}.mkString("\n");*/
     }
     
   }

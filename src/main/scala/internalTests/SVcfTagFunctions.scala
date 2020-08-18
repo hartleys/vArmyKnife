@@ -2045,7 +2045,7 @@ object SVcfTagFunctions {
                                                               ""
                                                             } else {
                                                               "(Optional) "
-                                                            }}+"("+pp.ty+") "+pp.desc ), indentTitle = 4, indentBlock = 12, indentFirst=10)
+                                                            }}+"("+pp.ty+") "+pp.desc ), indentTitle = 4, indentBlock = 12, indentFirst=10,mdCaret=true)
       }}
    }}
    

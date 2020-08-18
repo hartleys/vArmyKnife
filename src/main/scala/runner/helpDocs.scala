@@ -160,11 +160,11 @@ object helpDocs {
       sb.append("\n");
       
       sb.append("GENERAL SYNTAX:\n\n");
-      sb.append("    varmyknife [java_options] "+" [options] infile outfile"+"\n");
+      sb.append("    varmyknife [java_options] walkVcf"+" [options] infile outfile"+"\n");
       sb.append("    OR"+"\n");
-      sb.append("    varmyknife [java_options] "+" [options] infile - > outfile"+"\n");
+      sb.append("    varmyknife [java_options]  walkVcf"+" [options] infile - > outfile"+"\n");
       sb.append("    OR"+"\n");
-      sb.append("    varmyknife [java_options] "+"--CMD commandName"+" [options]"+"\n");
+      sb.append("    varmyknife [java_options]  command"+" [options]"+"\n");
 
       sb.append("\n");
       
