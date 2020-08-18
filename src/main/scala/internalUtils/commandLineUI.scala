@@ -273,15 +273,26 @@ List(
       runner.runner.RUNNER_EXECUTION_ENDTIME_STRING = Some(runner.runner.RUNNER_EXECUTION_ENDTIME_DATE.get.toString());
       runner.runner.RUNNER_EXECUTION_ENDTIME_SIMPLESTRING = Some(internalUtils.stdUtils.getDateAndTimeStringFromDate(runner.runner.RUNNER_EXECUTION_ENDTIME_DATE.get));
 
-      
+      reportln("Closing logfiles and logstreams...","note")
       this.get[Option[String]]("tallyFile").foreach{ tt => {
           val w = fileUtils.openWriter(tt)
-          
+          reportln("Writing tallyfile: \""+tt+"\"","note")
           getWarningAndNoticeTalliesTable("\t").foreach{ss => {
             w.write(ss+"\n")
           }}
+          
           w.close();
       }}
+      
+      if( internalUtils.optionHolder.OPTION_VERBOSE ){
+          reportln("<--> NOTICES <-->","note")
+          getWarningAndNoticeTalliesTable("\t").foreach{ss => {
+            reportln(ss,"debug")
+          }}
+          reportln("<--> NOTICES <-->","note")
+
+      }
+      
       this.get[Option[String]]("successfulCompletionFile") match {
         case Some(f) => {
             val runtimesec = (runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS - runner.runner.RUNNER_EXECUTION_ENDTIME_MILLIS.getOrElse(runner.runner.RUNNER_EXECUTION_STARTTIME_MILLIS)) / 1000000;

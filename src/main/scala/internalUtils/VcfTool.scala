@@ -1110,11 +1110,16 @@ object VcfTool {
     }
     
     def readVcf(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfInputVariantLine]) = {
+      reportln("     readVcf() init: buffering lines ... ("+getDateAndTimeString+")","debug")
       val bufLines = lines.buffered;
+      reportln("     readVcf() init: lines buffered, extracting header lines... ("+getDateAndTimeString+")","debug")
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      reportln("     readVcf() init: headerlines extracted, processing header... ("+getDateAndTimeString+")","debug")
       val header = readVcfHeader(allRawHeaderLines);
-      
+      reportln("     readVcf() iterator initialized... ("+getDateAndTimeString+")","debug")
+
       val variantLines = if(withProgress){
+        reportln("     readVcf() adding progress reporting... ("+getDateAndTimeString+")","debug")
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
                            bufLines.map(line => SVcfInputVariantLine(line)), 
@@ -1124,10 +1129,11 @@ object VcfTool {
                            )
                          )
       } else {
+        reportln("     readVcf() skipping progress reporting... ("+getDateAndTimeString+")","debug")
         //rawVariantLines.map(line => SVcfInputVariantLine(line,header))
         bufLines.map(line => SVcfInputVariantLine(line))
       }
-      
+      reportln("     readVcf() done... ("+getDateAndTimeString+")","debug")
       (header,variantLines);
     }
     
@@ -1151,14 +1157,16 @@ object VcfTool {
     }
     
     def readVcfHeader(lines : Seq[String]) : SVcfHeader = {
+      reportln("     readVcfHeader() init ... ("+getDateAndTimeString+")","debug")
       var infoLines = Seq[SVcfCompoundHeaderLine]();
       var formatLines = Seq[SVcfCompoundHeaderLine]();
       var otherHeaderLines = Seq[SVcfHeaderLine]();
       var walkLines = Seq[SVcfWalkHeaderLine]();
       
+      reportln("     readVcfHeader() partitioning taglines ... ("+getDateAndTimeString+")","debug")
       val (tagLines, nonTagLines) = lines.partition(line => line.startsWith("##"));
       
-      
+      reportln("     readVcfHeader() loading metadata into memory ... ("+getDateAndTimeString+")","debug")
       tagLines.foreach(line => {
         if(line.startsWith("##INFO=")){
           infoLines = infoLines :+ makeCompoundLineFromString(line);
@@ -1173,9 +1181,9 @@ object VcfTool {
       if(nonTagLines.length != 1){
          warning("VCF header line malformed? Found multiple header rows that do not start with \"##\""+ nonTagLines.map{line => "        \""+line+"\""}.mkString("\n"),"MALFORMED_VCF_HEADER_LINE",100);
       }
-      
+      reportln("     readVcfHeader() reading table title-line ... ("+getDateAndTimeString+")","debug")
       val titleLine = SVcfTitleLine(nonTagLines.filter{_.startsWith("#CHROM")}.head.split("\t").drop(9));
-      
+      reportln("     readVcfHeader() done ... ("+getDateAndTimeString+")","debug")
       SVcfHeader(infoLines, formatLines, otherHeaderLines,walkLines, titleLine);
     }
     
@@ -2201,8 +2209,7 @@ object VcfTool {
       numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, 
       infixes : Vector[String] = Vector(),
       extractInterval : Option[String] = None) : (Iterator[SVcfVariantLine],SVcfHeader) = {
-      reportln("     SVCFiterator init... ("+getDateAndTimeString+")","debug")
-      reportln("     SVCFiterator-init: opening input files... ("+getDateAndTimeString+")","debug")
+      reportln("     getSVcfIterators() init... ("+getDateAndTimeString+")","debug")
       val indata = if(inputFileList){
         val (infilePeek,infiles) = peekIterator(getLinesSmartUnzip(infileString),1000);
         val denominator = if(infilePeek.length < 1000) infilePeek.length.toString else "???";
@@ -2222,23 +2229,27 @@ object VcfTool {
       } else {
         getLinesSmartUnzip(infileString,allowStdin=true)
       }
-      reportln("     SVCFiterator input file open... ("+getDateAndTimeString+")","debug")
+      reportln("     getSVcfIterators() input file open... ("+getDateAndTimeString+")","debug")
 
     
     val (vcfHeader,vcIter) = if(chromList.isEmpty){
+        reportln("     getSVcfIterators() input file open: reading simple VCF... ("+getDateAndTimeString+")","debug")
         SVcfLine.readVcf(indata,withProgress = withProgress)
       } else if(chromList.get.length == 1){
+        reportln("     getSVcfIterators() input file open: reading VCF + extracting single chromosome... ("+getDateAndTimeString+")","debug")
         val chrom = chromList.get.head;
         SVcfLine.readVcf(indata.filter{line => {
           line.startsWith(chrom+"\t") || line.startsWith("#")
         }},withProgress = withProgress)
       } else {
+        reportln("     getSVcfIterators() input file open: reading VCF + extracting multiple chromosomes... ("+getDateAndTimeString+")","debug")
         val chromSet = chromList.get.toSet;
         val (vh,vi) = SVcfLine.readVcf(indata,withProgress = withProgress)
         (vh,vi.filter(line => { chromSet.contains(line.chrom) }))
       }
-      
+      reportln("     getSVcfIterators() vcIter initialized... ("+getDateAndTimeString+")","debug")
       val vcIter1p5 = extractInterval.map{ ivString => {
+        reportln("     getSVcfIterators() extracting interval: \""+ivString+"\"... ("+getDateAndTimeString+")","debug")
         val cells = ivString.split("[:-]");
         val chrom = cells(0);
         val start = string2int(cells(1));
@@ -2264,13 +2275,13 @@ object VcfTool {
           }
         }
       }}.getOrElse(vcIter);
-    
+      reportln("     getSVcfIterators() vcIter1p5 initialized... ("+getDateAndTimeString+")","debug")
       val vcIter2 = if(numLinesRead.isDefined){
         vcIter1p5.take(numLinesRead.get);
       } else {
         vcIter1p5
       }
-      
+      reportln("     getSVcfIterators() done ... ("+getDateAndTimeString+")","debug")
       (vcIter2,vcfHeader);
   }
   

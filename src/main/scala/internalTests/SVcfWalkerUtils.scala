@@ -5998,6 +5998,40 @@ object SVcfWalkerUtils {
                                         
       
    
+           
+           
+ALT VERSION: allows title line!
+      groupFile match {
+        case Some(gf) => {
+          val r = getLinesSmartUnzip(gf).buffered //.drop(1);
+          val columnTitles = r.head.split("\t").tail
+          if(r.head.startsWith("#sample")){
+            report("Detected a title column in the group decoder:\n       \"" + r.head + "\"","note");
+            r.next;
+          }
+          r.foreach(line => {
+            val cells = line.split("\t");
+            if(cells.length < 2) error("ERROR: group file must have at least 1 column. the sample.ID!");
+            val sampid = cells.head
+            cells.tail.zip(columnTitles.padTo(cells.tail.length,"")).foreach{ case (c,tt) => {
+              if(c != "" && c != "."){
+                val ggg = if(c == "1" || c == "0"){
+                  tt + c
+                } else {
+                  c
+                }
+                groupToSampleMap(ggg) = groupToSampleMap(ggg) + sampid;
+                sampleToGroupMap(sampid) = sampleToGroupMap(sampid) + ggg;
+                groupSet = groupSet + ggg;
+              }
+            }}
+          })
+        }
+        case None => {
+          //do nothing
+        }
+      }
+           
                    
    */
   
@@ -6013,22 +6047,14 @@ object SVcfWalkerUtils {
       groupFile match {
         case Some(gf) => {
           val r = getLinesSmartUnzip(gf).buffered //.drop(1);
-          val columnTitles = r.head.split("\t").tail
           r.foreach(line => {
             val cells = line.split("\t");
-            if(cells.length < 2) error("ERROR: group file must have at least 2 columns. sample.ID and group.ID!");
+            if(cells.length == 0) error("ERROR: group file must have at least 1 column. the sample.ID!");
             val sampid = cells.head
-            cells.tail.zip(columnTitles).foreach{ case (c,tt) => {
-              if(c != "" && c != "."){
-                val ggg = if(c == "1" || c == "0"){
-                  tt + c
-                } else {
-                  c
-                }
+            cells.tail.filter( c => c != "" && c != "." ).foreach{ case ggg => {
                 groupToSampleMap(ggg) = groupToSampleMap(ggg) + sampid;
                 sampleToGroupMap(sampid) = sampleToGroupMap(sampid) + ggg;
                 groupSet = groupSet + ggg;
-              }
             }}
           })
         }

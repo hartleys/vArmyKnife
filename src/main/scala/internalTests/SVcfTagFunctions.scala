@@ -1046,23 +1046,35 @@ object SVcfTagFunctions {
               val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
               val grp = if( pv(1).startsWith("INFO:")) pv(1).drop(5) else pv(1);
               
+              var rct = 0;
+              var tallyfuncInt : ( (String,Int) => Unit )    = internalUtils.Reporter.tallyWithDebugReport
+              var tallyfuncDub : ( (String,Double) => Unit ) = internalUtils.Reporter.tallyWithDebugReport
+
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
-                dd match {
-                  case Left(ddi) => {
-                    val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }.sum
-                    val g = vc.info.getOrElse( grp,None).filter( z => z != "." ).toSeq.flatMap{ z => z.split(",").toSeq }
-                    g.foreach{ gg => {
-                      tally(newTag+"_"+gg,v)
-                    }}
-                  }
-                  case Right(ddf) => {
-                    val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }.sum
-                    val g = vc.info.getOrElse( grp,None).filter( z => z != "." ).toSeq.flatMap{ z => z.split(",").toSeq }
-                    g.foreach{ gg => {
-                      tally(newTag+"_"+gg,v)
-                    }}
-                  }
+                if(rct == 20){
+                  tallyfuncInt = internalUtils.Reporter.tally;
+                  tallyfuncDub = internalUtils.Reporter.tally;
                 }
+                if(rct < 20){
+                  reportln("Starting: "+dd+":","debug")
+                }
+                rct = rct + 1;
+                  dd match {
+                    case Left(ddi) => {
+                      val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }.sum
+                      val g = vc.info.getOrElse( grp,None).filter( z => z != "." ).toSeq.flatMap{ z => z.split(",").toSeq }
+                      g.foreach{ gg => {
+                        tallyfuncInt(newTag+"\t"+gg,v)
+                      }}
+                    }
+                    case Right(ddf) => {
+                      val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }.sum
+                      val g = vc.info.getOrElse( grp,None).filter( z => z != "." ).toSeq.flatMap{ z => z.split(",").toSeq }
+                      g.foreach{ gg => {
+                        tallyfuncDub(newTag+"\t"+gg,v)
+                      }}
+                    }
+                  }
               }
               def close(){
                 

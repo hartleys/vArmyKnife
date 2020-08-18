@@ -793,7 +793,7 @@ object SVcfMapFunctions {
                 ppss.setDefaults(defaultFcnParams)
                 (mapType, ppss)
            }}
-     
+      
            val svwseq : Seq[SVcfWalker] = ssseq.flatMap{ case (mapType,params) => {
              
              if(mapType == "tagVariantsExpression"){

@@ -344,6 +344,17 @@ object Reporter {
     talliesCol2.update(str,talliesCol2(str)+v2);
   }
   
+  def tallyWithDebugReport(str : String,v : Int){
+    PROGRESS_NEEDS_NEWLINE = true;
+    reportln("    Tallying str:\""+str+"\": "+ v + "/"+tallies(str),"debug");
+    tallies.update(str,tallies(str)+v);
+  }
+  def tallyWithDebugReport(str : String,v : Double){
+    PROGRESS_NEEDS_NEWLINE = true;
+    reportln("    Tallying str:\""+str+"\": "+ v + "/"+tallyFloat(str),"debug");
+    tallyFloat.update(str,tallyFloat(str)+v);
+  }
+  
   def error(str : String){
     reportln("<====== FATAL ERROR! ======>","error");
     reportln("----------------------------","error");
@@ -381,19 +392,24 @@ object Reporter {
     } else {
        Seq[String]()
     }) ++
+    (if(tallyFloat.size > 0){
+      Seq[String](indent+"Counts:")++
+      tallyFloat.keySet.toSeq.sorted.map(x => indent+subIndent+tallyFloat(x)+": "+x)
+    } else {
+       Seq[String]()
+    }) ++
     Seq[String](indent+"---------------")
   }
   def getWarningAndNoticeTalliesTable(delim : String = "\t") : Seq[String] = {
     if( talliesCol2.size > 0 ){
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)+delim+".") ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x)+delim+".")++
-      tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x)+delim+talliesCol2.getOrElse(x,"."))
+      (tallies.keySet).toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x)+delim+talliesCol2.getOrElse(x,"."))
     } else if(tallyFloat.size > 0){
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)+delim+".") ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x)+delim+".")++
-      tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallyFloat(x)+delim+tallies.getOrElse(x,"."))
+      (tallies.keySet ++ tallyFloat.keySet).toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallyFloat(x)+delim+tallies.getOrElse(x,"."))
     } else {
-    
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)) ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x))++
       tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x))
