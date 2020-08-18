@@ -51,7 +51,8 @@ object helpDocs {
   //    "<TODO>: Write description!"
   //);
   
-  case class HelpTopic( topicName : String, desc : String = "", topicManual : Seq[internalUtils.commandLineUI.UserManualBlock]){
+  case class HelpTopic( topicName : String, desc : String = "", 
+                        topicManual : Seq[internalUtils.commandLineUI.UserManualBlock]){
    def blockManual : String = topicManual.map{ umb => {
      umb.getBlockString()
    }}.mkString("\n")
@@ -63,7 +64,9 @@ object helpDocs {
   val helpTopics : Seq[HelpTopic] = Seq[HelpTopic](
       HelpTopic("MapFunctions","Functions that perform a single operation on a variant file.",internalTests.SVcfMapFunctions.MAPFUNCTIONS_USERMANUALBLOCKS),
       HelpTopic("VariantExpressions","Syntax for logical Expressions that return either true or false for a variant. Used by various other functions.",internalUtils.VcfTool.sVcfFilterLogicParser.logicManualFmt ),
-      HelpTopic("GenotypeExpressions","Syntax for logical Expressions that return either true or false for a given sample and a given variant. Used by various other functions.",internalUtils.VcfTool.sGenotypeFilterLogicParser.logicManualFmt )
+      HelpTopic("GenotypeExpressions","Syntax for logical Expressions that return either true or false for a given sample and a given variant. Used by various other functions.", internalUtils.VcfTool.sGenotypeFilterLogicParser.logicManualFmt ),
+      HelpTopic("addInfo","Syntax for functions executed using: --fcn \"addInfo|newInfoName|fcn(param1,param2,...)\"",internalTests.SVcfTagFunctions.TAGFUNCTIONS_USERMANUALBLOCKS)
+
   )
   val helpTopicMap : Map[String,HelpTopic] = helpTopics.map{ht => (ht.topicName,ht)}.toMap;
   

@@ -57,7 +57,7 @@ object SVcfMapFunctions {
      val DEFAULT_VCF_CODES = VCFAnnoCodes();
 
      val COMMON_PARAMS : Map[String,ParamStr] = Seq[ParamStr](
-           ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="genome.fasta.gz",desc="",req=true),
+           ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="genome.fasta.gz",desc="The genome fasta file containing the reference genome. This will be used by various functions that require genomic information. Note that some functions that call the GATK library will also require that the fasta be indexed. Note: Chromosome names must match.",req=true),
            ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
            ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc="See the --superGroupList parameter of walkVcf.",req=false)
                  ).map{ ps => {
@@ -86,8 +86,11 @@ object SVcfMapFunctions {
        ),
        //TAGTITLE:bufferLen:filedesc:bedfile.bed,TAGTITLE2:bufferLen:filedesc2:bedfile2.bed.gz,...
        //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
-       ParamStrSet("addInfoTag" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field.", 
-           synon = Seq("addInfo"),
+       ParamStrSet("addInfo" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field. "+
+                                          "The syntax is: --fcn \"addInfo|newTagName|fcn(param1,param2,...)\". Optionally you can add \"|desc=tag description\". "+
+                                          "There are numerous addInfo functions. For more information, go to the section on addInfo Functions below, or use the help command: "+
+                                          "varmyknife help addInfo",
+           synon = Seq("addInfoTag"),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
            ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="The description in the header line for the new INFO field.",req=false,defaultValue = Some("No desc provided")),
@@ -95,7 +98,13 @@ object SVcfMapFunctions {
            ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
          )), category = "Variant Annotation"
        ),
-       
+       ParamStrSet("tally" ,  desc = "This is a set of functions that takes various counts and totals across the whole VCF.", 
+           synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
+           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
+         )), category = "Variant Annotation"
+       ),
        
        ParamStrSet("tagBedFile" ,  desc = "This function takes a BED file (which can be gzipped if desired) and creates a new INFO field based on whether the variant locus overlaps with a "+
                                           "genomic region in the BED file. The new field can be either an integer that is equal to 1 if there is overlap and 0 otherwise (which is the default behavior) "+
@@ -117,7 +126,7 @@ object SVcfMapFunctions {
            ParamStr(id = "skipFirstRow",synon=Seq(),ty="Flag",valueString="",desc="If this parameter is set, then this tool will skip the first line on the decoder file. This is useful if you are specifying the columns using column numbers but the file also has a title line.",req=false)
          )), category = "General Conversion/Processing"
        ),
-       ParamStrSet("convertChromNames" ,  desc = "....", 
+       ParamStrSet("convertChromNames" ,  desc = "This function takes a file and translates chromosome names into a different format. This is most often used to convert between the chr1,chr2,... format and the 1,2,... format.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "file",synon=Seq(),ty="String",valueString="myChromDecoder.txt",desc="A tab delimited file with the from/to chromosome names.",req=true),
            ParamStr(id = "columnNames",synon=Seq(),ty="String",valueString="fromCol,toCol",desc="The column titles for the old chrom names and the new chrom names, in that order. If this parameter is used, the decoder file must have a title line.",req=false),
@@ -145,7 +154,7 @@ object SVcfMapFunctions {
        
        
        //unPhaseAndSortGenotypes
-       ParamStrSet("unPhaseAndSortGenotypes" ,  desc = "This function removes phasing and sorts genotypes.", 
+       ParamStrSet("unPhaseAndSortGenotypes" ,  desc = "This function removes phasing and sorts genotypes (so that heterozygotes are always listed as 0/1 and never 1/0).", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input/output genotype FORMAT field.",req=false),
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
@@ -256,17 +265,17 @@ object SVcfMapFunctions {
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
          )), category = "File/Database Annotation"
        ),
-       ParamStrSet("snpEff" ,  desc = "This function runs SnpEff", 
+       ParamStrSet("snpEff" ,  desc = "This function runs SnpEff by calling the SnpEff library internally. It uses version 4.3t.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
          )), category = "File/Database Annotation"
        ),
        ParamStrSet("snpEffExtract" ,  desc = "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-              ParamStr(id = "annTag",synon=Seq(),ty="String",valueString="tag",desc="A valid SnpSift command",req=false,defaultValue=Some("ANN")),
-              ParamStr(id = "bioTypeKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
-              ParamStr(id = "effectKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
-              ParamStr(id = "warningDropList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
+              ParamStr(id = "annTag",synon=Seq(),ty="String",valueString="tag",desc="A valid ANN formatted field, usually generated by SNPeff.",req=false,defaultValue=Some("ANN")),
+              ParamStr(id = "bioTypeKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="A comma delimited list of the transcript biotypes that you want to keep. All other biotypes will be ignored.",req=false),
+              ParamStr(id = "effectKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="A comma delimited list of the effect types that you want to keep. All other EFFECT values will be ignored.",req=false),
+              ParamStr(id = "warningDropList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="A comma delimited list of warnings. Any entries that include a listed warning will be ignored.",req=false),
               //ParamStr(id = "keepIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
               ParamStr(id = "geneListName",synon=Seq(),ty="String",valueString="myGeneListName",desc="",req=false),
               ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
@@ -320,7 +329,7 @@ object SVcfMapFunctions {
               ParamStr(id = "desc",synon=Seq(),ty="String",valueString="...",desc="",req=false),
               ParamStr(id = "collapseUniques",synon=Seq(),ty="Flag",valueString="t1,t2,...",desc="",req=false),
               ParamStr(id = "tagSet",synon=Seq(),ty="String",valueString="HIGH,MODERATE,LOW,NS,ANY",desc="",req=false)
-         )), category = "File/Database Annotation"
+         )), category = "File/Database Annotation", hidden = true
        ),
        ParamStrSet("homopolymerRunStats" ,  desc = "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -328,38 +337,46 @@ object SVcfMapFunctions {
               COMMON_PARAMS("genomeFA")
          )), category = "Genomic Locus Annotation"
        ),
-       ParamStrSet("addContextBases" ,  desc = "", 
+       ParamStrSet("addContextBases" ,  desc = "This function adds several new columns, ", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window",req=true),
               COMMON_PARAMS("genomeFA")
          )), category = "Genomic Locus Annotation"
        ),
-       ParamStrSet("gcContext" ,  desc = "", 
+       ParamStrSet("gcContext" ,  desc = "This function calculates the fraction of bases within k bases from the variant locus that are G or C. "+
+                                         "This can be useful to identify high-GC areas where variant calling and sequencing may be less accurate.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window for determining local gc content.",req=true),
               ParamStr(id = "digits",synon=Seq(),ty="String",valueString="int",desc="Number of digits to round to.",req=false, defaultValue = Some("4")),
               COMMON_PARAMS("genomeFA")
          )), category = "Genomic Locus Annotation"
        ),
-       ParamStrSet("addVariantIdx" ,  desc = "", 
+       ParamStrSet("addVariantIdx" ,  desc = "This function adds a new INFO column with a unique numeric value for each line. Optionally, you can add "+
+                                             "a prefix to each ID.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "prefix",synon=Seq(),ty="String",valueString="prefix",desc="Prefix to prepend to the index field.",req=false)
          )),category = "Variant Annotation"
        ),//dropNullVariants
-       ParamStrSet("addVariantPosInfo" ,  desc = "", 
+       ParamStrSet("addVariantPosInfo" ,  desc = "This function adds a new INFO field in the form: CHROM:START:REF>ALT. This can be useful for "+
+                                                 "checking the effects of functions that alter the variant columns. "+
+                                                 "For example, you can run this function before and after leftAlignAndTrim to see how "+
+                                                 "a variant changes.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "Variant Annotation"
        ),//dropNullVariants
-       ParamStrSet("dropNullVariants" ,  desc = "", 
+       ParamStrSet("dropNullVariants" ,  desc = "This function drops all lines with no alt alleles ('.' in the ALT column), or lines where the ALT allele is identical to the REF. "+
+                                                "Note: you must split multiallelics first. See the 'splitMultiallelics' function.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "Variant Filtering"
        ),
-       ParamStrSet("dropSpanIndels" ,  desc = "", 
+       ParamStrSet("dropSpanIndels" ,  desc = "This function drops Spanning indel lines ('*' alleles). Note: you must split multiallelics first!", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "Variant Filtering"
        ),
        
-       ParamStrSet("checkReferenceMatch" ,  desc = "", 
+       ParamStrSet("checkReferenceMatch" ,  desc = "This function compares the REF column to the genomic reference and makes sure that they actually match. "+
+                                                   "If mismatches are found, a warning will be thrown. In addition, a new INFO field will be added to the VCF that will be a "+
+                                                   "simple integer field that will equal 1 if and only if the REF matches the reference, and 0 otherwise.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               COMMON_PARAMS("genomeFA")
          )),category = "Variant Calculations"
@@ -663,10 +680,10 @@ object SVcfMapFunctions {
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2)
    ) ++ MAP_FUNCTIONS.flatMap{ case (fcnID,mf) => {
-      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID ),
-                                                   lines = Seq("",mf.desc), level = 3, indentTitle = 4, indentBlock = 8, indentFirst=4)
+      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID +": "+mf.desc ),
+                                                   lines = Seq(), level = 3, indentTitle = 4, indentBlock = 12, indentFirst=4)
       Seq(fcnTitleLine) ++ mf.pp.filter{ pp => ! pp.hidden }.map{ pp => {
-        internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+": "+
+        internalUtils.commandLineUI.UserManualBlock(lines = Seq("-"+pp.id+": "+
                                                             pp.desc +"("+pp.ty+""+ { if(pp.req){
                                                               ", required)"
                                                             } else {
@@ -678,7 +695,7 @@ object SVcfMapFunctions {
                                                                  }}.getOrElse(")")
                                                               )
                                                             }}), indentTitle = 4, indentBlock = 12, indentFirst=8)
-      }}
+      }}.padTo(1,internalUtils.commandLineUI.UserManualBlock(lines = Seq("(This function takes no parameters)"), indentTitle = 4, indentBlock = 12, indentFirst=8))
    }}
      
    def MAPFUNCTIONS_getBlockStringManual : String = MAPFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
@@ -780,15 +797,17 @@ object SVcfMapFunctions {
            val svwseq : Seq[SVcfWalker] = ssseq.flatMap{ case (mapType,params) => {
              
              if(mapType == "tagVariantsExpression"){
+                warning("Warning: This function is DEPRECATED! Use function \"addInfo\" instead!","DEPRECATED_FUNCTION_tagVariantsFunction",-1)
                Some( VcfExpressionTag(expr = params("expr"), tagID = params("mapID"), tagDesc = params("desc")) );
              } else if(mapType == "tagVariantsFunction"){
+                warning("Warning: This function is DEPRECATED! Use function \"addInfo\" instead!","DEPRECATED_FUNCTION_tagVariantsFunction",-1)
                 val paramTags = params.get("params").map{ pp => {
                   pp.split(",").toSeq;
                 }}.getOrElse(Seq[String]())
                 
                 Some(new AddFuncTag(func=params("func"),newTag=params("mapID"),paramTags=paramTags,digits=params.get("digits").map{d => string2int(d)},desc=Some(params("desc"))));
 
-             } else if(mapType == "addInfoTag"){
+             } else if(mapType == "addInfo"){
                 val rawFunc = params("func").split("[(]").head;
                 val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {
                   if(pp.trim().last != ')'){
@@ -806,6 +825,34 @@ object SVcfMapFunctions {
                   }
                 }
                 Some(new AddFunctionTag(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,digits=params.get("digits").map{d => string2int(d)},desc=Some(params("desc"))));
+             } else if(mapType == "tally"){
+                val rawFunc = params("func").split("[(]").head;
+                val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {
+                  if(pp.trim().last != ')'){
+                    error("Error: hanging open paren in string: "+params("func"));
+                  }
+                  pp.init.split(",").toSeq.map{ _.trim() }
+                }} match {
+                  case Some(rp) => {
+                    rp;
+                  }
+                  case None => {
+                    params.get("params").map{ pp => {
+                      pp.split(",").toSeq;
+                    }}.getOrElse(Seq[String]())
+                  }
+                }
+                Some(new RunTally(func=rawFunc,newTag=params("mapID"),paramTags=paramTags));
+                
+                /*
+                        ParamStrSet("tally" ,  desc = "This is a set of functions that takes various counts and totals across the whole VCF.", 
+           synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
+           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
+         )), category = "Variant Annotation"
+       ),
+                 */
                 
              } else if(mapType == "genotypeFilter"){
                 Some( FilterGenotypesByStat(

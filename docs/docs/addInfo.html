@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+		<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<title>vArmyKnife: Variant Army Knife Toolkit</title>
+
+		<link rel="stylesheet" href="stylesheets/styles.2.css">
+		<link rel="stylesheet" href="stylesheets/pygment_trac.css">
+		<script src="javascripts/scale.fix.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+		<!--[if lt IE 9]>
+		<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+<div class="wrapper">
+
+
+<header>
+			<h1><a href="index.html">vArmyKnife</a></h1>
+			<p>Variant Army Knife</p>
+</header>
+
+
+<section>
+<h1>INFO TAG FUNCTIONS</h1>
+
+<p>Info Tag Functions are simple modular functions that take  one variant at a time and add a new INFO field. 
+Basic Syntax:
+    --FCN addInfoTag|newTagID|fcn=infoTagFunction|params=p1,p2,...</p>
+
+</section> <h2>Available Functions:</h2> <section>
+
+<h3>MULT(x,y)</h3>
+
+<p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.
+x (INT|FLOAT|INFO:Int|INFO:Float) 
+y (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>DIFF(x,y)</h3>
+
+<p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the difference of the two inputs (ie x - y). Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.
+x (INT|FLOAT|INFO:Int|INFO:Float) 
+y (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>SUM(x...)</h3>
+
+<p>Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.
+x... (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>FLAGSET(x...)</h3>
+
+<p>Input should be a set of infoFields and optionally a name, with the format tagID:name. If names are omitted, then the name will be equal to the tagID. Output field will be the set of names for which the respective info field is equal to 1. Any value other than 1, including missing fields, will be treated as 0.
+x... (INFO:Int) </p>
+
+<h3>LEN(x)</h3>
+
+<p>The new field will be an integer field equal to the length of the input field. Will be missing if the input field is missing.
+x (INFO:String,INFO:Int,INFO:Float) </p>
+
+<h3>RANDFLAG(x,seed)</h3>
+
+<p>x (FLOAT) 
+seed (INT) </p>
+
+<h3>DIV(x,y)</h3>
+
+<p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be a float.
+x (INT|FLOAT|INFO:Int|INFO:Float) 
+y (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>MIN(x...)</h3>
+
+<p>x... (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>CONVERT.TO.INT(x,defaultValue)</h3>
+
+<p>Input should be an INFO field
+x (INFO:String) 
+defaultValue (Optional) (Int) </p>
+
+<h3>CONVERT.TO.FLOAT(x,defaultValue)</h3>
+
+<p>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
+x (INFO:String) 
+defaultValue (Optional) (Float) </p>
+
+<h3>EXPR(expr)</h3>
+
+<p>The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise. See the expression format definition for more information on how the logical expression syntax works.
+expr (STRING) </p>
+
+<h3>DECODE(x,decoder)</h3>
+
+<p>x (INFO:String) 
+decoder (FILE:String) </p>
+
+<h3>CONCAT(x...)</h3>
+
+<p>This simple function concatenates the values of the input parameters. Input parameters can be any combination of INFO fields or constant strings.
+x... (String|INFO:String) </p>
+
+<h3>PRODUCT.ARRAY(x...)</h3>
+
+<p>Input should be a set of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the inputs. Missing INFO fields will be treated as ones unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.
+x... (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>SETS.DIFF(x,y)</h3>
+
+<p>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons.Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out.
+x (String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String) 
+y (String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String) </p>
+
+<h3>SWITCH.EXPR(expr,A,B)</h3>
+
+<p>Switches between two options depending on a logical expression. The 'expr' expression parameter must be formatted like standard variant-level expressions. The A and B parameters can each be either a constant or an INFO field. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B.
+expr (STRING) 
+A (INFO:Int|INFO:Float|INFO:String|Int|Float|String) 
+B (Optional) (INFO:Int|INFO:Float|INFO:String|Int|Float|String) </p>
+
+<h3>MAX(x...)</h3>
+
+<p>x... (INT|FLOAT|INFO:Int|INFO:Float) </p>
+
+<h3>PICK.RANDOM(seed,x,y...)</h3>
+
+<p>The first parameter must be either '.' or a supplied random seed for the random number generator. You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter. In this case the output will be chosen from this one input parameter (which is assumed to be a list of some sort), which can be a string constant list delimited with colons and beginning with CONST:, an INFO field, or a text file specified as FILE:filename. Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters.
+seed (String) 
+x (String|INFO:String|FILE:String) 
+y... (Optional) (String|INFO:String) </p>
+
+<h3>SETS.UNION(x...)</h3>
+
+<p>The new field will be equal to the union of the inputs. Inputs can either be INFO fields specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be constants (delimited with colons). The output will be the union of the given parameters, in alphabetical order. 
+x... (String|INFO:String|FILE:String) </p>
+
+<h3>COPY(oldField)</h3>
+
+<p>oldField (INFO:INT|INFO:Float|INFO:String) </p>
+
+<h3>SETS.INTERSECT(x...)</h3>
+
+<p>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons. Output field will be a comma delimited string containing the intersect between the supplied sets.
+x... (String|INFO:String|FILE:String) </p>
+
+</div></body></html>

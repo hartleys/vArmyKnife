@@ -3638,6 +3638,15 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="LOCUS.near",numParam=3,desc="True if the variant is within k bases from the given chromosome and position",paramNames=Seq("k","chrom","pos"),paramTypes=Seq("number","String","number"),
+                        (params : Seq[String]) => {
+                          val chrom = params.head;
+                          val pos = string2int(params(1));
+                          (a : SVcfVariantLine) => {
+                            a.chrom == chrom && a.pos == pos;
+                          }
+                        }
+                      ),
         FilterFunction(funcName="LOCUS.range",numParam=3,desc="True if the variant is at the given chromosome and between the given positions (0-based)",paramNames=Seq("chrom","from","to"),paramTypes=Seq("String","number"),
                         (params : Seq[String]) => {
                           val chrom = params.head;

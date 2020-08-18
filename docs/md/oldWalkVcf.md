@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.4 (Updated Tue Feb 11 15:57:51 EST 2020)
+> Version 3.1.5 (Updated Thu Feb 27 09:36:38 EST 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -150,778 +150,522 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 # VARIANT OPERATIONS
 
-    
-    Variant Operations or Variant Map Functions are a set of 
-    sub\-utilities that perform operations on a variant set one 
-    variant at a time\. When more than one function is specified in 
-    a run, these functions are performed in the order that they 
-    appear in the command line, after all other operations have 
-    been carried out \(excluding output ops\)\.
-    Basic Syntax:
-        \-\-FCN functionName|ID|param1=p1|param2=p2|\.\.\.
+
+Variant Operations or Variant Map Functions are a set of sub\-utilities that perform operations on a variant set one variant at a time\. When more than one function is specified in a run, these functions are performed in the order that they appear in the command line, after all other operations have been carried out \(excluding output ops\)\.
+Basic Syntax:
+    \-\-FCN functionName|ID|param1=p1|param2=p2|\.\.\.
 
 ## Available Functions:
 
-    
-
-### snpEffExtract
-
-    
-    
-    annTag: A valid SnpSift command\(String, default=ANN\)
-    bioTypeKeepList: \(String\)
-    effectKeepList: \(String\)
-    warningDropList: \(String\)
-    geneListName: \(String\)
-    geneList: \(String\)
-    severityList: Must be a list of severity levels, listed as some 
-    combination of effectseverity types delimited with slashes\. 
-    Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which are 
-    standard SnpEFF effect types, and also: NS \(HIGH and 
-    MODERATE\), NonNS \(LOW and MODIFIER\), and ANY \(any 
-    type\)\.\(String, default=HIGH/MODERATE/LOW\)
-    extractFields: This is a complex multi\-part field that allows 
-    flexible extraction of information from SnpEff ANN tags\. This 
-    field must be in the colon\-delimited format 
-    tagInfix:ANN\_idx:description:severityList\[:noCollapse\]\. 
-    severityList must be in the same format as the severityList 
-    parameter above, but can override the default if desired\. 
-    ANN\_idx must be a slash\-delimited list of field indices 
-    counting from zero in the ANN tag\. The standard ANN field 
-    indices are: 0:allele,1:effect,2:impact,3:geneName,4:geneID,5:t-
-    xType,6:txID,7:txBiotype,8:rank,9:HGVS\.c,10:HGVS\.p,11:cDNApos-
-    ition,12:cdsPosition,13:proteinPosition,14:distToFeature,15:war-
-    nings,16:errors If multiple fields are selected then the output 
-    fields will have the format first:second:third:etc\. For 
-    example, to create two new fields containing a list of all 
-    genes for which the current variant has HIGH and MODERATE 
-    impact respectively, use the format: myNewField:4:my 
-    description:HIGH/MODERATE\. This will generate two new fields: 
-    myNewField\_HIGH and myNewField\_MODERATE\. Note that if this 
-    function as a whole has a mapID set, then both field names will 
-    be prefixed by that overall ID\.\(String\)
-    geneNameIdx: \(String, default=4\)
-    biotypeIdx: \(String, default=7\)
-    warnIdx: \(String, default=15\)
-
-### fixSwappedRefAlt
-
-    
-    \.\.\.
-    genomeFA: \(String, required\)
-
-### convertSampleNames
-
-    
-    This function converts the sample IDs of the VCF file according 
-    to a decoder file that you supply\. The decoder will decode
-    file: A tab delimited file with the from/to chromosome 
-    names\.\(String, required\)
-    columnNames: The column titles for the old chrom names and the 
-    new chrom names, in that order\. If this parameter is used, the 
-    decoder file must have a title line\.\(String\)
-    columnIdx: The column number of the current chromosome names 
-    then the new chromosome names, in that order\. Column indices 
-    start counting from 0\. If you use this parameter to set the 
-    columns, and if the file has a title line, then you should use 
-    skipFirstRow or else it will be read in as if it were a 
-    chromosome\.\(Integer\)
-    skipFirstRow: If this parameter is set, then this tool will 
-    skip the first line on the decoder file\. This is useful if you 
-    are specifying the columns using column numbers but the file 
-    also has a title line\.\(Flag\)
-
-### tagBedFile
-
-    
-    This function takes a BED file \(which can be gzipped if 
-    desired\) and creates a new INFO field based on whether the 
-    variant locus overlaps with a genomic region in the BED file\. 
-    The new field can be either an integer that is equal to 1 if 
-    there is overlap and 0 otherwise \(which is the default 
-    behavior\) Or, alternatively, it can copy in the title field 
-    from the bed file\. NOTE: this function only uses the first 3 
-    to 5 fields of the BED file, it does not implement the optional 
-    fields 10\-12 which can specify intron/exon blocks\.
-    file: \(String, required\)
-    desc: \(String, default=No desc provided\)
-    buffer: \(Integer, default=0\)
-    style: \(String, default=\+\)
-
-### copyColumnToInfo
-
-    
-    
-    columnID: \(String, required\)
-
-### checkReferenceMatch
-
-    
-    
-    genomeFA: \(String, required\)
-
-### keepVariants
-
-    
-    This function drops variants based on a given true/false 
-    expression\.
-    expr: \(String\)
-
-### dropNullVariants
-
-    
-    
-
-### fixFirstBaseMismatch
-
-    
-    \.\.\.
-    windowSize: Sets the size of the sliding window used\. Problems 
-    may occur if you have variants longer than this window size\. 
-    Default is 200bp\.\(Int\)
-
-### depthStats
-
-    
-    This function calculates various statistics on total read depth 
-    and hetAB\.
-    inputGT: The input genotype FORMAT field\.\(String\)
-    inputAD: \(String\)
-    inputDP: \(String\)
-    restrictToGroup: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-
-### snpSiftDbnsfp
-
-    
-    This function runs the SnpSift dbnsfp command
-    cmd: A valid SnpSift command\(String\)
-
-### calcBurdenMatrix
-
-    
-    \.\.\.\.
-    geneTag: \(String, required\)
-    expr: \(String\)
-    sampleSet: \(String\)
-    group: \(String\)
-    inputGT: \(String\)
-    geneList: \(String\)
-    geneListFile: \(String\)
-    printFullGeneList: \(flag\)
-    pathwayList: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    outfile: The output matrix file path\.\(String, required\)
-
-### splitMultiAllelics
-
-    
-    \.\.\.
-
-### filterTags
-
-    
-    This function can be used to remove unwanted INFO or FORMAT 
-    fields, or remove unwanted samples\. This can substantially 
-    reduce file sizes\.
-    FORMAT\.keep: \(String\)
-    FORMAT\.drop: \(String\)
-    INFO\.keep: \(String\)
-    INFO\.drop: \(String\)
-    SAMPLES\.keep: \(String\)
-    SAMPLES\.drop: \(String\)
-
-### gcContext
-
-    
-    
-    windowSize: The number of bases to include in the context 
-    window for determining local gc content\.\(String, required\)
-    digits: Number of digits to round to\.\(String, default=4\)
-    genomeFA: \(String, required\)
-
-### addInfoTag
-
-    
-    This is a set of functions that all take one or more input 
-    parameters and outputs one new INFO field\.
-    func: \(String, required\)
-    desc: The description in the header line for the new INFO 
-    field\.\(String, default=No desc provided\)
-    digits: For floating point values, the number of digits to 
-    include after the decimal\(Integer\)
-
-### tagVariantsExpression
-
-    
-    This function takes a variant expression and creates a new INFO 
-    field that is 1 if and only if that expression returns TRUE, 
-    and 0 otherwise\.
-    expr: The variant expression, which is a true/false expression 
-    using the variant expression syntax\.\(String, required\)
-    desc: A description, to go in the info field 
-    description\.\(String, default=No desc provided\)
-
-### addVariantPosInfo
-
-    
-    
-
-### sanitize
-
-    
-    
-
-### snpEff
-
-    
-    This function runs SnpEff
-    cmd: A valid SnpSift command\(String\)
-
-### getLocusDepthFromWig
-
-    
-    \.\.\.
-    wigfile: \(String\)
-    desc: \(String\)
-
-### tagVariantsFunction
-
-    
-    This is a set of functions that all take one or more input 
-    parameters and outputs one new INFO field\.
-    func: \(String, required\)
-    desc: \(String, default=No desc provided\)
-    digits: \(Integer\)
-    params: \(String\)
-
-### convertToStdVcf
-
-    
-    Certain utilities \(eg GATK\) do not allow certain optional 
-    features of the VCFv4\.2 format standard \(For example: 
-    additional tag\-pairs in the INFO or FORMAT header lines\)\. 
-    This function strips out this additional metadata\.
-
-### snpEffExtractField
-
-    
-    
-    tagPrefix: \(String, required\)
-    outputTagPrefix: \(String\)
-    columns: \(String\)
-    desc: \(String\)
-    collapseUniques: \(Flag\)
-    tagSet: \(String\)
-
-### snpSiftAnno
-
-    
-    This function runs a SnpSift anno command
-    cmd: A valid SnpSift command\(String\)
-
-### unPhaseAndSortGenotypes
-
-    
-    This function removes phasing and sorts genotypes\.
-    inputGT: The input/output genotype FORMAT field\.\(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-
-### calcStats
-
-    
-    This function combines the functions sampleCounts, sampleLists, 
-    and depthStats, performing all three\.
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    inputAD: \(String\)
-    inputDP: \(\)
-    noCountsCalc: \(Flag\)
-    noFreqCalc: \(Flag\)
-    noMissCalc: \(Flag\)
-    noAlleCalc: \(Flag\)
-    noHetHomCalc: \(Flag\)
-    noMultiHetCalc: \(Flag\)
-    samplePrintLimit: \(String\)
-    noDepthStats: \(Flag\)
-    noSampleLists: \(Flag\)
-    noSampleCounts: \(Flag\)
-    expr: The variant expression, which is a true/false expression 
-    using the variant expression syntax\.\(String\)
-
-### calcBurdenCounts
-
-    
-    
-    geneTag: \(String, required\)
-    expr: \(String\)
-    sampleSet: \(String\)
-    group: \(String\)
-    inputGT: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    countFileID: If multiple output count files are desired, you 
-    can specify which functions output to which count file using 
-    this parameter\. Note that each file must be created using a 
-    \-\-burdenCountsFile parameter, with the form 
-    fileID:/path/to/file\.txt\(String\)
-
-### markDup
-
-    
-    This map function will detect duplicate variant lines and add 
-    two new INFO fields: mapID\_CT and mapID\_IDX\. The CT will 
-    indicate how many duplicates were found matching the current 
-    variant, and the IDX will number each duplicate with a unique 
-    identifier, counting from 0\. All nonduplicates will be marked 
-    with CT=1 and IDX=0\.
-
-### homopolymerRunStats
-
-    
-    
-    runSize: The number of repeated bases required to count as a 
-    homopolymer run\(String, required\)
-    genomeFA: \(String, required\)
-
-### addDummyGenotypeColumn
-
-    
-    
-
-### concordanceCaller
-
-    
-    \.\.\.\.
-    callerNames: Comma delimited list of caller IDs, used in the 
-    callerSet INFO fields and the names of the output GT fields\. 
-    By default, callers will simply be named C1,C2,\.\.\.\(String\)
-    priority: Comma delimited list of caller IDs\. The list of 
-    caller IDs in order of descending priority\.\(String\)
-    gtDecisionMethod: The merge rule for calculating 
-    ensemble\-merged GT and AD tags\. Valid options are priority, 
-    prioritySkipMissing, and majority\_priorityOnTies\. Default is 
-    simple priority\.\(String\)
-    ignoreSampleIds: If this flag is set, then sample IDs will be 
-    ignored and each VCF will be assumed to have the exact same 
-    samples in the exact same order\. Use at your own risk\.\(flag\)
-    ignoreSampleOrder: If this flag is set, then the sample IDs 
-    will be used to match up the different VCFs, and the samples 
-    may be in different orders in the different files\.\(flag\)
-
-### addContextBases
-
-    
-    
-    windowSize: The number of bases to include in the context 
-    window\(String, required\)
-    genomeFA: \(String, required\)
-
-### convertChromNames
-
-    
-    \.\.\.\.
-    file: A tab delimited file with the from/to chromosome 
-    names\.\(String, required\)
-    columnNames: The column titles for the old chrom names and the 
-    new chrom names, in that order\. If this parameter is used, the 
-    decoder file must have a title line\.\(String\)
-    columnIdx: The column number of the current chromosome names 
-    then the new chromosome names, in that order\. Column indices 
-    start counting from 0\. If you use this parameter to set the 
-    columns, and if the file has a title line, then you should use 
-    skipFirstRow or else it will be read in as if it were a 
-    chromosome\.\(Integer\)
-    skipFirstRow: If this parameter is set, then this tool will 
-    skip the first line on the decoder file\. This is useful if you 
-    are specifying the columns using column numbers but the file 
-    also has a title line\.\(Flag\)
-
-### addVariantIdx
-
-    
-    
-    prefix: Prefix to prepend to the index field\.\(String\)
-
-### dropSpanIndels
-
-    
-    
-
-### addAltSequence
-
-    
-    
-    windowSize: The number of flanking bases to include on each 
-    side of the alt sequence\.\(String, default=10\)
-    genomeFA: \(String, required\)
-
-### sampleLists
-
-    
-    This function generates sample list fields which contain 
-    comma\-delimited lists of samples that are het or hom\-alt\.
-    inputGT: The input genotype FORMAT field\.\(String\)
-    samplePrintLimit: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    expr: The variant expression, which is a true/false expression 
-    using the variant expression syntax\.\(String\)
-
-### fixDotAltIndels
-
-    
-    \.\.\.
-
-### dropGenotypeData
-
-    
-    
-
-### extractRegion
-
-    
-    This function extracts a single region from the VCF\. NOTE: the 
-    VCF MUST BE SORTED\!
-    region: The genomic region to extract\.\(String, required\)
-    windowSize: The size of the window around the genomic region to 
-    extract\.\(Int\)
-
-### calcBurdenCountsByGroups
-
-    
-    
-    geneTag: \(String, required\)
-    groups: \(String, required\)
-    expr: \(String\)
-    sampleSet: \(String\)
-    inputGT: \(String\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    countFileID: If multiple output count files are desired, you 
-    can specify which functions output to which count file using 
-    this parameter\. Note that each file must be created using a 
-    \-\-burdenCountsFile parameter, with the form 
-    fileID:/path/to/file\.txt\(String\)
-
-### rmDup
-
-    
-    \.\.\.
-
-### leftAlignAndTrim
-
-    
-    \.\.\.
-    windowSize: Sets the size of the sliding window used\. Problems 
-    may occur if you have variants longer than this window size\. 
-    Default is 200bp\.\(Int\)
-    genomeFA: \(String, required\)
-
-### sampleCounts
-
-    
-    This function generates counts and frequencies for alt alleles, 
-    alt genotypes, missing genotypes, ref genotypes, and so on\. 
-    Note that there are several calc\- flags\. If none of these are 
-    included, then this function does nothing\.
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    noCountsCalc: \(Flag\)
-    noFreqCalc: \(Flag\)
-    noMissCalc: \(Flag\)
-    noAlleCalc: \(Flag\)
-    noHetHomCalc: \(Flag\)
-    noMultiHetCalc: \(Flag\)
-
-### dropSymbolicAlleles
-
-    
-    
-
-### sampleReorder
-
-    
-    This function allows you to reorder the sample columns in your 
-    VCF\. Set ONE of the parameters below to specify the desired 
-    ordering\.
-    sampleOrdering: A simple list of all the samples, in the 
-    desired order\.\(String\)
-    sampleOrderingFile: A file containing one sampleID per line\. 
-    The samples will be reordered to match the order found in the 
-    file\.\(String, required\)
-    alphabetical: If this flag is set, then the samples will be 
-    reordered alphabetically\.\(Flag\)
-
-### genotypeFilter
-
-    
-    This function filters a genotype field based on a given 
-    genotype expression\. The new filtered genotype can replace the 
-    GT field or can be set to a different field, so multiple 
-    filtering strategies can be included in a single VCF\.
-    expr: A Genotype Expression, using the genotype expression 
-    syntax\.\(String, required\)
-    desc: A description, to go in the new FORMAT fields\.\(String\)
-    filterTag: The name of a new FORMAT field, which will be a flag 
-    equal to 1 if and only if the genotype passes the 
-    filter\.\(String\)
-    outputGT: The output genotype FORMAT field\. If this is the 
-    same as the input genotype field then the genotype field will 
-    be overwritten\.\(String\)
-    inputGT: The input genotype FORMAT field\.\(String\)
-    inputGtNewName: If this parameter is set, the input genotype 
-    field will be copied to a new tag with this name before 
-    filtering\. This can be useful if overwriting the input 
-    genotype field\.\(\)
-    groupFile: A tab\-delimited file containing sample ID's and a 
-    list of group IDs for each sample\. See the \-\-groupFile 
-    parameter of walkVcf\.\(String\)
-    superGroupList: See the \-\-superGroupList parameter of 
-    walkVcf\.\(String\)
+
+
+### snpEffExtract: 
+
+
+\-annTag: A valid ANN formatted field, usually generated by SNPeff\.\(String, default=ANN\)
+\-bioTypeKeepList: A comma delimited list of the transcript biotypes that you want to keep\. All other biotypes will be ignored\.\(String\)
+\-effectKeepList: A comma delimited list of the effect types that you want to keep\. All other EFFECT values will be ignored\.\(String\)
+\-warningDropList: A comma delimited list of warnings\. Any entries that include a listed warning will be ignored\.\(String\)
+\-geneListName: \(String\)
+\-geneList: \(String\)
+\-severityList: Must be a list of severity levels, listed as some combination of effectseverity types delimited with slashes\. Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which are standard SnpEFF effect types, and also: NS \(HIGH and MODERATE\), NonNS \(LOW and MODIFIER\), and ANY \(any type\)\.\(String, default=HIGH/MODERATE/LOW\)
+\-extractFields: This is a complex multi\-part field that allows flexible extraction of information from SnpEff ANN tags\. This field must be in the colon\-delimited format tagInfix:ANN\_idx:description:severityList\[:noCollapse\]\. severityList must be in the same format as the severityList parameter above, but can override the default if desired\. ANN\_idx must be a slash\-delimited list of field indices counting from zero in the ANN tag\. The standard ANN field indices are: 0:allele,1:effect,2:impact,3:geneName,4:geneID,5:txType,6:txID,7:txBiotype,8:rank,9:HGVS\.c,10:HGVS\.p,11:cDNAposition,12:cdsPosition,13:proteinPosition,14:distToFeature,15:warnings,16:errors If multiple fields are selected then the output fields will have the format first:second:third:etc\. For example, to create two new fields containing a list of all genes for which the current variant has HIGH and MODERATE impact respectively, use the format: myNewField:4:my description:HIGH/MODERATE\. This will generate two new fields: myNewField\_HIGH and myNewField\_MODERATE\. Note that if this function as a whole has a mapID set, then both field names will be prefixed by that overall ID\.\(String\)
+\-geneNameIdx: \(String, default=4\)
+\-biotypeIdx: \(String, default=7\)
+\-warnIdx: \(String, default=15\)
+
+### fixSwappedRefAlt: \.\.\.
+
+
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### convertSampleNames: This function converts the sample IDs of the VCF file according to a decoder file that you supply\. The decoder will decode 
+
+
+\-file: A tab delimited file with the from/to chromosome names\.\(String, required\)
+\-columnNames: The column titles for the old chrom names and the new chrom names, in that order\. If this parameter is used, the decoder file must have a title line\.\(String\)
+\-columnIdx: The column number of the current chromosome names then the new chromosome names, in that order\. Column indices start counting from 0\. If you use this parameter to set the columns, and if the file has a title line, then you should use skipFirstRow or else it will be read in as if it were a chromosome\.\(Integer\)
+\-skipFirstRow: If this parameter is set, then this tool will skip the first line on the decoder file\. This is useful if you are specifying the columns using column numbers but the file also has a title line\.\(Flag\)
+
+### tagBedFile: This function takes a BED file \(which can be gzipped if desired\) and creates a new INFO field based on whether the variant locus overlaps with a genomic region in the BED file\. The new field can be either an integer that is equal to 1 if there is overlap and 0 otherwise \(which is the default behavior\) Or, alternatively, it can copy in the title field from the bed file\. NOTE: this function only uses the first 3 to 5 fields of the BED file, it does not implement the optional fields 10\-12 which can specify intron/exon blocks\.
+
+
+\-file: \(String, required\)
+\-desc: \(String, default=No desc provided\)
+\-buffer: \(Integer, default=0\)
+\-style: \(String, default=\+\)
+
+### copyColumnToInfo: 
+
+
+\-columnID: \(String, required\)
+
+### checkReferenceMatch: This function compares the REF column to the genomic reference and makes sure that they actually match\. If mismatches are found, a warning will be thrown\. In addition, a new INFO field will be added to the VCF that will be a simple integer field that will equal 1 if and only if the REF matches the reference, and 0 otherwise\.
+
+
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### keepVariants: This function drops variants based on a given true/false expression\.
+
+
+\-expr: \(String\)
+
+### dropNullVariants: This function drops all lines with no alt alleles \('\.' in the ALT column\), or lines where the ALT allele is identical to the REF\. Note: you must split multiallelics first\. See the 'splitMultiallelics' function\.
+
+
+\(This function takes no parameters\)
+
+### fixFirstBaseMismatch: \.\.\.
+
+
+\-windowSize: Sets the size of the sliding window used\. Problems may occur if you have variants longer than this window size\. Default is 200bp\.\(Int\)
+
+### depthStats: This function calculates various statistics on total read depth and hetAB\.
+
+
+\-inputGT: The input genotype FORMAT field\.\(String\)
+\-inputAD: \(String\)
+\-inputDP: \(String\)
+\-restrictToGroup: \(String\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+
+### snpSiftDbnsfp: This function runs the SnpSift dbnsfp command
+
+
+\-cmd: A valid SnpSift command\(String\)
+
+### calcBurdenMatrix: \.\.\.\.
+
+
+\-geneTag: \(String, required\)
+\-expr: \(String\)
+\-sampleSet: \(String\)
+\-group: \(String\)
+\-inputGT: \(String\)
+\-geneList: \(String\)
+\-geneListFile: \(String\)
+\-printFullGeneList: \(flag\)
+\-pathwayList: \(String\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+\-outfile: The output matrix file path\.\(String, required\)
+
+### splitMultiAllelics: \.\.\.
+
+
+\(This function takes no parameters\)
+
+### filterTags: This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples\. This can substantially reduce file sizes\.
+
+
+\-FORMAT\.keep: \(String\)
+\-FORMAT\.drop: \(String\)
+\-INFO\.keep: \(String\)
+\-INFO\.drop: \(String\)
+\-SAMPLES\.keep: \(String\)
+\-SAMPLES\.drop: \(String\)
+
+### gcContext: This function calculates the fraction of bases within k bases from the variant locus that are G or C\. This can be useful to identify high\-GC areas where variant calling and sequencing may be less accurate\.
+
+
+\-windowSize: The number of bases to include in the context window for determining local gc content\.\(String, required\)
+\-digits: Number of digits to round to\.\(String, default=4\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### tagVariantsExpression: This function takes a variant expression and creates a new INFO field that is 1 if and only if that expression returns TRUE, and 0 otherwise\.
+
+
+\-expr: The variant expression, which is a true/false expression using the variant expression syntax\.\(String, required\)
+\-desc: A description, to go in the info field description\.\(String, default=No desc provided\)
+
+### tally: This is a set of functions that takes various counts and totals across the whole VCF\.
+
+
+\-func: \(String, required\)
+
+### addVariantPosInfo: This function adds a new INFO field in the form: CHROM:START:REF>ALT\. This can be useful for checking the effects of functions that alter the variant columns\. For example, you can run this function before and after leftAlignAndTrim to see how a variant changes\.
+
+
+\(This function takes no parameters\)
+
+### sanitize: 
+
+
+\(This function takes no parameters\)
+
+### snpEff: This function runs SnpEff by calling the SnpEff library internally\. It uses version 4\.3t\.
+
+
+\-cmd: A valid SnpSift command\(String\)
+
+### getLocusDepthFromWig: \.\.\.
+
+
+\-wigfile: \(String\)
+\-desc: \(String\)
+
+### tagVariantsFunction: This is a set of functions that all take one or more input parameters and outputs one new INFO field\.
+
+
+\-func: \(String, required\)
+\-desc: \(String, default=No desc provided\)
+\-digits: \(Integer\)
+\-params: \(String\)
+
+### convertToStdVcf: Certain utilities \(eg GATK\) do not allow certain optional features of the VCFv4\.2 format standard \(For example: additional tag\-pairs in the INFO or FORMAT header lines\)\. This function strips out this additional metadata\.
+
+
+\(This function takes no parameters\)
+
+### snpEffExtractField: 
+
+
+\-tagPrefix: \(String, required\)
+\-outputTagPrefix: \(String\)
+\-columns: \(String\)
+\-desc: \(String\)
+\-collapseUniques: \(Flag\)
+\-tagSet: \(String\)
+
+### snpSiftAnno: This function runs a SnpSift anno command
+
+
+\-cmd: A valid SnpSift command\(String\)
+
+### unPhaseAndSortGenotypes: This function removes phasing and sorts genotypes \(so that heterozygotes are always listed as 0/1 and never 1/0\)\.
+
+
+\-inputGT: The input/output genotype FORMAT field\.\(String\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+
+### calcStats: This function combines the functions sampleCounts, sampleLists, and depthStats, performing all three\.
+
+
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+\-inputGT: The input genotype FORMAT field\.\(String\)
+\-inputAD: \(String\)
+\-inputDP: \(\)
+\-noCountsCalc: \(Flag\)
+\-noFreqCalc: \(Flag\)
+\-noMissCalc: \(Flag\)
+\-noAlleCalc: \(Flag\)
+\-noHetHomCalc: \(Flag\)
+\-noMultiHetCalc: \(Flag\)
+\-samplePrintLimit: \(String\)
+\-noDepthStats: \(Flag\)
+\-noSampleLists: \(Flag\)
+\-noSampleCounts: \(Flag\)
+\-expr: The variant expression, which is a true/false expression using the variant expression syntax\.\(String\)
+
+### calcBurdenCounts: 
+
+
+\-geneTag: \(String, required\)
+\-expr: \(String\)
+\-sampleSet: \(String\)
+\-group: \(String\)
+\-inputGT: \(String\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+\-countFileID: If multiple output count files are desired, you can specify which functions output to which count file using this parameter\. Note that each file must be created using a \-\-burdenCountsFile parameter, with the form fileID:/path/to/file\.txt\(String\)
+
+### markDup: This map function will detect duplicate variant lines and add two new INFO fields: mapID\_CT and mapID\_IDX\. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0\. All nonduplicates will be marked with CT=1 and IDX=0\.
+
+
+\(This function takes no parameters\)
+
+### homopolymerRunStats: 
+
+
+\-runSize: The number of repeated bases required to count as a homopolymer run\(String, required\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### addDummyGenotypeColumn: 
+
+
+\(This function takes no parameters\)
+
+### concordanceCaller: \.\.\.\.
+
+
+\-callerNames: Comma delimited list of caller IDs, used in the callerSet INFO fields and the names of the output GT fields\. By default, callers will simply be named C1,C2,\.\.\.\(String\)
+\-priority: Comma delimited list of caller IDs\. The list of caller IDs in order of descending priority\.\(String\)
+\-gtDecisionMethod: The merge rule for calculating ensemble\-merged GT and AD tags\. Valid options are priority, prioritySkipMissing, and majority\_priorityOnTies\. Default is simple priority\.\(String\)
+\-ignoreSampleIds: If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the exact same samples in the exact same order\. Use at your own risk\.\(flag\)
+\-ignoreSampleOrder: If this flag is set, then the sample IDs will be used to match up the different VCFs, and the samples may be in different orders in the different files\.\(flag\)
+
+### addContextBases: This function adds several new columns, 
+
+
+\-windowSize: The number of bases to include in the context window\(String, required\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### convertChromNames: This function takes a file and translates chromosome names into a different format\. This is most often used to convert between the chr1,chr2,\.\.\. format and the 1,2,\.\.\. format\.
+
+
+\-file: A tab delimited file with the from/to chromosome names\.\(String, required\)
+\-columnNames: The column titles for the old chrom names and the new chrom names, in that order\. If this parameter is used, the decoder file must have a title line\.\(String\)
+\-columnIdx: The column number of the current chromosome names then the new chromosome names, in that order\. Column indices start counting from 0\. If you use this parameter to set the columns, and if the file has a title line, then you should use skipFirstRow or else it will be read in as if it were a chromosome\.\(Integer\)
+\-skipFirstRow: If this parameter is set, then this tool will skip the first line on the decoder file\. This is useful if you are specifying the columns using column numbers but the file also has a title line\.\(Flag\)
+
+### addVariantIdx: This function adds a new INFO column with a unique numeric value for each line\. Optionally, you can add a prefix to each ID\.
+
+
+\-prefix: Prefix to prepend to the index field\.\(String\)
+
+### dropSpanIndels: This function drops Spanning indel lines \('\*' alleles\)\. Note: you must split multiallelics first\!
+
+
+\(This function takes no parameters\)
+
+### addAltSequence: 
+
+
+\-windowSize: The number of flanking bases to include on each side of the alt sequence\.\(String, default=10\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### sampleLists: This function generates sample list fields which contain comma\-delimited lists of samples that are het or hom\-alt\.
+
+
+\-inputGT: The input genotype FORMAT field\.\(String\)
+\-samplePrintLimit: \(String\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+\-expr: The variant expression, which is a true/false expression using the variant expression syntax\.\(String\)
+
+### fixDotAltIndels: \.\.\.
+
+
+\(This function takes no parameters\)
+
+### dropGenotypeData: 
+
+
+\(This function takes no parameters\)
+
+### extractRegion: This function extracts a single region from the VCF\. NOTE: the VCF MUST BE SORTED\!
+
+
+\-region: The genomic region to extract\.\(String, required\)
+\-windowSize: The size of the window around the genomic region to extract\.\(Int\)
+
+### addInfo: This is a set of functions that all take one or more input parameters and outputs one new INFO field\. The syntax is: \-\-fcn "addInfo|newTagName|fcn\(param1,param2,\.\.\.\)"\. Optionally you can add "|desc=tag description"\. There are numerous addInfo functions\. For more information, go to the section on addInfo Functions below, or use the help command: varmyknife help addInfo
+
+
+\-func: \(String, required\)
+\-desc: The description in the header line for the new INFO field\.\(String, default=No desc provided\)
+\-digits: For floating point values, the number of digits to include after the decimal\(Integer\)
+
+### calcBurdenCountsByGroups: 
+
+
+\-geneTag: \(String, required\)
+\-groups: \(String, required\)
+\-expr: \(String\)
+\-sampleSet: \(String\)
+\-inputGT: \(String\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+\-countFileID: If multiple output count files are desired, you can specify which functions output to which count file using this parameter\. Note that each file must be created using a \-\-burdenCountsFile parameter, with the form fileID:/path/to/file\.txt\(String\)
+
+### rmDup: \.\.\.
+
+
+\(This function takes no parameters\)
+
+### leftAlignAndTrim: \.\.\.
+
+
+\-windowSize: Sets the size of the sliding window used\. Problems may occur if you have variants longer than this window size\. Default is 200bp\.\(Int\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
+
+### sampleCounts: This function generates counts and frequencies for alt alleles, alt genotypes, missing genotypes, ref genotypes, and so on\. Note that there are several calc\- flags\. If none of these are included, then this function does nothing\.
+
+
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
+\-inputGT: The input genotype FORMAT field\.\(String\)
+\-noCountsCalc: \(Flag\)
+\-noFreqCalc: \(Flag\)
+\-noMissCalc: \(Flag\)
+\-noAlleCalc: \(Flag\)
+\-noHetHomCalc: \(Flag\)
+\-noMultiHetCalc: \(Flag\)
+
+### dropSymbolicAlleles: 
+
+
+\(This function takes no parameters\)
+
+### sampleReorder: This function allows you to reorder the sample columns in your VCF\. Set ONE of the parameters below to specify the desired ordering\.
+
+
+\-sampleOrdering: A simple list of all the samples, in the desired order\.\(String\)
+\-sampleOrderingFile: A file containing one sampleID per line\. The samples will be reordered to match the order found in the file\.\(String, required\)
+\-alphabetical: If this flag is set, then the samples will be reordered alphabetically\.\(Flag\)
+
+### genotypeFilter: This function filters a genotype field based on a given genotype expression\. The new filtered genotype can replace the GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF\.
+
+
+\-expr: A Genotype Expression, using the genotype expression syntax\.\(String, required\)
+\-desc: A description, to go in the new FORMAT fields\.\(String\)
+\-filterTag: The name of a new FORMAT field, which will be a flag equal to 1 if and only if the genotype passes the filter\.\(String\)
+\-outputGT: The output genotype FORMAT field\. If this is the same as the input genotype field then the genotype field will be overwritten\.\(String\)
+\-inputGT: The input genotype FORMAT field\.\(String\)
+\-inputGtNewName: If this parameter is set, the input genotype field will be copied to a new tag with this name before filtering\. This can be useful if overwriting the input genotype field\.\(\)
+\-groupFile: A tab\-delimited file containing sample ID's and a list of group IDs for each sample\. See the \-\-groupFile parameter of walkVcf\.\(String\)
+\-superGroupList: See the \-\-superGroupList parameter of walkVcf\.\(String\)
 # INFO TAG FUNCTIONS
 
-    
-    Info Tag Functions are simple modular functions that take one 
-    variant at a time and add a new INFO field\.
-    Basic Syntax:
-    \-\-FCN 
-    addInfoTag|newTagID|fcn=infoTagFunction|params=p1,p2,\.\.\.
+
+Info Tag Functions are simple modular functions that take  one variant at a time and add a new INFO field\. 
+Basic Syntax:
+    \-\-FCN addInfoTag|newTagID|fcn=infoTagFunction|params=p1,p2,\.\.\.
 
 ## Available Functions:
 
-    
+
 
 ### MULT\(x,y\)
 
-    
-    Input should be a pair of info fields and/or numeric constants 
-    \(which must be specified as CONST:n\)\. Output field will be 
-    the product of the two inputs\. Missing INFO fields will be 
-    treated as ZEROS unless all params are INFO fields and all are 
-    missing, in which case the output will be missing\. Output 
-    field type will be an integer if all inputs are integers and 
-    otherwise a float\.
-    x \(INT|FLOAT|INFO:Int|INFO:Float\)
-    y \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+Input should be a pair of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the product of the two inputs\. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+x \(INT|FLOAT|INFO:Int|INFO:Float\) 
+y \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### DIFF\(x,y\)
 
-    
-    Input should be a pair of info fields and/or numeric constants 
-    \(which must be specified as CONST:n\)\. Output field will be 
-    the difference of the two inputs \(ie x \- y\)\. Missing INFO 
-    fields will be treated as ZEROS unless all params are INFO 
-    fields and all are missing, in which case the output will be 
-    missing\. Output field type will be an integer if all inputs 
-    are integers and otherwise a float\.
-    x \(INT|FLOAT|INFO:Int|INFO:Float\)
-    y \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+Input should be a pair of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the difference of the two inputs \(ie x \- y\)\. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+x \(INT|FLOAT|INFO:Int|INFO:Float\) 
+y \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### SUM\(x\.\.\.\)
 
-    
-    Input should be a set of info tags and/or numeric constants 
-    \(which must be specified as CONST:n\)\. Output field will be 
-    the sum of the inputs\. Missing INFO fields will be treated as 
-    zeros unless all params are INFO fields and all are missing, in 
-    which case the output will be missing\. Output field type will 
-    be an integer if all inputs are integers and otherwise a float\.
-    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+Input should be a set of info tags and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the sum of the inputs\. Missing INFO fields will be treated as zeros unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### FLAGSET\(x\.\.\.\)
 
-    
-    Input should be a set of infoFields and optionally a name, with 
-    the format tagID:name\. If names are omitted, then the name 
-    will be equal to the tagID\. Output field will be the set of 
-    names for which the respective info field is equal to 1\. Any 
-    value other than 1, including missing fields, will be treated 
-    as 0\.
-    x\.\.\. \(INFO:Int\)
+
+Input should be a set of infoFields and optionally a name, with the format tagID:name\. If names are omitted, then the name will be equal to the tagID\. Output field will be the set of names for which the respective info field is equal to 1\. Any value other than 1, including missing fields, will be treated as 0\.
+x\.\.\. \(INFO:Int\) 
+
+### LEN\(x\)
+
+
+The new field will be an integer field equal to the length of the input field\. Will be missing if the input field is missing\.
+x \(INFO:String,INFO:Int,INFO:Float\) 
 
 ### RANDFLAG\(x,seed\)
 
-    
-    
-    x \(FLOAT\)
-    seed \(INT\)
+
+
+x \(FLOAT\) 
+seed \(INT\) 
 
 ### DIV\(x,y\)
 
-    
-    Input should be a pair of info fields and/or numeric constants 
-    \(which must be specified as CONST:n\)\. Output field will be 
-    the product of the two inputs\. Missing INFO fields will be 
-    treated as ZEROS unless all params are INFO fields and all are 
-    missing, in which case the output will be missing\. Output 
-    field type will be a float\.
-    x \(INT|FLOAT|INFO:Int|INFO:Float\)
-    y \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+Input should be a pair of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the product of the two inputs\. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be a float\.
+x \(INT|FLOAT|INFO:Int|INFO:Float\) 
+y \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### MIN\(x\.\.\.\)
 
-    
-    
-    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+
+x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
-    
-    Input should be an INFO field
-    x \(INFO:String\)
-    defaultValue \(Optional\) \(Int\)
+
+Input should be an INFO field
+x \(INFO:String\) 
+defaultValue \(Optional\) \(Int\) 
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 
-    
-    Input should be an INFO field\. Converts to a numeric float\. 
-    If no defaultValue is supplied then non\-floats will be 
-    dropped\. Note that NaN and Inf will be dropped / replaced with 
-    the default\.
-    x \(INFO:String\)
-    defaultValue \(Optional\) \(Float\)
+
+Input should be an INFO field\. Converts to a numeric float\. If no defaultValue is supplied then non\-floats will be dropped\. Note that NaN and Inf will be dropped / replaced with the default\.
+x \(INFO:String\) 
+defaultValue \(Optional\) \(Float\) 
 
 ### EXPR\(expr\)
 
-    
-    The new field will be an integer field which will be equal to 1 
-    if and only if the expression is TRUE, and 0 otherwise\. See 
-    the expression format definition for more information on how 
-    the logical expression syntax works\.
-    expr \(STRING\)
+
+The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise\. See the expression format definition for more information on how the logical expression syntax works\.
+expr \(STRING\) 
 
 ### DECODE\(x,decoder\)
 
-    
-    
-    x \(INFO:String\)
-    decoder \(FILE:String\)
+
+
+x \(INFO:String\) 
+decoder \(FILE:String\) 
 
 ### CONCAT\(x\.\.\.\)
 
-    
-    This simple function concatenates the values of the input 
-    parameters\. Input parameters can be any combination of INFO 
-    fields or constant strings\.
-    x\.\.\. \(String|INFO:String\)
+
+This simple function concatenates the values of the input parameters\. Input parameters can be any combination of INFO fields or constant strings\.
+x\.\.\. \(String|INFO:String\) 
 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 
-    
-    Input should be a set of info fields and/or numeric constants 
-    \(which must be specified as CONST:n\)\. Output field will be 
-    the product of the inputs\. Missing INFO fields will be treated 
-    as ones unless all params are INFO fields and all are missing, 
-    in which case the output will be missing\. Output field type 
-    will be an integer if all inputs are integers and otherwise a 
-    float\.
-    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+Input should be a set of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the product of the inputs\. Missing INFO fields will be treated as ones unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### SETS\.DIFF\(x,y\)
 
-    
-    Input should be a pair of sets that are either INFO fields 
-    specified as INFO:tagID, text files specified as FILE:fileName, 
-    or a constant set delimited with colons\.Output field will be a 
-    comma delimited string containing the elements in the first set 
-    with the second set subtracted out\.
-    x 
-    \(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\)
-    y 
-    \(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\)
+
+Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons\.Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out\.
+x \(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\) 
+y \(String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:String\) 
 
 ### SWITCH\.EXPR\(expr,A,B\)
 
-    
-    Switches between two options depending on a logical 
-    expression\. The 'expr' expression parameter must be formatted 
-    like standard variant\-level expressions\. The A and B 
-    parameters can each be either a constant or an INFO field\. The 
-    output field will be equal to A if the logical expression is 
-    TRUE, and otherwise will be B\.
-    expr \(STRING\)
-    A \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\)
-    B \(Optional\) 
-    \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\)
+
+Switches between two options depending on a logical expression\. The 'expr' expression parameter must be formatted like standard variant\-level expressions\. The A and B parameters can each be either a constant or an INFO field\. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B\.
+expr \(STRING\) 
+A \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\) 
+B \(Optional\) \(INFO:Int|INFO:Float|INFO:String|Int|Float|String\) 
 
 ### MAX\(x\.\.\.\)
 
-    
-    
-    x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\)
+
+
+x\.\.\. \(INT|FLOAT|INFO:Int|INFO:Float\) 
 
 ### PICK\.RANDOM\(seed,x,y\.\.\.\)
 
-    
-    The first parameter must be either '\.' or a supplied random 
-    seed for the random number generator\. You can then provide 
-    either a single additional parameter and the output field will 
-    be a randomly picked element from that parameter\. In this case 
-    the output will be chosen from this one input parameter \(which 
-    is assumed to be a list of some sort\), which can be a string 
-    constant list delimited with colons and beginning with CONST:, 
-    an INFO field, or a text file specified as FILE:filename\. 
-    Alternately: you can provide several additional parameters, in 
-    which case it will select randomly from the set of parameters\.
-    seed \(String\)
-    x \(String|INFO:String|FILE:String\)
-    y\.\.\. \(Optional\) \(String|INFO:String\)
+
+The first parameter must be either '\.' or a supplied random seed for the random number generator\. You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter\. In this case the output will be chosen from this one input parameter \(which is assumed to be a list of some sort\), which can be a string constant list delimited with colons and beginning with CONST:, an INFO field, or a text file specified as FILE:filename\. Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters\.
+seed \(String\) 
+x \(String|INFO:String|FILE:String\) 
+y\.\.\. \(Optional\) \(String|INFO:String\) 
 
 ### SETS\.UNION\(x\.\.\.\)
 
-    
-    The new field will be equal to the union of the inputs\. Inputs 
-    can either be INFO fields specified with 'INFO:tagName', can 
-    point to a text file with 'FILE:filename', or can be constants 
-    \(delimited with colons\)\. The output will be the union of the 
-    given parameters, in alphabetical order\.
-    x\.\.\. \(String|INFO:String|FILE:String\)
+
+The new field will be equal to the union of the inputs\. Inputs can either be INFO fields specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be constants \(delimited with colons\)\. The output will be the union of the given parameters, in alphabetical order\. 
+x\.\.\. \(String|INFO:String|FILE:String\) 
 
 ### COPY\(oldField\)
 
-    
-    
-    oldField \(INFO:INT|INFO:Float|INFO:String\)
+
+
+oldField \(INFO:INT|INFO:Float|INFO:String\) 
 
 ### SETS\.INTERSECT\(x\.\.\.\)
 
-    
-    Input should be a pair of sets that are either INFO fields 
-    specified as INFO:tagID, text files specified as FILE:fileName, 
-    or a constant set delimited with colons\. Output field will be 
-    a comma delimited string containing the intersect between the 
-    supplied sets\.
-    x\.\.\. \(String|INFO:String|FILE:String\)## VCF Line Filter Expressions
+
+Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons\. Output field will be a comma delimited string containing the intersect between the supplied sets\.
+x\.\.\. \(String|INFO:String|FILE:String\) ## VCF Line Filter Expressions
 
 
 
@@ -1122,6 +866,10 @@ expression returns FALSE\.
 #### LOCUS\.eq:chrom:pos
 
 > True if the variant is at the given chromosome and position
+
+#### LOCUS\.near:k:chrom:pos
+
+> True if the variant is within k bases from the given chromosome and position
 
 #### LOCUS\.range:chrom:from:to
 

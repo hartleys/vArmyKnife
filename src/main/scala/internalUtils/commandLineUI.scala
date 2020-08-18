@@ -35,7 +35,8 @@ object commandLineUI {
     def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
                           baseLevel : Int = 0) : String = {
       title.map{ tx => "\n"+repString("#",baseLevel + level)+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + lines.map{line => {
-        wrapLineWithIndent(escapeToMarkdown(line),lineLen, mdBlockIndent );
+        //wrapLineWithIndent(escapeToMarkdown(line),lineLen, mdBlockIndent );
+        escapeToMarkdown(line)
       }}.mkString("\n");
     }
     

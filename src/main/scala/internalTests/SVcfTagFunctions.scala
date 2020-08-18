@@ -849,6 +849,10 @@ object SVcfTagFunctions {
       }
       
   }
+  abstract class VcfTagFcnSideEffecting() extends VcfTagFcn() {
+    def close()
+  }
+  
   case class VcfTagFcnMetadata( id : String, synon : Seq[String],
                               shortDesc : String,
                               desc : String,
@@ -867,8 +871,6 @@ object SVcfTagFunctions {
 
   
   abstract class VcfTagFcnFactory(){
-    
-
     def getTypeInfoOLD(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Vector[(String,String,VcfTagFunctionParam,String)] = {
      fcParam.padTo(params.length, fcParam.last).zip(params).map{ case (pp,pv) => {
             val tpair = pp.getFinalInputType(pv,h);
@@ -916,6 +918,162 @@ object SVcfTagFunctions {
      def metadata : VcfTagFcnMetadata;
      def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn;
   }
+
+  
+  abstract class VcfTagFcnFactorySideEffecting(){
+    def getTypeInfo(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Seq[VcfFcnParsedParam] = {
+      if(fcParam.length < params.length && (! fcParam.last.dotdot)){
+        error("ERROR: Function has too many parameters: "+params);
+      } else if( fcParam.filter{ fp => fp.req }.length > params.length ){
+        error("ERROR: Function has too few parameters: "+params);
+      }
+      fcParam.padTo(params.length, fcParam.last).zip(params).map{ case (fpp,param) => {
+        fpp.getParsedParam(param ,h)
+      }}
+    }
+    //def getTypeInfo(
+    def getSuperType(pprm : Seq[VcfFcnParsedParam]) : String = {
+      ParamType.getString( if( pprm.forall( p => p.TYPE == ParamType.INT ) ){
+        ParamType.INT
+      } else if( pprm.forall( p => p.TYPE == ParamType.INT || p.TYPE == ParamType.FLOAT ) ){
+        ParamType.FLOAT
+      } else {
+        ParamType.STRING
+      } )
+    }
+     def metadata : VcfTagFcnMetadata;
+     def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcnSideEffecting;
+  }
+
+  /*
+                 val expr = paramValues.head;
+              val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                val k = if( filter.keep(vc) ){
+                  dd(0).get(vc).getOrElse(".")
+                } else {
+                  dd(1).get(vc).getOrElse(".")
+                }
+   * 
+   */
+  
+  val vcfTagFcnMap_sideEffecting : Map[String,VcfTagFcnFactorySideEffecting] = Seq[VcfTagFcnFactorySideEffecting](
+        new VcfTagFcnFactorySideEffecting(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "TALLY.SUM.IF",synon = Seq(),
+              shortDesc = "Calculates a conditional sum across the whole file.",
+              desc = ""+
+                     ""+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "expr", ty = "String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "Int|Float|INFO:Int|INFO:Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcnSideEffecting = {
+            new VcfTagFcnSideEffecting(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
+              override val outType = getSuperType(typeInfo);
+              override val outNum = "1";
+              val dd = if(outType == "Integer"){
+                tally(newTag,0);
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
+              } else {
+                tally(newTag,0.0);
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
+              }
+              val expr = paramValues.head;
+              val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                dd match {
+                  case Left(ddi) => {
+                    val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }
+                    if(v.length > 0 && filter.keep(vc)){
+                      tally(newTag,v.sum)
+                    }
+                  }
+                  case Right(ddf) => {
+                    val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }
+                    if(v.length > 0 && filter.keep(vc)){
+                      tally(newTag,v.sum)
+                    }
+                  }
+                }
+              }
+              def close(){
+                
+              }
+            }
+
+          }
+        },
+        new VcfTagFcnFactorySideEffecting(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "TALLY.SUM.IF.GROUP",synon = Seq(),
+              shortDesc = "Sum of several tags or numeric constants.",
+              desc = ""+
+                     ""+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "expr", ty = "String",req=true,dotdot=false ),
+                   VcfTagFunctionParam( id = "group", ty = "INFO:String",req=true,dotdot=true ),
+                  VcfTagFunctionParam( id = "x", ty = "Int|Float|INFO:Int|INFO:Float",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcnSideEffecting = {
+            new VcfTagFcnSideEffecting(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params.drop(2),pv.drop(2),h)
+              override val outType = getSuperType(typeInfo);
+              override val outNum = "1";
+              val dd = if(outType == "Integer"){
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
+              } else {
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
+              }
+              val expr = paramValues.head;
+              val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
+              val grp = if( pv(1).startsWith("INFO:")) pv(1).drop(5) else pv(1);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                dd match {
+                  case Left(ddi) => {
+                    val v = ddi.flatMap{ d => d.get(vc).getOrElse(Vector()) }.sum
+                    val g = vc.info.getOrElse( grp,None).filter( z => z != "." ).toSeq.flatMap{ z => z.split(",").toSeq }
+                    g.foreach{ gg => {
+                      tally(newTag+"_"+gg,v)
+                    }}
+                  }
+                  case Right(ddf) => {
+                    val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }.sum
+                    val g = vc.info.getOrElse( grp,None).filter( z => z != "." ).toSeq.flatMap{ z => z.split(",").toSeq }
+                    g.foreach{ gg => {
+                      tally(newTag+"_"+gg,v)
+                    }}
+                  }
+                }
+              }
+              def close(){
+                
+              }
+            }
+
+          }
+        }
+    ).map{ ff => {
+        (ff.metadata.id,ff)
+      }}.toMap
   
   val vcfTagFunMap : Map[String,VcfTagFcnFactory] = Seq[VcfTagFcnFactory](
         new VcfTagFcnFactory(){
@@ -966,7 +1124,7 @@ object SVcfTagFunctions {
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "PRODUCT.ARRAY",synon = Seq(),
-              shortDesc = "",
+              shortDesc = "Multiplicative product",
               desc = "Input should be a set of info fields and/or numeric constants (which must be specified as CONST:n). "+
                      "Output field will be the product of the inputs. Missing INFO fields will be treated as ones "+
                      "unless all params are INFO fields and all are missing, in which case the output will be missing. "+
@@ -1360,7 +1518,7 @@ object SVcfTagFunctions {
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
               val typeInfo = getTypeInfo(md.params,pv,h)
-              override val outType = "String";
+              override val outType = getSuperType(typeInfo);
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.toVector.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
@@ -1389,7 +1547,7 @@ object SVcfTagFunctions {
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
               val typeInfo = getTypeInfo(md.params,pv,h).toVector
-              override val outType = "String";
+              override val outType = getSuperType(typeInfo);
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
@@ -1463,7 +1621,7 @@ object SVcfTagFunctions {
                 //   reportln("  ["+tt+","+tp+","+pp.id+"/"+pp.ty+","+pv+"] ","deepDebug");
                 //}}
 
-              override val outType = "String";
+              override val outType = getSuperType(typeInfo);
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
@@ -1474,6 +1632,44 @@ object SVcfTagFunctions {
                 //reportln("SETS.UNION.run:"+out,"deepDebug");
 
                 writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "LEN",synon = Seq(),
+              shortDesc = "Length",
+              desc = "The new field will be an integer field equal to the length of the input field. Will be missing if the input field is missing.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String,INFO:Int,INFO:Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
+              
+                //reportln("SETS.UNION.run: ","deepDebug");
+                //reportln("  SETS.UNION.typeInfo: ","deepDebug");
+                //typeInfo.foreach{ case (tt,tp,pp,pv) => {
+                //   reportln("  ["+tt+","+tp+","+pp.id+"/"+pp.ty+","+pv+"] ","deepDebug");
+                //}}
+
+              override val outType = "Integer";
+              override val outNum = ".";
+              val dd :VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo.head)
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                
+                val out = dd.get(vc).map{ x => {
+                  writeInt(vout,x.length)
+                }}
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+
+                //writeString(vout,out)
               }
             }
           }
@@ -1708,6 +1904,58 @@ object SVcfTagFunctions {
       }}.toMap
   
 
+  class RunTally(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "RunFunction."+newTag
+    //keywords: tagVariantFunction tagVariantsFunction Variant Function
+    val f : String = func.toUpperCase;
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("newTag",newTag),
+        ("func",func),
+        ("paramTags",paramTags.mkString("|"))
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+
+      val fcn = vcfTagFcnMap_sideEffecting( func ).gen( paramValues = paramTags, outHeader = outHeader, newTag = newTag, digits = digits);
+      
+      val minParamsRequired = fcn.md.params.filter{ pp => pp.req }.length
+      val maxParamsAllowed  = if( fcn.md.params.exists( pp => pp.dotdot ) ){
+        None
+      } else {
+        Some(fcn.md.params.length)
+      }
+      if(paramTags.length < minParamsRequired){
+        error("   ERROR in function setup: tagFunction "+func+" has "+minParamsRequired+" mandatory parameters. We found "+paramTags.length+": \""+paramTags.mkString(",")+"\"");
+      }
+      maxParamsAllowed.foreach{ mp => {
+        if(paramTags.length > mp){
+          error("   ERROR in function setup: tagFunction "+func+" can only take "+mp+" parameters. We found "+paramTags.length+": \""+paramTags.mkString(",")+"\"");
+        }
+      }}
+      //
+      //outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO",newTag,Number=fcn.outNum,Type=fcn.outType,desc=desc.getOrElse("") +" (Result of performing function "+func+" on params: "+paramTags.mkString(",")+".)")),Some(this));
+
+      //val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      //if( overwriteInfos.nonEmpty ){
+      //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      //}
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        //vc.dropInfo(overwriteInfos);
+        fcn.run(v,vc);
+        vc;
+      }}, closeAction = (() => {
+        fcn.close();
+      })),outHeader)
+    }
+  }
+  
+      
+
   class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "FunctionInfoTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
@@ -1776,7 +2024,7 @@ object SVcfTagFunctions {
       val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
                                                    lines = Seq("",
                                                                mf.metadata.desc), 
-                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=4)
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=8)
       Seq(fcnTitleLine) ++
           mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
         internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+
@@ -1784,7 +2032,7 @@ object SVcfTagFunctions {
                                                               ""
                                                             } else {
                                                               "(Optional) "
-                                                            }}+"("+pp.ty+")" ), indentTitle = 4, indentBlock = 12, indentFirst=8)
+                                                            }}+"("+pp.ty+") "+pp.desc ), indentTitle = 4, indentBlock = 12, indentFirst=10)
       }}
    }}
    
