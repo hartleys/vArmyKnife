@@ -70,6 +70,7 @@ Basic Syntax:
 
 
 \-windowSize: Sets the size of the sliding window used\. Problems may occur if you have variants longer than this window size\. Default is 200bp\.\(Int\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
 
 ### depthStats: This function calculates various statistics on total read depth and hetAB\.
 
@@ -290,7 +291,7 @@ Basic Syntax:
 ### fixDotAltIndels: \.\.\.
 
 
-\(This function takes no parameters\)
+\-genomeFA: The genome fasta file containing the reference genome\. This will be used by various functions that require genomic information\. Note that some functions that call the GATK library will also require that the fasta be indexed\. Note: Chromosome names must match\.\(String, required\)
 
 ### dropGenotypeData: 
 

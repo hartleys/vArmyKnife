@@ -490,7 +490,8 @@ object SVcfMapFunctions {
        
        ParamStrSet("fixFirstBaseMismatch" ,  desc = "...", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-              ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the sliding window used. Problems may occur if you have variants longer than this window size. Default is 200bp.",req=false)
+              ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the sliding window used. Problems may occur if you have variants longer than this window size. Default is 200bp.",req=false),
+              COMMON_PARAMS("genomeFA")
          )), category = "Variant Reformatting"
        ),
       ParamStrSet("leftAlignAndTrim" ,  desc = "...", 
@@ -531,7 +532,7 @@ object SVcfMapFunctions {
        
       ParamStrSet("fixDotAltIndels" ,  desc = "...", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-              
+              COMMON_PARAMS("genomeFA")
          )), category = "Variant Reformatting"
        ),
       ParamStrSet("getLocusDepthFromWig" ,  desc = "...", 
