@@ -727,14 +727,14 @@ object SVcfMapFunctions {
       
       def getSVcfMapFunction( variantMapFunction : List[String], 
                              chromList : Option[List[String]],
-                             burdenCountsFile : List[String] ,
+                             burdenWriterMap : Map[String,internalUtils.fileUtils.WriterUtil] ,
                              groupFile : Option[String],
                              superGroupList : Option[String],
                 genomeFA : Option[String],
                 calcStatGtTag : String
 
       ) : Seq[SVcfWalker] = {
-          val burdenWriterMap = burdenCountsFile.map{ bcf => 
+          /*val burdenWriterMap = burdenCountsFile.map{ bcf => 
             val cc = bcf.split("[:]");
             if(cc.length == 2){
               (cc(0),openWriterSmart(cc(1)));
@@ -745,7 +745,7 @@ object SVcfMapFunctions {
               ("",openWriterSmart(bcf))
             }
             
-          }.toMap;
+          }.toMap;*/
             val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String]) = getGroups(groupFile, None, superGroupList);

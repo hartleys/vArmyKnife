@@ -414,7 +414,7 @@ object SVcfWalkerMain {
             if( ccFcnIdx >= 1){
               SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.take(ccFcnIdx), 
                                                chromList=chromList, 
-                                               burdenCountsFile=burdenCountsFile, 
+                                               burdenWriterMap=burdenWriterMap, 
                                                groupFile=groupFile, 
                                                superGroupList=superGroupList, 
                                                genomeFA=genomeFA, 
@@ -431,7 +431,7 @@ object SVcfWalkerMain {
         ({
             SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.drop(ccFcnIdx+1), 
                                                chromList=chromList, 
-                                               burdenCountsFile=burdenCountsFile, 
+                                               burdenWriterMap=burdenWriterMap, 
                                                groupFile=groupFile, 
                                                superGroupList=superGroupList, 
                                                genomeFA=genomeFA, 
@@ -650,6 +650,7 @@ object SVcfWalkerMain {
     
     burdenWriterMap.foreach{ case (id,bw) => {
       reportln("Closing burden count writer: "+id,"note");
+      bw.flush();
       bw.close();
     }}
     //if(! summaryWriter.isEmpty) summaryWriter.get.close();

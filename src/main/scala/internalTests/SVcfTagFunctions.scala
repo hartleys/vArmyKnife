@@ -176,15 +176,15 @@ object SVcfTagFunctions {
       }
       
       val PP = if(param.toUpperCase().startsWith("FILE:")){
-        param.toUpperCase().drop(5)
+        param.drop(5)
       } else if(param.toUpperCase().startsWith("CONST:")){
-        param.toUpperCase().drop(6)
+        param.drop(6)
       } else if(param.toUpperCase().startsWith("GENO:")){
-        param.toUpperCase().drop(5)
+        param.drop(5)
       } else if( param.toUpperCase().startsWith("FORMAT:")){
-        param.toUpperCase().drop(7)
+        param.drop(7)
       } else if( param.toUpperCase().startsWith("INFO:")){
-        param.toUpperCase().drop(5)
+        param.drop(5)
       } else{
         param;
       }
@@ -1813,7 +1813,6 @@ object SVcfTagFunctions {
               //val newField = pv(1);
               override val outType = h.infoLines.find{ _.ID == oldField }.map{ _.Type }.getOrElse("???")
               override val outNum = h.infoLines.find{ _.ID == oldField }.map{ _.Number }.getOrElse("???")
-              val thresh = string2double(pv.head);
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 vc.info.getOrElse(oldField,None).foreach{ vv => writeString(vout,vv) }
               }

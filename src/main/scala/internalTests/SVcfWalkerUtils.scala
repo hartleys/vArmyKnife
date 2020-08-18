@@ -2251,7 +2251,8 @@ object SVcfWalkerUtils {
             out.write(tagID +"/"+grp+ "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
           }}
         }}
-        
+        out.flush();
+
         //out.close();
         //burdenMatrix.keys.toVector.sorted
       })),outHeader)

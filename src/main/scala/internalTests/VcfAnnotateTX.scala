@@ -2139,7 +2139,7 @@ object VcfAnnotateTX {
             if( ccFcnIdx >= 1){
               SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.take(ccFcnIdx), 
                                                chromList=chromList, 
-                                               burdenCountsFile=burdenCountsFile, 
+                                               burdenWriterMap=burdenWriterMap, 
                                                groupFile=groupFile, 
                                                superGroupList=superGroupList, 
                                                genomeFA=genomeFA, 
@@ -2726,7 +2726,7 @@ object VcfAnnotateTX {
         ) ++ ({
             SVcfMapFunctions.getSVcfMapFunction(variantMapFunction=variantMapFunction.drop(ccFcnIdx+1), 
                                                chromList=chromList, 
-                                               burdenCountsFile=burdenCountsFile, 
+                                               burdenWriterMap=burdenWriterMap, 
                                                groupFile=groupFile, 
                                                superGroupList=superGroupList, 
                                                genomeFA=genomeFA, 
