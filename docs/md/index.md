@@ -1,4 +1,4 @@
-> Version 3.1.50 (Updated Fri Sep  4 14:15:46 EDT 2020)
+> Version 3.1.51 (Updated Fri Sep  4 14:36:51 EDT 2020)
 
 # GENERAL SYNTAX:
 
@@ -29,7 +29,16 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
 ## OPTIONAL ARGUMENTS:
+### Edit VCF:
+#### --variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:
+
+> TODO DESC (repeatable String)
+
 ### Input Parameters:
+#### --chromList chr1,chr2,...:
+
+> List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)
+
 #### --infileList:
 
 > If this option is set, then the infile parameter is a text file containing a list of input VCF files (one per line), rather than a simple path to a single VCF file. Multiple VCF files will be concatenated and used as input. Note that only the first file's headers will be used, and if any of the subsequent files have tags or fields that are not present in the first VCF file then errors may occur. Also note that if the VCF file includes sample genotypes then the samples MUST be in the same order. (flag)
@@ -42,39 +51,20 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 > If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes. (Int)
 
-### Universal Parameters:
-#### --genomeFA genome.fa.gz:
-
-> The genome fasta file. Can be gzipped or in plaintext. (String)
-
 ### Output Parameters:
 #### --splitOutputByChrom:
 
 > If this option is set, the output will be split up into parts by chromosome. NOTE: The outfile parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (flag)
 
-### Annotation:
-#### --variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:
-
-> TODO DESC (repeatable String)
-
-#### --tallyFile file.txt:
-
-> Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
-
-### Preprocessing:
-#### --chromList chr1,chr2,...:
-
-> List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)
-
 #### --splitOutputByBed intervalBedFile.bed:
 
 > If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)
 
-#### --universalTagPrefix VAK\_:
+### Other Inputs:
+#### --genomeFA genome.fa.gz:
 
-> Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
+> The genome fasta file. Can be gzipped or in plaintext. (String)
 
-### Sample Info:
 #### --groupFile groups.txt:
 
 > File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID. (String)
@@ -82,6 +72,20 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --superGroupList sup1,grpA,grpB,...;sup2,grpC,grpD,...:
 
 > A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)
+
+#### --paramFile paramFile.txt:
+
+> A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)
+
+### Annotation:
+#### --tallyFile file.txt:
+
+> Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
+
+### Preprocessing:
+#### --universalTagPrefix VAK\_:
+
+> Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK\_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)
 
 ### OTHER OPTIONS:
 #### --verbose:
@@ -91,10 +95,6 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --quiet:
 
 > Flag to indicate that only errors and warnings should be sent to stderr. (flag)
-
-#### --paramFile paramFile.txt:
-
-> A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)
 
 #### --debugMode:
 

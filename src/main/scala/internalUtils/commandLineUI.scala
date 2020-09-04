@@ -214,7 +214,7 @@ List(
                                                           "Lines that begin with a pound sign will be skipped. "+
                                                           "Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file."+
                                                           ""+
-                                                          "") ::
+                                                          "").meta(false,"Other Inputs") ::
                     new UnaryArgument( name = "debugMode",
                                          arg = List("--debugMode"), // name of value
                                          argDesc = "Flag to indicate that much more debugging information should be sent to stderr." // description

@@ -1,7 +1,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 3.1.50 (Updated Fri Sep  4 14:15:46 EDT 2020)</p>
+  <p>Version 3.1.51 (Updated Fri Sep  4 14:36:51 EDT 2020)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -40,7 +40,21 @@ To use other secondary tools:
 
 <h2>OPTIONAL ARGUMENTS:</h2>
 
+<h3>Edit VCF:</h3>
+
+<h4>--variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:</h4>
+
+<blockquote>
+  <p>TODO DESC (repeatable String)</p>
+</blockquote>
+
 <h3>Input Parameters:</h3>
+
+<h4>--chromList chr1,chr2,...:</h4>
+
+<blockquote>
+  <p>List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)</p>
+</blockquote>
 
 <h4>--infileList:</h4>
 
@@ -60,14 +74,6 @@ To use other secondary tools:
   <p>If this parameter is set, then the utility will stop after reading in N variant lines. Intended for testing purposes. (Int)</p>
 </blockquote>
 
-<h3>Universal Parameters:</h3>
-
-<h4>--genomeFA genome.fa.gz:</h4>
-
-<blockquote>
-  <p>The genome fasta file. Can be gzipped or in plaintext. (String)</p>
-</blockquote>
-
 <h3>Output Parameters:</h3>
 
 <h4>--splitOutputByChrom:</h4>
@@ -76,41 +82,19 @@ To use other secondary tools:
   <p>If this option is set, the output will be split up into parts by chromosome. NOTE: The outfile parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (flag)</p>
 </blockquote>
 
-<h3>Annotation:</h3>
-
-<h4>--variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:</h4>
-
-<blockquote>
-  <p>TODO DESC (repeatable String)</p>
-</blockquote>
-
-<h4>--tallyFile file.txt:</h4>
-
-<blockquote>
-  <p>Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)</p>
-</blockquote>
-
-<h3>Preprocessing:</h3>
-
-<h4>--chromList chr1,chr2,...:</h4>
-
-<blockquote>
-  <p>List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process annotation data for the other chromosomes. (CommaDelimitedListOfStrings)</p>
-</blockquote>
-
 <h4>--splitOutputByBed intervalBedFile.bed:</h4>
 
 <blockquote>
   <p>If this option is set, the output will be split up into multiple VCF files based on the supplied BED file. An output VCF will be created for each line in the BED file. If the BED file has the 4th (optional) column, and if this 'name' column contains a unique name with no special characters then this name column will be used as the infix for all the output VCF filenames. If the BED file name column is missing, non-unique, or contains illegal characters then the files will simply be numbered. NOTE: If this option is used, then the 'outfile' parameter must be either a file prefix (rather than a full filename), or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being 'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'.  (String)</p>
 </blockquote>
 
-<h4>--universalTagPrefix VAK_:</h4>
+<h3>Other Inputs:</h3>
+
+<h4>--genomeFA genome.fa.gz:</h4>
 
 <blockquote>
-  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
+  <p>The genome fasta file. Can be gzipped or in plaintext. (String)</p>
 </blockquote>
-
-<h3>Sample Info:</h3>
 
 <h4>--groupFile groups.txt:</h4>
 
@@ -122,6 +106,28 @@ To use other secondary tools:
 
 <blockquote>
   <p>A list of top-level supergroups. Requires the --groupFile parameter to be set. (String)</p>
+</blockquote>
+
+<h4>--paramFile paramFile.txt:</h4>
+
+<blockquote>
+  <p>A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)</p>
+</blockquote>
+
+<h3>Annotation:</h3>
+
+<h4>--tallyFile file.txt:</h4>
+
+<blockquote>
+  <p>Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)</p>
+</blockquote>
+
+<h3>Preprocessing:</h3>
+
+<h4>--universalTagPrefix VAK_:</h4>
+
+<blockquote>
+  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
 </blockquote>
 
 <h3>OTHER OPTIONS:</h3>
@@ -136,12 +142,6 @@ To use other secondary tools:
 
 <blockquote>
   <p>Flag to indicate that only errors and warnings should be sent to stderr. (flag)</p>
-</blockquote>
-
-<h4>--paramFile paramFile.txt:</h4>
-
-<blockquote>
-  <p>A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)</p>
 </blockquote>
 
 <h4>--debugMode:</h4>

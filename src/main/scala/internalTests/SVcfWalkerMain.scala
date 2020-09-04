@@ -177,20 +177,20 @@ object SVcfWalkerMain {
                                          arg = List("--genomeFA"), 
                                          valueName = "genome.fa.gz",  
                                          argDesc =  "The genome fasta file. Can be gzipped or in plaintext."
-                                        ).meta(false,"Universal Parameters",1) ::
+                                        ).meta(false,"Other Inputs",5) ::
                     
                     new BinaryOptionArgument[String](
                                          name = "groupFile", 
                                          arg = List("--groupFile"), 
                                          valueName = "groups.txt",  
                                          argDesc =  "File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID."
-                                        ).meta(false,"Sample Info") :: 
+                                        ).meta(false,"Other Inputs") :: 
                     new BinaryOptionArgument[String](
                                          name = "superGroupList", 
                                          arg = List("--superGroupList"), 
                                          valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
                                          argDesc =  "A list of top-level supergroups. Requires the --groupFile parameter to be set."
-                                        ).meta(false,"Sample Info") :: 
+                                        ).meta(false,"Other Inputs") :: 
                                         
                     new BinaryOptionArgument[List[String]](
                                          name = "chromList", 
@@ -199,7 +199,7 @@ object SVcfWalkerMain {
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes will be ignored. "+
                                                     "For a VCF that contains only one chromosome this option will improve runtime, since the utility will not have to load and process "+
                                                     "annotation data for the other chromosomes."
-                                        ).meta(false,"Preprocessing") ::
+                                        ).meta(false,"Input Parameters") ::
                     
                     new UnaryArgument( name = "infileList",
                                          arg = List("--infileList"), // name of value
@@ -230,7 +230,7 @@ object SVcfWalkerMain {
                                                    "or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being " +
                                                    "'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'. "+
                                                    ""// description
-                                       ).meta(false,"Output Parameters", 110) ::
+                                       ).meta(false,"Output Parameters", 1) ::
                     new BinaryOptionArgument[String]( name = "splitOutputByBed",
                                          arg = List("--splitOutputByBed"), // name of value\
                                          valueName = "intervalBedFile.bed",
@@ -243,7 +243,7 @@ object SVcfWalkerMain {
                                                    "or must be a file prefix and file suffix separated by a bar character. In other worse, rather than being " +
                                                    "'outputFile.vcf.gz', it should be either just 'outputFile' or 'outputFile.|.vcf.gz'. "+
                                                    ""// description
-                                       ).meta(false,"Preprocessing") ::
+                                       ).meta(false,"Output Parameters") ::
                                        
                     new BinaryOptionArgument[Int](
                                          name = "numLinesRead", 
@@ -257,18 +257,18 @@ object SVcfWalkerMain {
                                        ).meta(true,"Input Parameters") ::
                                         
                     new BinaryMonoToListArgument[String](
-                                         name = "variantMapFunction", 
+                                         name = "FCN", 
                                          arg = List("--variantMapFunction","--FCN","--fcn","-F"),
                                          valueName = "FunctionType|ID|param1=p1|param2=p2|...",
                                          argDesc =  "TODO DESC"
-                                        ).meta(false,"Annotation") :: 
+                                        ).meta(false,"Edit VCF",-1) :: 
                                         
                     new BinaryArgument[String](name = "gtTag",
                                            arg = List("--gtTag"),  
                                            valueName = "GT", 
                                            argDesc = "The genotype tag to use in all functions. Note that many functions have the option to override this.",
                                            defaultValue = Some("GT")
-                                           ).meta(true,"Sample Stats") ::
+                                           ).meta(true,"Other Inputs") ::
                                         
                     new FinalArgument[String](
                                          name = "infile",
@@ -305,7 +305,7 @@ object SVcfWalkerMain {
                 tableInput = parser.get[Boolean]("tableInput"),
                 tableOutput = parser.get[Boolean]("tableOutput"),
                 //tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression"),
-                variantMapFunction = parser.get[List[String]]("variantMapFunction") ,
+                variantMapFunction = parser.get[List[String]]("FCN") ,
                 burdenCountsFile = parser.get[List[String]]("burdenCountsFile"),
                 calcStatGtTag = parser.get[String]("gtTag")
              )

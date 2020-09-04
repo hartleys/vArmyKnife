@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.50 (Updated Fri Sep  4 14:15:46 EDT 2020)
+> Version 3.1.51 (Updated Fri Sep  4 14:36:51 EDT 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -39,6 +39,11 @@ UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY\! DO NOT USE\!
 
 > Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)
 
+### Other Inputs:
+#### --paramFile paramFile.txt:
+
+> A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)
+
 ### Preprocessing:
 #### --universalTagPrefix VAK\_:
 
@@ -60,10 +65,6 @@ UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY\! DO NOT USE\!
 #### --quiet:
 
 > Flag to indicate that only errors and warnings should be sent to stderr. (flag)
-
-#### --paramFile paramFile.txt:
-
-> A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)
 
 #### --debugMode:
 

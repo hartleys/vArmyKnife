@@ -1,119 +1,14 @@
 @import url(https://fonts.googleapis.com/css?family=Lato:300italic,700italic,300,700);
 
-:root {
-	--deepDark: #103a51;
-	--LT: #c2d2dc;
-	--BASE: rgb(240, 243, 246);
-	--DK: #364550;
-	--LIGHTEN: rgba(255, 255, 255, 0.2);
-	--white: #fff;
-	--yellowNote: #fff3d4;
-}
 
-body {
-  background: var(--BASE);
-}
 
-.wrapper {
-  width: 1080px;
-  margin: 0 auto;
-  background: var(--BASE);
-}
-
-.tocColumn {
-	
-}
-
-.toc {
-	
-}
-
-.collapsible {
-	margin: 25px 0px 0px;
-	background: rgba(0,0,0,0.05);
-    border-top: 1px solid black;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
-    border-bottom: none solid black;
-    padding: 10px;
-}
-
-.collapseSection {
-	background: rgba(0,0,0,0.05);
-    border-top: 1px solid transparent;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
-    border-bottom: 1px solid black;
-	margin: 0px 0px 25px;
-    padding: 10px;
-}
-
-.entryBox {
-	background-color: var(--white);
-	border-radius: 0.2em;
-	min-height: 1.25em;
-	border-left: 0.25em solid white;
-	box-shadow: 0 0 10px rgba(0,0,0,0.1);
-	transition: 0.1s;
-	padding: 10px 5px 10px;
-	margin: 10px 5px 10px;
-}
-.entryBox:hover {
-    cursor: pointer;
-	border-left: 0.25em solid #72D0EB;
-	background-color: #dae7f0;
-}
-
-h3,h4,h6 {
-	margin: 0.1em 0em 0.1em;
-	font-size: 16px;
-	font-style: bold;
-	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
-}
-p,blockquote {
-	margin: 0.1em 0.5em 0.1em;
-}
-
-blockquote {
-	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
-    font-size: 16px;
-    font-style: normal;	
-}
-
-pre {
-	padding: 0em 3em 0em;
-	margin: 0.1em 0.5em 0.1em;
-	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
-    font-size: 16px;
-    font-style: normal;	
-}
-
-.inlineTitle {
-	display:inline;
-}
-
-.shortEntryDesc {
-	float:right;
-	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
-    font-size: 14px;
-    font-style: normal;	
-}
-
-.hiddenEntryContent {
-	display: none;
-}
-
-.exampleBox {
-	background: rgba(254, 255, 181,0.2);
-    border: 1px dotted black;
-	box-shadow: 0 0 10px rgba(0,0,0,0.1);
-	margin: 0.2em 0.2em 0.2em;
-	padding: 0.2em;
-}
-
-/*
 
 :root {
+
+	
+	
+	
+	
   --white: #ffffff;
   --black: #000000;
   --LT4: #f0f1f5;
@@ -166,8 +61,28 @@ pre {
   --textWarnRed: #AE2626;
   --textWarnGreen: #179A1B;
 }
+/*
+  --bioTextLT: #a4ba91;
+  --engTextLT: #e7b2b1;
+  --psyTextLT: #b9b0cf;
+  --bioTextDK: #323f27;
+  --engTextDK: #621f1e;
+  --psyTextDK: #50446f;
+4b5e3b
+633636
+67578e
+*/
 
-
+.THEME_SCALADOC_STYLE {
+	--DK4: #103a51;
+	--LT1: #c2d2dc;
+	--BASE: rgb(240, 243, 246);
+	--DK3: #364550;
+	--LIGHTEN: rgba(255, 255, 255, 0.2);
+	--white: #fff;
+	--whiteHover: #dae7f0;
+	--yellowNote: #fff3d4;
+}
 
 
 
@@ -474,7 +389,15 @@ pre {
   --baseBG: #c3c8d5
 }
 
-
+/*
+===================================================================================================================
+===================================================================================================================
+===================================================================================================================
+-----------------------------------   FORMATTING
+===================================================================================================================
+===================================================================================================================
+===================================================================================================================
+*/
 
 html {
   background: #6C7989;
@@ -488,6 +411,7 @@ html {
 
 
 body {
+  /*padding: 50px 0;*/
   margin: 0;
   font: 14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #000;
@@ -852,6 +776,10 @@ footer p + p {
 }
 
 h1 {
+  /*border-left: 5px solid black;
+  border-right: 5px solid black;
+  border-top: 5px solid black;*/
+/* top | right | bottom | left */  
   margin: 30px 0px 0px 5px;
   background-color: var(--DK3);
   color: var(--white);
@@ -933,10 +861,10 @@ h1 {
   position: relative;
   color: #000
 }
-
+/* sidebar */
 #sidebar {
 	float: right;
-	display: inline; 
+	display: inline; /* for IE */
 	width: 300px;
 	margin: 0px 20px;
 	background: #CCCCCC;
@@ -953,4 +881,4 @@ h1 {
 
 #topsidebar h2 {
 	padding: 20px 20px 20px;
-}*/
+}
