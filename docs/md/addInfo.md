@@ -54,11 +54,11 @@
 
     
     Input should be a set of infoFields and optionally a name, with 
-        the format tagID:name. If names are omitted, then the name 
-        will be equal to the tagID. Output field will be the set of 
-        names for which the respective info field is equal to 1. 
-        Any value other than 1, including missing fields, will be 
-        treated as 0.
+        the format tagID:name or just tagID. If names are omitted, 
+        then the name will be equal to the tagID. Output field will 
+        be the set of names for which the respective info field is 
+        equal to 1. Any value other than 1, including missing 
+        fields, will be treated as 0.
     x... (INFO:Int) 
 
 ### LEN\(x\)
@@ -97,7 +97,7 @@
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
-    Input should be an INFO field
+    Input should be an INFO field. Converts field to a Integer.
     x (INFO:String) 
     defaultValue (Optional) (Int) 
 

@@ -270,15 +270,25 @@ object helpDocs {
       
       for((arg, cmdMaker) <- runner.sortedCommandList ++ runner.depreciated_commandList){
         val parser = cmdMaker().parser;
-        val filename = if(arg == "walkVcf"){
-          "index"
-        } else {
-          arg
-        }
+        val filename = arg
+          
+        //if(arg == "walkVcf"){
+        //  "index"
+        //} else {
+        //  arg
+        //}
         val writer = openWriter(outdir+filename+".md");
         writer.write(parser.getMarkdownManual());
         writer.close();
+        
+        if(arg == "walkVcf"){
+          val writer = openWriter(outdir+"index"+".md");
+          writer.write(parser.SPECIAL_getMainManualMarkdown());
+          writer.close();
+        }
       }
+      
+      
       
       for((topicName,ht) <- helpTopicMap){
         val writer = openWriter(outdir+topicName+".md");

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version3.1.29 (Updated Tue Aug 18 15:50:40 EDT 2020)
+> Version3.1.50 (Updated Fri Sep  4 14:15:46 EDT 2020)
 
 > ([back to help base](secondaryCommands.html))
 
@@ -23,20 +23,20 @@ NOTE: if you run into OutOfMemoryExceptions, try adding the java options: "-Xmx8
 
 > This utility performs a series of transformations on an input VCF file and adds an array of informative tags.
 
-### [GenerateTranscriptAnnotation](GenerateTranscriptAnnotation.html)
-
-> This utility ... WARNING: THIS UTILITY IS AN UNTESTED BETA, AND MAY CONTAIN MAJOR FLAWS. NOT FOR PRODUCTION USE! USE AT YOUR OWN RISK!
-
 ### [VcfToMatrix](VcfToMatrix.html)
 
 > UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 
-### [MergeManyVcf](MergeManyVcf.html)
+### [splitExomeIntoParts](splitExomeIntoParts.html)
 
->  UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
+> UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 
 ## EXPERIMENTAL COMMANDS: 
 These commands have not been fully tested and are not for production use. Documentation may be incomplete or nonexistant. Some are nonfunctional, or have been subsumed into other commands, or were only intended for internal testing purposes. Use at your own risk!
+### [GenerateTranscriptAnnotation](GenerateTranscriptAnnotation.html)
+
+> This utility ... WARNING: THIS UTILITY IS AN UNTESTED BETA, AND MAY CONTAIN MAJOR FLAWS. NOT FOR PRODUCTION USE! USE AT YOUR OWN RISK!
+
 ### [filterGenotypesByStat](filterGenotypesByStat.html)
 
 > UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
@@ -93,10 +93,6 @@ These commands have not been fully tested and are not for production use. Docume
 
 > BETA: This function consolidates information from a wide variety of different input files and attempts to calculate a subset of the ACMG guidelines criteria. It then attempts to assign pathogenicity scores. WARNING: THIS UTILITY IS AN UNTESTED BETA, AND MAY CONTAIN MAJOR FLAWS. NOT FOR PRODUCTION USE! USE AT YOUR OWN RISK!
 
-### [splitExomeIntoParts](splitExomeIntoParts.html)
-
-> UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
-
 ### [legacySplit](legacySplit.html)
 
 >  UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
@@ -108,6 +104,10 @@ These commands have not been fully tested and are not for production use. Docume
 ### [ConvertToStandardVcf](ConvertToStandardVcf.html)
 
 > UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
+
+### [MergeManyVcf](MergeManyVcf.html)
+
+>  UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 
 ### [ConvertChromNames](ConvertChromNames.html)
 

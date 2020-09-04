@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "3.1.29"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Tue Aug 18 15:50:40 EDT 2020"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1597780240; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "3.1.50"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Fri Sep  4 14:15:46 EDT 2020"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1599243346; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -40,41 +40,56 @@ object runner {
   //Command name -> (execution call, summary, syntax)
   val utilList : Seq[CommandLineRunUtil] = Seq(
     new internalTests.SVcfWalkerMain.WalkVcf,
-    new internalTests.SVcfWalkerUtils.GenerateTxAnnotation,
     new internalTests.SVcfWalkerUtils.CommandVcfToMatrix,
-    new internalTests.minorUtils.CmdMemMergeVCF
+    new internalTests.SplitExomeIntoParts.CmdSplitExomeIntoParts    
   );
   
   val depreciatedUtilList : Seq[CommandLineRunUtil] = Seq(
-     new internalTests.VcfAnnotateTX.CmdMultiStepPipeline,
-    (new internalTests.SVcfWalkerUtils.AddGroupSummaries),
-    (new internalTests.SVcfWalkerUtils.ConvertAminoRangeToGenoRange),
+      //BETA:
+    new internalTests.SVcfWalkerUtils.GenerateTxAnnotation,
     (new internalUtils.CalcACMGVar.CmdAssessACMG),
-    (new internalTests.SVcfWalkerUtils.CmdRecodeClinVarCLN),
-    (new internalTests.trackToSpan.trackToSpan),
-    (new internalTests.SimSeqError.GenerateSimulatedError),
-    new internalTests.SimSeqError.GenerateSimulatedError,
-    //new internalTests.VcfAnnotateTX.RedoEnsemblMerge,
-    new internalTests.ibdSimulator.ibdSimulator,
+    new internalTests.minorUtils.CmdMemMergeVCF,
+
+    
+    
+       //FUNCTIONALITY REPLACED:
+          new internalTests.VcfAnnotateTX.CmdMultiStepPipeline,
+    (new internalTests.SVcfWalkerUtils.AddGroupSummaries),
     new internalTests.SVcfWalkerUtils.CommandFilterVCF,
     new internalTests.SVcfWalkerUtils.CmdFilterGenotypesByStat,
-    new internalTests.SVcfWalkerUtils.RunCalcVariantCountSummary,
-    new internalTests.SVcfWalkerUtils.compareVcfs,
     new internalTests.SVcfWalkerUtils.CmdAddTxBed,
     new internalTests.SVcfWalkerUtils.CmdCalcGenotypeStatTable,
     new internalTests.SVcfWalkerUtils.CmdFixVcfInfoWhitespace,
-    new internalTests.makeBedWiggle.CmdCodingCoverageStats,
     new internalTests.SVcfWalkerUtils.CmdExtractSingletons,
-    new internalTests.makeBedWiggle.CmdBuildSummaryTracks,
-    new internalTests.makeBedWiggle.CmdGenHomopolymerBed,
     new internalTests.SVcfWalkerUtils.CmdConvertChromNames,
     new internalTests.SVcfWalkerUtils.CmdFilterTags,
     new internalTests.SVcfWalkerUtils.CmdConvertToStandardVcf,
     new internalUtils.fileUtils.CmdZip,
     new internalTests.SVcfWalkerUtils.VcfParserTest,
+    new internalTests.SVcfWalkerUtils.compareVcfs,
+
+    
+
+       //SPECIAL USE:
+        (new internalTests.trackToSpan.trackToSpan),
+    (new internalTests.SVcfWalkerUtils.CmdRecodeClinVarCLN),
+    (new internalTests.SVcfWalkerUtils.ConvertAminoRangeToGenoRange),
+    new internalTests.makeBedWiggle.CmdGenHomopolymerBed,
+
+    
+    
+       //UNFINISHED OR UNTESTED:
+        (new internalTests.SimSeqError.GenerateSimulatedError),
+    new internalTests.SimSeqError.GenerateSimulatedError,
+    //new internalTests.VcfAnnotateTX.RedoEnsemblMerge,
+    new internalTests.ibdSimulator.ibdSimulator,
+    
+    //NOT SURE:
+    new internalTests.SVcfWalkerUtils.RunCalcVariantCountSummary,
+    new internalTests.makeBedWiggle.CmdCodingCoverageStats,
+    new internalTests.makeBedWiggle.CmdBuildSummaryTracks,
     new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTableV2,
-    new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTable,
-    new internalTests.SplitExomeIntoParts.CmdSplitExomeIntoParts
+    new internalTests.SVcfWalkerUtils.CmdCreateVariantSampleTable
   )
   
   val utilCommandList : Map[String, () => CommandLineRunUtil] = utilList.map((util) => {

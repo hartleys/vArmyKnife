@@ -963,8 +963,8 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "TALLY.SUM.IF",synon = Seq(),
               shortDesc = "Calculates a conditional sum across the whole file.",
-              desc = ""+
-                     ""+
+              desc = "Takes as input a variant expression expr and an INFO field x. "+
+                     "Output will be the sum of all x where expr is TRUE."+
                      ""+
                      "",
               params = Seq[VcfTagFunctionParam](
@@ -1018,10 +1018,11 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "TALLY.SUM.IF.GROUP",synon = Seq(),
               shortDesc = "Sum of several tags or numeric constants.",
-              desc = ""+
-                     ""+
-                     ""+
-                     "",
+              desc = "Takes a variant expression expr, an INFO field group and an INFO field x. "+
+                     "Will output an entry for each unique value of the group variable. "+
+                     "For each distinct value of the group variable g, will output the sum of all "+
+                     "x in which the group variable equals g AND where expr is TRUE. "+
+                     "This is especially useful for generating counts for each gene.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "expr", ty = "String",req=true,dotdot=false ),
                    VcfTagFunctionParam( id = "group", ty = "INFO:String",req=true,dotdot=true ),
@@ -1318,7 +1319,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "CONVERT.TO.INT",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be an INFO field",
+              desc = "Input should be an INFO field. Converts field to a Integer.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "defaultValue", ty = "Int",req=false,dotdot=false )
@@ -1392,7 +1393,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "FLAGSET",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be a set of infoFields and optionally a name, with the format tagID:name. "+
+              desc = "Input should be a set of infoFields and optionally a name, with the format tagID:name or just tagID. "+
                      "If names are omitted, then the name will be equal to the tagID. "+
                      "Output field will be the set of names for which the respective info field is equal to 1. Any value other than 1, including missing fields, will be treated as 0.",
               params = Seq[VcfTagFunctionParam](
@@ -2032,7 +2033,7 @@ object SVcfTagFunctions {
                                                                "Basic Syntax:",
                                                                "    --FCN addInfoTag|newTagID|fcn=infoTagFunction|params=p1,p2,..."), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
-                                                   lines = Seq(""), level = 2,indentTitle = 2)
+                                                   lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
       val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
                                                    lines = Seq("",

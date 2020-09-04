@@ -27,233 +27,236 @@
 
 
 <section>
-</section> <h1>BASIC SYNTAX:</h1> <section>
-
-<pre><code>Filtering expressions are parsed as a series of logical filters 
-    connected with AND, OR, NOT, and parentheses. All 
-    expressions must be separated with whitespace, though it 
-    does not matter how much whitespace or what kind. 
-    Alternatively, expressions can be read directly from file 
-    by setting the expression to EXPRESSIONFILE:filepath.
-Logical filters are all of the format 
-    FILTERNAME:PARAM1:PARAM2:etc. Some filters have no 
-    parameters, other filters can accept a variable number of 
-    parameters. All filters return TRUE or FALSE. Filters can 
-    be inverted using the NOT operator before the filter (with 
-    whitespace in between). Unless indicated otherwise, 
-    elements are dropped when the full expression returns FALSE.
+<pre><code>Variant expressions are logical expressions that are performed 
+    at the variant level. They are used by several parts of 
+    vArmyKnife, usually when filtering or differentiating 
+    variants based on it's properties/stats. For any given 
+    variant, a variant expression will be either TRUEor FALSE. 
+    Variant expressions are parsed as a series of logical 
+    functionsconnected with AND, OR, NOT, and parentheses. All 
+    expressions mustbe separated with whitespace, though it 
+    does not matter how muchwhitespace or what kind. 
+    Alternatively, expressions can be readdirectly from file by 
+    setting the expression toEXPRESSIONFILE:filepath.
+Variant Expression functions are all of the 
+    formatFILTERNAME:PARAM1:PARAM2:etc. Some filters have no 
+    parameters; other filters can accept a variable number of 
+    parameters. Allexpression functions return TRUE or FALSE. 
+    Filters can be inverted using theNOT operator before the 
+    filter (with whitespace in between).
 </code></pre>
 
 </section> <h1> </h1> <section>
 
 <pre><code>ALT.eq:k
-PASS iff the first ALT allele equals k.
+TRUE iff the first ALT allele equals k.
 (Param Types: string)
 ALT.isOneOf:k1:k2:...
-PASS iff the first ALT allele is one of k1,k2,...
+TRUE iff the first ALT allele is one of k1,k2,...
 (Param Types: string:...)
 ALT.len.eq:k
-PASS iff the first ALT allele is of length k.
+TRUE iff the first ALT allele is of length k.
 (Param Types: int)
 ALT.len.gt:k
-PASS iff the first ALT allele is of length gt k.
+TRUE iff the first ALT allele is of length gt k.
 (Param Types: int)
 AnyGtNonRef:gtTag
-
+TRUE iff gtTag has an alt allele for any sample. gtTag must be 
+    a GT-formatted genotype field.
 (Param Types: geno)
 AnyGtPass:simpleGtFiltExpression:k1:...
-PASS iff any one of the samples pass the supplied GT filter.
+TRUE iff any one of the samples pass the supplied GT filter.
 (Param Types: String:String:...)
 CHROM.inAnyOf:chrX:...
-True iff the variant is one one of the given chromosomes
+TRUE iff the variant is one one of the given chromosomes
 (Param Types: String:String:...)
 FALSE:
-Never pass
+Never TRUE
 (Param Types: )
 FILTER.eq:k
-PASS iff the FILTER column is equal to k.
+TRUE iff the FILTER column is equal to k.
 (Param Types: String)
 FILTER.ne:k
-PASS iff the FILTER column is not equal to k.
+TRUE iff the FILTER column is not equal to k.
 (Param Types: String)
 GENO.MAFgt:t:k
-PASS iff the genotype-field tag t is a genotype-style-formatted 
+TRUE iff the genotype-field tag t is a genotype-style-formatted 
     field and the minor allele frequency is greater than k.
 (Param Types: geno)
 GENO.MAFlt:t:k
-PASS iff the genotype-field tag t is a genotype-style-formatted 
+TRUE iff the genotype-field tag t is a genotype-style-formatted 
     field and the minor allele frequency is less than k.
 (Param Types: geno:number)
 GENO.hasTagPairGtStyleMismatch:t1:t2
-PASS iff the genotype-field t1 and t2 are both found on a given 
+TRUE iff the genotype-field t1 and t2 are both found on a given 
     line and have at least 1 sample where both tags are not set 
     to missing but they do not have the same value.
 (Param Types: geno:geno)
 GENO.hasTagPairMismatch:t1:t2
-PASS iff the genotype-field t1 and t2 are both found on a given 
+TRUE iff the genotype-field t1 and t2 are both found on a given 
     line but are not always equal for all samples.
 (Param Types: geno:geno)
 GTAG.any.gt:gtTag:k
-PASS iff any one of the samples have a value for their 
+TRUE iff any one of the samples have a value for their 
     genotype-tag entry greater than k.
 (Param Types: geno:number:...)
 INFO.any.gt:t:k
-PASS iff INFO field t is nonmissing and less than or equal to 
+TRUE iff INFO field t is nonmissing and less than or equal to 
     k.
 (Param Types: info:number)
 INFO.any.lt:t:k
-PASS iff INFO field t is nonmissing and less than or equal to 
+TRUE iff INFO field t is nonmissing and less than or equal to 
     k.
 (Param Types: info:number)
 INFO.eq:t:k
-PASS iff INFO field t is nonmissing and equal to k.
+TRUE iff INFO field t is nonmissing and equal to k.
 (Param Types: info:string)
 INFO.ge:t:k
-PASS iff INFO field t is nonmissing and greater than or equal 
+TRUE iff INFO field t is nonmissing and greater than or equal 
     to k.
 (Param Types: info:number)
 INFO.gem:t:k
-PASS iff INFO field t is missing or greater than or equal to k.
+TRUE iff INFO field t is missing or greater than or equal to k.
 (Param Types: info:number)
 INFO.gt:t:k
-PASS iff INFO field t is nonmissing and greater than k.
+TRUE iff INFO field t is nonmissing and greater than k.
 (Param Types: info:number)
 INFO.gtm:t:k
-PASS iff INFO field t is missing or greater than k.
+TRUE iff INFO field t is missing or greater than k.
 (Param Types: info:number)
 INFO.in:t:k
-PASS iff INFO field t is a comma delimited list that contains 
+TRUE iff INFO field t is a comma delimited list that contains 
     string k.
 (Param Types: info:string)
 INFO.inAny:t:k
-PASS if INFO field t is a list delimited with commas and bars, 
+TRUE if INFO field t is a list delimited with commas and bars, 
     and contains string k.
 (Param Types: info:string)
 INFO.inAnyOf:t:k1:k2:...
-PASS iff INFO field t is a list delimited with commas and bars, 
+TRUE iff INFO field t is a list delimited with commas and bars, 
     and contains any of the parameters k1,k2,...
 (Param Types: info:string:...)
 INFO.inAnyOfN:t:k1:k2:...
-PASS iff INFO field t is a list delimited with commas, bars, 
+TRUE iff INFO field t is a list delimited with commas, bars, 
     slashes, OR COLONS, and contains any of the parameters 
     k1,k2,...
 (Param Types: info:string:...)
 INFO.inAnyOfND:t:k1:k2:...
-PASS iff INFO field t is a list delimited with commas, bars, 
+TRUE iff INFO field t is a list delimited with commas, bars, 
     slashes, colons, or dashes, and contains any of the 
     parameters k1,k2,...
 (Param Types: info:string:...)
 INFO.le:t:k
-PASS iff INFO field t is nonmissing and less than or equal to 
+TRUE iff INFO field t is nonmissing and less than or equal to 
     k.
 (Param Types: info:number)
 INFO.lem:t:k
-PASS iff INFO field t is missing or less than or equal to k
+TRUE iff INFO field t is missing or less than or equal to k
 (Param Types: info:number)
 INFO.len.eq:t:k
-PASS iff INFO field t is nonmissing and has length equal to k.
+TRUE iff INFO field t is nonmissing and has length equal to k.
 (Param Types: info:int)
 INFO.len.gt:t:k
-PASS iff INFO field t is nonmissing and has length greater than 
+TRUE iff INFO field t is nonmissing and has length greater than 
     k.
 (Param Types: info:int)
 INFO.len.lt:t:k
-PASS iff INFO field t is nonmissing and has length less than k.
+TRUE iff INFO field t is nonmissing and has length less than k.
 (Param Types: info:int)
 INFO.lt:t:k
-PASS iff INFO field t is nonmissing and less than k.
+TRUE iff INFO field t is nonmissing and less than k.
 (Param Types: info:number)
 INFO.ltm:t:k
-PASS iff INFO field t is missing or less than k.
+TRUE iff INFO field t is missing or less than k.
 (Param Types: info:number)
 INFO.m:t
-PASS iff INFO field t is missing.
+TRUE iff INFO field t is missing.
 (Param Types: info)
 INFO.mempty:t
-PASS iff INFO field t is missing or less than or equal to k
+TRUE iff INFO field t is missing or less than or equal to k
 (Param Types: info)
 INFO.ne:t:k
-PASS iff INFO field t is either missing or not equal to k.
+TRUE iff INFO field t is either missing or not equal to k.
 (Param Types: info:string)
 INFO.nm:t
-PASS iff INFO field t is nonmissing.
+TRUE iff INFO field t is nonmissing.
 (Param Types: info)
 INFO.notIn:t:k
-PASS iff INFO field t is missing or is a comma delimited list 
+TRUE iff INFO field t is missing or is a comma delimited list 
     that does NOT contain string k.
 (Param Types: info:string)
 INFO.notInAny:t:k
-PASS if INFO field t is a list delimited with commas and bars, 
+TRUE if INFO field t is a list delimited with commas and bars, 
     and does not contain string k.
 (Param Types: info:string)
 INFO.subsetOf:t:k1:k2:...
-PASS iff INFO field t is a comma delimited list and is a subset 
+TRUE iff INFO field t is a comma delimited list and is a subset 
     of k1,k2,etc
 (Param Types: info:string:...)
 INFO.subsetOfFileList:t:f
-PASS iff INFO field t is a comma delimited list and is a subset 
+TRUE iff INFO field t is a comma delimited list and is a subset 
     of the list contained in file f
 (Param Types: info:infile)
 INFO.tagsDiff:t1:t2
-PASS iff the INFO-field t1 and t2 are different, including when 
+TRUE iff the INFO-field t1 and t2 are different, including when 
     one is missing and the other is not.
 (Param Types: info:info)
 INFO.tagsMismatch:t1:t2
-PASS iff the INFO-field t1 and t2 are both found on a given 
+TRUE iff the INFO-field t1 and t2 are both found on a given 
     line but are not equal.
 (Param Types: info:info)
 LOCUS.eq:chrom:pos
-True if the variant is at the given chromosome and position
+TRUE if the variant is at the given chromosome and position
 (Param Types: String:number)
 LOCUS.near:k:chrom:pos
-True if the variant is within k bases from the given chromosome 
+TRUE if the variant is within k bases from the given chromosome 
     and position
 (Param Types: number:String:number)
 LOCUS.range:chrom:from:to
-True if the variant is at the given chromosome and between the 
+TRUE if the variant is at the given chromosome and between the 
     given positions (0-based)
 (Param Types: String:number)
 POS.gt:pos
-True iff the variant is at a position greater than the given 
+TRUE iff the variant is at a position greater than the given 
     position
 (Param Types: number)
 POS.inAnyOf:pos1:...
-True iff the variant is at one of the given positions
+TRUE iff the variant is at one of the given positions
 (Param Types: String:String:...)
 QUAL.gt:k
-PASS iff the QUAL column is greater than k.
+TRUE iff the QUAL column is greater than k.
 (Param Types: String)
 QUAL.gtm:k
-PASS iff the QUAL column is greater than k, OR qual is missing.
+TRUE iff the QUAL column is greater than k, OR qual is missing.
 (Param Types: String)
 REF.eq:k
-PASS iff the REF allele equals k.
+TRUE iff the REF allele equals k.
 (Param Types: string)
 REF.isOneOf:k1:k2:...
-PASS iff the REF allele is one of k1,k2,...
+TRUE iff the REF allele is one of k1,k2,...
 (Param Types: string:...)
 REF.len.eq:k
-PASS iff the REF allele is of length k.
+TRUE iff the REF allele is of length k.
 (Param Types: int)
 REF.len.gt:k
-PASS iff the REF allele is of length gt k.
+TRUE iff the REF allele is of length gt k.
 (Param Types: int)
 TRUE:
-Always pass
+Always TRUE
 (Param Types: )
 allelesHaveNoNs:
-FAIL iff the variant has unknown bases, ie N, in the ALT or REF 
-    alleles.
+FALSE iff the variant has unknown bases, ie N, in the ALT or 
+    REF alleles.
 (Param Types: )
 isSNV:
-PASS iff the variant is an SNV.
+TRUE iff the variant is an SNV.
 (Param Types: )
 isVariant:
-FAIL iff the variant has no alt alleles, or if the only alt 
+FALSE iff the variant has no alt alleles, or if the only alt 
     allele is exactly equal to the ref allele.
 (Param Types: )
 simpleSNV:
-PASS iff the variant is a biallelic SNV.
+TRUE iff the variant is a biallelic SNV.
 (Param Types: )
 </code></pre>
 

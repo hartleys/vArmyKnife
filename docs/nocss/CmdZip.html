@@ -1,0 +1,110 @@
+<h1>vArmyKnife</h1>
+
+<blockquote>
+  <p>Version 3.1.50 (Updated Fri Sep  4 14:15:46 EDT 2020)</p>
+
+<p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
+</blockquote>
+
+<h2>Help for vArmyKnife command "CmdZip"</h2>
+
+<h2>USAGE:</h2>
+
+<p>GENERAL SYNTAX:</p>
+
+<pre><code>varmyknife [java_options] --CMD CmdZip [options] variants.vcf outfile.vcf.gz
+</code></pre>
+
+<h2>DESCRIPTION:</h2>
+
+<p>UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!</p>
+
+<h2>REQUIRED ARGUMENTS:</h2>
+
+<h4>variants.vcf:</h4>
+
+<blockquote>
+  <p>input VCF file. Can be gzipped or in plaintext. (String)</p>
+</blockquote>
+
+<h4>outfile.vcf.gz:</h4>
+
+<blockquote>
+  <p>The output file. Can be gzipped or in plaintext. (String)</p>
+</blockquote>
+
+<h2>OPTIONAL ARGUMENTS:</h2>
+
+<h3>Annotation:</h3>
+
+<h4>--tallyFile file.txt:</h4>
+
+<blockquote>
+  <p>Write a file with a table containing counts for all tallies, warnings and notices reported during the run. (String)</p>
+</blockquote>
+
+<h3>Preprocessing:</h3>
+
+<h4>--universalTagPrefix VAK_:</h4>
+
+<blockquote>
+  <p>Set the universal tag prefix for all vArmyKnife INFO and FORMAT tags. By default it is VAK_. Warning: if you change this at any point, then all subsequent vArmyKnife commands may need to be changed to match, as vArmyKnife sometimes expects its own tag formatting. (String)</p>
+</blockquote>
+
+<h3>OTHER OPTIONS:</h3>
+
+<h4>--compress:</h4>
+
+<blockquote>
+  <p>(flag)</p>
+</blockquote>
+
+<h4>--zip:</h4>
+
+<blockquote>
+  <p>(flag)</p>
+</blockquote>
+
+<h4>--verbose:</h4>
+
+<blockquote>
+  <p>Flag to indicate that debugging information and extra progress information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--quiet:</h4>
+
+<blockquote>
+  <p>Flag to indicate that only errors and warnings should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--paramFile paramFile.txt:</h4>
+
+<blockquote>
+  <p>A file containing additional parameters and options. Each parameter must begin with a dash. Leading whitespace will be ignored, and newlines preceded by a backslash are similarly ignored. Lines that begin with a pound sign will be skipped. Trailing parameters (infile, outfile, etc) CANNOT be defined using a parameter file. (paramFile)</p>
+</blockquote>
+
+<h4>--debugMode:</h4>
+
+<blockquote>
+  <p>Flag to indicate that much more debugging information should be sent to stderr. (flag)</p>
+</blockquote>
+
+<h4>--createRunningFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create when this utility starts, to be deleted on a clean exit. The file WILL be deleted even if errors are caught. It will only remain if uncaught errors are thrown or if the process is killed externally. (String)</p>
+</blockquote>
+
+<h4>--successfulCompletionFile filename.txt:</h4>
+
+<blockquote>
+  <p>A file to create if and when this utility successfully completes without fatal errors. (String)</p>
+</blockquote>
+
+<h2>AUTHORS:</h2>
+
+<p>Stephen W. Hartley, Ph.D. stephen.hartley (at nih dot gov)</p>
+
+<h2>LEGAL:</h2>
+
+<p>Written 2017-2019 by Stephen Hartley, PhD  National Cancer Institute (NCI), Division of Cancer Epidemiology and Genetics (DCEG), Human Genetics Program As a work of the United States Government, this software package and all related documentation and information is in the public domain within the United States. Additionally, the National Institutes of Health and the National Cancer Institute waives copyright and related rights in the work worldwide through the CC0 1.0 Universal Public Domain Dedication (which can be found at https://creativecommons.org/publicdomain/zero/1.0/). Although all reasonable efforts have been taken to ensure the accuracy and reliability of the software and data, the National Human Genome Research Institute (NHGRI), the National Cancer Institute (NCI) and the U.S. Government does not and cannot warrant the performance or results that may be obtained by using this software or data. NHGRI, NCI and the U.S. Government disclaims all warranties as to performance, merchantability or fitness for any particular purpose. In work or products derived from this material, proper attribution of the authors as the source of the software or data may be made using "NCI Division of Cancer Epidemiology and Genetics, Human Genetics Program" as the citation. This package uses (but is not derived from) several externally-developed, open-source libraries which have been distributed under various open-source licenses. vArmyKnife is distributed with compiled versions of these packages. Additional License information can be accessed using the command:     vArmyKnife --help LICENSES And can also found in the distributed source code in:     src/main/resources/library.LICENSES.txt</p>

@@ -2851,6 +2851,9 @@ object VcfTool {
       }
     }
   
+  
+  
+  
   abstract class SFilterLogicParser[A](){
     def filterManualTitle() : String
     def filterManualDesc() : String
@@ -2858,16 +2861,23 @@ object VcfTool {
     def logicManualTitle : String = "BASIC SYNTAX:";
     def logicManualRaw : Seq[(Option[String],String)] = 
       Seq[(Option[String],String)]( 
-                                  (Some("BASIC SYNTAX:"),
-                                        "Filtering expressions are parsed as a series of logical filters connected with AND, OR, NOT, and parentheses. "+
-                                        "All expressions must be separated with whitespace, though it does not matter how much whitespace or what kind. "+
-                                        "Alternatively, expressions can be read directly from file by setting the expression to EXPRESSIONFILE:filepath. "+
-                                        ""
+                                  (None,
+                                        "Variant expressions are logical expressions that are performed at the "+
+                                        "variant level. They are used by several parts of vArmyKnife, usually when "+
+                                        "filtering or differentiating variants based on it's properties/stats. "+
+                                        "For any given variant, a variant expression will be either TRUE"+
+                                        "or FALSE. Variant expressions are parsed as a series of logical functions"+
+                                        "connected with AND, OR, NOT, and parentheses. All expressions must"+
+                                        "be separated with whitespace, though it does not matter how much"+
+                                        "whitespace or what kind. Alternatively, expressions can be read"+
+                                        "directly from file by setting the expression to"+
+                                        "EXPRESSIONFILE:filepath."
                                   ),
-                                  (None,"Logical filters are all of the format FILTERNAME:PARAM1:PARAM2:etc. Some filters "+
-                                        "have no parameters, other filters can accept a variable number of parameters. All "+
-                                        "filters return TRUE or FALSE. Filters can be inverted using the NOT operator before the filter (with whitespace in between). "+
-                                        "Unless indicated otherwise, elements are dropped when the full expression returns FALSE. "
+                                  (None,"Variant Expression functions are all of the format"+
+                                        "FILTERNAME:PARAM1:PARAM2:etc. Some filters have no parameters; "+
+                                        "other filters can accept a variable number of parameters. All"+
+                                        "expression functions return TRUE or FALSE. Filters can be inverted using the"+
+                                        "NOT operator before the filter (with whitespace in between)."
                                   )
       );
     def logicManualFmt : Seq[UserManualBlock] = logicManualRaw.map{ case (t,ln) => {
@@ -2928,7 +2938,7 @@ object VcfTool {
         case Some(dx) => dx;
         case None => filterManualDesc() 
       }
-      "## "+escapeToMarkdown(t)+"\n\n" +
+      "# "+escapeToMarkdown(t)+"\n\n" +
       wrapLineWithIndent(escapeToMarkdown(d),internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,0)+"\n\n"+
       logicManualRaw.map{case (lmrt,lmrd) => {
         "" + (lmrt match {
@@ -2936,7 +2946,7 @@ object VcfTool {
           case None => "";
         }) + wrapLineWithIndent(escapeToMarkdown(lmrd),internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,0)+"\n"
       }}.mkString("\n")+
-      "### Filter Functions:\n\n"+
+      "### True/False Functions:\n\n"+
       this.filterFunctionSet.toVector.sortBy( x => x.funcName ).map( x => {
           "#### "+escapeToMarkdown(x.funcName) +":"+x.paramNames.mkString(":")+ "\n\n> "+escapeToMarkdown(x.desc)+"\n"
       }).mkString("\n") + "\n"
@@ -3151,7 +3161,7 @@ object VcfTool {
     
     //Map(funcID) = (numParam,desc,metaFunction(params) => function(vc))
     val filterFunctionSetVal : Set[FilterFunction[SVcfVariantLine]] = Set[FilterFunction[SVcfVariantLine]]( 
-        FilterFunction(funcName="INFO.eq",numParam=2,desc="PASS iff INFO field t is nonmissing and equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.eq",numParam=2,desc="TRUE iff INFO field t is nonmissing and equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3160,7 +3170,7 @@ object VcfTool {
                           }
                         }
                       ), 
-        FilterFunction(funcName="INFO.ne",numParam=2,desc="PASS iff INFO field t is either missing or not equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.ne",numParam=2,desc="TRUE iff INFO field t is either missing or not equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3169,7 +3179,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.nm",numParam=1,desc="PASS iff INFO field t is nonmissing.",paramNames=Seq("t"),paramTypes=Seq("info"),
+        FilterFunction(funcName="INFO.nm",numParam=1,desc="TRUE iff INFO field t is nonmissing.",paramNames=Seq("t"),paramTypes=Seq("info"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : SVcfVariantLine) => {
@@ -3177,7 +3187,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.m",numParam=1,desc="PASS iff INFO field t is missing.",paramNames=Seq("t"),paramTypes=Seq("info"),
+        FilterFunction(funcName="INFO.m",numParam=1,desc="TRUE iff INFO field t is missing.",paramNames=Seq("t"),paramTypes=Seq("info"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : SVcfVariantLine) => {
@@ -3185,7 +3195,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.gt",numParam=2,desc="TRUE iff INFO field t is nonmissing and greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3194,7 +3204,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.lt",numParam=2,desc="TRUE iff INFO field t is nonmissing and less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3203,7 +3213,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.ge",numParam=2,desc="PASS iff INFO field t is nonmissing and greater than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.ge",numParam=2,desc="TRUE iff INFO field t is nonmissing and greater than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3212,7 +3222,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.le",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.le",numParam=2,desc="TRUE iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3221,7 +3231,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.len.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and has length greater than k.", paramNames=Seq("t","k"),paramTypes=Seq("info","int"),
+        FilterFunction(funcName="INFO.len.gt",numParam=2,desc="TRUE iff INFO field t is nonmissing and has length greater than k.", paramNames=Seq("t","k"),paramTypes=Seq("info","int"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2int(params(1));
@@ -3230,7 +3240,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.len.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and has length less than k.", paramNames=Seq("t","k"),paramTypes=Seq("info","int"),
+        FilterFunction(funcName="INFO.len.lt",numParam=2,desc="TRUE iff INFO field t is nonmissing and has length less than k.", paramNames=Seq("t","k"),paramTypes=Seq("info","int"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2int(params(1));
@@ -3239,7 +3249,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.len.eq",numParam=2,desc="PASS iff INFO field t is nonmissing and has length equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","int"),
+        FilterFunction(funcName="INFO.len.eq",numParam=2,desc="TRUE iff INFO field t is nonmissing and has length equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","int"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2int(params(1));
@@ -3249,7 +3259,7 @@ object VcfTool {
                         }
                       ),
 
-        FilterFunction(funcName="INFO.any.gt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.any.gt",numParam=2,desc="TRUE iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3258,7 +3268,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.any.lt",numParam=2,desc="PASS iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.any.lt",numParam=2,desc="TRUE iff INFO field t is nonmissing and less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3268,7 +3278,7 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="INFO.gtm",numParam=2,desc="PASS iff INFO field t is missing or greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.gtm",numParam=2,desc="TRUE iff INFO field t is missing or greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3277,7 +3287,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.ltm",numParam=2,desc="PASS iff INFO field t is missing or less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.ltm",numParam=2,desc="TRUE iff INFO field t is missing or less than k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3286,7 +3296,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.gem",numParam=2,desc="PASS iff INFO field t is missing or greater than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.gem",numParam=2,desc="TRUE iff INFO field t is missing or greater than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3295,7 +3305,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.lem",numParam=2,desc="PASS iff INFO field t is missing or less than or equal to k",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
+        FilterFunction(funcName="INFO.lem",numParam=2,desc="TRUE iff INFO field t is missing or less than or equal to k",paramNames=Seq("t","k"),paramTypes=Seq("info","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3304,7 +3314,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.mempty",numParam=1,desc="PASS iff INFO field t is missing or less than or equal to k",paramNames=Seq("t"),paramTypes=Seq("info"),
+        FilterFunction(funcName="INFO.mempty",numParam=1,desc="TRUE iff INFO field t is missing or less than or equal to k",paramNames=Seq("t"),paramTypes=Seq("info"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           //val v = string2double(params(1));
@@ -3314,7 +3324,7 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="INFO.in",numParam=2,desc="PASS iff INFO field t is a comma delimited list that contains string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.in",numParam=2,desc="TRUE iff INFO field t is a comma delimited list that contains string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3323,7 +3333,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.notIn",numParam=2,desc="PASS iff INFO field t is missing or is a comma delimited list that does NOT contain string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.notIn",numParam=2,desc="TRUE iff INFO field t is missing or is a comma delimited list that does NOT contain string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3332,7 +3342,7 @@ object VcfTool {
                           }
                         }
                       ), 
-        FilterFunction(funcName="INFO.inAny", numParam = 2,desc="PASS if INFO field t is a list delimited with commas and bars, and contains string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.inAny", numParam = 2,desc="TRUE if INFO field t is a list delimited with commas and bars, and contains string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3341,7 +3351,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.notInAny", numParam = 2,desc="PASS if INFO field t is a list delimited with commas and bars, and does not contain string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.notInAny", numParam = 2,desc="TRUE if INFO field t is a list delimited with commas and bars, and does not contain string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => { 
                           val tag = params(0);
                           val v = params(1);
@@ -3350,7 +3360,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.inAnyOf", numParam = -1,desc="PASS iff INFO field t is a list delimited with commas and bars, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.inAnyOf", numParam = -1,desc="TRUE iff INFO field t is a list delimited with commas and bars, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params.tail.toSet;
@@ -3359,7 +3369,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.inAnyOfN", numParam = -1,desc="PASS iff INFO field t is a list delimited with commas, bars, slashes, OR COLONS, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.inAnyOfN", numParam = -1,desc="TRUE iff INFO field t is a list delimited with commas, bars, slashes, OR COLONS, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params.tail.toSet;
@@ -3368,7 +3378,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.inAnyOfND", numParam = -1,desc="PASS iff INFO field t is a list delimited with commas, bars, slashes, colons, or dashes, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.inAnyOfND", numParam = -1,desc="TRUE iff INFO field t is a list delimited with commas, bars, slashes, colons, or dashes, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params.tail.toSet;
@@ -3377,7 +3387,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.subsetOf", numParam = -1,desc="PASS iff INFO field t is a comma delimited list and is a subset of k1,k2,etc",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
+        FilterFunction(funcName="INFO.subsetOf", numParam = -1,desc="TRUE iff INFO field t is a comma delimited list and is a subset of k1,k2,etc",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params.tail.toSet;
@@ -3386,7 +3396,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.subsetOfFileList", numParam = 2,desc="PASS iff INFO field t is a comma delimited list and is a subset of the list contained in file f",paramNames=Seq("t","f"),paramTypes=Seq("info","infile"),
+        FilterFunction(funcName="INFO.subsetOfFileList", numParam = 2,desc="TRUE iff INFO field t is a comma delimited list and is a subset of the list contained in file f",paramNames=Seq("t","f"),paramTypes=Seq("info","infile"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = getLinesSmartUnzip(params(1)).toSet
@@ -3396,7 +3406,7 @@ object VcfTool {
                         }
                       ),
 
-        FilterFunction(funcName="REF.len.eq", numParam = 1,desc="PASS iff the REF allele is of length k.",paramNames=Seq("k"),paramTypes=Seq("int"),
+        FilterFunction(funcName="REF.len.eq", numParam = 1,desc="TRUE iff the REF allele is of length k.",paramNames=Seq("k"),paramTypes=Seq("int"),
                         (params : Seq[String]) => {
                           val len = string2int(params(0));
                           (a : SVcfVariantLine) => {
@@ -3404,7 +3414,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="ALT.len.eq", numParam = 1,desc="PASS iff the first ALT allele is of length k.",paramNames=Seq("k"),paramTypes=Seq("int"),
+        FilterFunction(funcName="ALT.len.eq", numParam = 1,desc="TRUE iff the first ALT allele is of length k.",paramNames=Seq("k"),paramTypes=Seq("int"),
                         (params : Seq[String]) => {
                           val len = string2int(params(0));
                           (a : SVcfVariantLine) => {
@@ -3412,7 +3422,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="REF.len.gt", numParam = 1,desc="PASS iff the REF allele is of length gt k.",paramNames=Seq("k"),paramTypes=Seq("int"),
+        FilterFunction(funcName="REF.len.gt", numParam = 1,desc="TRUE iff the REF allele is of length gt k.",paramNames=Seq("k"),paramTypes=Seq("int"),
                         (params : Seq[String]) => {
                           val len = string2int(params(0));
                           (a : SVcfVariantLine) => {
@@ -3420,7 +3430,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="ALT.len.gt", numParam = 1,desc="PASS iff the first ALT allele is of length gt k.",paramNames=Seq("k"),paramTypes=Seq("int"),
+        FilterFunction(funcName="ALT.len.gt", numParam = 1,desc="TRUE iff the first ALT allele is of length gt k.",paramNames=Seq("k"),paramTypes=Seq("int"),
                         (params : Seq[String]) => {
                           val len = string2int(params(0));
                           (a : SVcfVariantLine) => {
@@ -3428,7 +3438,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="REF.eq", numParam = 1,desc="PASS iff the REF allele equals k.",paramNames=Seq("k"),paramTypes=Seq("string"),
+        FilterFunction(funcName="REF.eq", numParam = 1,desc="TRUE iff the REF allele equals k.",paramNames=Seq("k"),paramTypes=Seq("string"),
                         (params : Seq[String]) => {
                           val gt = (params(0));
                           (a : SVcfVariantLine) => {
@@ -3436,7 +3446,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="ALT.eq", numParam = 1,desc="PASS iff the first ALT allele equals k.",paramNames=Seq("k"),paramTypes=Seq("string"),
+        FilterFunction(funcName="ALT.eq", numParam = 1,desc="TRUE iff the first ALT allele equals k.",paramNames=Seq("k"),paramTypes=Seq("string"),
                         (params : Seq[String]) => {
                           val gt = (params(0));
                           (a : SVcfVariantLine) => {
@@ -3444,7 +3454,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="REF.isOneOf", numParam = -1,desc="PASS iff the REF allele is one of k1,k2,...",paramNames=Seq("k1","k2","..."),paramTypes=Seq("string"),
+        FilterFunction(funcName="REF.isOneOf", numParam = -1,desc="TRUE iff the REF allele is one of k1,k2,...",paramNames=Seq("k1","k2","..."),paramTypes=Seq("string"),
                         (params : Seq[String]) => {
                           val gtset = params.toSet;
                           (a : SVcfVariantLine) => {
@@ -3452,7 +3462,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="ALT.isOneOf", numParam = -1,desc="PASS iff the first ALT allele is one of k1,k2,...",paramNames=Seq("k1","k2","..."),paramTypes=Seq("string"),
+        FilterFunction(funcName="ALT.isOneOf", numParam = -1,desc="TRUE iff the first ALT allele is one of k1,k2,...",paramNames=Seq("k1","k2","..."),paramTypes=Seq("string"),
                         (params : Seq[String]) => {
                           val gtset = params.toSet;
                           (a : SVcfVariantLine) => {
@@ -3460,7 +3470,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.tagsMismatch", numParam = 2,desc="PASS iff the INFO-field t1 and t2 are both found on a given line but are not equal.",paramNames=Seq("t1","t2"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.tagsMismatch", numParam = 2,desc="TRUE iff the INFO-field t1 and t2 are both found on a given line but are not equal.",paramNames=Seq("t1","t2"),paramTypes=Seq("info","info"),
                         (params : Seq[String]) => {
                           val tag1 = params(0);
                           val tag2 = params(1);
@@ -3473,7 +3483,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="INFO.tagsDiff", numParam = 2,desc="PASS iff the INFO-field t1 and t2 are different, including when one is missing and the other is not.",paramNames=Seq("t1","t2"),paramTypes=Seq("info","info"),
+        FilterFunction(funcName="INFO.tagsDiff", numParam = 2,desc="TRUE iff the INFO-field t1 and t2 are different, including when one is missing and the other is not.",paramNames=Seq("t1","t2"),paramTypes=Seq("info","info"),
                         (params : Seq[String]) => {
                           val tag1 = params(0);
                           val tag2 = params(1);
@@ -3488,7 +3498,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GENO.hasTagPairMismatch", numParam = 2,desc="PASS iff the genotype-field t1 and t2 are both found on a given line but are not always equal for all samples.",paramNames=Seq("t1","t2"),paramTypes=Seq("geno","geno"),
+        FilterFunction(funcName="GENO.hasTagPairMismatch", numParam = 2,desc="TRUE iff the genotype-field t1 and t2 are both found on a given line but are not always equal for all samples.",paramNames=Seq("t1","t2"),paramTypes=Seq("geno","geno"),
                         (params : Seq[String]) => {
                           val tag1 = params(0);
                           val tag2 = params(1);
@@ -3505,7 +3515,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GENO.hasTagPairGtStyleMismatch", numParam = 2,desc="PASS iff the genotype-field t1 and t2 are both found on a given line and have at least 1 sample where both tags are not set to missing but they do not have the same value.",paramNames=Seq("t1","t2"),paramTypes=Seq("geno","geno"),
+        FilterFunction(funcName="GENO.hasTagPairGtStyleMismatch", numParam = 2,desc="TRUE iff the genotype-field t1 and t2 are both found on a given line and have at least 1 sample where both tags are not set to missing but they do not have the same value.",paramNames=Seq("t1","t2"),paramTypes=Seq("geno","geno"),
                         (params : Seq[String]) => {
                           val tag1 = params(0);
                           val tag2 = params(1);
@@ -3522,7 +3532,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GENO.MAFgt", numParam = 2,desc="PASS iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("geno"),
+        FilterFunction(funcName="GENO.MAFgt", numParam = 2,desc="TRUE iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is greater than k.",paramNames=Seq("t","k"),paramTypes=Seq("geno"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val frac = string2float(params(1));
@@ -3538,7 +3548,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GENO.MAFlt", numParam = 2,desc="PASS iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is less than k.",paramNames=Seq("t","k"),paramTypes=Seq("geno","number"),
+        FilterFunction(funcName="GENO.MAFlt", numParam = 2,desc="TRUE iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is less than k.",paramNames=Seq("t","k"),paramTypes=Seq("geno","number"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val frac = string2float(params(1));
@@ -3554,21 +3564,21 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="isSNV",numParam=0,desc="PASS iff the variant is an SNV.",paramNames=Seq(),paramTypes=Seq(),
+        FilterFunction(funcName="isSNV",numParam=0,desc="TRUE iff the variant is an SNV.",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             a.ref.length == 1 && a.alt.head.length == 1;
                           }
                         }
                       ),
-        FilterFunction(funcName="simpleSNV",numParam=0,desc="PASS iff the variant is a biallelic SNV.",paramNames=Seq(),paramTypes=Seq(),
+        FilterFunction(funcName="simpleSNV",numParam=0,desc="TRUE iff the variant is a biallelic SNV.",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             a.ref.length == 1 && a.alt.length == 1 && a.alt.head.length == 1
                           }
                         }
                       ),
-        FilterFunction(funcName="isVariant",numParam=0,desc="FAIL iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele.",paramNames=Seq(),paramTypes=Seq(),
+        FilterFunction(funcName="isVariant",numParam=0,desc="FALSE iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele.",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             val af = a.alt.filter(aa => aa != "." && aa != "*")
@@ -3576,7 +3586,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="allelesHaveNoNs",numParam=0,desc="FAIL iff the variant has unknown bases, ie N, in the ALT or REF alleles.",paramNames=Seq(),paramTypes=Seq(),
+        FilterFunction(funcName="allelesHaveNoNs",numParam=0,desc="FALSE iff the variant has unknown bases, ie N, in the ALT or REF alleles.",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             (! a.ref.contains("N")) && (! a.ref.contains("n")) && (! a.alt.mkString("").contains("N")) && (! a.alt.mkString("").contains("n"))
@@ -3584,7 +3594,7 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="FILTER.eq",numParam=1,desc="PASS iff the FILTER column is equal to k.",paramNames=Seq("k"),paramTypes=Seq("String"),
+        FilterFunction(funcName="FILTER.eq",numParam=1,desc="TRUE iff the FILTER column is equal to k.",paramNames=Seq("k"),paramTypes=Seq("String"),
                         (params : Seq[String]) => {
                           val v = params(0);
                           (a : SVcfVariantLine) => {
@@ -3592,7 +3602,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="FILTER.ne",numParam=1,desc="PASS iff the FILTER column is not equal to k.",paramNames=Seq("k"),paramTypes=Seq("String"),
+        FilterFunction(funcName="FILTER.ne",numParam=1,desc="TRUE iff the FILTER column is not equal to k.",paramNames=Seq("k"),paramTypes=Seq("String"),
                         (params : Seq[String]) => {
                           val v = params(0);
                           (a : SVcfVariantLine) => {
@@ -3600,7 +3610,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="QUAL.gt",numParam=1,desc="PASS iff the QUAL column is greater than k.",paramNames=Seq("k"),paramTypes=Seq("String"),
+        FilterFunction(funcName="QUAL.gt",numParam=1,desc="TRUE iff the QUAL column is greater than k.",paramNames=Seq("k"),paramTypes=Seq("String"),
                         (params : Seq[String]) => {
                           val v = string2float( params(0) );
                           (a : SVcfVariantLine) => {
@@ -3608,7 +3618,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="QUAL.gtm",numParam=1,desc="PASS iff the QUAL column is greater than k, OR qual is missing.",paramNames=Seq("k"),paramTypes=Seq("String"),
+        FilterFunction(funcName="QUAL.gtm",numParam=1,desc="TRUE iff the QUAL column is greater than k, OR qual is missing.",paramNames=Seq("k"),paramTypes=Seq("String"),
                         (params : Seq[String]) => {
                           val v = string2float( params(0) );
                           (a : SVcfVariantLine) => {
@@ -3617,21 +3627,21 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="TRUE",numParam=0,desc="Always pass",paramNames=Seq(),paramTypes=Seq(),
+        FilterFunction(funcName="TRUE",numParam=0,desc="Always TRUE",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             true;
                           }
                         }
                       ),
-        FilterFunction(funcName="FALSE",numParam=0,desc="Never pass",paramNames=Seq(),paramTypes=Seq(),
+        FilterFunction(funcName="FALSE",numParam=0,desc="Never TRUE",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : SVcfVariantLine) => {
                             false;
                           }
                         }
                       ),
-        FilterFunction(funcName="CHROM.inAnyOf",numParam = -1,desc="True iff the variant is one one of the given chromosomes",paramNames=Seq("chrX","..."),paramTypes=Seq("String","String"),
+        FilterFunction(funcName="CHROM.inAnyOf",numParam = -1,desc="TRUE iff the variant is one one of the given chromosomes",paramNames=Seq("chrX","..."),paramTypes=Seq("String","String"),
                         (params : Seq[String]) => {
                           //val tag = params(0);
                           val v = params.toSet;
@@ -3640,7 +3650,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="LOCUS.eq",numParam=2,desc="True if the variant is at the given chromosome and position",paramNames=Seq("chrom","pos"),paramTypes=Seq("String","number"),
+        FilterFunction(funcName="LOCUS.eq",numParam=2,desc="TRUE if the variant is at the given chromosome and position",paramNames=Seq("chrom","pos"),paramTypes=Seq("String","number"),
                         (params : Seq[String]) => {
                           val chrom = params.head;
                           val pos = string2int(params(1));
@@ -3649,7 +3659,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="LOCUS.near",numParam=3,desc="True if the variant is within k bases from the given chromosome and position",paramNames=Seq("k","chrom","pos"),paramTypes=Seq("number","String","number"),
+        FilterFunction(funcName="LOCUS.near",numParam=3,desc="TRUE if the variant is within k bases from the given chromosome and position",paramNames=Seq("k","chrom","pos"),paramTypes=Seq("number","String","number"),
                         (params : Seq[String]) => {
                           val chrom = params.head;
                           val pos = string2int(params(1));
@@ -3658,7 +3668,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="LOCUS.range",numParam=3,desc="True if the variant is at the given chromosome and between the given positions (0-based)",paramNames=Seq("chrom","from","to"),paramTypes=Seq("String","number"),
+        FilterFunction(funcName="LOCUS.range",numParam=3,desc="TRUE if the variant is at the given chromosome and between the given positions (0-based)",paramNames=Seq("chrom","from","to"),paramTypes=Seq("String","number"),
                         (params : Seq[String]) => {
                           val chrom = params.head;
                           val pfrom = string2int(params(1));
@@ -3668,7 +3678,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="POS.inAnyOf",numParam = -1,desc="True iff the variant is at one of the given positions",paramNames=Seq("pos1","..."),paramTypes=Seq("String","String"),
+        FilterFunction(funcName="POS.inAnyOf",numParam = -1,desc="TRUE iff the variant is at one of the given positions",paramNames=Seq("pos1","..."),paramTypes=Seq("String","String"),
                         (params : Seq[String]) => {
                           val v = params.map{ss => string2int(ss)}.toSet;
                           (a : SVcfVariantLine) => {
@@ -3676,7 +3686,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="POS.gt",numParam=1,desc="True iff the variant is at a position greater than the given position",paramNames=Seq("pos"),paramTypes=Seq("number"),
+        FilterFunction(funcName="POS.gt",numParam=1,desc="TRUE iff the variant is at a position greater than the given position",paramNames=Seq("pos"),paramTypes=Seq("number"),
                         (params : Seq[String]) => {
                           val v = string2int(params.head);
                           (a : SVcfVariantLine) => {
@@ -3686,7 +3696,7 @@ object VcfTool {
                       ),
                       
                       
-        FilterFunction(funcName="GTAG.any.gt", numParam = -1,desc="PASS iff any one of the samples have a value for their genotype-tag entry greater than k.",paramNames=Seq("gtTag","k"),paramTypes=Seq("geno","number"),
+        FilterFunction(funcName="GTAG.any.gt", numParam = -1,desc="TRUE iff any one of the samples have a value for their genotype-tag entry greater than k.",paramNames=Seq("gtTag","k"),paramTypes=Seq("geno","number"),
                         (params : Seq[String]) => {
                           val gtTag = params.head;
                           val gtK = string2double( params(1) );
@@ -3705,7 +3715,7 @@ object VcfTool {
                       ),
                       
                       
-        FilterFunction(funcName="AnyGtPass", numParam = -1,desc="PASS iff any one of the samples pass the supplied GT filter.",paramNames=Seq("simpleGtFiltExpression","k1","..."),paramTypes=Seq("String","String"),
+        FilterFunction(funcName="AnyGtPass", numParam = -1,desc="TRUE iff any one of the samples pass the supplied GT filter.",paramNames=Seq("simpleGtFiltExpression","k1","..."),paramTypes=Seq("String","String"),
                         (params : Seq[String]) => {
                           val gtFiltName = params.head;
                           val gtParams = params.tail;
@@ -3717,7 +3727,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="AnyGtNonRef", numParam = 1,desc="",paramNames=Seq("gtTag"),paramTypes=Seq("geno"),
+        FilterFunction(funcName="AnyGtNonRef", numParam = 1,desc="TRUE iff gtTag has an alt allele for any sample. gtTag must be a GT-formatted genotype field.",paramNames=Seq("gtTag"),paramTypes=Seq("geno"),
                         (params : Seq[String]) => {
                           val gtTag = params.head;
                           (a : SVcfVariantLine) => {
@@ -3727,7 +3737,7 @@ object VcfTool {
                           }
                         }
                       )/*,
-        FilterFunction(funcName="INFO.altGtOnSampIdx", numParam = -1,desc="UNTESTED ALPHA FUNCTION. NOT FOR GENERAL USE. FORMAT field g is the genotype tag, file f is a list of sample indices starting from 0. PASS iff the alt genotype is found on a member of the given sample subset. Warning: may fail for non-split multiallelics with more than 9 alleles.",paramNames=Seq("g","f"),
+        FilterFunction(funcName="INFO.altGtOnSampIdx", numParam = -1,desc="UNTESTED ALPHA FUNCTION. NOT FOR GENERAL USE. FORMAT field g is the genotype tag, file f is a list of sample indices starting from 0. TRUE iff the alt genotype is found on a member of the given sample subset. Warning: may fail for non-split multiallelics with more than 9 alleles.",paramNames=Seq("g","f"),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = getLinesSmartUnzip(params(1)).map{string2int(_)}.toSet
@@ -3783,7 +3793,7 @@ object VcfTool {
     
     //Map(funcID) = (numParam,desc,metaFunction(params) => function(vc))
     val filterFunctionSetVal : Set[FilterFunction[(SVcfVariantLine,Int)]] = Set[FilterFunction[(SVcfVariantLine,Int)]]( 
-        FilterFunction(funcName="GTAG.eq",numParam=2,desc="PASS iff GT field t equals the string s. DROP if tag t is not present or set to missing.",paramNames=Seq("t","s"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.eq",numParam=2,desc="TRUE iff GT field t equals the string s. DROP if tag t is not present or set to missing.",paramNames=Seq("t","s"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3793,7 +3803,7 @@ object VcfTool {
                           }
                         }
                       ), 
-        FilterFunction(funcName="GTAG.ne",numParam=2,desc="PASS iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.ne",numParam=2,desc="TRUE iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
@@ -3803,7 +3813,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.nm",numParam=1,desc="PASS iff the GT field t is present and not set to missing.",paramNames=Seq("t"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.nm",numParam=1,desc="TRUE iff the GT field t is present and not set to missing.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -3811,7 +3821,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.m",numParam=1,desc="PASS iff the GT field t is is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.m",numParam=1,desc="TRUE iff the GT field t is is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -3819,7 +3829,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.gt",numParam=2,desc="PASS iff tag t is present and not set to missing, and is a number greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.gt",numParam=2,desc="TRUE iff tag t is present and not set to missing, and is a number greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3829,7 +3839,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.lt",numParam=2,desc="PASS iff tag t is present and not set to missing, and is a number less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.lt",numParam=2,desc="TRUE iff tag t is present and not set to missing, and is a number less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3839,7 +3849,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.ge",numParam=2,desc="PASS iff tag t is present and not set to missing, and is a number greater than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.ge",numParam=2,desc="TRUE iff tag t is present and not set to missing, and is a number greater than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3849,7 +3859,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.le",numParam=2,desc="PASS iff tag t is present and not set to missing, and is a number less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.le",numParam=2,desc="TRUE iff tag t is present and not set to missing, and is a number less than or equal to k.", paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3859,7 +3869,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.gtm",numParam=2,desc="PASS iff tag t is either not present, set to missing, or a number greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.gtm",numParam=2,desc="TRUE iff tag t is either not present, set to missing, or a number greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3869,7 +3879,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.ltm",numParam=2,desc="PASS iff tag t is either not present, set to missing, or a number less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.ltm",numParam=2,desc="TRUE iff tag t is either not present, set to missing, or a number less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3879,7 +3889,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.gem",numParam=2,desc="PASS iff tag t is either not present, set to missing, or a number greater than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.gem",numParam=2,desc="TRUE iff tag t is either not present, set to missing, or a number greater than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3889,7 +3899,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.lem",numParam=2,desc="PASS iff tag t is either not present, set to missing, or a number less than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.lem",numParam=2,desc="TRUE iff tag t is either not present, set to missing, or a number less than or equal to k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3899,7 +3909,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="TAGPAIR.match",numParam=2,desc="PASS iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another.",paramNames=Seq("t1","t2"),paramTypes=Seq(),
+        FilterFunction(funcName="TAGPAIR.match",numParam=2,desc="TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another.",paramNames=Seq("t1","t2"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag1 = params(0);
                           val tag2 = params(1);
@@ -3913,7 +3923,7 @@ object VcfTool {
                       
                       
                       
-        FilterFunction(funcName="GTAGARRAY.gt",numParam=3,desc="PASS iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is greater than k.",paramNames=Seq("t","i","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAGARRAY.gt",numParam=3,desc="TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is greater than k.",paramNames=Seq("t","i","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val idx = string2int(params(1));
@@ -3932,7 +3942,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAGARRAYSUM.gt",numParam=2,desc="PASS iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAGARRAYSUM.gt",numParam=2,desc="TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -3945,7 +3955,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.isHet",numParam=1,desc="PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous.",paramNames=Seq("t"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.isHet",numParam=1,desc="TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -3958,7 +3968,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.isCleanHet",numParam=1,desc="PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous between the alt and reference allele.",paramNames=Seq("t"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.isCleanHet",numParam=1,desc="TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous between the alt and reference allele.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -3971,7 +3981,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.isAnyAlt",numParam=1,desc="PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and contains the alt allele.",paramNames=Seq("t"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.isAnyAlt",numParam=1,desc="TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and contains the alt allele.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -3984,7 +3994,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.isHomRef",numParam=1,desc="PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-reference.",paramNames=Seq("t"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.isHomRef",numParam=1,desc="TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-reference.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -3997,7 +4007,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.isHomAlt",numParam=1,desc="PASS iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-alt.",paramNames=Seq("t"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.isHomAlt",numParam=1,desc="TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-alt.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -4011,7 +4021,7 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="SAMPGRP.in",numParam=1,desc="PASS iff the sample is a member of group g.",paramNames=Seq("g"),paramTypes=Seq(),
+        FilterFunction(funcName="SAMPGRP.in",numParam=1,desc="TRUE iff the sample is a member of group g.",paramNames=Seq("g"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val g = params(0);
                           (a : (SVcfVariantLine,Int)) => {
@@ -4020,7 +4030,7 @@ object VcfTool {
                         }
                       ),
                       
-        FilterFunction(funcName="GTAG.altProportion.lt",numParam=2,desc="PASS iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.altProportion.lt",numParam=2,desc="TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -4039,7 +4049,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.altProportion.gt",numParam=2,desc="PASS iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.altProportion.gt",numParam=2,desc="TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
@@ -4058,7 +4068,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.SC.altProportion.lt",numParam=3,desc="PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.SC.altProportion.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
@@ -4081,7 +4091,7 @@ object VcfTool {
                           }
                         }
                       ),   
-        FilterFunction(funcName="GTAG.SC.altProportion.gt",numParam=3,desc="PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.SC.altProportion.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
@@ -4104,7 +4114,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.altDepthForAlle.gt",numParam=3,desc="PASS iff for AD-style tag ad and GT-style tag gt, the sample is called as having an allele K while having less than v reads covering said allele.",paramNames=Seq("gt","ad","v"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.altDepthForAlle.gt",numParam=3,desc="TRUE iff for AD-style tag ad and GT-style tag gt, the sample is called as having an allele K while having less than v reads covering said allele.",paramNames=Seq("gt","ad","v"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val gtTag = params(0);
                           val adTag = params(1);
@@ -4136,7 +4146,7 @@ object VcfTool {
                           }
                         }
                       ), 
-        FilterFunction(funcName="GTAG.SC.altDepth.lt",numParam=3,desc="PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.SC.altDepth.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
@@ -4155,7 +4165,7 @@ object VcfTool {
                           }
                         }
                       ),   
-        FilterFunction(funcName="GTAG.SC.altDepth.gt",numParam=3,desc="PASS iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.SC.altDepth.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);

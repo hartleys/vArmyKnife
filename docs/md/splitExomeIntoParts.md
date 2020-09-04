@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.29 (Updated Tue Aug 18 15:50:40 EDT 2020)
+> Version 3.1.50 (Updated Fri Sep  4 14:15:46 EDT 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -9,7 +9,7 @@
 
 GENERAL SYNTAX:
 
-    varmyknife [java_options] --CMD splitExomeIntoParts [options]
+    varmyknife [java_options] --CMD splitExomeIntoParts [options] chromLengthFile.txt partct outputDir
 
 
 ## DESCRIPTION:

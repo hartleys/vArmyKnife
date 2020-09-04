@@ -54,8 +54,8 @@ object SVcfWalkerMain {
   class WalkVcf extends CommandLineRunUtil {
      override def priority = 1;
      
-     val vcfFilterManualTitle = "VCF Line Filter Expressions"
-     val gtFilterManualTitle = "Genotype Filter Expressions"
+     val vcfFilterManualTitle = "VARIANT EXPRESSIONS"
+     val gtFilterManualTitle = "GENOTYPE-LEVEL EXPRESSIONS"
      
      val vcfFilterManualDesc = ""+
                               ""+
@@ -81,7 +81,7 @@ object SVcfWalkerMain {
                                   //sb.append("### ["+arg+"]("+arg+".html)\n\n");
                                   //sb.append("> "+(parser.getDescription).replaceAll("_","\\\\_") + "\n\n");
                                 }}*/
-     val altCommandDocText : Seq[String] = Seq("Secondary Commands:",
+     val altCommandDocText : Seq[String] = Seq("SECONDARY COMMANDS",
                             "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
                             "which perform other tasks. ",
                             "These tools can be invoked with the command:",
@@ -91,32 +91,32 @@ object SVcfWalkerMain {
                             "For a listing of all secondary commands, use the command: ",
                             "    varmyknife --help secondaryCommands") 
                             
-     val altCommandDocMd : Seq[String] = Seq("## Secondary Commands:",
+     val altCommandDocMd : Seq[String] = Seq("# SECONDARY COMMANDS\n",
                             "In addition to the standard command which parses a VCF or variant table, vArmyKnife includes a few ancillary tools "+
                             "which perform other tasks. ",
-                            "These tools can be invoked with the command:",
-                            "    varmyknife --CMD commandName [options]",
-                            "For more information see the [secondary command page](secondaryCommands.html), or use the command:" ,
-                            "    varmyknife --help CMD",
-                            "For a listing of all secondary commands, use the command: ",
-                            "    varmyknife --help secondaryCommands") 
+                            "These tools can be invoked with the command:\n",
+                            "    varmyknife --CMD commandName [options]\n",
+                            "For more information see the [secondary command page](secondaryCommands.html), or use the command:\n" ,
+                            "    varmyknife --help CMD\n",
+                            "For a listing of all secondary commands, use the command: \n",
+                            "    varmyknife --help secondaryCommands\n") 
      val manualExtras = 
-                        internalTests.SVcfMapFunctions.MAPFUNCTIONS_getBlockStringManual +
-                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getBlockStringManual+
-                        sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
-                        sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +
+                        internalTests.SVcfMapFunctions.MAPFUNCTIONS_getBlockStringManual +"\n"+
+                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getBlockStringManual+"\n"+
+                        sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +"\n"+
+                        sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +"\n"+
                         altCommandDocText.map{ acm => {
                           wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
                         }}.mkString("\n");
                         
      val markdownManualExtras = 
-                        internalTests.SVcfMapFunctions.MAPFUNCTIONS_getMarkdownStringManual +
-                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getMarkdownStringManual+
-                        sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +
-                        sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +
+                        internalTests.SVcfMapFunctions.MAPFUNCTIONS_getMarkdownStringManual +"\n\n"+
+                        internalTests.SVcfTagFunctions.TAGFUNCTIONS_getMarkdownStringManual+"\n\n"+
+                        sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +"\n\n"+
+                        sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +"\n\n"+
                         altCommandDocMd.map{ acm => {
                           wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "", false) 
-                        }}.mkString("\n");
+                        }}.mkString("\n")+"\n\n";
 
      /*
       * 

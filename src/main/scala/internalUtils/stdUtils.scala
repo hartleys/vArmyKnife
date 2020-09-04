@@ -80,7 +80,8 @@ object stdUtils {
                          alpha : Boolean = false,
                          category : String = "General",
                          withinCatPriority : Int = 1000,
-                         ord : Ordering[String] = ParamStrSetDefaultOrdering ) {
+                         ord : Ordering[String] = ParamStrSetDefaultOrdering,
+                         exampleCode : Seq[Seq[String]] = Seq[Seq[String]]()) {
     val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
     val nameSetHolder = ( Set(mapType) ++ synon.toSet );
     def paramMap = pm;

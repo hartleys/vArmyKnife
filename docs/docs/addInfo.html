@@ -78,11 +78,11 @@ x... (INT|FLOAT|INFO:Int|INFO:Float)
 <h3>FLAGSET(x...)</h3>
 
 <pre><code>Input should be a set of infoFields and optionally a name, with 
-    the format tagID:name. If names are omitted, then the name 
-    will be equal to the tagID. Output field will be the set of 
-    names for which the respective info field is equal to 1. 
-    Any value other than 1, including missing fields, will be 
-    treated as 0.
+    the format tagID:name or just tagID. If names are omitted, 
+    then the name will be equal to the tagID. Output field will 
+    be the set of names for which the respective info field is 
+    equal to 1. Any value other than 1, including missing 
+    fields, will be treated as 0.
 x... (INFO:Int)
 </code></pre>
 
@@ -119,7 +119,7 @@ y (INT|FLOAT|INFO:Int|INFO:Float)
 
 <h3>CONVERT.TO.INT(x,defaultValue)</h3>
 
-<pre><code>Input should be an INFO field
+<pre><code>Input should be an INFO field. Converts field to a Integer.
 x (INFO:String) 
 defaultValue (Optional) (Int)
 </code></pre>

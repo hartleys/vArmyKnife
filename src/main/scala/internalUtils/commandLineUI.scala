@@ -10,13 +10,16 @@ object commandLineUI {
 
   case class UserManualBlock( lines : Seq[String],
                               title : Option[String] = None, subtitle : Option[String] = None,
-                              level : Int = 1, isCodeBlock : Boolean = true,
+                              level : Int = 1, 
                               indentTitle : Int = 4, indentBlock : Int = 8, 
                               indentFirst:Int= 8, 
+                              mdIndentBlock : Int = 8,
+                              mdIndentFirst : Int = 4,
                               titleIndentChar : String = " ", firstLineIndentChar : String = " ", indentChar : String = " ",
                               mdCaret : Boolean = false,
-                              mdBold : Boolean = false){
-    def mdBlockIndent = if(isCodeBlock) 4 else 0;
+                              mdBold : Boolean = false,
+                              hiddenInPlain : Boolean = false,
+                              category : String = "Misc"){
     def getBlockString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
                        baseIndent : Int = 0) : String = {
       title.map{ t => "\n"+repString(titleIndentChar,baseIndent + indentTitle)+t }.getOrElse("") + 
@@ -44,11 +47,11 @@ object commandLineUI {
       
       title.map{ tx => "\n"+repString("#",baseLevel + level)+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + 
       subtitle.map{ tx => "> "+" "+escapeToMarkdown(tx)+"\n\n" }.getOrElse("") + 
-        lines.zipWithIndex.map{ case (line,i) => {
+      lines.zipWithIndex.map{ case (line,i) => {
         //wrapLineWithIndent(line,lineLen,4)
         wrapSimpleLineWithIndent_staggered(line, width = lineLen, 
-                                           indent = repString(" ",8), 
-                                           firstLineIndent = repString(" ",4));
+                                           indent = repString(" ",mdIndentBlock), 
+                                           firstLineIndent = repString(" ",mdIndentFirst));
       }}.mkString("\n");
       
       /*lines.map{line => {
@@ -479,21 +482,8 @@ List(
       return sb.toString;
     }
     
-    def getMarkdownManual(backToIndexPath : String = "index.html") : String = {
+    def getMarkdownManual_ARGS() : String = {
       val sb = new StringBuilder("");
-      
-      sb.append("# "+runner.runner.UTILITY_TITLE+"\n");
-      sb.append("> Version " + runner.runner.UTIL_VERSION + " (Updated " + runner.runner.UTIL_COMPILE_DATE +")\n\n");
-      sb.append("> ([back to main](../index.html)) ([back to java-utility help]("+backToIndexPath+"))\n\n");
-      sb.append("## Help for vArmyKnife command \""+escapeToMarkdown(command)+"\"\n\n");
-      if(aliases.length > 0){
-        sb.append("ALIASES: "+aliases.mkString(",")+"\n");
-      }
- 
-      sb.append("## USAGE:\n\n"); 
-      sb.append(""+getShortHelp()+"\n\n");
-      sb.append("## DESCRIPTION:\n\n");
-      sb.append(escapeToMarkdown(description)+"\n\n");
       sb.append("## REQUIRED ARGUMENTS:\n");
       for(arg <- argList.filter(_.argIsMandatory)){
         sb.append(arg.getFullMarkdownDescription+"\n");
@@ -528,7 +518,26 @@ List(
           sb.append(arg.getFullMarkdownDescription);
         }
       }
+      sb.toString;
+    }
+    
+    def getMarkdownManual(backToIndexPath : String = "index.html") : String = {
+      val sb = new StringBuilder("");
       
+      sb.append("# "+runner.runner.UTILITY_TITLE+"\n");
+      sb.append("> Version " + runner.runner.UTIL_VERSION + " (Updated " + runner.runner.UTIL_COMPILE_DATE +")\n\n");
+      sb.append("> ([back to main](../index.html)) ([back to java-utility help]("+backToIndexPath+"))\n\n");
+      sb.append("## Help for vArmyKnife command \""+escapeToMarkdown(command)+"\"\n\n");
+      if(aliases.length > 0){
+        sb.append("ALIASES: "+aliases.mkString(",")+"\n");
+      }
+ 
+      sb.append("## USAGE:\n\n"); 
+      sb.append(""+getShortHelp()+"\n\n");
+      sb.append("## DESCRIPTION:\n\n");
+      sb.append(escapeToMarkdown(description)+"\n\n");
+
+      sb.append( getMarkdownManual_ARGS() )
       /*
       for(arg <- argList.filter(! _.argIsMandatory)){
         sb.append( arg.getFullMarkdownDescription);
@@ -539,6 +548,45 @@ List(
       sb.append(escapeToMarkdown(authors.mkString(", "))+ "\n\n");
       
       sb.append("## LEGAL:\n\n");
+      sb.append(escapeToMarkdown(legal.mkString(" "))+ "\n\n");
+      
+      return sb.toString;
+    }
+    
+    def SPECIAL_getMainManualMarkdown() : String = {
+      val sb = new StringBuilder("");
+      
+      sb.append("> Version " + runner.runner.UTIL_VERSION + " (Updated " + runner.runner.UTIL_COMPILE_DATE +")\n\n");
+ 
+      sb.append("# GENERAL SYNTAX:\n\n");
+      
+      sb.append("    The main method is walkVcf. Most runs will look something like this:\n");
+      sb.append("        varmyknife [java_options] walkVcf [options] \\"+"\n");
+      sb.append("                                  --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
+      sb.append("                                  --FCN \"fcnName2|stepName2|param1|param2\"\\"+"\n");
+      sb.append("                                  ...etc...\\"+"\n");
+      sb.append("                                  infile.vcf.gz outfile.vcf.gz"+"\n");
+      sb.append("    "+"\n");
+      sb.append("    Note that either infile or outfile can be '-' to read from STDIN or STDOUT respectively.");
+      sb.append("    "+"\n");
+      sb.append("    vArmyKnife also comes packaged with a few other tools that don't run on VCF files."+"\n");
+      sb.append("    To use these other secondary tools:"+"\n");
+      sb.append("        varmyknife [java_options] "+"otherCommandName"+" [options]"+"\n");
+      sb.append("    "+"\n");
+
+      sb.append(escapeToMarkdown(description)+"\n\n");
+
+      sb.append( getMarkdownManual_ARGS() )
+      /*
+      for(arg <- argList.filter(! _.argIsMandatory)){
+        sb.append( arg.getFullMarkdownDescription);
+      }*/
+      sb.append(markdownManualExtras);
+      
+      sb.append("# AUTHORS:\n\n");
+      sb.append(escapeToMarkdown(authors.mkString(", "))+ "\n\n");
+      
+      sb.append("# LEGAL:\n\n");
       sb.append(escapeToMarkdown(legal.mkString(" "))+ "\n\n");
       
       return sb.toString;
@@ -558,18 +606,20 @@ List(
       if(command == "walkVcf"){
       var sb = new StringBuilder();
       sb.append("GENERAL SYNTAX:\n\n");
-      sb.append("    varmyknife [java_options] "+" [options] infile outfile"+"\n");
-      sb.append("    OR"+"\n");
-      sb.append("    varmyknife [java_options] "+" [options] infile - > outfile"+"\n");
-      sb.append("    OR, to use other secondary tools:"+"\n");
-      sb.append("    varmyknife [java_options] "+"--CMD commandName"+" [options]"+"\n");
+      
+      sb.append("    The main method is walkVcf:\n");
+      sb.append("        varmyknife [java_options] "+"walkVcf [options] infile outfile"+"\n");
+      sb.append("    which can also output to STDOUT: "+"\n");
+      sb.append("        varmyknife [java_options] "+"walkVcf [options] infile - > outfile"+"\n");
+      sb.append("    To use other secondary tools:"+"\n");
+      sb.append("        varmyknife [java_options] "+"otherCommandName"+" [options]"+"\n");
       return sb.toString();
-        
+      
       } else {
       
       var sb = new StringBuilder();
       sb.append("GENERAL SYNTAX:\n\n");
-      sb.append("    varmyknife [java_options] "+"--CMD "+command+" [options]"+"\n");
+      sb.append("    varmyknife [java_options] "+"--CMD "+command+" [options] "+argList.map(_.getShortSyntax()).filter(_ != "").mkString(" ")+"\n");
       return sb.toString();
       }
       //"    varmyknife [java options] " + command + " [options] " + argList.map(_.getShortSyntax()).filter(_ != "").mkString(" ")+"\n"+
