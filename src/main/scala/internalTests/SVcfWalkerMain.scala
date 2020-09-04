@@ -259,8 +259,12 @@ object SVcfWalkerMain {
                     new BinaryMonoToListArgument[String](
                                          name = "FCN", 
                                          arg = List("--FCN","--variantMapFunction","--fcn","-F"),
-                                         valueName = "FunctionType|ID|param1=p1|param2=p2|...",
-                                         argDesc =  "TODO DESC"
+                                         valueName = "fcnName|ID|param1=p1|param2=p2|...",
+                                         argDesc =  "This parameter tells vArmyKnife what to do to your VCF. "+
+                                                    "You can specify multiple functions in a single vArmyKnife run, "+
+                                                    "and the functions will be executed sequentially in order."+
+                                                    ""+
+                                                    ""
                                         ).meta(false,"Edit VCF",-1) :: 
                                         
                     new BinaryArgument[String](name = "gtTag",

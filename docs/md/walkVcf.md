@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.53 (Updated Fri Sep  4 14:59:46 EDT 2020)
+> Version 3.1.54 (Updated Fri Sep  4 15:11:26 EDT 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -35,9 +35,9 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ## OPTIONAL ARGUMENTS:
 ### Edit VCF:
-#### --FCN FunctionType|ID|param1=p1|param2=p2|...:
+#### --FCN fcnName|ID|param1=p1|param2=p2|...:
 
-> TODO DESC (repeatable String)
+> This parameter tells vArmyKnife what to do to your VCF. You can specify multiple functions in a single vArmyKnife run, and the functions will be executed sequentially in order. (repeatable String)
 
 ### Input Parameters:
 #### --chromList chr1,chr2,...:
