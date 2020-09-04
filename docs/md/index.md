@@ -1,4 +1,4 @@
-> Version 3.1.51 (Updated Fri Sep  4 14:36:51 EDT 2020)
+> Version 3.1.53 (Updated Fri Sep  4 14:59:46 EDT 2020)
 
 # GENERAL SYNTAX:
 
@@ -30,7 +30,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ## OPTIONAL ARGUMENTS:
 ### Edit VCF:
-#### --variantMapFunction FunctionType|ID|param1=p1|param2=p2|...:
+#### --FCN FunctionType|ID|param1=p1|param2=p2|...:
 
 > TODO DESC (repeatable String)
 

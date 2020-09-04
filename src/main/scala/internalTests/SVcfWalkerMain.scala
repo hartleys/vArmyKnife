@@ -258,7 +258,7 @@ object SVcfWalkerMain {
                                         
                     new BinaryMonoToListArgument[String](
                                          name = "FCN", 
-                                         arg = List("--variantMapFunction","--FCN","--fcn","-F"),
+                                         arg = List("--FCN","--variantMapFunction","--fcn","-F"),
                                          valueName = "FunctionType|ID|param1=p1|param2=p2|...",
                                          argDesc =  "TODO DESC"
                                         ).meta(false,"Edit VCF",-1) :: 
