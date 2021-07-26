@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.18 (Updated Tue Feb  2 14:14:20 EST 2021)
+> Version 3.2.19 (Updated Wed Feb  3 02:00:11 EST 2021)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -452,6 +452,16 @@ This utility performs a series of transformations on an input VCF file and adds 
     desc: The description for the new INFO field, to be included in 
         the INFO line.(String)
 
+### addDistToFeature
+
+>  This utility takes a simple 2\-column text file\. the first column must be the chrom ID and the second column must be position\. A new integer info field will be added that is equal to the distance to the nearest position in the file\. If there is no listed position on the given chromosome then the info field will be missing\.
+
+
+    file: The input text file. Must have 2 columns, chrom and 
+        pos(String)
+    desc: The description for the new INFO field, to be included in 
+        the INFO line.(String)
+
 ##### Genotype Processing
 
 
@@ -845,6 +855,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
 
+### LN\(x\)
+
+    
+    Input should be a numeric INFO field. output will be the 
+        natural log of that field.
+    x (INT|FLOAT|INFO:Int|INFO:Float) 
+
 ### MULT\(x,y\)
 
     
@@ -967,6 +984,13 @@ This utility performs a series of transformations on an input VCF file and adds 
         parameters. Input parameters can be any combination of INFO 
         fields or constant strings.
     x... (String|INFO:String) 
+
+### LOG10\(x\)
+
+    
+    Input should be a numeric INFO field. output will be the log10 
+        of that field.
+    x (INT|FLOAT|INFO:Int|INFO:Float) 
 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 

@@ -19,7 +19,7 @@
 <div class="wrapper">
 
 <div><blockquote>
-  <p>Version 3.2.18 (Updated Tue Feb  2 14:14:20 EST 2021)</p>
+  <p>Version 3.2.19 (Updated Wed Feb  3 02:00:11 EST 2021)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -559,6 +559,18 @@ desc: The description for the new INFO field, to be included in
     the INFO line.(String)
 </code></pre>
 
+<h3>addDistToFeature</h3>
+
+<blockquote>
+  <p>This utility takes a simple 2-column text file. the first column must be the chrom ID and the second column must be position. A new integer info field will be added that is equal to the distance to the nearest position in the file. If there is no listed position on the given chromosome then the info field will be missing.</p>
+</blockquote>
+
+<pre><code>file: The input text file. Must have 2 columns, chrom and 
+    pos(String)
+desc: The description for the new INFO field, to be included in 
+    the INFO line.(String)
+</code></pre>
+
 <h5>Genotype Processing</h5>
 
 <h3>unPhaseAndSortGenotypes</h3>
@@ -991,6 +1003,13 @@ Basic Syntax:
 
 <h2>Available Functions:</h2>
 
+<h3>LN(x)</h3>
+
+<pre><code>Input should be a numeric INFO field. output will be the 
+    natural log of that field.
+x (INT|FLOAT|INFO:Int|INFO:Float)
+</code></pre>
+
 <h3>MULT(x,y)</h3>
 
 <pre><code>Input should be a pair of info fields and/or numeric constants 
@@ -1109,6 +1128,13 @@ decoder (FILE:String)
     parameters. Input parameters can be any combination of INFO 
     fields or constant strings.
 x... (String|INFO:String)
+</code></pre>
+
+<h3>LOG10(x)</h3>
+
+<pre><code>Input should be a numeric INFO field. output will be the log10 
+    of that field.
+x (INT|FLOAT|INFO:Int|INFO:Float)
 </code></pre>
 
 <h3>PRODUCT.ARRAY(x...)</h3>

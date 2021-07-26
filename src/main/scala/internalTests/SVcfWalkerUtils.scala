@@ -1712,6 +1712,48 @@ object SVcfWalkerUtils {
   }
   
   
+  class addDistToFeature(file : String, tag : String, desc : String) extends SVcfWalker {
+    
+    def walkerName : String = "addDistToFeature"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("file", file)
+    );
+    val features = scala.collection.mutable.AnyRefMap[String,List[Int]]().withDefault( k => List[Int]() );
+    
+    getLinesSmartUnzip(file).filter{ line => ! line.startsWith("#") }.map{ line => {
+      val x = line.split("\t")
+      if(x.length != 2){
+        error("ERROR: addDistToFeature: file must contain 2 columns, chrom and start!");
+      }
+      (x(0),string2int(x(1)));
+    }}.foreach{ case (chrom,pos) => {
+      features(chrom) = features(chrom) :+ pos;
+    }}
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tag,Number="1",Type="Integer",desc=desc+"Distance from nearest feature in file: "+file+")"));
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        val c = v.chrom
+        val p = v.start;
+        val distList = features(c).map{ featPos => {
+          math.abs(p - featPos);
+        }}
+        if(distList.length > 0){
+           vc.addInfo(tag,""+distList.min);
+        }
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+    
+  }
+  
+  
   class addWiggleDepthWalker(wigFile : String, tag : String, desc : String) extends SVcfWalker {
     
     def walkerName : String = "addWiggleDepthWalker"

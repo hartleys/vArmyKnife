@@ -634,6 +634,14 @@ object SVcfMapFunctions {
               ParamStr(id = "desc",synon=Seq(),ty="String",valueString="...",desc="The description for the new INFO field, to be included in the INFO line.",req=false)
          )), category = "File/Database Annotation"
        ),
+      ParamStrSet("addDistToFeature" ,  desc = "This utility takes a simple 2-column text file. the first column must be the chrom ID and the second column must be position. "+
+                                               "A new integer info field will be added that is equal to the distance to the nearest position in the file. "+
+                                               "If there is no listed position on the given chromosome then the info field will be missing.", 
+           (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "file",synon=Seq(),ty="String",valueString="filename.txt",desc="The input text file. Must have 2 columns, chrom and pos",req=false),
+              ParamStr(id = "desc",synon=Seq(),ty="String",valueString="...",desc="The description for the new INFO field, to be included in the INFO line.",req=false)
+         )), category = "File/Database Annotation"
+       ),
        /*
         * 
         * Seq[SVcfWalker](new StdVcfConverter(thirdAlleleChar = thirdAlleleChar))
@@ -1435,6 +1443,14 @@ object SVcfMapFunctions {
                  error("ERROR: Wiggle file: "+wigFile+" does not exist!");
                }
                Some( new addWiggleDepthWalker(wigFile = wigFile, tag = params("mapID"), desc = params.getOrElse("desc","noDesc")) )
+               
+               //addDistToFeature(file : String, tag : String, desc : String)
+             } else if(mapType == "addDistToFeature"){
+               val file = params("file")
+               if( ! (new File(file)).exists() ){
+                 error("ERROR: File: "+file+" does not exist!");
+               }
+               Some( new addDistToFeature(file = file, tag = params("mapID"), desc = params.getOrElse("desc","noDesc")) )
              } else if(mapType == "dropVariantsWithNs"){
                Some(new DropNs());
              } else if(mapType == "markDup"){

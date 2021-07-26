@@ -341,6 +341,16 @@
     desc: The description for the new INFO field, to be included in 
         the INFO line.(String)
 
+### addDistToFeature
+
+>  This utility takes a simple 2\-column text file\. the first column must be the chrom ID and the second column must be position\. A new integer info field will be added that is equal to the distance to the nearest position in the file\. If there is no listed position on the given chromosome then the info field will be missing\.
+
+
+    file: The input text file. Must have 2 columns, chrom and 
+        pos(String)
+    desc: The description for the new INFO field, to be included in 
+        the INFO line.(String)
+
 ##### Genotype Processing
 
 

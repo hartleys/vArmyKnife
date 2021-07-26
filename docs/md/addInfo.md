@@ -12,6 +12,13 @@
 
     
 
+### LN\(x\)
+
+    
+    Input should be a numeric INFO field. output will be the 
+        natural log of that field.
+    x (INT|FLOAT|INFO:Int|INFO:Float) 
+
 ### MULT\(x,y\)
 
     
@@ -134,6 +141,13 @@
         parameters. Input parameters can be any combination of INFO 
         fields or constant strings.
     x... (String|INFO:String) 
+
+### LOG10\(x\)
+
+    
+    Input should be a numeric INFO field. output will be the log10 
+        of that field.
+    x (INT|FLOAT|INFO:Int|INFO:Float) 
 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 
