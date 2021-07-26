@@ -1391,7 +1391,9 @@ object SVcfMapFunctions {
                if( params.isSet("useStarAlle") ){
                    Seq( SSplitMultiAllelics(vcfCodes = DEFAULT_VCF_CODES, clinVarVariants = false, splitSimple = false) )
                } else {
-                   Seq( SSplitMultiAllelics(vcfCodes = DEFAULT_VCF_CODES, clinVarVariants = false, splitSimple = false),
+                 Seq(SSplitMultiAllelics2(vcfCodes = DEFAULT_VCF_CODES))
+                 
+                  /* Seq( SSplitMultiAllelics(vcfCodes = DEFAULT_VCF_CODES, clinVarVariants = false, splitSimple = false),
                         new StdVcfConverter(cleanHeaderLines = false, 
                            cleanInfoFields =false, 
                            cleanMetaData = false,
@@ -1399,7 +1401,7 @@ object SVcfMapFunctions {
                            deleteUnannotatedFields  = false)
 //                          thirdAlleleChar : Option[String] = None,
 //                         multAlleInfoTag : Option[String] = None)
-                    )
+                    )*/
                }
              } else if(mapType == "rmDup"){
                Some(new RemoveDuplicateLinesWalker())

@@ -12028,17 +12028,19 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         fline.subType match {
           case Some(st) => {
             if(st == VcfTool.subtype_GtStyleUnsplit){
-              //reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID, Number=fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle))
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit",  Number="1", Type="String", desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
               val ml = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + threeAllelePrefix, Number="1", Type=fline.Type, desc="(Recoded for multiallelic split, with all other alleles collapsed into a 3rd allele) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle3))
-              //reportln("    ol:"+ol.getVcfString,"note");
-              //reportln("    nl:"+nl.getVcfString,"note");
+              reportln("    ol:"+ol.getVcfString,"note");
+              reportln("    nl:"+nl.getVcfString,"note");
+              reportln("    ml:"+ml.getVcfString,"note");
+
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
               newHeader.addFormatLine(ml,walker=Some(this));
               
-              copyPresplits = copyPresplits + fline.ID;
+              //copyPresplits = copyPresplits + fline.ID;
               Some((fline.ID,fline.ID + "_presplit",ol,nl));
             } else {
               None
@@ -12057,13 +12059,14 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                 warning("Warning: Tag with subtype: subtype_AlleleCountsUnsplit must have Number R or A","MalformedFormatTag",10)
               }
               val newNum = if(fline.Number == "R") "3" else "2";
-              //reportln("Adding new Allele-Count FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              reportln("Adding new Allele-Count FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID,Number= fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCounts))
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
               val ml = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + threeAllelePrefix, Number=newNum, Type=fline.Type, desc="(Recoded for multiallelic split, with all other alleles collapsed into a 3rd allele) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle3))
-              //reportln("    ol:"+ol.getVcfString,"note");
-              //reportln("    nl:"+nl.getVcfString,"note");
-              copyPresplits = copyPresplits + fline.ID;
+              reportln("    ol:"+ol.getVcfString,"note");
+              reportln("    nl:"+nl.getVcfString,"note");
+              reportln("    ml:"+ml.getVcfString,"note");
+              //copyPresplits = copyPresplits + fline.ID;
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
               newHeader.addFormatLine(ml,walker=Some(this));
@@ -12083,12 +12086,18 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
           fline.ID == oldID
         }} == -1 && (fline.Number == "R" || fline.Number == "A")
       }}.flatMap{ fline => {
-              //reportln("Adding new FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              val newNum = if(fline.Number == "R") "3" else "2";
+              reportln("Adding new FORMAT tag (otherSplitLines): "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID,Number= fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc)
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
+              val ml = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + threeAllelePrefix, Number=newNum, Type=fline.Type, desc="(Recoded for multiallelic split, with all other alleles collapsed into a 3rd allele) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle3))
+              reportln("    ol:"+ol.getVcfString,"note");
+              reportln("    nl:"+nl.getVcfString,"note");
+              reportln("    ml:"+ml.getVcfString,"note");
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
-              copyPresplits = copyPresplits + fline.ID;
+              newHeader.addFormatLine(ml,walker=Some(this));
+              //copyPresplits = copyPresplits + fline.ID;
               Some((fline.ID,fline.ID, ol,nl))
       }}
       
@@ -12124,6 +12133,15 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       val infoAtruncate = newHeader.infoLines.withFilter(hl => hl.Number == "A" && hl.subType.getOrElse("") == "truncateOtherAlts").map(_.ID).toSet
       
       val tagWarningMap = new scala.collection.mutable.AnyRefMap[String,Int](tag => 0);
+      
+      infoA.foreach{ oldID => {
+         val fline = vcfHeader.infoLines.find{ ff => ff.ID == oldID }.get
+         val nl = new SVcfCompoundHeaderLine("INFO",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
+      }}
+      infoR.foreach{ oldID => {
+         val fline = vcfHeader.infoLines.find{ ff => ff.ID == oldID }.get
+         val nl = new SVcfCompoundHeaderLine("INFO",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
+      }}
       /*
       infoCLN.foreach(x => {
         reportln("INFO Line "+x+" is of type CLN","debug");
@@ -12388,7 +12406,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                       if(adString == "."){
                         "."
                       } else {
-                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        val ad = adString.split(",") //.map{ aa => if(aa == ".") 0 else string2int(aa) }
                         if(! ad.isDefinedAt(alleIdx)){
                           warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
                           "."
@@ -12403,7 +12421,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                       if(adString == "."){
                         "."
                       } else {
-                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        val ad = adString.split(",")  //.map{ aa => if(aa == ".") 0 else string2int(aa) }
                         if(! ad.isDefinedAt(alleIdx-1)){
                           warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
                           "."
@@ -14523,6 +14541,12 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
           vcSeq.headOption.foreach{ vc => {
             callerSupport = callerSupport + callerName;
             vc.info.map{ case (oldTag,fieldVal) => {
+              if(! currInfoLines.contains(oldTag)){
+                report("ERROR INCOMING: Cannot find tag \""+oldTag+"\"!\n"+
+                    "    available tags are: ["+currInfoLines.map{_._1}.mkString(",")+"]",
+                    "note")
+              }
+              
               val (newTag,infoLine) = currInfoLines(oldTag);
               /*val fixedFieldVal = if(numAlle > 1 && vc.alt.length == 1 && (infoLine.Number == "R" || infoLine.Number == "A")){
                 fieldVal + ",.";
