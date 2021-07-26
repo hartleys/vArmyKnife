@@ -282,8 +282,10 @@ object SVcfMapFunctions {
            ParamStr(id = "noMissCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
            ParamStr(id = "noAlleCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
            ParamStr(id = "noHetHomCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false)
-         )), category = "General-Purpose Tools"
+           ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="The variant expression, "+
+                                                  "which is a true/false expression using the variant expression syntax.",req=false,defaultValue=None)
+           )), category = "General-Purpose Tools"
        ),
        ParamStrSet("sampleLists" ,  desc = "This function generates sample list fields which contain comma-delimited lists of samples that are het or hom-alt.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](

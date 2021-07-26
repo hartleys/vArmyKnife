@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.39 (Updated Tue May 25 22:27:11 EDT 2021)
+> Version 3.2.40 (Updated Wed May 26 09:14:51 EDT 2021)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -256,6 +256,8 @@ This utility performs a series of transformations on an input VCF file and adds 
     noAlleCalc: (Flag)
     noHetHomCalc: (Flag)
     noMultiHetCalc: (Flag)
+    expr: The variant expression, which is a true/false expression 
+        using the variant expression syntax.(String)
 
 ### sampleLists
 

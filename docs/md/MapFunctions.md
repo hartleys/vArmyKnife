@@ -106,6 +106,8 @@
     noAlleCalc: (Flag)
     noHetHomCalc: (Flag)
     noMultiHetCalc: (Flag)
+    expr: The variant expression, which is a true/false expression 
+        using the variant expression syntax.(String)
 
 ### sampleLists
 
