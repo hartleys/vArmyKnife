@@ -835,7 +835,7 @@ object GatkPublicCopy {
       var noticeShownA = true;
       (vcMap(vcIter){ vc => {
         val vb = vc.getOutputLine();
-        val ref = getBases(vc.chrom,vc.pos,vc.pos+vc.ref.length());
+        val ref = getBases(vc.chrom,vc.pos,vc.pos+vc.ref.length()-1);
         if( vc.ref == ref){
           vb.addInfo(infotag,"1");
           tally("REFERENCE_MATCH_1",1,10)
