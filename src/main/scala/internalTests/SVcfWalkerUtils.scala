@@ -11023,6 +11023,138 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     
     
   }
+  //cmdId : String,snpSiftAnnoCmd : String, tagPrefix : String = ""
+  
+case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "snpSiftAnnotate"+cmdTriples.map{ _._1 }.mkString(".")
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+    )
+
+    val argSeq = cmdTriples.map{ case (cmdId, cmd) => {
+      val args = cmd.split("\\s+") 
+      notice("Attempting SnpSift annotation with cmdId="+cmdId+"\n   "+args.mkString("\n   ")+"\n","SNPSIFT_ANNOTATE",-1);
+      args
+    }}
+    //
+    
+    val infoListSeq = argSeq.map{ args => {
+      val infoList = args.zipWithIndex.find{ case (arg,idx) => { arg == "-info"}}.flatMap{ case (arg,idx) => {
+        args.lift(idx+1).map{_.split(",")}
+      }}.getOrElse(Array[String]())
+      reportln("    SnpSiftAnno: found infoList: [\""+infoList.padTo(1,".").mkString("\",\"")+"\"]","debug");
+      infoList
+    }}
+    
+
+    val namePrefixSeq = argSeq.map{ args => {
+      val namePrefix = args.zipWithIndex.find{ case (arg,idx) => { arg == "-name"}}.flatMap{ case (arg,idx) => {
+        args.lift(idx+1)
+      }}.getOrElse("");
+      reportln("    SnpSiftAnno: found namePrefix: \""+namePrefix+"\"","debug");
+      namePrefix
+    }}
+    
+    
+    //val ssa = new org.snpsift.SnpSiftCmdAnnotate()
+    //ssa.parseArgs(args)
+    //ssa.init()
+    val finalArgSeq : Seq[Array[String]] = argSeq.map{ args => {
+      Array[String]("annotate") ++ args ++ Array[String]("dummyvar")
+    }}
+    val ssSeq = finalArgSeq.map{ finalArgs => { new org.snpsift.SnpSift(finalArgs) }}
+    val ssaSeq = ssSeq.map{ ss => ss.cmd() }
+    
+    //HACK HACK HACK:
+    //      SnpSiftCmdAnnotate requires an instance of its special entry iterator class.
+    val dummySeq = ssaSeq.map{ ssa => {
+      SVcfVariantLine.getDummyIterator();
+    }}
+    
+    ssaSeq.zip(dummySeq).foreach{ case (ssa,(dummyIter,snpSiftHeader)) => {
+      ssa.annotateInit(dummyIter);
+    }}
+    
+    //val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
+    //ssaSeq.foreach{ ssa => {
+    //  ssa.annotateInit(dummyIter);
+    //}}
+    
+    
+    
+    //HACK HACK HACK: 
+    //      Force SnpSift to process the header so I can access the header info.
+    //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
+    val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummySeq.head._1,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
+    ssaSeq.foreach{ssa => {
+      ssa.annotate(initilizerExampleVariant)      
+    }}
+    ssaSeq.zip(dummySeq).foreach{ case (ssa,(dummyIter,snpSiftHeader)) => {
+      reportln("    SnpSiftAnno: snpSiftHeader has the following info fields: [\""+dummyIter.getVcfHeader().getVcfHeaderInfo().asScala.map{h => h.getId()}.toVector.padTo(1,".").mkString("\",\"")+"\"]","debug");
+    }}
+    
+    val newHeaderLinesSeq : Seq[Seq[(String,String,SVcfCompoundHeaderLine)]] = infoListSeq.zip(ssaSeq).zip(dummySeq).zip(cmdTriples).zip(namePrefixSeq).map{ case ((((infoList,ssa),(dummyIter,snpSiftHeader)),(cmdId,cmd)),namePrefix) => {
+      infoList.toSeq.map{ tag => {
+        dummyIter.getVcfHeader().getVcfHeaderInfo().asScala.find{ ssline => ssline.getId() == namePrefix + tag }.map{ ssline => {
+          val numRaw = ssline.getVcfInfoNumber().toString().padTo(1,'0');
+          val num = if(numRaw == "A") "1" else numRaw;
+          val desc = ssline.getDescription()
+          val ty = ssline.getVcfInfoType().name;
+          val id = ssline.getId;
+          val outTag = namePrefix + id;
+          (namePrefix + tag,outTag,new SVcfCompoundHeaderLine(in_tag="INFO",ID = outTag,Number = num, Type = ty, desc = desc).
+                                   addWalker(this).addExtraField("source","SnpSift.via.vArmyKnife").
+                                   addExtraField("SnpSiftVer",org.snpsift.SnpSift.VERSION_SHORT).
+                                   addExtraField("SnpEffVer",org.snpeff.SnpEff.VERSION_SHORT))
+        }}.getOrElse(
+          (namePrefix + tag,namePrefix + tag,
+            new SVcfCompoundHeaderLine(in_tag="INFO",ID = namePrefix + tag,Number = ".", Type = "String", desc = "Annotation tag "+tag+" from "+cmdId).
+                                   addWalker(this).addExtraField("source","SnpSift.via.vArmyKnife").
+                                   addExtraField("SnpSiftVer",org.snpsift.SnpSift.VERSION_SHORT).
+                                   addExtraField("SnpEffVer",org.snpeff.SnpEff.VERSION_SHORT))
+        );
+      }}
+    }}
+      
+    newHeaderLinesSeq.zipWithIndex.foreach{ case (newHeaderLines,i) => {
+      reportln("    SnpSiftAnno: For annotation set: "+i,"debug");
+      reportln("       SnpSiftAnno: extracting infolines: [\""+newHeaderLines.map{_._1}.padTo(1,".").mkString("\",\"")+"\"]","debug");
+      reportln("       SnpSiftAnno: adding infolines: [\""+newHeaderLines.map{_._2}.padTo(1,".").mkString("\",\"")+"\"]","debug");  
+    }}
+
+
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val newHeader = vcfHeader.copyHeader;
+      newHeaderLinesSeq.foreach{ newHeaderLines => {
+        newHeaderLines.foreach{ case (tag,outTag,hl) => {
+          newHeader.addInfoLine(hl);
+        }}  
+      }}
+      var neverAddedAnno = true;
+      newHeader.reportAddedInfos(this)
+      (vcMap(vcIter){ v => {
+        val vb = v.getOutputLine();
+        val ve = vb.makeSnpeffVariantEntry(dummySeq.head._1);
+        //ssa.annotate(ve);
+        for( i <- newHeaderLinesSeq.indices ){
+          ssaSeq(i).annotate(ve);
+          val cmdId = cmdTriples(i)._1;
+          var addedAnno = false;
+          newHeaderLinesSeq(i).foreach{ case (tag,outTag,hl) => {
+            Option(ve.getInfo(tag)).foreach{ v => {
+              addedAnno = true;
+              vb.addInfo(tag,v);
+            }}
+          }}
+          if(addedAnno) notice("Found variant with SnpSift."+cmdId+" annotation match.","SNPSIFT_ANNOTATE_"+cmdId,1);
+        }
+        //Need to find a way to pull VCF header info?
+        vb
+      }},newHeader);
+    }
+
+
+  }
   
   case class SnpSiftAnnotater(cmdId : String,snpSiftAnnoCmd : String, tagPrefix : String = "") extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "snpSiftAnnotate"+cmdId
@@ -12137,10 +12269,12 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
       infoA.foreach{ oldID => {
          val fline = vcfHeader.infoLines.find{ ff => ff.ID == oldID }.get
          val nl = new SVcfCompoundHeaderLine("INFO",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
+         newHeader.addInfoLine(nl,walker=Some(this));
       }}
       infoR.foreach{ oldID => {
          val fline = vcfHeader.infoLines.find{ ff => ff.ID == oldID }.get
          val nl = new SVcfCompoundHeaderLine("INFO",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
+         newHeader.addInfoLine(nl,walker=Some(this));
       }}
       /*
       infoCLN.foreach(x => {
