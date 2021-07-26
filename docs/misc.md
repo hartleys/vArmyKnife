@@ -1,5 +1,5 @@
-v3.2.19
-Revised Wed Feb  3 02:00:11 EST 2021
+v3.2.20
+Revised Wed Mar 17 19:05:23 EDT 2021
 
 The [vArmyKnife software package](http://hartleys.github.io/vArmyKnife/) is a fast, efficient, and portable 
 multifunction toolkit designed to assist in

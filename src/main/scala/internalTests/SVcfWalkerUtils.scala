@@ -7163,7 +7163,7 @@ ALT VERSION: allows title line!
               if(tagidx != -1){
                 vc.genotypes.genotypeValues(tagidx) = vc.genotypes.genotypeValues(tagidx).map{ gv => {
                   if(gv.contains('.')){
-                    "."
+                    gv.split("[\\|/]").sortBy{ gg => string2intOpt(gg) }.mkString("/");
                   } else {
                     gv.split("[\\|/]").sortBy{ gg => gg.toInt}.mkString("/");
                   }

@@ -1,4 +1,4 @@
-> Version 3.2.19 (Updated Wed Feb  3 02:00:11 EST 2021)
+> Version 3.2.20 (Updated Wed Mar 17 19:05:23 EDT 2021)
 
 # GENERAL SYNTAX:
 
