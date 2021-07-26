@@ -1615,6 +1615,7 @@ object SVcfWalkerUtils {
 
 
   case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], 
+                              refTag : Option[String] = None, altTag : Option[String] = None,
                               copyFilterToGeno : Option[String] = None,copyQualToGeno : Option[String]= None,
                               copyInfoToGeno : List[String]= List[String]()) extends SVcfWalker {
     def walkerName : String = "CopyFieldsToInfo"
@@ -1637,6 +1638,12 @@ object SVcfWalkerUtils {
       }}
       idTag.map{ tagID => {
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="String",desc="ID field"));
+      }}
+      altTag.map{ tagID => {
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="String",desc="ALT field"));
+      }}
+      refTag.map{ tagID => {
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number="1",Type="String",desc="REF field"));
       }}
       copyFilterToGeno.map{ tagID => {
         outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",tagID,Number="1",Type="String",desc="ID field"))
@@ -1675,6 +1682,13 @@ object SVcfWalkerUtils {
         idTag.map{ tagID => {
           vc.addInfo(tagID, v.id)
         }}
+        refTag.map{ tagID => {
+          vc.addInfo(tagID, v.ref)
+        }}
+        altTag.map{ tagID => {
+          vc.addInfo(tagID, v.alt.mkString(","))
+        }}
+        
         copyInfoPairs.map{ case (info,geno) => {
           v.info.getOrElse(info,None).map{ infovalue => {
             vc.genotypes.addGenotypeArray(geno,Array.fill(sampleCt)( infovalue ))
@@ -1966,6 +1980,59 @@ object SVcfWalkerUtils {
     }
   }
 
+  case class AddTrinucleotideComplexity(tagPrefix : String, genomeFa : String, windowSize : Int) extends SVcfWalker {
+    
+    def walkerName : String = "AddTrinucleotideComplexity"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("tagPrefix", tagPrefix)
+    );
+    
+    val refFastaTool = internalUtils.GatkPublicCopy.refFastaTool(genomeFa = genomeFa);
+    
+    val len = (windowSize / 3) * 3
+    val tnct = len*2 / 3
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",Number="1",Type="String",desc="The "+len+" ref bases before the variant"));
+      //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",Number="1",Type="String",desc="The "+len+" ref bases after the variant"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagPrefix,Number="1",Type="Float",desc="The sum of 64 trinucleotide proportions squared across a "+len+" bp window."));
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        //val after = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos, end = v.pos + len-1);
+        //val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len + 1, end = v.pos-1);
+        val bp = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len, end = v.pos + len-1)
+       // reportln("BP = "+bp,"debug");
+        val tn = Range(0,tnct).toList.map{ i => {
+          bp.slice(i*3,i*3+3)
+        }}
+        
+        val cts = new scala.collection.mutable.AnyRefMap[String,Int]().withDefault( k => 0 );
+        tn.foreach{ trinuc => {
+          cts(trinuc) = cts(trinuc) + 1;
+        }}
+        val complexityScore = cts.map{ case (trinuc,ct) => {
+          (ct * ct).toDouble
+        }}.sum / 4096
+        
+        vc.addInfo(tagPrefix,""+complexityScore);
+        
+        //vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",before);
+        //vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",after);
+        //vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"",before+"["+v.ref+">"+v.alt.mkString("|")+"]"+after);
+        
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
+  
+  
   case class AddContextBases(tagPrefix : String, genomeFa : String, len : Int) extends SVcfWalker {
     
     def walkerName : String = "AddContextBases"
@@ -1990,7 +2057,7 @@ object SVcfWalkerUtils {
         //vc.addInfo(tagPrefix,v.chrom+":"+v.pos+","+v.ref+","+v.alt.mkString(","))
         //val ctrPos = v.pos + (v.ref.length / 2)
         val after = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length, end = v.pos + v.ref.length + len-1);
-        val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len + 1, end = v.pos-1);
+        val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len, end = v.pos-1);
         vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",before);
         vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",after);
         vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"",before+"["+v.ref+">"+v.alt.mkString("|")+"]"+after);

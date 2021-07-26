@@ -49,7 +49,9 @@ object genomicAnnoUtils {
               val cc = headerLine.trim().split("\\s+").find(_.startsWith("chrom")).getOrElse({error("fixedStep line found with no chrom tag: \""+iter.head+"\"");"?NO CHROM FOUND?"}).split("=")(1);
               if( ! chromList.contains(cc)){
                 notice("    Found chrom: \""+cc+"\" ["+getDateAndTimeString+"]","CHROM_OBS",-1);
+                notice("          chromlist before:["+chromList.mkString(",")+"]","CHROM_OBS_note1",-1);
                 chromList = chromList :+ cc;
+                notice("          chromlist after: ["+chromList.mkString(",")+"]","CHROM_OBS_note2",-1);
               }
               if(cc == c){
                 keepGoing = false;

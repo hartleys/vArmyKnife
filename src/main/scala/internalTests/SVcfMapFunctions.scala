@@ -408,6 +408,12 @@ object SVcfMapFunctions {
               ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window",req=true),
               COMMON_PARAMS("genomeFA")
          )), category = "Genomic Locus Annotation"
+       ),//AddTrinucleotideComplexity(tagPrefix : String, genomeFa : String, windowSize : Int)
+       ParamStrSet("addTrinucleotideComplexity" ,  desc = "This function adds a new INFO field containing the trinucleotide complexity, defined as the sum of the squares of the proportions of each 3-bp combination.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window",req=true),
+              COMMON_PARAMS("genomeFA")
+         )), category = "Genomic Locus Annotation"
        ),
        ParamStrSet("gcContext" ,  desc = "This function calculates the fraction of bases within k bases from the variant locus that are G or C. "+
                                          "This can be useful to identify high-GC areas where variant calling and sequencing may be less accurate.", 
@@ -624,7 +630,7 @@ object SVcfMapFunctions {
        ),
       ParamStrSet("getLocusDepthFromWig" ,  desc = "This utility takes a .wig file (aka a wiggle file) and annotates each variant with the depth indicated in the wiggle file for the variant site.", 
            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-              ParamStr(id = "wigfile",synon=Seq(),ty="String",valueString="depthfile.wig.gz",desc="The input wiggle file.",req=false),
+              ParamStr(id = "wigFile",synon=Seq(),ty="String",valueString="depthfile.wig.gz",desc="The input wiggle file.",req=false),
               ParamStr(id = "desc",synon=Seq(),ty="String",valueString="...",desc="The description for the new INFO field, to be included in the INFO line.",req=false)
          )), category = "File/Database Annotation"
        ),
@@ -1191,6 +1197,9 @@ object SVcfMapFunctions {
                Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
              } else if(mapType == "addContextBases"){
                Some(AddContextBases(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), len = params("windowSize").toInt))
+             } else if(mapType == "addTrinucleotideComplexity"){
+               //AddTrinucleotideComplexity(tagPrefix : String, genomeFa : String, windowSize : Int)
+               Some(AddTrinucleotideComplexity(tagPrefix=params("mapID"),genomeFa=params("genomeFA"),windowSize=params("windowSize").toInt))
              } else if(mapType == "gcContext"){
                Some(localGcInfoWalker(tagPrefix=params("tagPrefix"),windows=params("windowSize").split(",").toSeq.map{_.toInt},genomeFa=params("genomeFA"), roundDigits = params.get("digits").map{_.toInt}))
              } else if(mapType == "convertChromNames"){
@@ -1421,11 +1430,11 @@ object SVcfMapFunctions {
              } else if(mapType == "dropSpanIndels"){
                Some(new DropSpanIndels())
              } else if(mapType == "getLocusDepthFromWig"){
-               val wigfile = params("wigFile")
-               if( ! (new File(wigfile)).exists() ){
-                 error("ERROR: Wiggle file: "+wigfile+" does not exist!");
+               val wigFile = params("wigFile")
+               if( ! (new File(wigFile)).exists() ){
+                 error("ERROR: Wiggle file: "+wigFile+" does not exist!");
                }
-               Some( new addWiggleDepthWalker(wigFile = wigfile, tag = params("mapID"), desc = params.getOrElse("desc","noDesc")) )
+               Some( new addWiggleDepthWalker(wigFile = wigFile, tag = params("mapID"), desc = params.getOrElse("desc","noDesc")) )
              } else if(mapType == "dropVariantsWithNs"){
                Some(new DropNs());
              } else if(mapType == "markDup"){
@@ -1447,7 +1456,10 @@ object SVcfMapFunctions {
                val qual = if(params("columnID") == "QUAL") Some(params("mapID")) else None
                val filt = if(params("columnID") == "FILTER") Some(params("mapID")) else None
                val idtag = if(params("columnID") == "ID") Some(params("mapID")) else None
-               Some(CopyFieldsToInfo( qualTag = qual, filterTag = filt, idTag = idtag ))
+               val ref   = if(params("columnID") == "REF") Some(params("mapID")) else None
+               val alt   = if(params("columnID") == "ALT") Some(params("mapID")) else None
+
+               Some(CopyFieldsToInfo( qualTag = qual, filterTag = filt, idTag = idtag, refTag = ref, altTag=alt ))
                /*
                 * CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], copyFilterToGeno : Option[String],copyQualToGeno : Option[String],
                               copyInfoToGeno : List[String])

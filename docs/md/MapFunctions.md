@@ -337,7 +337,7 @@
 >  This utility takes a \.wig file \(aka a wiggle file\) and annotates each variant with the depth indicated in the wiggle file for the variant site\.
 
 
-    wigfile: The input wiggle file.(String)
+    wigFile: The input wiggle file.(String)
     desc: The description for the new INFO field, to be included in 
         the INFO line.(String)
 
@@ -480,6 +480,19 @@
 ### addContextBases
 
 >  This function adds several new INFO fields which list the base pairs flanking the variant\.
+
+
+    windowSize: The number of bases to include in the context 
+        window(String, required)
+    genomeFA: The genome fasta file containing the reference 
+        genome. This will be used by various functions that require 
+        genomic information. Note that some functions that call the 
+        GATK library will also require that the fasta be indexed. 
+        Note: Chromosome names must match.(String, required)
+
+### addTrinucleotideComplexity
+
+>  This function adds a new INFO field containing the trinucleotide complexity, defined as the sum of the squares of the proportions of each 3\-bp combination\.
 
 
     windowSize: The number of bases to include in the context 
