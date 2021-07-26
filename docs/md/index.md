@@ -1,4 +1,4 @@
-> Version 3.2.45 (Updated Tue Jul  6 23:41:44 EDT 2021)
+> Version 3.2.46 (Updated Tue Jul 20 12:53:11 EDT 2021)
 
 # GENERAL SYNTAX:
 
@@ -1588,6 +1588,10 @@ whitespace in between\)\.
 #### VAREXPR:g
 
 > TRUE iff simple variant\-level expression passes\.
+
+#### VARIANT:fcn:params
+
+> Variant passes variant\-level logical function\. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant\-level logical function\.
 
 
 

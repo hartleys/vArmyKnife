@@ -1071,7 +1071,7 @@ object SVcfMapFunctions {
                     }}.getOrElse(Seq[String]())
                   }
                 }
-                Some(new AddFunctionTag(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,digits=None,desc=Some(params("desc"))));
+                Some(new AddFunctionTag(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,digits=None,desc=Some(params("desc")),sampleToGroupMap=sampleToGroupMap));
              } else if(mapType == "calculateMatchMatrix" ){
              /*
                      ParamStrSet("calculateMatchMatrix" ,  desc = "....", 
@@ -1101,7 +1101,7 @@ object SVcfMapFunctions {
                     }}.getOrElse(Seq[String]())
                   }
                 }
-                Some(new AddFunctionFormat(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,desc=Some(params("desc"))));
+                Some(new AddFunctionFormat(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,desc=Some(params("desc")),sampleToGroupMap=sampleToGroupMap));
                 
                //AddFunctionFormat(func : String, newTag : String, paramTags : Seq[String], desc : Option[String] = None) 
              } else if(mapType == "tally"){
@@ -1121,7 +1121,7 @@ object SVcfMapFunctions {
                     }}.getOrElse(Seq[String]())
                   }
                 }
-                Some(new RunTally(func=rawFunc,newTag=params("mapID"),paramTags=paramTags));
+                Some(new RunTally(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,sampleToGroupMap=sampleToGroupMap));
                 
                 /*
                         ParamStrSet("tally" ,  desc = "This is a set of functions that takes various counts and totals across the whole VCF.", 

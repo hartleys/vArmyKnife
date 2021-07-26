@@ -4247,21 +4247,42 @@ object VcfTool {
                       ),
                       
         FilterFunction(funcName="TRUE",numParam=0,desc="Always pass",paramNames=Seq(),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+                        metaFunc=(params : Seq[String]) => {
                           (a : (SVcfVariantLine,Int)) => {
                             true;
                           }
                         }
                       ),
         FilterFunction(funcName="FALSE",numParam=0,desc="Never pass",paramNames=Seq(),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+                        metaFunc=(params : Seq[String]) => {
                           (a : (SVcfVariantLine,Int)) => {
                             false;
+                          }
+                        }
+                      ),
+             FilterFunction(funcName="VARIANT",numParam = -1, desc = "Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.",paramNames=Seq("fcn","params"), paramTypes=Seq(),
+                        metaFunc=(params : Seq[String]) => {
+                          val varfcn = sVcfFilterLogicParser.filterFunctionMap(params.head);
+                          val ffn = varfcn.metaFunc(params.tail);
+                          (a : (SVcfVariantLine,Int)) => {
+                            ffn(a._1);
                           }
                         }
                       )
                       
     ); 
+    /*
+                   val expr = paramValues.head;
+              val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
+             FilterFunction(funcName="VARIANT",numParam=-1, desc = "Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.",paramNames=Seq("fcn","params"), paramTypes=Seq(),
+                        metaFunc=(params : Seq[String]) => { 
+                          (a : (SVcfVariantLine,Int)) => {
+                            false
+                          }
+                        }
+                      )
+     */
     
     val filterFunctionMapVal : Map[String,FilterFunction[(SVcfVariantLine,Int)]] = {
       filterFunctionSet.map{ ff => {

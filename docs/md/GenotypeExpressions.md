@@ -142,3 +142,8 @@
     VAREXPR:g
     TRUE iff simple variant-level expression passes.
     (Param Types: :...)
+    VARIANT:fcn:params
+    Variant passes variant-level logical function. Note that you 
+        cannot include AND/OR/NOT inside this logical function, it 
+        must be a single variant-level logical function.
+    (Param Types: :...)

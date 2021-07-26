@@ -2177,7 +2177,7 @@ object SVcfTagFunctions {
       }}.toMap
   
 
-  class RunTally(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+  class RunTally(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None , sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]] ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "RunFunction."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
     val f : String = func.toUpperCase;
@@ -2228,7 +2228,8 @@ object SVcfTagFunctions {
   }
   
 
-  class AddFunctionFormat(func : String, newTag : String, paramTags : Seq[String], desc : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker { 
+  class AddFunctionFormat(func : String, newTag : String, paramTags : Seq[String], desc : Option[String],
+                          sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]]  ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "FunctionInfoTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
     val f : String = func.toUpperCase;
@@ -2237,6 +2238,11 @@ object SVcfTagFunctions {
         ("func",func),
         ("paramTags",paramTags.mkString("|"))
     );
+
+    /*val (sampleToGroupMap,groupToSampleMap,groups) : (,
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = internalTests.SVcfWalkerUtils.getGroups(groupFile, groupList, superGroupList);
+      */
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
@@ -2265,6 +2271,7 @@ object SVcfTagFunctions {
 
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
+        vc.genotypes.sampGrp = Some(sampleToGroupMap);
         fcn.run(v,vc);
         vc;
       }}, closeAction = (() => {
@@ -2273,7 +2280,9 @@ object SVcfTagFunctions {
     }
   }
 
-  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int], desc : Option[String],
+                         sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]]
+                        ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "FunctionInfoTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
     val f : String = func.toUpperCase;
@@ -2283,12 +2292,17 @@ object SVcfTagFunctions {
         ("paramTags",paramTags.mkString("|"))
     );
     
+   /* val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = internalTests.SVcfWalkerUtils.getGroups(groupFile, groupList, superGroupList);
+      */
+    
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       var errCt = 0;
       
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
-
+      
       val fcn = vcfTagFunMap( func ).gen( paramValues = paramTags, outHeader = outHeader, newTag = newTag, digits = digits);
       
       val minParamsRequired = fcn.md.params.filter{ pp => pp.req }.length
