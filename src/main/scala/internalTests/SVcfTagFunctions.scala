@@ -1127,6 +1127,62 @@ object SVcfTagFunctions {
             }
 
           }
+        },
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "EXPR",synon = Seq(),
+              shortDesc = "",
+              desc = " "+
+                     " "+
+                     " "+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "gtExpr", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "varExpr", ty = "CONST:String",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true; 
+              override val outType = "Integer";
+              override val outNum = "1"; 
+              val gtexpr = paramValues.head;
+              val gtparser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
+              val varparser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              
+              val gtfilter : SFilterLogic[(SVcfVariantLine,Int)] = gtparser.parseString(gtexpr);
+              val varfilter : SFilterLogic[SVcfVariantLine] = paramValues.tail.headOption match {
+                case Some(ee) => {
+                  varparser.parseString(ee);
+                }
+                case None => {
+                  varparser.parseString("TRUE");
+                }
+              }
+              val zeroArray = Array.fill[String](outHeader.titleLine.sampleList.length)("0");
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                val k = if( varfilter.keep(vc) ){
+                  Range(0,outHeader.sampleCt).map{ii => {
+                    if(  gtfilter.keep((vc,ii)) ){
+                      "1"
+                    } else {
+                      "0"
+                    }
+                  }}.toArray
+                } else {
+                  zeroArray
+                }
+                vout.genotypes.addGenotypeArray( newTag, k);
+                
+                //notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag,5);
+                //writeString(vout,k);
+              }
+            }
+
+          }
         }
         ).map{ ff => {
         (ff.metadata.id,ff)

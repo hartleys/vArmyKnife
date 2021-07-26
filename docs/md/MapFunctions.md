@@ -670,7 +670,7 @@
 
 ### calcBurdenMatrix
 
->  \.\.\.\.
+>  This utility creates a matrix file with 
 
 
     geneTag: (String, required)

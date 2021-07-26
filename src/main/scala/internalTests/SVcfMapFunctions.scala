@@ -549,7 +549,7 @@ object SVcfMapFunctions {
          )),category = "Data/Table Extraction"
        ),
        
-       ParamStrSet("calcBurdenMatrix" ,  desc = "....", 
+       ParamStrSet("calcBurdenMatrix" ,  desc = "This utility creates a matrix file with ", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "geneTag",synon=Seq(),ty="String",valueString="k",desc="",req=true),
               ParamStr(id = "expr",synon=Seq(),ty="String",valueString="k",desc="",req=false),
