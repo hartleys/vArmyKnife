@@ -1115,7 +1115,7 @@ object SVcfTagFunctions {
               val extractIDX = string2int( paramValues(1) )
               val delim = paramValues.lift(2).getOrElse(",");
               override val outType = outHeader.formatLines.find( ff => ff.ID == gtTag ).get.Type
-              override val outNum = "1";
+              override val outNum = "1"; 
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
                 if( gtIdx > -1 ){

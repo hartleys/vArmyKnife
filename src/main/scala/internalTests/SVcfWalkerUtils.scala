@@ -14807,13 +14807,13 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         error("Header for VCF "+inputVcfTypes(i)+" has "+h.titleLine.sampleList.length+" samples instead of "+sampNames.length);
       }
     }}
-    headers.zipWithIndex.foreach{ case (h,i) => {
+    /*headers.zipWithIndex.foreach{ case (h,i) => {
       h.titleLine.sampleList.zip(sampNames).zipWithIndex.foreach{ case ((n1,n2),j) => {
         if( n1 != n2){
           error("Sample name "+j+" does not match between VCFs! VCF "+inputVcfTypes.head+" has sample "+n1+", VCF "+inputVcfTypes(i)+" has sample "+n2);
         }
       }}
-    }}
+    }}*/
     //vcfHeader
     val bufIters : Seq[BufferedIterator[SVcfVariantLine]] = vcIters.map{_.buffered};
     
