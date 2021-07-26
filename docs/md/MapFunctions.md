@@ -255,6 +255,14 @@
 
     cmd: A valid SnpSift command(String)
 
+### snpSiftAnnoMulti
+
+>  This function runs several SnpSift anno commands in series\. This will be faster than several separate snpSiftAnno function calls\.
+
+
+    cmds: A semicolon delimited list of valid snpSift 
+        commands.(String)
+
 ### snpSiftDbnsfp
 
 >  This function runs the SnpSift dbnsfp command

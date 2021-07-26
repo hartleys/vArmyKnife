@@ -314,6 +314,12 @@ object SVcfMapFunctions {
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
          )), category = "File/Database Annotation"
        ),
+       ParamStrSet("snpSiftAnnoMulti" ,  desc = "This function runs several SnpSift anno commands in series. This will be faster than several separate snpSiftAnno function calls.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "cmds",synon=Seq(),ty="String",valueString="cmds",desc="A semicolon delimited list of valid snpSift commands.",req=false)
+         )), category = "File/Database Annotation"
+       ),
+       
        ParamStrSet("snpSiftDbnsfp" ,  desc = "This function runs the SnpSift dbnsfp command", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
@@ -1174,6 +1180,9 @@ object SVcfMapFunctions {
                 Some(VcfExtractRegionFromSorted(region = params("region"), windowSize = params.get("windowSize").map{ string2int(_)}  ))
              } else if(mapType == "snpSiftAnno"){
                 Some(SnpSiftAnnotater(params("mapID"),params("cmd")))
+             } else if(mapType == "snpSiftAnnoMulti"){
+                Some(SnpSiftAnnotaterMulti( params("cmds").split(";").zipWithIndex.map{ case (cmd,ii) => ("multiSift."+ii,cmd.trim()) } ))
+                //SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)])
              } else if(mapType == "snpSiftDbnsfp"){
                 Some(SnpSiftDbnsfp(params("mapID"),params("cmd")))
              } else if(mapType == "snpEff"){

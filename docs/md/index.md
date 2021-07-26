@@ -1,4 +1,4 @@
-> Version 3.2.3 (Updated Mon Nov 16 14:00:48 EST 2020)
+> Version 3.2.5 (Updated Tue Nov 17 13:39:37 EST 2020)
 
 # GENERAL SYNTAX:
 
@@ -360,6 +360,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     cmd: A valid SnpSift command(String)
+
+### snpSiftAnnoMulti
+
+>  This function runs several SnpSift anno commands in series\. This will be faster than several separate snpSiftAnno function calls\.
+
+
+    cmds: A semicolon delimited list of valid snpSift 
+        commands.(String)
 
 ### snpSiftDbnsfp
 
