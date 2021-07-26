@@ -777,7 +777,7 @@ object SVcfMapFunctions {
                                                                "param1,param2,...: Most functions take one or more parameters. Parameters are "+
                                                                "specified with the format: param=value, where param is the parameter ID listed in the "+
                                                                "documentation below."), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
-       internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
+       internalUtils.commandLineUI.UserManualBlock(title=Some("Available Operations"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ MAP_FUNCTIONS_SEQ.filter{ case (fcnID,mf) => {
      ! mf.hidden

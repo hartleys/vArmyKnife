@@ -2866,9 +2866,9 @@ object VcfTool {
                                         "Variant expressions are logical expressions that are performed at the "+
                                         "variant level. They are used by several parts of vArmyKnife, usually when "+
                                         "filtering or differentiating variants based on it's properties/stats. "+
-                                        "For any given variant, a variant expression will be either TRUE"+
+                                        "For any given variant, a variant expression will return either TRUE"+
                                         "or FALSE. Variant expressions are parsed as a series of logical functions"+
-                                        "connected with AND, OR, NOT, and parentheses. All expressions must"+
+                                        "connected with AND, OR, NOT, and parentheses. All expressions MUST"+
                                         "be separated with whitespace, though it does not matter how much"+
                                         "whitespace or what kind. Alternatively, expressions can be read"+
                                         "directly from file by setting the expression to"+
@@ -2886,7 +2886,7 @@ object VcfTool {
     }} ++ Seq(
         UserManualBlock(Seq(""),Some(""))
     ) ++ this.filterFunctionSet.toVector.sortBy( x => x.funcName ).flatMap( x => {
-      Seq(   
+      Seq(
       UserManualBlock(title = None,lines = Seq( x.funcName+":"+x.paramNames.mkString(":")), indentBlock = 8,  indentFirst = 4),
       UserManualBlock(title = None,lines = Seq( x.desc)                                   , indentBlock = 8,  indentFirst = 8),
       UserManualBlock(title = None,lines = Seq( "(Param Types: "+ x.paramTypes.mkString(":") + ({ if(x.numParam == -1) ":...)" else ")" })),

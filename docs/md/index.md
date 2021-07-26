@@ -1,4 +1,4 @@
-> Version 3.1.57 (Updated Mon Sep 14 16:15:16 EDT 2020)
+> Version 3.1.61 (Updated Tue Sep 15 13:43:49 EDT 2020)
 
 # GENERAL SYNTAX:
 
@@ -127,7 +127,7 @@ This utility performs a series of transformations on an input VCF file and adds 
         where param is the parameter ID listed in the documentation 
         below.
 
-## Available Functions:
+## Available Operations
 
     
 
@@ -1042,12 +1042,12 @@ Variant expressions are logical expressions that are performed at
 the variant level\. They are used by several parts of vArmyKnife, 
 usually when filtering or differentiating variants based on it's 
 properties/stats\. For any given variant, a variant expression will 
-be either TRUEor FALSE\. Variant expressions are parsed as a series 
-of logical functionsconnected with AND, OR, NOT, and parentheses\. 
-All expressions mustbe separated with whitespace, though it does 
-not matter how muchwhitespace or what kind\. Alternatively, 
-expressions can be readdirectly from file by setting the expression 
-toEXPRESSIONFILE:filepath\.
+return either TRUEor FALSE\. Variant expressions are parsed as a 
+series of logical functionsconnected with AND, OR, NOT, and 
+parentheses\. All expressions MUSTbe separated with whitespace, 
+though it does not matter how muchwhitespace or what kind\. 
+Alternatively, expressions can be readdirectly from file by setting 
+the expression toEXPRESSIONFILE:filepath\.
 
 Variant Expression functions are all of the 
 formatFILTERNAME:PARAM1:PARAM2:etc\. Some filters have no 
@@ -1307,12 +1307,12 @@ Variant expressions are logical expressions that are performed at
 the variant level\. They are used by several parts of vArmyKnife, 
 usually when filtering or differentiating variants based on it's 
 properties/stats\. For any given variant, a variant expression will 
-be either TRUEor FALSE\. Variant expressions are parsed as a series 
-of logical functionsconnected with AND, OR, NOT, and parentheses\. 
-All expressions mustbe separated with whitespace, though it does 
-not matter how muchwhitespace or what kind\. Alternatively, 
-expressions can be readdirectly from file by setting the expression 
-toEXPRESSIONFILE:filepath\.
+return either TRUEor FALSE\. Variant expressions are parsed as a 
+series of logical functionsconnected with AND, OR, NOT, and 
+parentheses\. All expressions MUSTbe separated with whitespace, 
+though it does not matter how muchwhitespace or what kind\. 
+Alternatively, expressions can be readdirectly from file by setting 
+the expression toEXPRESSIONFILE:filepath\.
 
 Variant Expression functions are all of the 
 formatFILTERNAME:PARAM1:PARAM2:etc\. Some filters have no 

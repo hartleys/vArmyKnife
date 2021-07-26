@@ -33,7 +33,87 @@
 </header>
 
 
-<section>
+<section><blockquote>
+  <p>v3.1.61   \
+Compiled Tue Sep 15 13:43:49 EDT 2020</p>
+</blockquote>
+
+<h1>INTRODUCTION:</h1>
+
+<p>vArmyKnife is...</p>
+
+<h1>INSTALLATION AND SETUP:</h1>
+
+<p><a href="https://github.com/hartleys/vArmyKnife/releases">You can download the most recent stable version of vArmyKnife here</a>,
+or you can use the <a href="https://github.com/hartleys/vArmyKnife/tarball/master">most recent experimental build here</a>.</p>
+
+<p>Simply download the vArmyKnife.tar.gz file and extract it to your preferred location.</p>
+
+<pre><code>tar xvzf varmyknife.tar.gz /my/install/directory/
+</code></pre>
+
+<p>If you are running either Linux or OSX, you can install the software onto your PATH using the command:</p>
+
+<pre><code>export PATH=/my/install/directory/:$PATH
+</code></pre>
+
+<p>Then you can test vArmyKnife and see the basic syntax using either of the commands:</p>
+
+<pre><code>varmyknife help
+   or
+java -jar /my/install/directory/vArmyKnife.jar help
+</code></pre>
+
+<h1>RECOMMENDED ENVIRONMENT AND JAVA OPTIONS:</h1>
+
+<p>I have found that the following environment variables seem to improve stability and performance
+when using vArmyKnife on a cluster or HPC-like environment.</p>
+
+<pre><code>export _JAVA_OPTIONS="-Xms1g -XX:ParallelGCThreads=1 -Xss512m -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
+export MALLOC_ARENA_MAX=1
+</code></pre>
+
+<p>Also, you're usually going to want to set the maximum memory. How much memory is required
+will depend on the type of job. The more large annotation files that need to be loaded,
+the more memory will be required. Note however that if you restrict to only one chromosome,
+most of the annotation files will only be loaded for that chromosome, greatly reducing the
+memory footprint.</p>
+
+<p>You can set the memory usage by adding "-Xmx4g" just after "varmyknife" when you invoke vArmyKnife,
+changing "4g" to however many gigabytes you think you will need. Note that if java starts to
+run low on memory it will slow down considerably as it tries to conserve. It's usually best
+to allocate some extra memory as needed. So for example, to set the max memory to 4 gigabytes:</p>
+
+<pre><code>varmyknife -Xmx4g walkVcf inputVcf.vcf.gz outputVcf.vcf.gz
+</code></pre>
+
+<h1>How to use vArmyKnife:</h1>
+
+<p>General command documentation can be found <a href="https://hartleys.github.io/vArmyKnife/"><em>here</em></a>.</p>
+
+</section> <h2>LEGAL:</h2> <section>
+
+<p>Written 2017 by Stephen Hartley, PhD</p>
+
+<p>National Cancer Institute (NCI), Division of Cancer Epidemiology and Genetics (DCEG), Human Genetics Program</p>
+
+<p>vArmyKnife and all relevant documentation is "United States Government Work" under he terms of the United States Copyright Act. It was written as part of the authors' official duties for the United States Government and thus vArmyKnife cannot be copyrighted. This software is freely available to the public for use without a copyright notice. Restrictions cannot be placed on its present or future use.</p>
+
+<p>Although all reasonable efforts have been taken to ensure the accuracy and reliability of the software and data, the National Human Genome Research Institute (NHGRI), the National Cancer Institute (NCI) and the U.S. Government does not and cannot warrant the performance or results that may be obtained by using this software or data. NHGRI, NCI and the U.S. Government disclaims all warranties as to performance, merchantability or fitness for any particular purpose.</p>
+
+<p>In any work or product derived from this material, proper attribution of the authors as the source of the software or data should be made, using "NCI Division of Cancer Epidemiology and Genetics, Human Genetics Program" as the citation.</p>
+
+<p>This package uses (but is not derived from) several externally-developed, open-source libraries which have been distributed under various open-source licenses. vArmyKnife is distributed packaged with these libraries included.</p>
+
+<p>Additional License information can be accessed using the command:</p>
+
+<pre><code>vArmyKnife help LICENSES
+</code></pre>
+
+<p>And can also found in the distributed source code in:</p>
+
+<pre><code>src/main/resources/
+</code></pre>
 
 </section>
 

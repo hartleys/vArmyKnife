@@ -21,7 +21,7 @@
         where param is the parameter ID listed in the documentation 
         below.
 
-## Available Functions:
+## Available Operations
 
     
 

@@ -10903,7 +10903,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
           cfgWriter.write(line);
         }}
         cfgWriter.close();
-        args = Array("-c",cfg) ++ args
+        args = Array(args.head,"-c",cfg) ++ args.tail
       }
     }
     
