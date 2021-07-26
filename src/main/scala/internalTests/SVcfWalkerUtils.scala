@@ -12435,17 +12435,13 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
               
               //gs.addGenotypeArray(fmtid , gval : Array[String])
               gtSplitLines.foreach{ case (oldID,newID,ohl,hl) => {
-                val fIdx = gs.fmt.indexOf(oldID);
+                var fIdx = gs.fmt.indexOf(oldID);
                 if(fIdx != -1){
+       //reportln("===> GT-RECODE 1: fIdx="+fIdx+", oldID="+oldID+", newID="+newID+", alleIdxString="+alleIdxString,"deepDebug")
+                  
                   gs.addGenotypeArray(newID,gs.genotypeValues(fIdx).clone());
-                  gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{g => {
-                    if(g.contains('.')){
-                      //g
-                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else if(gg == ".") "." else otherAlleleChar}.sorted.mkString("/")
-                    } else {
-                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else otherAlleleChar}.sorted.mkString("/")
-                    }
-                  }})
+                  fIdx = gs.fmt.indexOf(oldID);
+       //reportln("===> GT-RECODE 2: fIdx="+fIdx+", oldID="+oldID+", newID="+newID+", alleIdxString="+alleIdxString,"deepDebug")
                   gs.addGenotypeArray(oldID+threeAllelePrefix,gs.genotypeValues(fIdx).map{g => {
                     if(g.contains('.')){
                       //g
@@ -12454,7 +12450,15 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                       g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
                     }
                   }})
-                  
+                  fIdx = gs.fmt.indexOf(oldID);
+                  gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{g => {
+                    if(g.contains('.')){
+                      //g
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else if(gg == ".") "." else otherAlleleChar}.sorted.mkString("/")
+                    } else {
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else otherAlleleChar}.sorted.mkString("/")
+                    }
+                  }})
                 }
               }}
               adSplitLines.foreach{ case (oldID,newID,ohl,hl) => {
@@ -12486,7 +12490,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                           warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
                           "."
                         } else if(treatOtherAsRef) {
-                          (ad(0) - ad(alleIdx)) + "," + ad(alleIdx);
+                          (ad.sum - ad(alleIdx)) + "," + ad(alleIdx);
                         } else {
                           ad(0) + "," + ad(alleIdx);
                         }
