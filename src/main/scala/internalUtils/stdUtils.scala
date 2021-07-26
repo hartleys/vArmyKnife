@@ -81,14 +81,15 @@ object stdUtils {
                          category : String = "General",
                          withinCatPriority : Int = 1000,
                          ord : Ordering[String] = ParamStrSetDefaultOrdering,
-                         exampleCode : Seq[Seq[String]] = Seq[Seq[String]]()) {
+                         exampleCode : Seq[Seq[String]] = Seq[Seq[String]](),
+                         textBoxes : Seq[(String,Seq[String])] = Seq()) {
     val pm = pp.map{ ppp => (ppp.id,ppp) }.toMap;
     val nameSetHolder = ( Set(mapType) ++ synon.toSet );
     def paramMap = pm;
     def nameSet : Set[String] = nameSetHolder
     def isMatch(s : String) : Boolean = nameSetHolder.contains(s);
-    
-  }
+      
+  }   
   case class ParsedParamStrSet( sc : Seq[String], pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]", parenDelim : String = "()"){
     val paramMap = pss.paramMap;
     //val sc = ss.split(delim).toSeq;

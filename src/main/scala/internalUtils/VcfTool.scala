@@ -1473,9 +1473,10 @@ object VcfTool {
     }
   }
   
-  val subtype_GtStyle = "GtStyle"
+  val subtype_GtStyle    = "GtStyle"
   val subtype_GtStyleUnsplit = "GtStyle.unsplit"
-  
+  val subtype_GtStyle3   = "GtStyle.triAlle"
+
   val subtype_ListOfLists = "ListOfLists"
   val subtype_AlleleCounts = "AlleleCounts"
   val subtype_AlleleCountsUnsplit = "AlleleCounts.unsplit"

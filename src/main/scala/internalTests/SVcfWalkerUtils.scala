@@ -4991,7 +4991,8 @@ object SVcfWalkerUtils {
                         collapseStarAllele : Boolean = true,
                         deleteUnannotatedFields : Boolean = true,
                         thirdAlleleChar : Option[String] = None,
-                        multAlleInfoTag : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker { 
+                        multAlleInfoTag : Option[String] = None,
+                        treatOtherAlleleAsRef : Boolean = false) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "StdVcfConverter"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
       ("cleanHeaderLines",cleanHeaderLines.toString()),
@@ -5189,6 +5190,133 @@ object SVcfWalkerUtils {
     }
   }
 
+  /*
+   * UNFINISHED:
+   */
+  class collapseStarAllele(ADtypeFields : Seq[String] = Seq("AD"),
+                           GTtypeFields : Seq[String] = Seq("GT"),
+                           OtherARfields : Seq[String] = Seq(),
+                           treatOtherAlleleAsRef : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "StdVcfConverter"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+      ("treatOtherAlleleAsRef",treatOtherAlleleAsRef.toString()),
+    );
+    val talle = if(treatOtherAlleleAsRef){ "0" } else { "." }
+    //def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
+      val samps = outHeader.getSampleList
+      
+      val fixList = Seq("GT", "GL","PL","QA","AO","AD");
+      
+      val multAlleIdx : Int = Stream.from(1).find{ xx => {
+        val xs = if(xx == 1) "" else xx.toString;
+        (fixList).forall{ gg => {
+          ! vcfHeader.formatLines.exists{ fl => fl.ID == gg + "_multAlle" + xs }
+        }}
+      }}.get
+      val multAlleSuffix = "_multAlle" + (if(multAlleIdx == 1) "" else multAlleIdx.toString())
+      val oldFmtLines = outHeader.formatLines.filter{ fl => fixList.contains(fl.ID) };
+      
+        oldFmtLines.foreach{ fl => {
+          outHeader.addFormatLine(
+            new SVcfCompoundHeaderLine("FORMAT" ,ID = fl.ID + multAlleSuffix, ".", fl.Type, "(For multiallelic variants, an additional value is included in this version to indicate the value for the other alt alleles) "+fl.desc)
+          )
+        }}
+        outHeader.addStatBool("isSplitMultAlleStar",false)
+        
+        outHeader.addFormatLine(
+            new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT" + multAlleSuffix, "1", "String", "Raw GT tag, prior to lossy conversion to universally readable VCF. Note that for split multiallelics there will be three possible alleles, 0, 1, and 2, where 2 represents any or all other alt alleles. FOR MOST PURPOSES, THIS IS THE GT TAG THAT SHOULD BE USED.")
+        )
+        
+        vcfHeader.infoLines.find{ info => info.ID == "GT" }.foreach{ oldGt => {
+          outHeader.addFormatLine(
+            new SVcfCompoundHeaderLine("FORMAT" ,ID = "GT", "1", "String", "Collapsed GT tag, for back-compatibility with software tools that cannot parse VCF v4.2. For split multiallelic variants the third allele will be collapsed with the ref allele. WARNING: It is NOT recommended that this GT tag be used for most purposes, as multiallelic alt alleles have been simplified. It is preferable to use the "+"GT" + multAlleSuffix+" tag, which may contain 3 possible alleles.")
+            )
+        }}
+        
+      
+      outHeader.reportAddedInfos(this)
+
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        //val vc = v.getOutputLine()
+        
+        val vc = v.getOutputLine
+        //vc.info.withFilter{ case (key,info) => info.getOrElse("miss") == "" }.foreach{ case (tag,info) => {
+        //  vc.addInfo(tag,".");
+        //}}
+
+        if(v.genotypes.genotypeValues.length > 0 ){
+          if(v.alt.length == 2 && v.alt.last == (internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING)){
+            oldFmtLines.foreach( fl => {
+              val fmtIdx = v.format.indexOf(fl.ID);
+              if(fmtIdx == -1){
+                //do nothing
+              } else {
+                val expectedCt = if(fl.Number == "R"){ 3 } else if(fl.Number == "A"){ 1 } else { 2 }
+                val gv = v.genotypes.genotypeValues(fmtIdx).map{g => { g.split(",") }}
+                if(gv.exists{ g => {
+                  g.length > expectedCt
+                }}){
+                  vc.genotypes.fmt = vc.genotypes.fmt.updated(fmtIdx,fl.ID + multAlleSuffix)
+                  if(fl.Number == "A"){
+                    vc.genotypes.addGenotypeArray(fl.ID, gv.map{ gg => {
+                      gg.head
+                    }})
+                  } else if(fl.Number == "R"){
+                    vc.genotypes.addGenotypeArray(fl.ID, gv.map{ gg => {
+                      gg.take(2).padTo(1,".").mkString(",")
+                    }})
+                  }
+                } else {
+                  vc.genotypes.addGenotypeArray( fl.ID + multAlleSuffix, v.genotypes.genotypeValues(fmtIdx).clone() );
+                }
+                /*v.genotypes.genotypeValues(fmtIdx).zipWithIndex.foreach{ case (g,i) => {
+                  val gc = g.split(",");
+                  if(gc.length > expectedCt){
+                    
+                  }
+                }}*/
+              }
+            })
+
+          } else {
+            oldFmtLines.foreach{ fl => {
+              val fmtIdx = v.format.indexOf(fl.ID);
+              if(fmtIdx == -1){
+                //do nothing
+              } else {
+                vc.genotypes.addGenotypeArray( fl.ID +multAlleSuffix, v.genotypes.genotypeValues(fmtIdx).clone() );
+              }
+            }}
+
+          }
+
+
+          if(v.alt.length == 2 && v.alt.last == (internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING)){
+            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
+            v.genotypes.genotypeValues(0).map{g => (g.split("[/\\|]"),g.contains('|'))}.zipWithIndex.foreach{ case ((g,isPhased),i) => {
+              vc.genotypes.genotypeValues(0)(i) = g.map{ a => if(a == ".") "." else {
+                if(a == "2") talle else a;
+              }}.mkString((if(isPhased) "|" else "/"));
+            }}
+          } else {
+            vc.genotypes.addGenotypeArray("GT"+multAlleSuffix,v.genotypes.genotypeValues(0).clone);
+          }
+        }
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
+  
+  
   case class AddStatDistributionTags(tagAD : Option[String], tagDP : Option[String] = None,
                                      tagGT : String = "GT",
                                      tagSingleCallerAlles : Option[String] = None,
@@ -10753,8 +10881,31 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         ("cmdId",cmdId.toString)
     )
 
-    val args = snpSiftAnnoCmd.split("\\s+");
+    var args = snpSiftAnnoCmd.split("\\s+");
     notice("Attempting SnpEff annotation with cmdId="+cmdId+"\n   "+args.mkString("\n   ")+"\n","SNPSIFT_ANNOTATE",-1);
+    
+    if(args.contains("-c") || args.contains("-config")){
+      notice("Using custom SNPEff config file","note");
+    } else {
+      //val currdir =  (new File(SVcfWalkerUtils.SnpEffAnnotater.getClass.getProtectionDomain().getCodeSource().getLocation().toURI())).getParent();
+      //val cfg = currdir+"snpEff.config"
+      val wd = System.getProperty("user.dir");
+      if(! (new File( wd+"/snpeff" )).exists()){
+        (new File(wd+"/snpeff")).mkdirs();
+      }
+      
+      val cfg = wd+"/snpeff/snpEff.config"
+      if(! (new File(cfg)).exists() ){
+        warning("Creating new snpEff config file (and database) at: "+wd+"/snpeff/"+". In future runs you may want to invoke SnpEff using the added parameters: \"-c "+cfg+"\"","SNPEFF_CONFIG",-1);
+      val cfgReader = ( new java.io.BufferedReader( new java.io.InputStreamReader( this.getClass().getClassLoader().getResourceAsStream("snpEff.config") )) )
+        val cfgWriter = new BufferedWriter(new FileWriter(cfg));
+        cfgReader.lines().iterator().asScala.foreach{ line => {
+          cfgWriter.write(line);
+        }}
+        cfgWriter.close();
+        args = Array("-c",cfg) ++ args
+      }
+    }
     
     //val ssa = new org.snpsift.SnpSiftCmdAnnotate()
     //ssa.parseArgs(args)
@@ -11084,6 +11235,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     Range(0,i).flatMap(k => Range(k,i).map(z => (k,z)))
   }) 
   val NUMREPORTBADLEN=5;
+  
   case class SSplitMultiAllelics(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(), 
                                  clinVarVariants : Boolean = false, 
                                  fmtKeySumIntAlts : Seq[String] = Seq[String]("AD","AO"),
@@ -11201,18 +11353,21 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
             case None => Seq();
           }
       )
-        
+      
+      var copyPresplits = scala.collection.Set[String]();
+      
       val gtSplitLines : Seq[(String,String,SVcfCompoundHeaderLine,SVcfCompoundHeaderLine)] = vcfHeader.formatLines.flatMap{ fline => {
         fline.subType match {
           case Some(st) => {
             if(st == VcfTool.subtype_GtStyleUnsplit){
               //reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
               val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID, Number=fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle))
-              val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit",  Number="1", Type="String", desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
+              val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit",  Number="1", Type="String", desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
               //reportln("    ol:"+ol.getVcfString,"note");
               //reportln("    nl:"+nl.getVcfString,"note");
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
+              copyPresplits = copyPresplits + fline.ID;
               Some((fline.ID,fline.ID + "_presplit",ol,nl));
             } else {
               None
@@ -11235,6 +11390,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
               //reportln("    ol:"+ol.getVcfString,"note");
               //reportln("    nl:"+nl.getVcfString,"note");
+              copyPresplits = copyPresplits + fline.ID;
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
               Some((fline.ID,fline.ID + "_presplit",ol,nl));
@@ -11257,6 +11413,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
               val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
               newHeader.addFormatLine(ol,walker=Some(this));
               newHeader.addFormatLine(nl,walker=Some(this));
+              copyPresplits = copyPresplits + fline.ID;
               Some((fline.ID,fline.ID, ol,nl))
       }}
       
@@ -11313,6 +11470,18 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
         var warningSet = Set[String]();
         val vb = vc.getOutputLine();
         tally("multiAlleSplit_nAlle"+vc.alt.length,1)
+        
+        copyPresplits.foreach{ s => {
+           vc.info.getOrElse( s, None ) match {
+             case Some(k) => {
+               vb.addInfo(s+"_presplit",k);
+             }
+             case None => {
+               //do nothing
+             }
+           }
+        }}
+        
         if(vc.alt.length <= 1 && (! splitSimple)){
           vb.addInfo(vcfCodes.numSplit_TAG, ""+vc.alt.length);
           vb.addInfo(vcfCodes.splitIdx_TAG, "0");
@@ -11760,6 +11929,545 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     }
   }
   
+  
+  
+  case class SSplitMultiAllelics2(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(), 
+                                  treatOtherAsRef : Boolean = true,
+                                 fmtKeySumIntAlts : Seq[String] = Seq[String]("AD","AO"),
+                                 fmtKeyIgnoreAlts : Seq[String] = Seq[String](),
+                                 fmtKeyGenotypeStyle : Seq[String] = Seq[String]("GT"),
+                                 splitSimple : Boolean = false,
+                                 rawPrefix : Option[String] = Some("UNSPLIT_"),
+                                 forceSplit : Boolean = false,
+                                 silent : Boolean = false
+                               ) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "SSplitMultiAllelics"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+        ("fmtKeySumIntAlts",fmtList(fmtKeySumIntAlts)),
+        ("fmtKeyIgnoreAlts",fmtList(fmtKeyIgnoreAlts)),
+        ("fmtKeyGenotypeStyle",fmtList(fmtKeyGenotypeStyle)),
+        ("splitSimple",splitSimple.toString),
+        ("rawPrefix",rawPrefix.toString)
+    )
+
+    val threeAllelePrefix = "a3";
+    val otherAlleleChar = if(treatOtherAsRef) "0" else ".";
+    
+    
+    val alleCtCt = new scala.collection.mutable.HashMap[Int, Int]().withDefaultValue(0)
+    val badCtCt = new scala.collection.mutable.HashMap[Int, Int]().withDefaultValue(0)
+    
+    
+    val noteCt = if(silent){ 0 } else { 5 }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      if( vcfHeader.infoLines.contains(vcfCodes.splitIdx_TAG) || vcfHeader.isSplitMA ){
+        warning("Multiallelics appear to have already been split in this file!","ALLELES_ALREADY_SPLIT",10);
+      }
+      if(vcfHeader.walkLines.exists(walkline => walkline.ID == "SSplitMultiAllelics") || vcfHeader.isSplitMA ){
+          warning("Splitmultiallelic walker found in this VCF file's header. Skipping multiallelic split!","ALLELES_ALREADY_SPLIT",10);
+          //if(! forceSplit){
+            return((vcIter,vcfHeader));
+          //}
+      }
+       
+      //if(vcfHeader.titleLine.sampleList.length > 0){
+        vcfHeader.formatLines.find(fline => fline.ID == "GT").foreach{ fline => {
+          val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "1","String", fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
+          notice("Adding GtStyleUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
+          vcfHeader.addFormatLine(nl,walker=Some(this));
+        }}
+        vcfHeader.formatLines.find(fline => fline.ID == "AD").foreach{ fline => {
+          val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "R","Integer", fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
+          notice("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
+          vcfHeader.addFormatLine(nl,walker=Some(this));
+        }}
+        vcfHeader.formatLines.find(fline => fline.ID == "AO").foreach{ fline => {
+          val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, "A","Integer", fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
+          notice("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
+          vcfHeader.addFormatLine(nl,walker=Some(this));
+        }}
+        fmtKeySumIntAlts.foreach{t => vcfHeader.formatLines.find(fline => fline.ID == t && fline.subType.isEmpty).foreach{ fline => {
+          val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, fline.Number,fline.Type, fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
+          notice("Adding subtype_AlleleCountsUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
+          vcfHeader.addFormatLine(nl,walker=Some(this));
+        }}}
+        fmtKeyGenotypeStyle.foreach{t => vcfHeader.formatLines.find(fline => fline.ID == t && fline.subType.isEmpty).foreach{ fline => {
+          val nl = new SVcfCompoundHeaderLine("FORMAT",fline.ID, fline.Number,fline.Type, fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
+          notice("Adding GtStyleUnsplit subtype to tag: "+fline.ID+"\n"+
+               "    fline:"+fline.getVcfString+"\n"+
+               "    nl:"+nl.getVcfString,"GtStyleUnsplit",noteCt);
+          vcfHeader.addFormatLine(nl,walker=Some(this));
+        }}}
+      
+      val newHeader =vcfHeader.copyHeader
+
+      newHeader.addStatBool("isSplitMultAlle",true)
+      newHeader.addStatBool("isSplitMultAlleStar",false)
+      
+      val newHeaderLines = List[SVcfCompoundHeaderLine](
+          //new VCFInfoHeaderLine(vcfCodes.isSplitMulti_TAG, 0, VCFHeaderLineType.Flag,    "Indicates that this line was split apart from a multiallelic VCF line."),
+          new SVcfCompoundHeaderLine("INFO",vcfCodes.splitIdx_TAG, "1", "Integer", "Indicates the index of this biallelic line in the set of biallelic lines extracted from the same multiallelic VCF line."),
+          new SVcfCompoundHeaderLine("INFO",vcfCodes.numSplit_TAG,     "1", "Integer", "Indicates the number of biallelic lines extracted from the same multiallelic VCF line as this line."),
+          new SVcfCompoundHeaderLine("INFO",vcfCodes.splitAlle_TAG,     ".", "String", "The original set of alternative alleles."),
+           new SVcfCompoundHeaderLine("INFO",vcfCodes.splitAlleWARN_TAG,     ".", "String", "Warnings produced by the multiallelic allele split. These may occur when certain tags have the wrong number of values.")
+      )
+      
+      var copyPresplits = scala.collection.Set[String]();
+      
+      val gtSplitLines : Seq[(String,String,SVcfCompoundHeaderLine,SVcfCompoundHeaderLine)] = vcfHeader.formatLines.flatMap{ fline => {
+        fline.subType match {
+          case Some(st) => {
+            if(st == VcfTool.subtype_GtStyleUnsplit){
+              //reportln("Adding new GT-Style FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID, Number=fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle))
+              val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit",  Number="1", Type="String", desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_GtStyleUnsplit))
+              val ml = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + threeAllelePrefix, Number="1", Type=fline.Type, desc="(Recoded for multiallelic split, with all other alleles collapsed into a 3rd allele) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle3))
+              //reportln("    ol:"+ol.getVcfString,"note");
+              //reportln("    nl:"+nl.getVcfString,"note");
+              newHeader.addFormatLine(ol,walker=Some(this));
+              newHeader.addFormatLine(nl,walker=Some(this));
+              newHeader.addFormatLine(ml,walker=Some(this));
+              
+              copyPresplits = copyPresplits + fline.ID;
+              Some((fline.ID,fline.ID + "_presplit",ol,nl));
+            } else {
+              None
+            }
+          }
+          case None => {
+            None
+          }
+        }
+      }}
+      val adSplitLines : Seq[(String,String,SVcfCompoundHeaderLine,SVcfCompoundHeaderLine)] = vcfHeader.formatLines.flatMap{ fline => {
+        fline.subType match {
+          case Some(st) => {
+            if(st == VcfTool.subtype_AlleleCountsUnsplit){
+              if(fline.Number != "R" && fline.Number != "A"){
+                warning("Warning: Tag with subtype: subtype_AlleleCountsUnsplit must have Number R or A","MalformedFormatTag",10)
+              }
+              val newNum = if(fline.Number == "R") "3" else "2";
+              //reportln("Adding new Allele-Count FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID,Number= fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCounts))
+              val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc, subType = Some(VcfTool.subtype_AlleleCountsUnsplit))
+              val ml = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + threeAllelePrefix, Number=newNum, Type=fline.Type, desc="(Recoded for multiallelic split, with all other alleles collapsed into a 3rd allele) "+fline.desc, subType = Some(VcfTool.subtype_GtStyle3))
+              //reportln("    ol:"+ol.getVcfString,"note");
+              //reportln("    nl:"+nl.getVcfString,"note");
+              copyPresplits = copyPresplits + fline.ID;
+              newHeader.addFormatLine(ol,walker=Some(this));
+              newHeader.addFormatLine(nl,walker=Some(this));
+              newHeader.addFormatLine(ml,walker=Some(this));
+
+              Some((fline.ID,fline.ID + "_presplit",ol,nl));
+            } else {
+              None
+            }
+          }
+          case None => {
+            None
+          }
+        }
+      }}
+      val otherSplitLines : Seq[(String,String,SVcfCompoundHeaderLine,SVcfCompoundHeaderLine)] = vcfHeader.formatLines.filter{ fline => {
+        adSplitLines.indexWhere{ case (oldID,newID,ohl,hl) => {
+          fline.ID == oldID
+        }} == -1 && (fline.Number == "R" || fline.Number == "A")
+      }}.flatMap{ fline => {
+              //reportln("Adding new FORMAT tag: "+fline.ID+"_presplit, based on "+fline.ID+": "+fline.getVcfString,"note");
+              val ol = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID,Number= fline.Number, Type=fline.Type, desc="(Recoded for multiallelic split) "+fline.desc)
+              val nl = new SVcfCompoundHeaderLine("FORMAT",ID=fline.ID + "_presplit", Number=".", Type=fline.Type, desc="(Raw value prior to multiallelic split) "+fline.desc)
+              newHeader.addFormatLine(ol,walker=Some(this));
+              newHeader.addFormatLine(nl,walker=Some(this));
+              copyPresplits = copyPresplits + fline.ID;
+              Some((fline.ID,fline.ID, ol,nl))
+      }}
+      
+      //}
+      
+      newHeaderLines.foreach{hl => {
+        newHeader.addInfoLine(hl,walker=Some(this));
+      }}
+      
+      /*gtSplitLines.foreach{ case (oldID,newID,hl) => {
+        newHeader.addFormatLine(hl,walker=Some(this));
+      }}
+      adSplitLines.foreach{ case (oldID,newID,hl) => {
+        newHeader.addFormatLine(hl,walker=Some(this));
+      }}*/
+      
+      newHeader.addWalk(this);
+      
+      /*
+      rawPrefix.toSeq.flatMap{rawpre => (fmtKeyGenotypeStyle ++ fmtKeySumIntAlts).flatMap{gtTag => {
+             vcfHeader.formatLines.find{ fl => fl.ID == gtTag }.map{ fl => {
+               new SVcfCompoundHeaderLine("FORMAT",rawpre+fl.ID, ".", "String", "(Raw, before allele splitting) "+fl.desc) 
+             }}
+           }}
+      }.toSeq.foreach{ hl => {
+        newHeader.addFormatLine(hl,walker=Some(this));
+      }}*/
+      
+      val infoA = newHeader.infoLines.withFilter(_.Number == "A").map(_.ID).toSet
+      val infoR = newHeader.infoLines.withFilter(hl => hl.Number == "R").map(_.ID).toSet
+      
+      val infoRrev = newHeader.infoLines.withFilter(hl => hl.Number == "R" && hl.subType.getOrElse("") == "refAlleLast").map(_.ID).toSet
+      val infoAtruncate = newHeader.infoLines.withFilter(hl => hl.Number == "A" && hl.subType.getOrElse("") == "truncateOtherAlts").map(_.ID).toSet
+      
+      val tagWarningMap = new scala.collection.mutable.AnyRefMap[String,Int](tag => 0);
+      /*
+      infoCLN.foreach(x => {
+        reportln("INFO Line "+x+" is of type CLN","debug");
+      })
+      infoA.foreach(x => {
+        reportln("INFO Line "+x+" is of type A","debug");
+      })
+      infoR.foreach(x => {
+        reportln("INFO Line "+x+" is of type R","debug");
+      })*/
+      for( i <- Range(1,10)){
+        tally("multiAlleSplit_nAlle"+i,0)
+      }
+      newHeader.reportAddedInfos(this)
+      val sampNames = vcfHeader.titleLine.sampleList;
+      newHeader.reportAddedInfos(this)
+      return (addIteratorCloseAction(vcFlatMap(vcIter)(vc => {
+        
+        var warningSet = Set[String]();
+        val vb = vc.getOutputLine();
+        tally("multiAlleSplit_nAlle"+vc.alt.length,1)
+        
+        copyPresplits.foreach{ s => {
+           vc.info.getOrElse( s, None ) match {
+             case Some(k) => {
+               vb.addInfo(s+"_presplit",k);
+             }
+             case None => {
+               //do nothing
+             }
+           }
+        }}
+        
+        if(vc.alt.length <= 1 && (! splitSimple)){
+          vb.addInfo(vcfCodes.numSplit_TAG, ""+vc.alt.length);
+          vb.addInfo(vcfCodes.splitIdx_TAG, "0");
+          vb.addInfo(vcfCodes.splitAlle_TAG, vc.alt.padTo(1,".").mkString(","));
+          alleCtCt(vc.alt.length) = alleCtCt(vc.alt.length) + 1;
+          
+          vb.info.withFilter{case (t,v) => infoAtruncate.contains(t)}.map{ case (t,v) => {
+            v.foreach{ vv => {
+              val vvcells = vv.split(",");
+              if(vvcells.length > 1){
+                notice("Truncating overlong A-Numbered INFO field (in biallelic variant): "+t+". Len="+vvcells.length+", numAltAlle=1","TRUNCATING_ANUMBERED_INFO_BIALLE",10);
+                vb.addInfo(t,vvcells.head);
+              }
+            }}
+          }}
+          
+          if(vc.genotypes.genotypeValues.length > 0){
+            adSplitLines.foreach{ case (oldTag,newTag,rawHeaderLine,headerLine) => {
+                val fIdx = vc.genotypes.fmt.indexOf(oldTag);
+                if(fIdx != -1){
+                  vb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(fIdx).clone());
+                  vb.genotypes.addGenotypeArray(oldTag+threeAllelePrefix,vc.genotypes.genotypeValues(fIdx).clone());
+                }
+            }}
+            gtSplitLines.foreach{ case (oldTag,newTag,rawHeaderLine,headerLine) => {
+                val fIdx = vc.genotypes.fmt.indexOf(oldTag);
+                if(fIdx != -1){
+                  vb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(fIdx).clone());
+                  vb.genotypes.addGenotypeArray(oldTag+threeAllelePrefix,vc.genotypes.genotypeValues(fIdx).clone());
+                }
+            }}
+          }
+          Seq(vb);
+        } else {
+          val alleles = vc.alleles;
+          val numAlle = alleles.length;
+          val refAlle = alleles.head;
+          val altAlleles = alleles.tail;
+          alleCtCt(altAlleles.length) = alleCtCt(altAlleles.length) + 1;
+          val attrMap = vc.info
+          val (copyAttrA,tempAttrSet)    = attrMap.partition{case (key,obj) => { infoA.contains(key) }};
+          val (copyAttrR,simpleCopyAttr) = tempAttrSet.partition{case (key,obj) => { infoR.contains(key) }};
+          //infoRrev, infoAtruncate
+          val attrA = copyAttrA.map{case (key,attr) => {
+            val a = {
+              val atr = if(attr.isEmpty) Array[String]() else attr.getOrElse("").split(",",-1);
+              if(atr.length > numAlle - 1 && infoAtruncate.contains(key)){
+                notice("Truncating overlong A-Numbered INFO field: "+key+". Len="+atr.length+", numAltAlle="+(numAlle-1),"TRUNCATING_ANUMBERED_INFO",10);
+                atr.take(numAlle - 1).toSeq;
+              } else if(atr.length != numAlle - 1){
+                  warning("WARNING: ATTR: \""+key+"\"=\""+attr+"\" of type \"A\"\n   VAR:\n      atr.length() = "+atr.length + " numAlle = "+numAlle+
+                      (if(internalUtils.optionHolder.OPTION_DEBUGMODE) "\n   "+vc.getVcfStringNoGenotypes else ""),
+                      "INFO_LENGTH_WRONG_"+key,NUMREPORTBADLEN);
+                  warningSet = warningSet + ("INFO_LENGTH_WRONG_A."+key)
+                  tagWarningMap(key) += 1; 
+                  repToSeq(atr.mkString(","),numAlle - 1);
+              } else {
+                atr.toSeq;
+              }
+            }
+            (key,a)
+          }}
+          val attrR = copyAttrR.map{case (key,attr) => {
+            val a = {
+              val atr = if(attr.isEmpty) Array[String]() else attr.getOrElse("").split(",",-1);
+              if(atr.length != numAlle){
+                warning("WARNING: ATTR: \""+key+"\"=\""+attr+"\" of type \"R\"\n   VAR:\n      atr.length() = "+atr.length + " numAlle = "+numAlle+
+                       (if(internalUtils.optionHolder.OPTION_DEBUGMODE) "\n   "+vc.getVcfStringNoGenotypes else ""),
+                       "INFO_LENGTH_WRONG_"+key,NUMREPORTBADLEN);
+                warningSet = warningSet + ("INFO_LENGTH_WRONG_R."+key)
+                tagWarningMap(key) += 1;
+                repToSeq(atr.mkString(","),numAlle);
+              } else {
+                atr.toSeq;
+              }
+            }
+            (key,a)
+          }}
+
+          //var attrOut = simpleCopyAttr ++ attrA ++ attrR
+
+          val ANNSTR =  trimBrackets(attrMap.getOrElse("ANN",Some(".")).getOrElse(".")).split(",",-1).map(ann => { (ann.trim.split("\\|",-1)(0),ann.trim) });
+          
+          //warning("ANNSTR: \n      "+ANNSTR.map{case (a,b) => { "(\""+a+"\",\""+b+"\")" }}.mkString("\n      ")+"","ANN_FIELD_TEST",100);
+          
+          val ANN = if(attrMap.contains("ANN")) Some(altAlleles.map(aa => {
+             ANNSTR.filter{case (ahead,ann) => { ahead == aa }}.map{case (ahead,ann) => {ann}}.mkString(",");
+          })) else None;
+          
+          var isBad = false;
+          
+          val out = altAlleles.zipWithIndex.map{ case (alt,altIdx) => {
+            
+            val gs = internalUtils.VcfTool.SVcfGenotypeSet(vc.genotypes.fmt,vc.genotypes.genotypeValues.map{g => g.clone()})
+            val alleIdx = altIdx + 1;
+            val alleIdxString = alleIdx.toString;
+            
+            val vb = internalUtils.VcfTool.SVcfOutputVariantLine(in_chrom = vc.chrom,
+              in_pos  = vc.pos,
+              in_id = vc.id,
+              in_ref = vc.ref,
+              in_alt = Seq[String](alt),
+              in_qual = vc.qual,
+              in_filter = vc.filter,
+              in_info = simpleCopyAttr,
+              in_format = vc.format,
+              in_genotypes = gs
+            )
+            
+
+            //vb.log10PError(vc.getLog10PError());
+            //val alleleSet = if(alt != Allele.SPAN_DEL) List(refAlle,alt,Allele.SPAN_DEL) else List(refAlle,alt);
+            //vb.alleles(alleleSet.asJava);
+            //vb.attribute(vcfCodes.splitAlle_TAG, altAlleles.map(a => {a.getBaseString()}).mkString(",") )
+            //vb.attribute(vcfCodes.numSplit_TAG, altAlleles.length.toString );
+            //vb.attribute(vcfCodes.splitIdx_TAG, altIdx.toString );
+            vb.addInfo(vcfCodes.splitAlle_TAG, altAlleles.mkString(",") );
+            vb.addInfo(vcfCodes.numSplit_TAG, altAlleles.length.toString );
+            vb.addInfo(vcfCodes.splitIdx_TAG, altIdx.toString);
+            
+            var malformedADCT = 0;
+            
+            if(vc.genotypes.genotypeValues.length > 0){
+              
+              //gs.addGenotypeArray(fmtid , gval : Array[String])
+              gtSplitLines.foreach{ case (oldID,newID,ohl,hl) => {
+                val fIdx = gs.fmt.indexOf(oldID);
+                if(fIdx != -1){
+                  gs.addGenotypeArray(newID,gs.genotypeValues(fIdx).clone());
+                  gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{g => {
+                    if(g.contains('.')){
+                      //g
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else if(gg == ".") "." else otherAlleleChar}.sorted.mkString("/")
+                    } else {
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else otherAlleleChar}.sorted.mkString("/")
+                    }
+                  }})
+                  gs.addGenotypeArray(oldID+threeAllelePrefix,gs.genotypeValues(fIdx).map{g => {
+                    if(g.contains('.')){
+                      //g
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else if(gg == ".") "." else "2"}.sorted.mkString("/")
+                    } else {
+                      g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                    }
+                  }})
+                  
+                }
+              }}
+              adSplitLines.foreach{ case (oldID,newID,ohl,hl) => {
+                val fIdx = gs.fmt.indexOf(oldID);
+                if(fIdx != -1){
+                  gs.addGenotypeArray(newID,gs.genotypeValues(fIdx).clone());
+                  if(ohl.Number == "R"){
+                    gs.addGenotypeArray(oldID+threeAllelePrefix,gs.genotypeValues(fIdx).map{adString => {
+                      if(adString == "."){
+                        "."
+                      } else {
+                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        if(! ad.isDefinedAt(alleIdx)){
+                          warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
+                          "."
+                        } else {
+                          ad(0) + "," + ad(alleIdx) + "," + (ad.sum - ad(0) - ad(alleIdx));
+                        }
+                        //  g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                      }
+                    }})
+                    
+                    gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{adString => {
+                      if(adString == "."){
+                        "."
+                      } else {
+                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        if(! ad.isDefinedAt(alleIdx)){
+                          warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
+                          "."
+                        } else if(treatOtherAsRef) {
+                          (ad(0) - ad(alleIdx)) + "," + ad(alleIdx);
+                        } else {
+                          ad(0) + "," + ad(alleIdx);
+                        }
+                        //  g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                      }
+                    }})
+                    
+                  } else if(ohl.Number == "A"){
+                    gs.addGenotypeArray(oldID+threeAllelePrefix,gs.genotypeValues(fIdx).map{adString => {
+                      if(adString == "."){
+                        "."
+                      } else {
+                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        if(! ad.isDefinedAt(alleIdx-1)){
+                          warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
+                          "."
+                        } else {
+                          ad(alleIdx-1) + "," + (ad.sum - ad(alleIdx-1));
+                        }
+                      }
+
+                      //  g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                    }})
+                    
+                    gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{adString => {
+                      if(adString == "."){
+                        "."
+                      } else {
+                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        if(! ad.isDefinedAt(alleIdx)){
+                          warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
+                          "."
+                        } else {
+                          ""+ad(alleIdx);
+                        }
+                      }
+
+                      //  g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                    }})
+                  } else {
+                    warning("Attempting to split "+oldID+" tag failed!","IMPOSSIBLESTATE_BADSECONDARYADTAG_HASBADTYPE_SPLITMULTALLE",10);
+                  }
+                }
+              }}
+              otherSplitLines.foreach{ case (oldID,newID,ohl,hl) => {
+                val fIdx = gs.fmt.indexOf(oldID);
+                if(fIdx != -1){
+                  gs.addGenotypeArray(newID,gs.genotypeValues(fIdx).clone());
+                  if(ohl.Number == "R"){
+                    gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{adString => {
+                      if(adString == "."){
+                        "."
+                      } else {
+                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        if(! ad.isDefinedAt(alleIdx)){
+                          warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
+                          "."
+                        } else {
+                          ad(0) + "," + ad(alleIdx) + "";
+                        }
+                        //  g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                      }
+                    }})
+                  } else if(ohl.Number == "A"){
+                    gs.addGenotypeArray(oldID,gs.genotypeValues(fIdx).map{adString => {
+                      if(adString == "."){
+                        "."
+                      } else {
+                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        if(! ad.isDefinedAt(alleIdx-1)){
+                          warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
+                          "."
+                        } else {
+                          ad(alleIdx-1) + "";
+                        }
+                      }
+
+                      //  g.split("[\\|/]").map{gg => if(gg == "0") "0" else if(gg == alleIdxString) "1" else "2"}.sorted.mkString("/")
+                    }})
+                  } else {
+                    warning("Attempting to split "+oldID+" tag failed!","IMPOSSIBLESTATE_BADSECONDARYADTAG_HASBADTYPE_SPLITMULTALLE",10);
+                  }
+                }
+              }}
+              
+            }
+            
+            attrA.foreach{case (key,attrArray) => {
+              vb.addInfo(key,attrArray(altIdx));
+            }}//truncateOtherAlts
+            attrR.foreach{case (key,attrArray) => {
+              if(infoRrev.contains(key)){
+                vb.addInfo(key,attrArray(alleIdx) + "," + attrArray.last);
+              } else {
+                vb.addInfo(key,attrArray(0) + "," + attrArray(alleIdx));
+              }
+              
+            }}
+
+            ANN match {
+              case Some(annVector) => {
+                vb.addInfo("ANN",annVector(altIdx));
+              }
+              case None => {
+                //do nothing
+              }
+            }
+            
+            vb.addInfo(vcfCodes.splitAlleWARN_TAG, warningSet.toVector.sorted.map(_.toString()).padTo(1,".").mkString(","));
+            
+            vb
+          }}
+          if(isBad){
+            badCtCt(altAlleles.length) = badCtCt(altAlleles.length) + 1;
+          }
+          out;
+        }
+      }), closeAction = () => {
+        if(alleCtCt.size > 0){
+        Range(1,alleCtCt.keys.max+1).foreach{k => {
+          reportln("altCt("+k+"): "+ alleCtCt(k) + " VCF lines","debug");
+        }}}
+        if(badCtCt.size > 0){
+        Range(1,badCtCt.keys.max+1).foreach{k => {
+          reportln("badAltCt("+k+"): "+ badCtCt(k) + " VCF lines","debug");
+        }}}
+        tagWarningMap.toVector.sortBy{ case (tag,ct) => tag }.foreach{ case (tag,ct) => {
+          reportln("WARNING_PROBLEMATIC_TAG\t"+tag+"\t"+ct,"debug");
+        }}
+        
+      }),newHeader)
+    }
+  }
   
   
   //AA,AB,BB,AC,BC,CC

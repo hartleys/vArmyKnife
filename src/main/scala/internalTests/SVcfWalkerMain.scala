@@ -183,14 +183,17 @@ object SVcfWalkerMain {
                                          name = "groupFile", 
                                          arg = List("--groupFile"), 
                                          valueName = "groups.txt",  
-                                         argDesc =  "File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID."
+                                         argDesc =  "File containing a group decoder. This is a simple tab-delimited file. "+
+                                                    "The first column on each line is the sample ID. All subsequent tab-delimited entries on that line "+
+                                                    "will be processed as a sample group ID to which the sample belongs. WARNING: make sure ALL columns in the "+
+                                                    "file are categorical. If you include numeric columns then you will get a huge number of groups and may have runtime issues."
                                         ).meta(false,"Other Inputs") :: 
                     new BinaryOptionArgument[String](
                                          name = "superGroupList", 
                                          arg = List("--superGroupList"), 
                                          valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
                                          argDesc =  "A list of top-level supergroups. Requires the --groupFile parameter to be set."
-                                        ).meta(false,"Other Inputs") :: 
+                                        ).meta(true,"Other Inputs") :: 
                                         
                     new BinaryOptionArgument[List[String]](
                                          name = "chromList", 

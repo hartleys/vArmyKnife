@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.56 (Updated Thu Sep 10 13:29:50 EDT 2020)
+> Version 3.1.57 (Updated Mon Sep 14 16:15:16 EDT 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -218,8 +218,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
     inputGT: The input genotype FORMAT field.(String)
     noCountsCalc: (Flag)
     noFreqCalc: (Flag)
@@ -238,8 +236,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
     expr: The variant expression, which is a true/false expression 
         using the variant expression syntax.(String)
 
@@ -255,8 +251,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
 
 ### calcStats
 
@@ -266,8 +260,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
     inputGT: The input genotype FORMAT field.(String)
     inputAD: (String)
     inputDP: ()
@@ -350,10 +342,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### splitMultiAllelics
 
->  This utility takes any multiallelic variables and splits them apart so that each line contains only one ALT allele\.
+>  This utility takes any multiallelic variables and splits them apart so that each line contains only one ALT allele\. There are two options for how this will be carried out\. The default creates several new FORMAT fields\. TODO explain more\! \.\.\.Thus after the split the multiallelics will have an ALT field of the form A,\* and the GT field and AD field will use this coding\. Thus if a sample has one of the other alt alleles then 
 
 
-    (This function takes no parameters)
+    useStarAlle: If this flag is used, the asterisk allele will be 
+        used as a placeholder for all other alleles. See the 
+        explanation above.(Flag)
+    treatOtherAsRef:  (Flag)
 
 ### fixDotAltIndels
 
@@ -501,8 +496,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
 
 ### genotypeFilter
 
@@ -526,8 +519,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
 
 ##### Concordance Caller
 
@@ -699,8 +690,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
     countFileID: If multiple output count files are desired, you 
         can specify which functions output to which count file 
         using this parameter. Note that each file must be created 
@@ -728,8 +717,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
     countFileID: If multiple output count files are desired, you 
         can specify which functions output to which count file 
         using this parameter. Note that each file must be created 
@@ -753,8 +740,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
-    superGroupList: See the --superGroupList parameter of 
-        walkVcf.(String)
     outfile: The output matrix file path.(String, required)
 
 ##### File Formatting/Conversion

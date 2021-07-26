@@ -59,7 +59,7 @@ object SVcfMapFunctions {
      val COMMON_PARAMS : Map[String,ParamStr] = Seq[ParamStr](
            ParamStr(id = "genomeFA",synon=Seq(),ty="String",valueString="genome.fasta.gz",desc="The genome fasta file containing the reference genome. This will be used by various functions that require genomic information. Note that some functions that call the GATK library will also require that the fasta be indexed. Note: Chromosome names must match.",req=true),
            ParamStr(id = "groupFile",synon=Seq(),ty="String",valueString="group.file.txt",desc="A tab-delimited file containing sample ID's and a list of group IDs for each sample. See the --groupFile parameter of walkVcf.",req=false),
-           ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc="See the --superGroupList parameter of walkVcf.",req=false)
+           ParamStr(id = "superGroupList",synon=Seq(),ty="String",valueString="superGroups",desc="See the --superGroupList parameter of walkVcf.",req=false,hidden=true)
                  ).map{ ps => {
                    (ps.id,ps)
                  }}.toMap
@@ -573,9 +573,22 @@ object SVcfMapFunctions {
               COMMON_PARAMS("genomeFA")
          )), category = "Variant Formatting/Conversion"
        ), 
-      ParamStrSet("splitMultiAllelics" ,  desc = "This utility takes any multiallelic variables and splits them apart so that each line contains only one ALT allele.", 
+      ParamStrSet("splitMultiAllelics" ,  desc = "This utility takes any multiallelic variables and splits them apart so that each line contains only one ALT allele. "+
+                                                 "There are two options for how this will be carried out. The default creates several new FORMAT fields. "+
+                                                 "TODO explain more! "+
+                                                 ""+
+                                                 "...Thus after the split the "+
+                                                 "multiallelics will have an ALT field of the form A,* and the "+
+                                                 "GT field and AD field will use this coding. Thus if a sample has one of the "+
+                                                 "other alt alleles then ", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-              
+              ParamStr(id = "useStarAlle",synon=Seq(),ty="Flag",valueString="",desc="If this flag is used, the asterisk allele will be used "+
+                                                                                    "as a placeholder for all other alleles. See the explanation above."+
+                                                                                    "",req=false),
+              ParamStr(id = "treatOtherAsRef",synon=Seq(),ty="Flag",valueString="",desc=" "+
+                                                                                    ""+
+                                                                                    "",req=false),                                                                  
+
          )), category = "Variant Formatting/Conversion"
        ),
       ParamStrSet("rmDup" ,  desc = "This utility detects identical variant lines and deletes any excess beyond the first. NOTE: VCF FILE MUST BE SORTED!", 
@@ -1375,7 +1388,19 @@ object SVcfMapFunctions {
              } else if(mapType == "fixSwappedRefAlt"){
                Some(internalUtils.GatkPublicCopy.FixRefAltSwaps( genomeFa = params("genomeFA"), changeTag = Some("RefAltSwap"), warnTag  = Some("BadRefAlle")))
              } else if(mapType == "splitMultiAllelics"){
-               Some( SSplitMultiAllelics(vcfCodes = DEFAULT_VCF_CODES, clinVarVariants = false, splitSimple = false) )
+               if( params.isSet("useStarAlle") ){
+                   Seq( SSplitMultiAllelics(vcfCodes = DEFAULT_VCF_CODES, clinVarVariants = false, splitSimple = false) )
+               } else {
+                   Seq( SSplitMultiAllelics(vcfCodes = DEFAULT_VCF_CODES, clinVarVariants = false, splitSimple = false),
+                        new StdVcfConverter(cleanHeaderLines = false, 
+                           cleanInfoFields =false, 
+                           cleanMetaData = false,
+                           collapseStarAllele = true,
+                           deleteUnannotatedFields  = false)
+//                          thirdAlleleChar : Option[String] = None,
+//                         multAlleInfoTag : Option[String] = None)
+                    )
+               }
              } else if(mapType == "rmDup"){
                Some(new RemoveDuplicateLinesWalker())
              } else if(mapType == "fixDotAltIndels"){
@@ -1396,7 +1421,7 @@ object SVcfMapFunctions {
                 Some(new DuplicateStats(params("mapID")))
              } else if(mapType == "convertToStdVcf"){
                Some( new StdVcfConverter(thirdAlleleChar = None) )
-               
+
                
              } else if(mapType == "addAltSequence"){
                 

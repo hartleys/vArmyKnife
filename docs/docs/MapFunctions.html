@@ -103,8 +103,6 @@ infile.vcf.gz outfile.vcf.gz
 <pre><code>groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 inputGT: The input genotype FORMAT field.(String)
 noCountsCalc: (Flag)
 noFreqCalc: (Flag)
@@ -125,8 +123,6 @@ samplePrintLimit: (String)
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 expr: The variant expression, which is a true/false expression 
     using the variant expression syntax.(String)
 </code></pre>
@@ -144,8 +140,6 @@ restrictToGroup: (String)
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 </code></pre>
 
 <h3>calcStats</h3>
@@ -157,8 +151,6 @@ superGroupList: See the --superGroupList parameter of
 <pre><code>groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 inputGT: The input genotype FORMAT field.(String)
 inputAD: (String)
 inputDP: ()
@@ -253,10 +245,13 @@ genomeFA: The genome fasta file containing the reference
 <h3>splitMultiAllelics</h3>
 
 <blockquote>
-  <p>This utility takes any multiallelic variables and splits them apart so that each line contains only one ALT allele.</p>
+  <p>This utility takes any multiallelic variables and splits them apart so that each line contains only one ALT allele. There are two options for how this will be carried out. The default creates several new FORMAT fields. TODO explain more! ...Thus after the split the multiallelics will have an ALT field of the form A,* and the GT field and AD field will use this coding. Thus if a sample has one of the other alt alleles then </p>
 </blockquote>
 
-<pre><code>(This function takes no parameters)
+<pre><code>useStarAlle: If this flag is used, the asterisk allele will be 
+    used as a placeholder for all other alleles. See the 
+    explanation above.(Flag)
+treatOtherAsRef:  (Flag)
 </code></pre>
 
 <h3>fixDotAltIndels</h3>
@@ -422,8 +417,6 @@ desc: The description for the new INFO field, to be included in
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 </code></pre>
 
 <h3>genotypeFilter</h3>
@@ -449,8 +442,6 @@ inputGtNewName: If this parameter is set, the input genotype
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 </code></pre>
 
 <h5>Concordance Caller</h5>
@@ -642,8 +633,6 @@ inputGT: This is the FORMAT column to use as the genotype
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 countFileID: If multiple output count files are desired, you 
     can specify which functions output to which count file 
     using this parameter. Note that each file must be created 
@@ -673,8 +662,6 @@ inputGT: This is the FORMAT column to use as the genotype
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 countFileID: If multiple output count files are desired, you 
     can specify which functions output to which count file 
     using this parameter. Note that each file must be created 
@@ -700,8 +687,6 @@ pathwayList: (String)
 groupFile: A tab-delimited file containing sample ID's and a 
     list of group IDs for each sample. See the --groupFile 
     parameter of walkVcf.(String)
-superGroupList: See the --superGroupList parameter of 
-    walkVcf.(String)
 outfile: The output matrix file path.(String, required)
 </code></pre>
 
