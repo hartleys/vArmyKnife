@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.20 (Updated Wed Mar 17 19:05:23 EDT 2021)
+> Version 3.2.21 (Updated Thu Mar 25 11:23:55 EDT 2021)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1033,6 +1033,18 @@ This utility performs a series of transformations on an input VCF file and adds 
     A (INFO:Int|INFO:Float|INFO:String|Int|Float|String) 
     B (Optional) (INFO:Int|INFO:Float|INFO:String|Int|Float|String) 
         
+
+### GT\.EXPR\(gtExpr,varExpr\)
+
+    
+    The new field will be an integer field which will be equal to 
+        the number of samples that satisfy a given genotype-level 
+        expression. See the expression format definition for more 
+        information on how the logical expression syntax works. You 
+        can also specify a variant-level expression which, if 
+        false, will return missing.
+    gtExpr (Optional) (STRING) 
+    varExpr (Optional) (STRING) 
 
 ### MAX\(x\.\.\.\)
 

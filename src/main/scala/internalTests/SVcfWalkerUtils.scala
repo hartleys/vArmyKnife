@@ -15679,7 +15679,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       "Integer"
     } else if(style == "GTFRAC" || style == "GTPCT"){
       "Float"
-    } else {
+    } else { 
       "String"
     }
     //if(!Set("GTCT","GTPCT","GTFRAC","GTTAG").contains(style)){

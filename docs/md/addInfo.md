@@ -191,6 +191,18 @@
     B (Optional) (INFO:Int|INFO:Float|INFO:String|Int|Float|String) 
         
 
+### GT\.EXPR\(gtExpr,varExpr\)
+
+    
+    The new field will be an integer field which will be equal to 
+        the number of samples that satisfy a given genotype-level 
+        expression. See the expression format definition for more 
+        information on how the logical expression syntax works. You 
+        can also specify a variant-level expression which, if 
+        false, will return missing.
+    gtExpr (Optional) (STRING) 
+    varExpr (Optional) (STRING) 
+
 ### MAX\(x\.\.\.\)
 
     

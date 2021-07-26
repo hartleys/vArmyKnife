@@ -964,7 +964,7 @@ object SVcfTagFunctions {
               id = "TALLY.SUM.IF",synon = Seq(),
               shortDesc = "Calculates a conditional sum across the whole file.",
               desc = "Takes as input a variant expression expr and an INFO field x. "+
-                     "Output will be the sum of all x where expr is TRUE."+
+                     "Output will be the sum of all x where expr is TRUE. Set x to CONST:1 to simply count variants."+
                      ""+
                      "",
               params = Seq[VcfTagFunctionParam](
@@ -1965,6 +1965,53 @@ object SVcfTagFunctions {
                   "0"
                 }
                 notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag+"_"+k,1);
+                writeString(vout,k);
+              }
+            }
+
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){ 
+          val mmd =  new VcfTagFcnMetadata(
+              id = "GT.EXPR",synon = Seq("expr"),
+              shortDesc = "Creates a count field, counting the number of samples that satisfy a genotype-level expression",
+              desc = "The new field will be an integer field which will be equal to the number of samples that satisfy a given genotype-level expression. "+
+                     "See the expression format definition for more information on how the logical expression syntax works. "+
+                     "You can also specify a variant-level expression which, if false, will return missing.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "gtExpr", ty = "STRING",req=false,dotdot=false ),
+                  VcfTagFunctionParam( id = "varExpr", ty = "STRING",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              override val outType = "Integer";
+              override val outNum = "1";
+              val gtexpr = paramValues.head;
+              val gtparser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
+              val varparser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              
+              val gtfilter : SFilterLogic[(SVcfVariantLine,Int)] = gtparser.parseString(gtexpr);
+              val varfilter : SFilterLogic[SVcfVariantLine] = paramValues.tail.headOption match {
+                case Some(ee) => {
+                  varparser.parseString(ee);
+                }
+                case None => {
+                  varparser.parseString("TRUE");
+                }
+              }
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                val k = if( varfilter.keep(vc) ){
+                  Range(0,outHeader.sampleCt).count{ii => {
+                    gtfilter.keep((vc,ii))
+                  }}.toString
+                } else {
+                  "."
+                }
+                notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag,5);
                 writeString(vout,k);
               }
             }
