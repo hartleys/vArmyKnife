@@ -251,18 +251,6 @@ object SVcfMapFunctions {
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
          )), category = "Genotype Processing"
        ),
-       /*
-                       Some( SelectGenotypesByStat(
-                   filter = params("expr"), 
-                   filterTag = params("filterTag"),
-                   gtTagA = params("inputGTifTRUE"),
-                   gtTagB = params("inputGTifFALSE"),
-                   newGTTag = params("outputGT"),
-                   groupFile = params.get("groupFile"), 
-                   groupList = None, 
-                   superGroupList  = params.get("superGroupList")
-                ))
-        */
        ParamStrSet("genotypeSelect" ,  desc = "This function selects between two different a genotype fields based on a given genotype expression. The new composite genotype can replace either GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A Genotype Expression, using the genotype expression syntax.",req=true),

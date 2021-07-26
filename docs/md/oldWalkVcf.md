@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.28 (Updated Fri Apr 30 10:04:08 EDT 2021)
+> Version 3.2.29 (Updated Mon May  3 10:51:49 EDT 2021)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1183,7 +1183,13 @@ This utility performs a series of transformations on an input VCF file and adds 
         FILE:fileName, or a constant set delimited with colons. 
         Output field will be a comma delimited string containing 
         the intersect between the supplied sets.
-    x... (String|INFO:String|FILE:String) # VCF Line Filter Expressions
+    x... (String|INFO:String|FILE:String) 
+
+### CONST\(x\)
+
+    
+    Input should be a simple string of characters
+    x (STRING) # VCF Line Filter Expressions
 
 
 

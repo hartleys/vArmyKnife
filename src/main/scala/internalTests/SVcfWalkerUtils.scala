@@ -13352,7 +13352,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                            Vector[String]) = getGroups(groupFile, groupList, superGroupList);
     
     
-    
+     
     val logicParser : internalUtils.VcfTool.SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
     val filterLogic = logicParser.parseString(filter);
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {

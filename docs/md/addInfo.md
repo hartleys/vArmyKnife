@@ -252,3 +252,9 @@
         Output field will be a comma delimited string containing 
         the intersect between the supplied sets.
     x... (String|INFO:String|FILE:String) 
+
+### CONST\(x\)
+
+    
+    Input should be a simple string of characters
+    x (STRING) 

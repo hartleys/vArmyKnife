@@ -1110,7 +1110,7 @@ object SVcfTagFunctions {
           def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
-              def init : Boolean = true;
+              def init : Boolean = true; 
               val gtTag = paramValues(0);
               val extractIDX = string2int( paramValues(1) )
               val delim = paramValues.lift(2).getOrElse(",");
@@ -1415,6 +1415,63 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "CONST",synon = Seq(),
+              shortDesc = "Creates a new tag variable that is always equal to a given string",
+              desc = "Input should be a simple string of characters",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "STRING",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val x = paramValues.head;
+              override val outType = "String";
+              override val outNum = "1";
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                   
+                    writeString(vout, x)
+                  
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "LN",synon = Seq(),
+              shortDesc = "The natural log of a field",
+              desc = "Input should be a numeric INFO field. output will be the natural log of that field.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INT|FLOAT|INFO:Int|INFO:Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = "Float";
+              override val outNum = "1";
+              val ddf : Vector[VcfTagFunctionParamReader[Double]]  = typeInfo.toVector.map{ pprm => VcfTagFunctionParamReaderFloat(pprm)}
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                  val v = ddf.flatMap{ d => d.get(vc) }
+                  if(v.length == 1){
+                    
+                    writeNum(vout, math.log(v(0)))
+                  }
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "CONVERT.TO.INT",synon = Seq(),
