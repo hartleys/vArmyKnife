@@ -385,7 +385,7 @@ object SVcfWalkerMain {
     
     burdenWriterMap.foreach{ case (id,bw) => {
       //out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
-      bw.write("tagID\tgeneID\tburdenCt\taltCt\tvarCt\n");
+      bw.write("tagID\tgeneID\tburdenCt\taltCt\tvarCt\tmultiBurdenCt\n");
     }}
     reportln("Initializing VCF walker ... "+getDateAndTimeString,"debug");
 

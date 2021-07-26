@@ -1879,6 +1879,7 @@ object VcfAnnotateTX {
     
     burdenWriterMap.foreach{ case (id,bw) => {
       //out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+      reportln("MAKING OLD-STYLE BURDEN COUNT FILE!","note")
       bw.write("tagID\tgeneID\tburdenCt\taltCt\tvarCt\n");
     }}
     reportln("Initializing VCF walker ... "+getDateAndTimeString,"debug");

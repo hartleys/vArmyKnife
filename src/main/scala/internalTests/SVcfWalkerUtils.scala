@@ -2248,7 +2248,7 @@ object SVcfWalkerUtils {
             val mtr = burdenMatrix(g).zip(fullSampList).filter{ case (ct,ss) => gss.contains(ss) }.map{ case (ct,ss) => ct}
             val altCt = mtr.sum
             val varCt = varCounts(g);
-            out.write(tagID +"/"+grp+ "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+            out.write(tagID +"/"+grp+ "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\t"+mtr.count( pp => pp > 1)+"\n");
           }}
         }}
         out.flush();
@@ -2371,7 +2371,7 @@ object SVcfWalkerUtils {
           val mtr = burdenMatrix(g);
           val altCt = altCounts(g);
           val varCt = varCounts(g);
-          out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\n");
+          out.write(tagID + "\t" + g+"\t"+mtr.count( pp => pp > 0)+"\t"+altCt+"\t"+varCt+"\t"+mtr.count( pp => pp > 1)+"\n");
         }}
         
         //out.close();
