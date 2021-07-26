@@ -1,4 +1,4 @@
-> Version 3.2.44 (Updated Tue Jul  6 23:29:51 EDT 2021)
+> Version 3.2.45 (Updated Tue Jul  6 23:41:44 EDT 2021)
 
 # GENERAL SYNTAX:
 
@@ -1540,6 +1540,10 @@ whitespace in between\)\.
 #### GTAG\.m:t:k
 
 > TRUE iff the GT field t is is not present or set to missing\.
+
+#### GTAG\.mg:t
+
+> TRUE iff the GT field t is not present or is missing or is set to a missing genotype \(\./\.\)\.
 
 #### GTAG\.ne:t:k
 

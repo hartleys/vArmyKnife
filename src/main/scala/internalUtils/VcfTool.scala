@@ -3827,11 +3827,20 @@ object VcfTool {
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
-                            getTag(tag,a).map{ x => x != "." || x != "./." }.getOrElse(false);
+                            getTag(tag,a).map{ x => x != "." && x != "./." }.getOrElse(false);
                           }
                         }
                       ),
-       FilterFunction(funcName="GTAG.m",numParam=1,desc="TRUE iff the GT field t is is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
+        FilterFunction(funcName="GTAG.mg",numParam=1,desc="TRUE iff the GT field t is not present or is missing or is set to a missing genotype (./.).",paramNames=Seq("t"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val tag = params(0);
+                          (a : (SVcfVariantLine,Int)) => {
+                            getTag(tag,a).map{ x => x == "." || x == "./." }.getOrElse(true);
+                          }
+                        }
+                      ),
+
+        FilterFunction(funcName="GTAG.m",numParam=1,desc="TRUE iff the GT field t is is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
                           (a : (SVcfVariantLine,Int)) => {
