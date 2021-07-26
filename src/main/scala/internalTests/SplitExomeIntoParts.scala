@@ -427,6 +427,22 @@ def runSplitExomeIntoParts(outputDir : String, partct : Int, chromList : Option[
     }}
   }}
   
+  reportln("Writing tgtSpanHead files ["+getDateAndTimeString+"]","note");
+
+  (new java.io.File( outputDir + "/tgtSpans" )).mkdir();
+  finalBreakpoints.foreach{ case (i,chrom,fbp) => {
+    fbp.zipWithIndex.foreach{ case ((s,e,ct), segmentIdx) => {
+      val spanTitle = chrom+"."+("%0"+numZeros+"d").format(segmentIdx) 
+      val spangt = openWriter(outputDir+"/tgtSpans/spans."+spanTitle+".head.bed");
+      targetArray.findWhollyContainedSteps(new GenomicInterval( chrom,'.',s,e )).slice(0,2).filter{ case (iv,stepset) => {
+        stepset.size > 0
+      }}.foreach{ case (iv,stepset) => {
+        spangt.write(chrom+"\t"+iv.start+"\t"+iv.end+"\n");
+      }}
+      spangt.close();
+    }}
+  }}
+  
   reportln("Writing chrom.chunks files ["+getDateAndTimeString+"]","note");
 
   (new java.io.File( outputDir + "/chrom.chunks/" )).mkdir();

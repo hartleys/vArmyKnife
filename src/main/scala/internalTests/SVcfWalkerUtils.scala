@@ -2090,8 +2090,11 @@ object SVcfWalkerUtils {
       outHeader.addWalk(this);
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",Number="1",Type="String",desc="The "+len+" ref bases before the variant"));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",Number="1",Type="String",desc="The "+len+" ref bases after the variant"));
-      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len,Number="1",Type="String",desc="The context around the variant in a window of size "+len));
-     outHeader.reportAddedInfos(this)
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len,Number="1",Type="String",desc="The context around the variant in a window of size "+len+". Note that this uses the ref allele from the VCF. If the REF allele from the VCF is incorrect then this will also be incorrect." ));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_REF",Number="1",Type="String",desc="The sequence of the REF allele with the nearby sequence context of window "+len+". Note that the allele itself will be capitalized. Note that this uses the reference sequence from the genome itself. If the VCF is incorrect then the ref allele will not match the VCF."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_ALT",Number="1",Type="String",desc="The sequence of the ALT allele with the nearby sequence context of window "+len+". Note that the allele itself will be capitalized."));
+
+      outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
@@ -2100,10 +2103,13 @@ object SVcfWalkerUtils {
         //val ctrPos = v.pos + (v.ref.length / 2)
         val after = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos + v.ref.length, end = v.pos + v.ref.length + len-1);
         val before = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos - len, end = v.pos-1);
+        val REF = refFastaTool.getBasesForIv(chrom = v.chrom,start = v.pos, end = v.pos + v.ref.length-1);
         vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",before);
         vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",after);
         vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"",before+"["+v.ref+">"+v.alt.mkString("|")+"]"+after);
-        
+        vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_REF",before.toLowerCase()+REF+after.toLowerCase());
+        vc.addInfo(internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_ALT",v.alt.filter{ aa => aa != "*" && aa != "." }.map{ aa => { before.toLowerCase()+aa+after.toLowerCase() }}.mkString("|") );
+
         /*
         windows.foreach{ currWin => {
           val winDiff = maxWin - currWin;

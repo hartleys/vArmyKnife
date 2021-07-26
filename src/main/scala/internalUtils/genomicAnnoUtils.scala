@@ -1073,8 +1073,9 @@ object genomicAnnoUtils {
     def findWhollyContainedSteps(start : Int, end : Int) : Iterator[(Int, Set[B])] = {
       val iter = steps.iteratorFrom(start);
       new Iterator[(Int,Set[B])]{
+        var hasNX = iter.hasNext;
         var next_holder : (Int, Set[B]) = {
-          val b = iter.next;
+          //val b = iter.next;
           if(iter.hasNext){
             iter.next;
           } else {
@@ -1083,12 +1084,15 @@ object genomicAnnoUtils {
           //If not assigned already, then the iterator must now be empty, and the curr value is irrelevant:
         }
         def hasNext : Boolean = {
-          next_holder._1 <= end && iter.hasNext
+          hasNX && next_holder._1 <= end
         }
         def next : (Int,Set[B]) = {
           val buff = next_holder;
-          next_holder = iter.next;
-          return next_holder;
+          hasNX = iter.hasNext;
+          if( hasNX ){
+              next_holder = iter.next;
+          }
+          return buff;
         }
       }
     }
