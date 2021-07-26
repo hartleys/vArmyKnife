@@ -103,6 +103,10 @@
     GTAG.nm:t
     TRUE iff the GT field t is present and not set to missing.
     (Param Types: )
+    GTAG.nmg:t
+    TRUE iff the GT field t is present and not set to missing and 
+        is not set to a missing genotype (./.).
+    (Param Types: )
     GTAGARRAY.gt:t:i:k
     TRUE iff the tag t is present and not set to missing, and is a 
         list with at least i elements, and the i-th element of 
