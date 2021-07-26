@@ -711,6 +711,18 @@ genomeFA: The genome fasta file containing the reference
 <pre><code>func: (String, required)
 </code></pre>
 
+<h3>calculateMatchMatrix</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>file: (String, required)
+gtTag: The genotype FORMAT field.(String, default=GT)
+matchCutoff: matches below this threshold will not be written 
+    to file.(Float, default=0.5)
+</code></pre>
+
 <h3>calcBurdenCounts</h3>
 
 <blockquote>

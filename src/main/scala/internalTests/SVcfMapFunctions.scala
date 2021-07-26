@@ -141,6 +141,13 @@ object SVcfMapFunctions {
            ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
          )), category = "Data/Table Extraction"
        ),
+       ParamStrSet("calculateMatchMatrix" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="output.table.txt",desc="",req=true),
+           ParamStr(id = "gtTag",synon=Seq(),ty="String",valueString="",desc="The genotype FORMAT field.",req=false,defaultValue = Some("GT")),
+           ParamStr(id = "matchCutoff",synon=Seq(),ty="Float",valueString="x",desc="matches below this threshold will not be written to file.",req=false, defaultValue=Some("0.5"))
+         )), category = "Data/Table Extraction",
+       ),
        ParamStrSet("addFormat" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new FORMAT field. "+
                                           "The syntax is: --fcn \"addInfo|newTagName|fcn(param1,param2,...)\". Optionally you can add \"|desc=tag description\". "+
                                           "There are numerous addInfo functions. For more information, go to the section on addFormat Functions below, or use the help command: "+
@@ -560,6 +567,9 @@ object SVcfMapFunctions {
 
          )),category = "Data/Table Extraction"
        ),
+       
+       
+       
        
        ParamStrSet("concordanceCaller" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1060,7 +1070,18 @@ object SVcfMapFunctions {
                   }
                 }
                 Some(new AddFunctionTag(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,digits=None,desc=Some(params("desc"))));
-                
+             } else if(mapType == "calculateMatchMatrix" ){
+             /*
+                     ParamStrSet("calculateMatchMatrix" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="output.table.txt",desc="",req=true),
+           ParamStr(id = "gtTag",synon=Seq(),ty="String",valueString="",desc="The genotype FORMAT field.",req=false,defaultValue = Some("GT")),
+           ParamStr(id = "matchCutoff",synon=Seq(),ty="Float",valueString="x",desc="matches below this threshold will not be written to file.",req=false, defaultValue=Some("0.5"))
+         )), category = "Data/Table Extraction",
+       ),
+              * CountMatchMatrix(matchFile : String, gtTag : String = "GT", matchPctCutoff : Double = 0.5 ) 
+              */
+                Some(CountMatchMatrix(matchFile=params.get("file").getOrElse("match.matrix.txt") , gtTag=params.get("gtTag").getOrElse("GT"), matchPctCutoff=string2double(params.get("matchCutoff").getOrElse("0.5")) ))
              } else if(mapType == "addFormat"){
                 val rawFunc = params("func").split("[(]").head;
                 val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {

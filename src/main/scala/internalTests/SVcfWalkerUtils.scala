@@ -178,6 +178,80 @@ object SVcfWalkerUtils {
     }
   }*/
 
+  case class CountMatchMatrix(matchFile : String, gtTag : String = "GT", matchPctCutoff : Double = 0.5 ) extends SVcfWalker {
+    
+    def walkerName : String = "CountMatchMatrix"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("gtTag", gtTag)
+    );
+    
+    reportln("CountMatchMatrix: file="+matchFile+", gt="+gtTag+", pctCutoff="+matchPctCutoff,"note");
+    
+    //val refFastaTool = internalUtils.GatkPublicCopy.refFastaTool(genomeFa = genomeFa);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      
+      val matchct = scala.Array.ofDim[Int](vcfHeader.sampleCt,vcfHeader.sampleCt)
+      val totalct = scala.Array.ofDim[Int](vcfHeader.sampleCt)
+
+
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {        
+        //val vc = v.getOutputLine();
+        val gtidx = v.genotypes.fmt.indexOf(gtTag);
+        if(gtidx >= 0){
+           val gt = v.genotypes.genotypeValues(gtidx).zipWithIndex;
+           val ff = gt.filter{ case (g,i) => {
+             g.contains("1");
+           }}
+           warning("Found "+ff.length+" alts","ALT_CT",10);
+           ff.foreach{ case (a,i) => {
+             totalct(i) = totalct(i) + 1;
+             ff.foreach{ case (b,j) => {
+               if( a == b && i != j ){
+                 matchct(i)(j) = matchct(i)(j) + 1
+               }
+             }}
+           }}
+        } else {
+          warning("No GT ("+gtTag+") found: ["+v.genotypes.fmt.mkString(",")+"]","NO_GT_FOUND",10);
+        }
+        v
+      }}, closeAction = (() => {
+        var out = openWriter(matchFile+".txt");
+        reportln("Writing matches...","note");
+        Range(1,vcfHeader.sampleCt).foreach{ i => {
+          Range(0,i).foreach{ j => {
+        //Range(0,vcfHeader.sampleCt).foreach{ i => {
+        //  Range(0,vcfHeader.sampleCt).foreach{ j => {
+            val m = matchct(i)(j)
+            val a = m.toDouble / totalct(i).toDouble;
+            val b = m.toDouble / totalct(j).toDouble;
+            if(a > matchPctCutoff || b > matchPctCutoff ){
+                warning("Found match: ["+a+","+b+"]","MATCH_FOUND",10);
+                val maxab = math.max(a,b);
+                val minab = math.min(a,b);
+                out.write(vcfHeader.titleLine.sampleList(i)+"\t"+vcfHeader.titleLine.sampleList(j)+"\t"+m+"\t"+totalct(i)+"\t"+totalct(j)+"\t"+a+"\t"+b+"\t"+minab+"\t"+maxab+"\n");
+            }
+          }}
+        }}
+        out.close();
+        
+        out = openWriter(matchFile+".totalCt.txt");
+        reportln("Writing totals...","note");
+        Range(0,vcfHeader.sampleCt).foreach{ i => {
+               out.write(vcfHeader.titleLine.sampleList(i)+"\t"+totalct(i)+"\n");
+        }}
+        out.close();
+      })),outHeader)
+      
+    }
+  }
+    
+    
   class CmdConvertToStandardVcf extends CommandLineRunUtil {
      override def priority = 1;
      val parser : CommandLineArgParser = 

@@ -601,6 +601,16 @@
 
     func: (String, required)
 
+### calculateMatchMatrix
+
+>  \.\.\.\.
+
+
+    file: (String, required)
+    gtTag: The genotype FORMAT field.(String, default=GT)
+    matchCutoff: matches below this threshold will not be written 
+        to file.(Float, default=0.5)
+
 ### calcBurdenCounts
 
 >  This function generates the \.

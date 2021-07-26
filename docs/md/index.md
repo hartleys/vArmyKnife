@@ -1,4 +1,4 @@
-> Version 3.2.30 (Updated Tue May 18 15:48:03 EDT 2021)
+> Version 3.2.39 (Updated Tue May 25 22:27:11 EDT 2021)
 
 # GENERAL SYNTAX:
 
@@ -706,6 +706,16 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     func: (String, required)
+
+### calculateMatchMatrix
+
+>  \.\.\.\.
+
+
+    file: (String, required)
+    gtTag: The genotype FORMAT field.(String, default=GT)
+    matchCutoff: matches below this threshold will not be written 
+        to file.(Float, default=0.5)
 
 ### calcBurdenCounts
 
