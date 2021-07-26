@@ -1,9 +1,12 @@
-# User Manual for vArmyKnife 
 
-> v3.1.55   \
-> Compiled Tue Sep  8 12:39:00 EDT 2020
+> v3.1.56   \
+> Compiled Thu Sep 10 13:29:50 EDT 2020
 
-## QUICK START:
+# INTRODUCTION:
+
+vArmyKnife is...
+
+# INSTALLATION AND SETUP:
 
 [You can download the most recent stable version of vArmyKnife here](https://github.com/hartleys/vArmyKnife/releases), 
 or you can use the [most recent experimental build here](https://github.com/hartleys/vArmyKnife/tarball/master).
@@ -47,6 +50,8 @@ to allocate some extra memory as needed. So for example, to set the max memory t
 
 General command documentation can be found [*here*](docs/index.html).
 
+# BASICS:
+
 ## INPUT COMMANDS AND OPTIONS:
 
 Most vArmyKnife runs use the "walkVcf" command, and have a basic structure like this:
@@ -61,63 +66,34 @@ Most vArmyKnife runs use the "walkVcf" command, and have a basic structure like 
 The walkVcf function reads in a VCF file, sequentially performs a series of operations on the file,
 and outputs the resultant VCF file.
 
-All the primary functions of vArmyKnife have been folded into the multiStepPipeline command,
-so you're almost always going to use that command. The above invocation is the simplest
-possible use of this tool. It simply reads in a VCF file (which can be gzipped, or not) and
-copies it to a new place (which can also be gzipped, or not).
-
-You can add java options prior to the "command" part, and vArmyKnife options after the command. 
-So for example:
-
-    varmyknife -Xmx5g walkVcf --verbose testInput.vcf.gz testOutput.vcf.gz
-
-Will increase the allowed memory to 5 gigabytes and turn on verbose reporting (making it tell you
-more progress and debugging information).
-
-In addition to the mandatory inputVcf and outputVcf parameters, multiStepPipeline
-can take a large number of additional optional parameters that add functionality to the
-run. These options should be placed AFTER the multiStepPipeline command but before the mandatory parameters. 
-For example, if you simply want to take an input VCF and split all multiallelics:
-
-    varmyknife -Xmx5g walkVcf --splitMultiAllelics testInput.vcf.gz testOutput.vcf.gz
-
-You can get a full list of all parameters using the command:
-
-    varmyknife walkVcf --help
-
-## WHAT CAN VARMYKNIFE DO
-
-vArmyKnife can do many different things. It is primarily designed to read and process [*VCF files*]().
-
-The vast majority of functions can be carried out by the walkVcf command. This command uses the syntax:
-
-    varmyknife walkVcf [options] input.vcf.gz output.vcf.gz
-
 Optionally, the input or output vcfs can be replaced with "-" and the tool will use stdin and/or stdout. This can be used to read
 VCF output from other tools without generating intermediate files, or to feed the output directly into other tools, or to generate
 block VCFs using the tabix bgzip utility. For example:
 
     varmyknife walkVcf [options] input.vcf.gz - | bgzip > output.vcf.gz
 
-### Basic Processing and Reorganization
+## WHAT CAN VARMYKNIFE DO
+
+vArmyKnife has a dozens of different modular functions that carry out some operation on your VCF file. 
+These functions can be carried out sequentially in the same vArmyKnife run, greatly reducing the number of 
+steps in a pipeline and simplifying error checking and validation.
+
+The full set of all Variant Functions can be found in the docs [here](???)
+
+They include:
 
  * Dropping tags, fields, or samples.
+ * Dropping all genotype data
  * Splitting Multiallelics: Many tools do not properly deal with multiallelic variants and so it is often useful to split up the multiallelics into separate VCF lines.     
  * Left-Align and Trim: vArmyKnife contains the GATK 3.8 open software libraries, and can internally call the functons underlying the LeftAlignAndTrim function. Note that this function generally must be combined with the multiallelic split in order to fully left align and trim indels.
+ * Generating allele counts, allele frequencies, carrier frequencies, missingness rates, and similar stats both for each variant overall and by sample subpopulations.
+ * Annotating variants using SnpEff: vArmyKnife calls the SnpEff library internally, allowing it to run SnpEff in a run alongside additional processing.
+ * Extracting information from SnpEff outout
+ * Annotating variants against a database using SnpSift: vArmyKnife comes packaged with the SnpSift library and calls these methods internally.
+this allows you to annotate variants with variant databases like ClinVar, dbNSFP, ExAC, etc.
 
 
 
-
-
-### Gene and Transcript Annotation
-
-Transcript Effect Annotation: Like SnpEff, vArmyKnife generates automated prediction of transcript base changes. It outputs ths information organized in several different ways, intended to make it easier to parse, filter, and organize variants based on their type and effect.
-
-SnpEff Processing: vArmyKnife also has several functions designed to parse and extract useful information from SnpEff-generated "ANN" fields. This often produces information similar to the vArmyKnife native automated transcript annotations. There are often minor differences caused by differences in definitions, as well as differences in the alignment of indels. This can serve as an alternative to the native transcript effect prediction.
-
-### Comparing and Combining Multiple Caller VCFs
-
-vArmyKnife contains tools for comparing and merging multiple VCFs for the same sample sets. This can be used to compare the results of different sequencing technologies or variant calling tools. It can also be used to generate "ensemble" callsets and final genotype calls based on the results of two or more variant callers. Because different variant callers often have different assumptions and different failure modes, the intersection between multiple callers often produces much lower false discovery rates than either caller alone (albeit at the cost of fewer true positives as well).
 
 ## How-To:
 

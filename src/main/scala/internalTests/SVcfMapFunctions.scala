@@ -643,7 +643,13 @@ object SVcfMapFunctions {
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )), category = "Filtering"
+       ), //dropVariantsWithNs
+       ParamStrSet("dropVariantsWithNs" ,  desc = "This utility drops variants if they contain Ns in either the REF or ALT columns.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+         )), category = "Filtering"
        ),
+       
        ParamStrSet("copyColumnToInfo" ,  desc = "This utility copies the contents of one of the VCF columns to a new INFO field.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1399,7 +1405,7 @@ object SVcfMapFunctions {
                Some(StripGenotypeData(addDummyGenotypeColumn=false))
              } else if(mapType == "addDummyGenotypeColumn"){
                Some(StripGenotypeData(addDummyGenotypeColumn=true))
-             } else if(mapType == "dropSymbolicAlleleLines"){
+             } else if(mapType == "dropSymbolicAlleles"){
                 Some(new FilterSymbolicAlleleLines());
              } else if(mapType == "copyColumnToInfo"){
                val qual = if(params("columnID") == "QUAL") Some(params("mapID")) else None

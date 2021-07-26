@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.1.55 (Updated Tue Sep  8 12:39:00 EDT 2020)
+> Version 3.1.56 (Updated Thu Sep 10 13:29:50 EDT 2020)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -565,6 +565,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### dropSymbolicAlleles
 
 >  This utility strips all symbolic alleles\. See the VCF v4\.2 specification for more information on what those are and what they are used for\. Many older tools will return errors if fed symbolic alleles\.
+
+
+    (This function takes no parameters)
+
+### dropVariantsWithNs
+
+>  This utility drops variants if they contain Ns in either the REF or ALT columns\.
 
 
     (This function takes no parameters)

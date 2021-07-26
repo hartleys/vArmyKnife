@@ -454,6 +454,13 @@
 
     (This function takes no parameters)
 
+### dropVariantsWithNs
+
+>  This utility drops variants if they contain Ns in either the REF or ALT columns\.
+
+
+    (This function takes no parameters)
+
 ##### Genomic Locus Annotation
 
 

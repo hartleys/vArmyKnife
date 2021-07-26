@@ -33,14 +33,16 @@
 </header>
 
 
-<section><h1>User Manual for vArmyKnife</h1>
-
-<blockquote>
-  <p>v3.1.55   \
-Compiled Tue Sep  8 12:39:00 EDT 2020</p>
+<section><blockquote>
+  <p>v3.1.56   \
+Compiled Thu Sep 10 13:29:50 EDT 2020</p>
 </blockquote>
 
-</section> <h2>QUICK START:</h2> <section>
+<h1>INTRODUCTION:</h1>
+
+<p>vArmyKnife is...</p>
+
+<h1>INSTALLATION AND SETUP:</h1>
 
 <p><a href="https://github.com/hartleys/vArmyKnife/releases">You can download the most recent stable version of vArmyKnife here</a>, 
 or you can use the <a href="https://github.com/hartleys/vArmyKnife/tarball/master">most recent experimental build here</a>.</p>
@@ -89,6 +91,8 @@ to allocate some extra memory as needed. So for example, to set the max memory t
 
 <p>General command documentation can be found <a href="docs/index.html"><em>here</em></a>.</p>
 
+<h1>BASICS:</h1>
+
 </section> <h2>INPUT COMMANDS AND OPTIONS:</h2> <section>
 
 <p>Most vArmyKnife runs use the "walkVcf" command, and have a basic structure like this:</p>
@@ -104,42 +108,6 @@ to allocate some extra memory as needed. So for example, to set the max memory t
 <p>The walkVcf function reads in a VCF file, sequentially performs a series of operations on the file,
 and outputs the resultant VCF file.</p>
 
-<p>All the primary functions of vArmyKnife have been folded into the multiStepPipeline command,
-so you're almost always going to use that command. The above invocation is the simplest
-possible use of this tool. It simply reads in a VCF file (which can be gzipped, or not) and
-copies it to a new place (which can also be gzipped, or not).</p>
-
-<p>You can add java options prior to the "command" part, and vArmyKnife options after the command. 
-So for example:</p>
-
-<pre><code>varmyknife -Xmx5g walkVcf --verbose testInput.vcf.gz testOutput.vcf.gz
-</code></pre>
-
-<p>Will increase the allowed memory to 5 gigabytes and turn on verbose reporting (making it tell you
-more progress and debugging information).</p>
-
-<p>In addition to the mandatory inputVcf and outputVcf parameters, multiStepPipeline
-can take a large number of additional optional parameters that add functionality to the
-run. These options should be placed AFTER the multiStepPipeline command but before the mandatory parameters. 
-For example, if you simply want to take an input VCF and split all multiallelics:</p>
-
-<pre><code>varmyknife -Xmx5g walkVcf --splitMultiAllelics testInput.vcf.gz testOutput.vcf.gz
-</code></pre>
-
-<p>You can get a full list of all parameters using the command:</p>
-
-<pre><code>varmyknife walkVcf --help
-</code></pre>
-
-</section> <h2>WHAT CAN VARMYKNIFE DO</h2> <section>
-
-<p>vArmyKnife can do many different things. It is primarily designed to read and process <a href=""><em>VCF files</em></a>.</p>
-
-<p>The vast majority of functions can be carried out by the walkVcf command. This command uses the syntax:</p>
-
-<pre><code>varmyknife walkVcf [options] input.vcf.gz output.vcf.gz
-</code></pre>
-
 <p>Optionally, the input or output vcfs can be replaced with "-" and the tool will use stdin and/or stdout. This can be used to read
 VCF output from other tools without generating intermediate files, or to feed the output directly into other tools, or to generate
 block VCFs using the tabix bgzip utility. For example:</p>
@@ -147,23 +115,27 @@ block VCFs using the tabix bgzip utility. For example:</p>
 <pre><code>varmyknife walkVcf [options] input.vcf.gz - | bgzip &gt; output.vcf.gz
 </code></pre>
 
-<h3>Basic Processing and Reorganization</h3>
+</section> <h2>WHAT CAN VARMYKNIFE DO</h2> <section>
+
+<p>vArmyKnife has a dozens of different modular functions that carry out some operation on your VCF file. 
+These functions can be carried out sequentially in the same vArmyKnife run, greatly reducing the number of 
+steps in a pipeline and simplifying error checking and validation.</p>
+
+<p>The full set of all Variant Functions can be found in the docs <a href="???">here</a></p>
+
+<p>They include:</p>
 
 <ul>
 <li>Dropping tags, fields, or samples.</li>
+<li>Dropping all genotype data</li>
 <li>Splitting Multiallelics: Many tools do not properly deal with multiallelic variants and so it is often useful to split up the multiallelics into separate VCF lines.     </li>
 <li>Left-Align and Trim: vArmyKnife contains the GATK 3.8 open software libraries, and can internally call the functons underlying the LeftAlignAndTrim function. Note that this function generally must be combined with the multiallelic split in order to fully left align and trim indels.</li>
+<li>Generating allele counts, allele frequencies, carrier frequencies, missingness rates, and similar stats both for each variant overall and by sample subpopulations.</li>
+<li>Annotating variants using SnpEff: vArmyKnife calls the SnpEff library internally, allowing it to run SnpEff in a run alongside additional processing.</li>
+<li>Extracting information from SnpEff outout</li>
+<li>Annotating variants against a database using SnpSift: vArmyKnife comes packaged with the SnpSift library and calls these methods internally.
+this allows you to annotate variants with variant databases like ClinVar, dbNSFP, ExAC, etc.</li>
 </ul>
-
-<h3>Gene and Transcript Annotation</h3>
-
-<p>Transcript Effect Annotation: Like SnpEff, vArmyKnife generates automated prediction of transcript base changes. It outputs ths information organized in several different ways, intended to make it easier to parse, filter, and organize variants based on their type and effect.</p>
-
-<p>SnpEff Processing: vArmyKnife also has several functions designed to parse and extract useful information from SnpEff-generated "ANN" fields. This often produces information similar to the vArmyKnife native automated transcript annotations. There are often minor differences caused by differences in definitions, as well as differences in the alignment of indels. This can serve as an alternative to the native transcript effect prediction.</p>
-
-<h3>Comparing and Combining Multiple Caller VCFs</h3>
-
-<p>vArmyKnife contains tools for comparing and merging multiple VCFs for the same sample sets. This can be used to compare the results of different sequencing technologies or variant calling tools. It can also be used to generate "ensemble" callsets and final genotype calls based on the results of two or more variant callers. Because different variant callers often have different assumptions and different failure modes, the intersection between multiple callers often produces much lower false discovery rates than either caller alone (albeit at the cost of fewer true positives as well).</p>
 
 </section> <h2>How-To:</h2> <section>
 
