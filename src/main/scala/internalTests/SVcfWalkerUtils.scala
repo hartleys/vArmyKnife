@@ -11670,7 +11670,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                       if(adString == "."){
                         "."
                       } else {
-                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        val ad = adString.split(",") //.map{ aa => if(aa == ".") 0 else string2int(aa) }
                         if(! ad.isDefinedAt(alleIdx)){
                           warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
                           "."
@@ -11685,7 +11685,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                       if(adString == "."){
                         "."
                       } else {
-                        val ad = adString.split(",").map{ aa => if(aa == ".") 0 else string2int(aa) }
+                        val ad = adString.split(",") //.map{ aa => if(aa == ".") 0 else string2int(aa) }
                         if(! ad.isDefinedAt(alleIdx-1)){
                           warning("Attempting to split "+oldID+" tag failed! Offending String: "+adString+" for variant:\n     "+vc.getSimpleVcfString(),"BADSECONDARYADTAG_SPLITMULTALLE",10);
                           "."
