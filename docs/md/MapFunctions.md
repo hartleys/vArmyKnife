@@ -388,6 +388,25 @@
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
 
+### genotypeSelect
+
+>  This function selects between two different a genotype fields based on a given genotype expression\. The new composite genotype can replace either GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF\.
+
+
+    expr: A Genotype Expression, using the genotype expression 
+        syntax.(String, required)
+    desc: A description, to go in the new FORMAT fields.(String)
+    outputGT: The output genotype FORMAT field. If this is the same 
+        as the input genotype field then the genotype field will be 
+        overwritten.(String)
+    inputGTifTRUE: The input genotype FORMAT field to be used if 
+        the expression returns TRUE.(String, required)
+    inputGTifFALSE: The input genotype FORMAT field to be used if 
+        the expression returns FALSE.(String, required)
+    groupFile: A tab-delimited file containing sample ID's and a 
+        list of group IDs for each sample. See the --groupFile 
+        parameter of walkVcf.(String)
+
 ##### Concordance Caller
 
 

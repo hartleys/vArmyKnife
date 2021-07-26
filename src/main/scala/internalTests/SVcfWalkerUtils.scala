@@ -13239,6 +13239,9 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
        }
      }
   }
+  
+  
+  
   case class FilterGenotypesByStat(filter : String, filterTag : String = OPTION_TAGPREFIX+"GTFILT", gtTag : String, 
                                    rawGtTag : String, noRawGt : Boolean, newGTTag : String,
                                    groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None) extends SVcfWalker {
@@ -13325,6 +13328,75 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     }
   }
 
+  case class SelectGenotypesByStat(filter : String, gtTagA : String, gtTagB : String,
+                                   newGTTag : String,
+                                   groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None) extends SVcfWalker {
+    def walkerName : String = "FilterGenotypesByStat"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+        ("filter","\""+filter+"\""),
+        ("gtTagA",gtTagA),
+        ("gtTagB",gtTagB),
+        ("newGTTag",newGTTag)
+    )
+    
+    /*
+     groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]
+      
+     getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None) 
+                        : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String])
+    */
+    val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           scala.collection.mutable.AnyRefMap[String,Set[String]],
+                           Vector[String]) = getGroups(groupFile, groupList, superGroupList);
+    
+    
+    
+    val logicParser : internalUtils.VcfTool.SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
+    val filterLogic = logicParser.parseString(filter);
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      //vcfHeader.formatLines = vcfHeader.formatLines ++ Some(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = filterTag, Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the genotype was filtered due to post-caller quality filters. ("+filter+")"))
+      val sampList = vcfHeader.titleLine.sampleList.toList
+      val sampCt   = vcfHeader.sampleCt;
+      val outHeader = vcfHeader.copyHeader;
+      outHeader.addFormatLine(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = newGTTag, Number = "1", Type = "String", desc = "A composite genotype based on "+gtTagA+" and "+gtTagB+" based on predicate: [ "+filter+ " ] ",subType=Some(VcfTool.subtype_GtStyleUnsplit)), walker = Some(this) );
+
+      outHeader.addWalk(this);
+      val missingGeno = "./." // Range(0,ploidy).map{_ => "."}.mkString("/");
+      
+      val missingGenoArray = Array.fill[String](sampCt)(missingGeno);
+      
+      val addRawGt = false;
+      val rango = Range(0,vcfHeader.sampleCt);
+       outHeader.reportAddedInfos(this)
+      val outIter = vcMap(vcIter){ vc => {
+        val gtIdxA = vc.genotypes.fmt.indexOf(gtTagA);
+        val gtIdxB = vc.genotypes.fmt.indexOf(gtTagB);
+        
+        if(gtIdxA > -1 || gtIdxB > -1){
+          vc.genotypes.sampList = sampList;
+          vc.genotypes.sampGrp = Some(sampleToGroupMap);
+          val vb = vc.getOutputLine();
+          //vb.genotypes.genotypeValues = vb.genotypes.genotypeValues :+ Array.fill[String](vb.genotypes.genotypeValues(0).length)("0");
+          val gtValsA = if( gtIdxA == -1){ missingGenoArray } else { vc.genotypes.genotypeValues(gtIdxA) }
+          val gtValsB = if( gtIdxB == -1){ missingGenoArray } else { vc.genotypes.genotypeValues(gtIdxB) }
+          
+          val newGtIdx = vb.genotypes.addGenotypeArray(newGTTag, gtValsB.clone());
+          
+          rango.withFilter{(i) => filterLogic.keep(vc,i)}.foreach{ (i) => {
+              vb.genotypes.genotypeValues(newGtIdx)(i) = gtValsA(i);
+          }}
+          vb;
+        } else {
+          vc.getOutputLine();
+        }
+      }}
+      
+      return (outIter,outHeader);
+    }
+  }
+  
   
     case class VariantCountSet(
         ctHet : Array[Long],

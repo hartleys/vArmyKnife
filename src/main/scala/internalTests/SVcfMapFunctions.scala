@@ -222,6 +222,31 @@ object SVcfMapFunctions {
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
          )), category = "Genotype Processing"
        ),
+       /*
+                       Some( SelectGenotypesByStat(
+                   filter = params("expr"), 
+                   filterTag = params("filterTag"),
+                   gtTagA = params("inputGTifTRUE"),
+                   gtTagB = params("inputGTifFALSE"),
+                   newGTTag = params("outputGT"),
+                   groupFile = params.get("groupFile"), 
+                   groupList = None, 
+                   superGroupList  = params.get("superGroupList")
+                ))
+        */
+       ParamStrSet("genotypeSelect" ,  desc = "This function selects between two different a genotype fields based on a given genotype expression. The new composite genotype can replace either GT field or can be set to a different field, so multiple filtering strategies can be included in a single VCF.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A Genotype Expression, using the genotype expression syntax.",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="A description, to go in the new FORMAT fields.",req=false),
+           ParamStr(id = "outputGT",synon=Seq(),ty="String",valueString="filtered_GT",desc="The output genotype FORMAT field. If this is the same as the "+
+                                                  "input genotype field then the genotype field will be overwritten.",req=false),
+           ParamStr(id = "inputGTifTRUE",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field to be used if the expression returns TRUE.",req=true),
+           ParamStr(id = "inputGTifFALSE",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field to be used if the expression returns FALSE.",req=true),
+           COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
+         )), category = "Genotype Processing"
+       ),
+       
+       
        ParamStrSet("sampleCounts" ,  desc = "This function generates counts and frequencies for alt alleles, alt genotypes, missing genotypes, "+
                                                   "ref genotypes, and so on. Note that there are several calc- flags. If none of these are included, then this function does nothing.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1053,6 +1078,16 @@ object SVcfMapFunctions {
                    gtTag = params("inputGT"),
                    rawGtTag = params("inputGtNewName"),
                    noRawGt = params.isSet("inputGtNewName"),
+                   newGTTag = params("outputGT"),
+                   groupFile = params.get("groupFile"), 
+                   groupList = None, 
+                   superGroupList  = params.get("superGroupList")
+                ))
+             } else if(mapType == "genotypeSelect"){
+                Some( SelectGenotypesByStat(
+                   filter = params("expr"), 
+                   gtTagA = params("inputGTifTRUE"),
+                   gtTagB = params("inputGTifFALSE"),
                    newGTTag = params("outputGT"),
                    groupFile = params.get("groupFile"), 
                    groupList = None, 
