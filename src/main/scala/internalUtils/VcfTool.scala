@@ -2843,7 +2843,8 @@ object VcfTool {
                               numParam : Int, 
                               desc : String, 
                               paramNames : Seq[String], paramTypes : Seq[String],
-                              metaFunc : ((Seq[String]) => ((A) => Boolean))){
+                              metaFunc : ((Seq[String]) => ((A) => Boolean)),
+                              isHidden : Boolean = false){
       def getFunctionInfo() : String = {
         funcName+"\t"+numParam+"\t"+desc;
       }
@@ -2885,11 +2886,11 @@ object VcfTool {
       UserManualBlock( Seq(ln),t , indentTitle = 0, indentBlock = 4, indentFirst = 0);
     }} ++ Seq(
         UserManualBlock(Seq(""),Some(""))
-    ) ++ this.filterFunctionSet.toVector.sortBy( x => x.funcName ).flatMap( x => {
+    ) ++ this.filterFunctionSet.toVector.filter{ x => ! x.isHidden }.sortBy( x => x.funcName ).flatMap( x => {
       Seq(
-      UserManualBlock(title = None,lines = Seq( x.funcName+":"+x.paramNames.mkString(":")), indentBlock = 8,  indentFirst = 4),
-      UserManualBlock(title = None,lines = Seq( x.desc)                                   , indentBlock = 8,  indentFirst = 8),
-      UserManualBlock(title = None,lines = Seq( "(Param Types: "+ x.paramTypes.mkString(":") + ({ if(x.numParam == -1) ":...)" else ")" })),
+        UserManualBlock(title = None,lines = Seq( x.funcName+":"+x.paramNames.mkString(":")), indentBlock = 8,  indentFirst = 4),
+        UserManualBlock(title = None,lines = Seq( x.desc)                                   , indentBlock = 8,  indentFirst = 8),
+        UserManualBlock(title = None,lines = Seq( "(Param Types: "+ x.paramTypes.mkString(":") + ({ if(x.numParam == -1) ":...)" else ")" })),
                                                                                             indentBlock = 12, indentFirst = 12)
       )
     })
@@ -3977,6 +3978,19 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="GTAGARRAYSUM.lt",numParam=2,desc="TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val tag = params(0);
+                          val v = string2double(params(1));
+                          (a : (SVcfVariantLine,Int)) => {
+                            val value = getTag(tag,a);
+                            if(value.isEmpty) false;
+                            else {
+                              value.get.split(",").map{(s) => if(s == ".") 0.toDouble else string2double(s)}.sum < v
+                            }
+                          }
+                        }
+                      ),
         FilterFunction(funcName="GTAG.isHet",numParam=1,desc="TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous.",paramNames=Seq("t"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4080,8 +4094,8 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.altProportion.gt",numParam=2,desc="TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+        FilterFunction(funcName="GTAG.altProportion.gt",numParam=2,desc="TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),isHidden = true,
+                        metaFunc=(params : Seq[String]) => {
                           val tag = params(0);
                           val v = string2double(params(1));
                           (a : (SVcfVariantLine,Int)) => {
@@ -4099,8 +4113,8 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="GTAG.SC.altProportion.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+        FilterFunction(funcName="GTAG.SC.altProportion.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden = true,
+                        metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
                           val fracThresh = string2double(params(2));
@@ -4122,8 +4136,8 @@ object VcfTool {
                           }
                         }
                       ),   
-        FilterFunction(funcName="GTAG.SC.altProportion.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+        FilterFunction(funcName="GTAG.SC.altProportion.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden = true,
+                        metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
                           val fracThresh = string2double(params(2));
@@ -4177,8 +4191,8 @@ object VcfTool {
                           }
                         }
                       ), 
-        FilterFunction(funcName="GTAG.SC.altDepth.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+        FilterFunction(funcName="GTAG.SC.altDepth.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden=true,
+                        metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
                           val fracThresh = string2double(params(2));
@@ -4196,8 +4210,8 @@ object VcfTool {
                           }
                         }
                       ),   
-        FilterFunction(funcName="GTAG.SC.altDepth.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),
-                        (params : Seq[String]) => {
+        FilterFunction(funcName="GTAG.SC.altDepth.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden = true,
+                        metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
                           val adTag = params(1);
                           val fracThresh = string2double(params(2));

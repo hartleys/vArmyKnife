@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.42 (Updated Thu Jul  1 22:34:38 EDT 2021)
+> Version 3.2.43 (Updated Fri Jul  2 13:44:36 EDT 2021)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1563,6 +1563,10 @@ whitespace in between\)\.
 > TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i\-th element of which is less than k\.
 
 #### GTAGARRAYSUM\.gt:t:k
+
+> TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k\.
+
+#### GTAGARRAYSUM\.lt:t:k
 
 > TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k\.
 

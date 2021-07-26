@@ -2003,7 +2003,6 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h).toVector
               override val outType = "Integer";
               override val outNum = "1";
               val rand = pv.lift(1).map{ s => {

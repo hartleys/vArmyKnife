@@ -52,34 +52,10 @@ Variant Expression functions are all of the
 <pre><code>FALSE:
 Never pass
 (Param Types: )
-GTAG.SC.altDepth.gt:splitIdxTag:t:v
-TRUE iff the tag t, which must be a 
-    single-caller-AD-style-formatted field, has an observed 
-    alt-allele-frequency greater than k.
-(Param Types: )
-GTAG.SC.altDepth.lt:splitIdxTag:t:v
-TRUE iff the tag t, which must be a 
-    single-caller-AD-style-formatted field, has an observed 
-    alt-allele-frequency greater than k.
-(Param Types: )
-GTAG.SC.altProportion.gt:splitIdxTag:t:v
-TRUE iff the tag t, which must be a 
-    single-caller-AD-style-formatted field, has an observed 
-    alt-allele-frequency greater than k.
-(Param Types: )
-GTAG.SC.altProportion.lt:splitIdxTag:t:v
-TRUE iff the tag t, which must be a 
-    single-caller-AD-style-formatted field, has an observed 
-    alt-allele-frequency greater than k.
-(Param Types: )
 GTAG.altDepthForAlle.gt:gt:ad:v
 TRUE iff for AD-style tag ad and GT-style tag gt, the sample is 
     called as having an allele K while having less than v reads 
     covering said allele.
-(Param Types: )
-GTAG.altProportion.gt:t:k
-TRUE iff the tag t, which must be a AD-style-formatted field, 
-    has an observed alt-allele-frequency greater than k.
 (Param Types: )
 GTAG.altProportion.lt:t:k
 TRUE iff the tag t, which must be a AD-style-formatted field, 
@@ -167,6 +143,10 @@ TRUE iff the tag t is present and not set to missing, and is a
     which is less than k.
 (Param Types: )
 GTAGARRAYSUM.gt:t:k
+TRUE iff the tag t is present and not set to missing, and is a 
+    list of numbers the sum of which is greater than k.
+(Param Types: )
+GTAGARRAYSUM.lt:t:k
 TRUE iff the tag t is present and not set to missing, and is a 
     list of numbers the sum of which is greater than k.
 (Param Types: )
