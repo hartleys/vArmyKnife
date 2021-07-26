@@ -141,7 +141,36 @@ object SVcfMapFunctions {
            ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
          )), category = "Data/Table Extraction"
        ),
-       
+       ParamStrSet("addFormat" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new FORMAT field. "+
+                                          "The syntax is: --fcn \"addInfo|newTagName|fcn(param1,param2,...)\". Optionally you can add \"|desc=tag description\". "+
+                                          "There are numerous addInfo functions. For more information, go to the section on addFormat Functions below, or use the help command: "+
+                                          "varmyknife help addFormat",
+           synon = Seq("addInfoTag"),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="The description in the header line for the new INFO field.",req=false,defaultValue = Some("No desc provided")),
+           ParamStr(id = "params",synon=Seq(),ty="String",valueString="p1,p2,...",desc="Input parameters.",req=false,hidden=true)
+         )), category = "General-Purpose Tools",
+         exampleCode = Seq[Seq[String]](
+           Seq[String](
+             "Make a new FORMAT field which is the maximum from several allele frequencies (which are already in the file) "+
+             "Then make a 0/1 INFO field that is 1 if the max AF is less than 0.01. "+
+             "Note the CONST:0 term, which allows you to include constant values in these functions. "+
+             "In this case it makes it so that if the AF is missing in all three populations, the maxAF "+
+             "will be 0 rather than missing.\n",
+             "   varmyknife walkVcf \\\n"+
+             "          --fcn \"addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\\\n"+
+             "                          desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF (or zero if all are missing).\"\\\n"+
+             "          --fcn \"addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\\\n"+
+             "                          desc=Indicates whether the variant maxAF is less than 0.01.\"\\\n"+
+             "          infile.vcf.gz outfile.vcf.gz\n"),
+           Seq[String](
+             "   varmyknife walkVcf \\\n"+
+             "          --fcn \"addInfo|CarryCt|SUM(hetCount,homAltCount)|\\\n"+
+             "                          desc=The sum of the info tags: hetCount and homAltCount.\"\\\n"+
+             "          infile.vcf.gz outfile.vcf.gz\n")
+         )
+       ),
        ParamStrSet("tagBedFile" ,  desc = "This function takes a BED file (which can be gzipped if desired) and creates a new INFO field based on whether the variant locus overlaps with a "+
                                           "genomic region in the BED file. The new field can be either an integer that is equal to 1 if there is overlap and 0 otherwise (which is the default behavior) "+
                                           "Or, alternatively, it can copy in the title field from the bed file. NOTE: this function only uses the first 3 to 5 fields of the BED file, it does not "+
@@ -242,6 +271,7 @@ object SVcfMapFunctions {
                                                   "input genotype field then the genotype field will be overwritten.",req=false),
            ParamStr(id = "inputGTifTRUE",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field to be used if the expression returns TRUE.",req=true),
            ParamStr(id = "inputGTifFALSE",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field to be used if the expression returns FALSE.",req=true),
+           ParamStr(id = "missingString",synon=Seq(),ty="String",valueString="GT",desc="The string to use when setting the variable to missing.",req=false),
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
          )), category = "Genotype Processing"
        ),
@@ -1042,6 +1072,27 @@ object SVcfMapFunctions {
                   }
                 }
                 Some(new AddFunctionTag(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,digits=None,desc=Some(params("desc"))));
+                
+             } else if(mapType == "addFormat"){
+                val rawFunc = params("func").split("[(]").head;
+                val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {
+                  if(pp.trim().last != ')'){
+                    error("Error: hanging open paren in string: "+params("func"));
+                  }
+                  pp.init.split(",").toSeq.map{ _.trim() }
+                }} match {
+                  case Some(rp) => {
+                    rp;
+                  }
+                  case None => {
+                    params.get("params").map{ pp => {
+                      pp.split(",").toSeq;
+                    }}.getOrElse(Seq[String]())
+                  }
+                }
+                Some(new AddFunctionFormat(func=rawFunc,newTag=params("mapID"),paramTags=paramTags,desc=Some(params("desc"))));
+                
+               //AddFunctionFormat(func : String, newTag : String, paramTags : Seq[String], desc : Option[String] = None) 
              } else if(mapType == "tally"){
                 val rawFunc = params("func").split("[(]").head;
                 val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {
@@ -1089,6 +1140,7 @@ object SVcfMapFunctions {
                    gtTagA = params("inputGTifTRUE"),
                    gtTagB = params("inputGTifFALSE"),
                    newGTTag = params("outputGT"),
+                   missingString = params.get("missingString"),
                    groupFile = params.get("groupFile"), 
                    groupList = None, 
                    superGroupList  = params.get("superGroupList")

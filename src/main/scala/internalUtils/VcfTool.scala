@@ -3943,6 +3943,27 @@ object VcfTool {
                           }
                         }
                       ),
+        FilterFunction(funcName="GTAGARRAY.lt",numParam=3,desc="TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is less than k.",paramNames=Seq("t","i","k"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val tag = params(0);
+                          val idx = string2int(params(1));
+                          val v = string2double(params(2));
+                          (a : (SVcfVariantLine,Int)) => {
+                            val value = getTag(tag,a);
+                            if(value.isEmpty) false;
+                            else {
+                              val arr = value.get.split(",");
+                              if(arr.length < idx) false;
+                              else if(arr(idx) == ".") false;
+                              else {
+                                string2double(arr(idx)) < v;
+                              }
+                            }
+                          }
+                        }
+                      ),
+                      
+                      
         FilterFunction(funcName="GTAGARRAYSUM.gt",numParam=2,desc="TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4030,7 +4051,16 @@ object VcfTool {
                           }
                         }
                       ),
-                      
+        FilterFunction(funcName="VAREXPR",numParam = -1,desc="TRUE iff simple variant-level expression passes.",paramNames=Seq("g"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val gtFiltName = params.head;
+                          val gtParams = params.tail;                          
+                          val (ff,vff) = sVcfFilterLogicParser.getFilterFunction(gtFiltName, gtParams)
+                          (a : (SVcfVariantLine,Int)) => {
+                            ff(a._1);
+                          }
+                        }
+                      ),
         FilterFunction(funcName="GTAG.altProportion.lt",numParam=2,desc="TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4184,6 +4214,7 @@ object VcfTool {
                           }
                         }
                       ),
+                      
         FilterFunction(funcName="TRUE",numParam=0,desc="Always pass",paramNames=Seq(),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           (a : (SVcfVariantLine,Int)) => {

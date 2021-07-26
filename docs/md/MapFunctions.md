@@ -60,6 +60,37 @@
     infile.vcf.gz outfile.vcf.gz
 ###### End Example
 
+### addFormat
+
+>  This is a set of functions that all take one or more input parameters and outputs one new FORMAT field\. The syntax is: \-\-fcn "addInfo|newTagName|fcn\(param1,param2,\.\.\.\)"\. Optionally you can add "|desc=tag description"\. There are numerous addInfo functions\. For more information, go to the section on addFormat Functions below, or use the help command: varmyknife help addFormat
+
+
+    func: (String, required)
+    desc: The description in the header line for the new INFO 
+        field.(String, default=No desc provided)
+###### Example 1:
+    Make a new FORMAT field which is the maximum from several 
+        allele frequencies (which are already in the file) Then 
+        make a 0/1 INFO field that is 1 if the max AF is less than 
+        0.01. Note the CONST:0 term, which allows you to include 
+        constant values in these functions. In this case it makes 
+        it so that if the AF is missing in all three populations, 
+        the maxAF will be 0 rather than missing.
+    varmyknife walkVcf \
+    --fcn "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
+    desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF 
+        (or zero if all are missing)."\
+    --fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\
+    desc=Indicates whether the variant maxAF is less than 0.01."\
+    infile.vcf.gz outfile.vcf.gz
+###### End Example
+###### Example 2:
+    varmyknife walkVcf \
+    --fcn "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
+    desc=The sum of the info tags: hetCount and homAltCount."\
+    infile.vcf.gz outfile.vcf.gz
+###### End Example
+
 ### sampleCounts
 
 >  This function generates counts and frequencies for alt alleles, alt genotypes, missing genotypes, ref genotypes, and so on\. Note that there are several calc\- flags\. If none of these are included, then this function does nothing\.
@@ -403,6 +434,8 @@
         the expression returns TRUE.(String, required)
     inputGTifFALSE: The input genotype FORMAT field to be used if 
         the expression returns FALSE.(String, required)
+    missingString: The string to use when setting the variable to 
+        missing.(String)
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)

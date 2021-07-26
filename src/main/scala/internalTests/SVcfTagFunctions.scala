@@ -1090,6 +1090,48 @@ object SVcfTagFunctions {
         (ff.metadata.id,ff)
       }}.toMap
   
+      
+  val vcfFormatFunMap : Map[String,VcfTagFcnFactory] = Seq[VcfTagFcnFactory](
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "extractIDX",synon = Seq(),
+              shortDesc = "",
+              desc = " "+
+                     " "+
+                     " "+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "i", ty = "CONST:Int",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "delim", ty = "CONST:String",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val gtTag = paramValues(0);
+              val extractIDX = string2int( paramValues(1) )
+              val delim = paramValues.lift(2).getOrElse(",");
+              override val outType = outHeader.formatLines.find( ff => ff.ID == gtTag ).get.Type
+              override val outNum = "1";
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
+                if( gtIdx > -1 ){
+                  vout.genotypes.genotypeValues(gtIdx) = vout.genotypes.genotypeValues(gtIdx).map{ gg => {
+                    gg.split(delim).lift(extractIDX).getOrElse(".");
+                  }}
+                }
+              }
+            }
+
+          }
+        }
+        ).map{ ff => {
+        (ff.metadata.id,ff)
+      }}.toMap
+      
   val vcfTagFunMap : Map[String,VcfTagFcnFactory] = Seq[VcfTagFcnFactory](
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
@@ -2073,7 +2115,51 @@ object SVcfTagFunctions {
     }
   }
   
+
+  class AddFunctionFormat(func : String, newTag : String, paramTags : Seq[String], desc : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker { 
+    def walkerName : String = "FunctionInfoTag."+newTag
+    //keywords: tagVariantFunction tagVariantsFunction Variant Function
+    val f : String = func.toUpperCase;
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("newTag",newTag),
+        ("func",func),
+        ("paramTags",paramTags.mkString("|"))
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
       
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+
+      val fcn = vcfFormatFunMap( func ).gen( paramValues = paramTags, outHeader = outHeader, newTag = newTag, digits = None);
+      
+      val minParamsRequired = fcn.md.params.filter{ pp => pp.req }.length
+      val maxParamsAllowed  = if( fcn.md.params.exists( pp => pp.dotdot ) ){
+        None
+      } else {
+        Some(fcn.md.params.length)
+      }
+      if(paramTags.length < minParamsRequired){
+        error("   ERROR in function setup: tagFunction "+func+" has "+minParamsRequired+" mandatory parameters. We found "+paramTags.length+": \""+paramTags.mkString(",")+"\"");
+      }
+      maxParamsAllowed.foreach{ mp => {
+        if(paramTags.length > mp){
+          error("   ERROR in function setup: tagFunction "+func+" can only take "+mp+" parameters. We found "+paramTags.length+": \""+paramTags.mkString(",")+"\"");
+        }
+      }}
+      //
+      outHeader.addFormatLine((new SVcfCompoundHeaderLine("FORMAT",newTag,Number=fcn.outNum,Type=fcn.outType,desc=desc.getOrElse("") +" (Result of performing function "+func+" on params: "+paramTags.mkString(",")+".)")),Some(this));
+
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        fcn.run(v,vc);
+        vc;
+      }}, closeAction = (() => {
+        
+      })),outHeader)
+    }
+  }
 
   class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
     def walkerName : String = "FunctionInfoTag."+newTag

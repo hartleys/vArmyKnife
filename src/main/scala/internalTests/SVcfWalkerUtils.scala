@@ -13328,7 +13328,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     }
   }
 
-  case class SelectGenotypesByStat(filter : String, gtTagA : String, gtTagB : String,
+  case class SelectGenotypesByStat(filter : String, gtTagA : String, gtTagB : String, missingString : Option[String] = None,
                                    newGTTag : String,
                                    groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None) extends SVcfWalker {
     def walkerName : String = "FilterGenotypesByStat"
@@ -13363,7 +13363,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       outHeader.addFormatLine(new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = newGTTag, Number = "1", Type = "String", desc = "A composite genotype based on "+gtTagA+" and "+gtTagB+" based on predicate: [ "+filter+ " ] ",subType=Some(VcfTool.subtype_GtStyleUnsplit)), walker = Some(this) );
 
       outHeader.addWalk(this);
-      val missingGeno = "./." // Range(0,ploidy).map{_ => "."}.mkString("/");
+      val missingGeno = missingString.getOrElse("./."); // Range(0,ploidy).map{_ => "."}.mkString("/");
       
       val missingGenoArray = Array.fill[String](sampCt)(missingGeno);
       

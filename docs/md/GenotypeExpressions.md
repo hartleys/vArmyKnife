@@ -132,6 +132,11 @@
         list with at least i elements, and the i-th element of 
         which is greater than k.
     (Param Types: )
+    GTAGARRAY.lt:t:i:k
+    TRUE iff the tag t is present and not set to missing, and is a 
+        list with at least i elements, and the i-th element of 
+        which is less than k.
+    (Param Types: )
     GTAGARRAYSUM.gt:t:k
     TRUE iff the tag t is present and not set to missing, and is a 
         list of numbers the sum of which is greater than k.
@@ -146,3 +151,6 @@
     TRUE:
     Always pass
     (Param Types: )
+    VAREXPR:g
+    TRUE iff simple variant-level expression passes.
+    (Param Types: :...)
