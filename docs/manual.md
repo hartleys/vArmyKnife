@@ -1,7 +1,7 @@
 # User Manual for vArmyKnife 
 
-> v3.1.54   \
-> Compiled Fri Sep  4 15:11:26 EDT 2020
+> v3.1.55   \
+> Compiled Tue Sep  8 12:39:00 EDT 2020
 
 ## QUICK START:
 
@@ -47,18 +47,19 @@ to allocate some extra memory as needed. So for example, to set the max memory t
 
 General command documentation can be found [*here*](docs/index.html).
 
-Options and variables for the walkVcf command (which is the command that you will almost always use for most purposes)
-can be found [*here*](walkVcf.html)
-
 ## INPUT COMMANDS AND OPTIONS:
 
-All vArmyKnife executions follow the same basic syntax:
+Most vArmyKnife runs use the "walkVcf" command, and have a basic structure like this:
 
-    varmyknife commandName parameters
+    varmyknife [options] walkVcf \
+	   --fcn "funcName|myName1|param1=p1|param2=p2" \
+	   --fcn "funcName|myName2|param1=p1|param2=p2" \
+	   ... etc ... \
+	   infile.vcf.gz \
+	   outfile.vcf.gz
 
-For example:
-
-    varmyknife walkVcf testInput.vcf.gz testOutput.vcf.gz
+The walkVcf function reads in a VCF file, sequentially performs a series of operations on the file,
+and outputs the resultant VCF file.
 
 All the primary functions of vArmyKnife have been folded into the multiStepPipeline command,
 so you're almost always going to use that command. The above invocation is the simplest

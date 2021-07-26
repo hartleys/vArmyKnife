@@ -36,8 +36,8 @@
 <section><h1>User Manual for vArmyKnife</h1>
 
 <blockquote>
-  <p>v3.1.54   \
-Compiled Fri Sep  4 15:11:26 EDT 2020</p>
+  <p>v3.1.55   \
+Compiled Tue Sep  8 12:39:00 EDT 2020</p>
 </blockquote>
 
 </section> <h2>QUICK START:</h2> <section>
@@ -89,20 +89,20 @@ to allocate some extra memory as needed. So for example, to set the max memory t
 
 <p>General command documentation can be found <a href="docs/index.html"><em>here</em></a>.</p>
 
-<p>Options and variables for the walkVcf command (which is the command that you will almost always use for most purposes)
-can be found <a href="walkVcf.html"><em>here</em></a></p>
-
 </section> <h2>INPUT COMMANDS AND OPTIONS:</h2> <section>
 
-<p>All vArmyKnife executions follow the same basic syntax:</p>
+<p>Most vArmyKnife runs use the "walkVcf" command, and have a basic structure like this:</p>
 
-<pre><code>varmyknife commandName parameters
+<pre><code>varmyknife [options] walkVcf \
+   --fcn "funcName|myName1|param1=p1|param2=p2" \
+   --fcn "funcName|myName2|param1=p1|param2=p2" \
+   ... etc ... \
+   infile.vcf.gz \
+   outfile.vcf.gz
 </code></pre>
 
-<p>For example:</p>
-
-<pre><code>varmyknife walkVcf testInput.vcf.gz testOutput.vcf.gz
-</code></pre>
+<p>The walkVcf function reads in a VCF file, sequentially performs a series of operations on the file,
+and outputs the resultant VCF file.</p>
 
 <p>All the primary functions of vArmyKnife have been folded into the multiStepPipeline command,
 so you're almost always going to use that command. The above invocation is the simplest
