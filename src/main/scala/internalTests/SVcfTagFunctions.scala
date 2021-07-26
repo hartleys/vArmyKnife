@@ -1101,7 +1101,7 @@ object SVcfTagFunctions {
                      " "+
                      "",
               params = Seq[VcfTagFunctionParam](
-                  VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float|GENO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "i", ty = "CONST:Int",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "delim", ty = "CONST:String",req=false,dotdot=false )
               )
@@ -1119,9 +1119,9 @@ object SVcfTagFunctions {
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
                 if( gtIdx > -1 ){
-                  vout.genotypes.genotypeValues(gtIdx) = vout.genotypes.genotypeValues(gtIdx).map{ gg => {
+                  vout.genotypes.addGenotypeArray( newTag, vout.genotypes.genotypeValues(gtIdx).map{ gg => {
                     gg.split(delim).lift(extractIDX).getOrElse(".");
-                  }}
+                  }})
                 }
               }
             }
