@@ -1,20 +1,21 @@
-    Variant expressions are logical expressions that are performed 
-        at the variant level. They are used by several parts of 
-        vArmyKnife, usually when filtering or differentiating 
-        variants based on it's properties/stats. For any given 
-        variant, a variant expression will return either TRUEor 
-        FALSE. Variant expressions are parsed as a series of 
-        logical functionsconnected with AND, OR, NOT, and 
-        parentheses. All expressions MUSTbe separated with 
-        whitespace, though it does not matter how muchwhitespace or 
-        what kind. Alternatively, expressions can be readdirectly 
-        from file by setting the expression 
-        toEXPRESSIONFILE:filepath.
-    Variant Expression functions are all of the 
-        formatFILTERNAME:PARAM1:PARAM2:etc. Some filters have no 
+    Genotype-level expressions are logical expressions that are 
+        performed at the GENOTYPE level. In other words, for each 
+        sample in each variant line. They are used by several parts 
+        of vArmyKnife, usually when filtering or differentiating 
+        genotypes based on their properties/stats. For any given 
+        variant, a genotype expression will return either TRUE or 
+        FALSE for each sample. Genotype expressions are parsed as a 
+        series of logical functions connected with AND, OR, NOT, 
+        and parentheses. All expressions MUST be separated with 
+        whitespace, though it does not matter how much whitespace 
+        or what kind. Alternatively, expressions can be read 
+        directly from file by setting the expression to 
+        EXPRESSIONFILE:filepath.
+    Genotype Expression functions are all of the format 
+        FILTERNAME:PARAM1:PARAM2:etc. Some filters have no 
         parameters; other filters can accept a variable number of 
-        parameters. Allexpression functions return TRUE or FALSE. 
-        Filters can be inverted using theNOT operator before the 
+        parameters. All expression functions return TRUE or FALSE. 
+        Filters can be inverted using the NOT operator before the 
         filter (with whitespace in between).
 
 # 
@@ -139,10 +140,7 @@
     TRUE:
     Always pass
     (Param Types: )
-    VAREXPR:g
-    TRUE iff simple variant-level expression passes.
-    (Param Types: :...)
-    VARIANT:fcn:params
+    VAREXPR:fcn:params
     Variant passes variant-level logical function. Note that you 
         cannot include AND/OR/NOT inside this logical function, it 
         must be a single variant-level logical function.

@@ -2812,6 +2812,23 @@ object VcfTool {
       }}
       idx;
   }
+  def findMatchedParenIdxFromStr(str : String, openParen : Char = '(', closeParen : Char = ')') : Int = {
+      if(str.head != openParen){
+        error("findMatchedParenIdxFromStr run on non-paren char!");
+      }
+      val (depth, idx) = str.tail.zipWithIndex.iterator.foldLeft((1,1)){ case ((currDepth,currIdx),(currChar,idx)) => {
+        if(currDepth == 0){
+          (currDepth, currIdx);
+        } else if(currChar == openParen){
+          (currDepth + 1, currIdx + 1)
+        } else if(currChar == closeParen){
+          (currDepth - 1, currIdx + 1)
+        } else {
+          (currDepth, currIdx + 1)
+        }
+      }}
+      idx;
+  }
   
   class FunctionExpression(args : Seq[String])
   /*
@@ -2852,9 +2869,7 @@ object VcfTool {
         true;
       }
     }
-  
-  
-  
+    
   
   abstract class SFilterLogicParser[A](){
     def filterManualTitle() : String
@@ -2867,18 +2882,18 @@ object VcfTool {
                                         "Variant expressions are logical expressions that are performed at the "+
                                         "variant level. They are used by several parts of vArmyKnife, usually when "+
                                         "filtering or differentiating variants based on it's properties/stats. "+
-                                        "For any given variant, a variant expression will return either TRUE"+
-                                        "or FALSE. Variant expressions are parsed as a series of logical functions"+
-                                        "connected with AND, OR, NOT, and parentheses. All expressions MUST"+
-                                        "be separated with whitespace, though it does not matter how much"+
-                                        "whitespace or what kind. Alternatively, expressions can be read"+
+                                        "For any given variant, a variant expression will return either TRUE "+
+                                        "or FALSE. Variant expressions are parsed as a series of logical functions "+
+                                        "connected with AND, OR, NOT, and parentheses. All expressions MUST "+
+                                        "be separated with whitespace, though it does not matter how much "+
+                                        "whitespace or what kind. Alternatively, expressions can be read "+
                                         "directly from file by setting the expression to"+
                                         "EXPRESSIONFILE:filepath."
                                   ),
-                                  (None,"Variant Expression functions are all of the format"+
+                                  (None,"Variant Expression functions are all of the format "+
                                         "FILTERNAME:PARAM1:PARAM2:etc. Some filters have no parameters; "+
-                                        "other filters can accept a variable number of parameters. All"+
-                                        "expression functions return TRUE or FALSE. Filters can be inverted using the"+
+                                        "other filters can accept a variable number of parameters. All "+
+                                        "expression functions return TRUE or FALSE. Filters can be inverted using the "+
                                         "NOT operator before the filter (with whitespace in between)."
                                   )
       );
@@ -2953,10 +2968,96 @@ object VcfTool {
           "#### "+escapeToMarkdown(x.funcName) +":"+x.paramNames.mkString(":")+ "\n\n> "+escapeToMarkdown(x.desc)+"\n"
       }).mkString("\n") + "\n"
     }
-       
-       
+    
+    def parseString_NEW(str : String) : SFilterLogic[A] = {
+      if( str.count( cc => cc == '(' ) != str.count(cc => cc == ')')){
+        error("ERROR parsing logical expression: different number of open and closed perentheses!\n"+
+              "      Found "+str.count( cc => cc == '(')+" open perens and " + str.count(cc => cc == ')') + " closed perens in string:"+
+              "      \""+str+"\""
+            );
+      }
+      var s = str.trim().replaceAll("AND\\(","AND \\(").replaceAll("OR\\(","OR \\(").replaceAll("NOT\\(","NOT \\(").replaceAll("\\(NOT","\\( NOT").replaceAll("\t"," ").replaceAll("\n"," ").replaceAll("\\s+"," ");
+      var ss = s.replaceAll("\\(\\(","\\( \\(").replaceAll("\\)\\)","\\) \\)")
+      while( s != ss ){
+        s = ss;
+        ss = s.replaceAll("\\(\\(","\\( \\(").replaceAll("\\)\\)","\\) \\)").trim();
+      }
+      //parseStringArray_NEW(s.split("\\s+"));
+      
+      return null;
+    }
+    /*
+    abstract class Token {
+      
+    }
+    case class AtomicToken( s : String ) extends Token {
+      
+    }
+    case class NotToken( s : Token ) extends Token {
+      
+    }
+    case class AndToken( a : Token, b : Token ) extends Token {
+      
+    }
+    case class OrToken( a : Token, b : Token ) extends Token {
+      
+    }
+    def buildToken( s : String ) : Token = {
+      if(s.head == '(' && s.last == ')'){
+        buildToken(s.tail.init);
+      } else if(s.startsWith("NOT ")){
+        return NotToken( buildToken( s.drop(3).trim() )) ;
+      } else if(s.head == '('){
+        val closeIdx = findMatchedParenIdxFromStr(s);
+        val parenStr = s.take(closeIdx).tail.init;
+        val remainder = s.drop(closeIdx).trim();
+        
+        if( remainder.startsWith("AND")){
+          AndToken(buildToken(parenStr), buildToken(remainder));
+        } else if( remainder.startsWith("OR")){
+          OrToken(buildToken(parenStr), buildToken(remainder));          
+        } else {
+          error("Bad logical expression: new phrase does not start with AND, OR, or NOT");
+          return null;
+        }
+      } else if(
+    }*/
+    
+    
+    /*
+    
+    def parseStringArray_NEW(strs : Seq[String]) : SFilterLogic[A] = {
+      if( strs.head == "(" && strs.last == ")"){
+        return parseStringArray_NEW( strs.tail.init );
+      } else if( strs.head == "(" ) {
+        val closeIdx = findMatchedParenIdx(strs);
+        val parenStr = strs.take(closeIdx).tail.init;
+        
+      } else {
+   
+        val ss = str.split("\\s+")
+        
+        
+        
+      }
+      return null;
+    }
+    def parseLogicFunc_NEW(a : SFilterLogic[A], strs : Seq[String]) : SFilterLogic[A] = {
+      if(strs.length == 0){
+        a;
+      } else if(strs.head == "AND"){
+        SFilterAND[A](a,parseStringArray(strs.tail));
+      } else if(strs.head == "OR"){
+        SFilterOR[A](a,parseStringArray(strs.tail));
+      } else {
+        error("Filter logic parse error! Unrecognized logic func: "+strs.head);
+        null;
+      }
+    }*/
+
+    
     def parseString(str : String) : SFilterLogic[A] = {
-      if( str.count( cc => cc == '(') != str.count(cc => cc == ')')){
+      if( str.count( cc => cc == '(' ) != str.count(cc => cc == ')')){
         error("ERROR parsing logical expression: different number of open and closed perentheses!\n"+
               "      Found "+str.count( cc => cc == '(')+" open perens and " + str.count(cc => cc == ')') + " closed perens in string:"+
               "      \""+str+"\""
@@ -2966,7 +3067,7 @@ object VcfTool {
       parseStringArray(str.trim().replaceAll("\\("," \\( ").replaceAll("\\)"," \\) ").trim().split("\\s+").toSeq);
     }
   
-    def parseStringArray(strs : Seq[String]) : SFilterLogic[A] = {
+    def parseStringArray_OLD(strs : Seq[String]) : SFilterLogic[A] = {
       if(strs.length == 0){
         error("Null SVcfFilterLogic!");
       }
@@ -3000,7 +3101,35 @@ object VcfTool {
       }
     }
     
-    
+    def parseStringArray(strs : Seq[String]) : SFilterLogic[A] = {
+      if(strs.length == 0){
+        error("Null SVcfFilterLogic!");
+      }
+      val str = strs.head;
+      
+      if(str == "("){
+        val closeIdx = findMatchedParenIdx(strs);
+        val parenStr = strs.take(closeIdx).tail.init;
+        //parseDebugReport("Entering Parenthetical: [\"" + parenStr.mkString("\",\"") + "\"]" + " with remainder: [\"" + strs.drop(closeIdx).mkString("\",\"")+"\"]");
+        parseLogicFunc(parseStringArray(parenStr),strs.drop(closeIdx));
+      } else if(str == "NOT"){
+        SFilterNOT[A](parseStringArray(strs.tail));
+      } else { //if(strs.head.startsWith("FILT:")) {
+        //parseDebugReport("Parsing Binary: [" + strs.head +"]");
+        
+        if( ! strs.head.contains(':') && strs.length > 1 && strs(1) == "(" ){
+          //PAREN-STYLE:
+          val closeIdx = findMatchedParenIdx(strs.tail);
+          val filterID = strs.head
+          val fcnString = filterID+":"+strs.tail.take(closeIdx).tail.init.mkString("").split(",").mkString(":")
+          parseLogicFunc( parseFilter(fcnString),strs.tail.drop(closeIdx) );
+        } else {
+          parseLogicFunc(parseFilter(strs.head),strs.drop(1));
+        }
+      } //else {
+        //null;
+     // }
+    }
 
     def parseFilter(str : String) : SFilterLogic[A] = {
       //if(! str.startsWith("FILT:")){
@@ -3015,6 +3144,8 @@ object VcfTool {
       val (fun,ff) = getFilterFunction(funID,params);
       SFilterByFunc[A](fun=fun,params=params,filterName=funID,ff=ff);
     }
+    
+
     
     /*case class FilterFunction(funcName : String, 
                               numParam : Int, 
@@ -3771,8 +3902,34 @@ object VcfTool {
   
   //case class SGenotypeFilterLogicParser() extends SFilterLogicParser[(SVcfVariantLine,Int)]{
   val sGenotypeFilterLogicParser : SFilterLogicParser[(SVcfVariantLine,Int)] = new SFilterLogicParser[(SVcfVariantLine,Int)]{
+
+    override def logicManualRaw : Seq[(Option[String],String)] = 
+      Seq[(Option[String],String)]( 
+                                  (None,
+                                        "Genotype-level expressions are logical expressions that are performed at the "+
+                                        "GENOTYPE level. In other words, for each sample in each variant line. "+
+                                        "They are used by several parts of vArmyKnife, usually when "+
+                                        "filtering or differentiating genotypes based on their properties/stats. "+
+                                        "For any given variant, a genotype expression will return either TRUE "+
+                                        "or FALSE for each sample. Genotype expressions are parsed as a series of logical functions "+
+                                        "connected with AND, OR, NOT, and parentheses. All expressions MUST "+
+                                        "be separated with whitespace, though it does not matter how much "+
+                                        "whitespace or what kind. Alternatively, expressions can be read "+
+                                        "directly from file by setting the expression to "+
+                                        "EXPRESSIONFILE:filepath."
+                                  ),
+                                  (None,"Genotype Expression functions are all of the format "+
+                                        "FILTERNAME:PARAM1:PARAM2:etc. Some filters have no parameters; "+
+                                        "other filters can accept a variable number of parameters. All "+
+                                        "expression functions return TRUE or FALSE. Filters can be inverted using the "+
+                                        "NOT operator before the filter (with whitespace in between)."
+                                  )
+      );
+    
     def filterManualTitle() : String = "";
     def filterManualDesc() : String = "";
+    
+    
     
     def getTag(tag : String, a : (SVcfVariantLine,Int)) : Option[String] = {
       if(a._1.format.contains(tag)){
@@ -4082,16 +4239,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="VAREXPR",numParam = -1,desc="TRUE iff simple variant-level expression passes.",paramNames=Seq("g"),paramTypes=Seq(),
-                        (params : Seq[String]) => {
-                          val gtFiltName = params.head;
-                          val gtParams = params.tail;                          
-                          val (ff,vff) = sVcfFilterLogicParser.getFilterFunction(gtFiltName, gtParams)
-                          (a : (SVcfVariantLine,Int)) => {
-                            ff(a._1);
-                          }
-                        }
-                      ),
+
         FilterFunction(funcName="GTAG.altProportion.lt",numParam=2,desc="TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency less than k.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4260,7 +4408,17 @@ object VcfTool {
                           }
                         }
                       ),
-             FilterFunction(funcName="VARIANT",numParam = -1, desc = "Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.",paramNames=Seq("fcn","params"), paramTypes=Seq(),
+        FilterFunction(funcName="VAREXPR",numParam = -1,desc="Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.",paramNames=Seq("fcn","params"), paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val gtFiltName = params.head;
+                          val gtParams = params.tail;                          
+                          val (ff,vff) = sVcfFilterLogicParser.getFilterFunction(gtFiltName, gtParams)
+                          (a : (SVcfVariantLine,Int)) => {
+                            ff(a._1);
+                          }
+                        }
+                      ),
+             FilterFunction(funcName="VARIANT",numParam = -1, desc = "Equivalent to VAREXPR.",paramNames=Seq("fcn","params"), paramTypes=Seq(),isHidden=true,
                         metaFunc=(params : Seq[String]) => {
                           val varfcn = sVcfFilterLogicParser.filterFunctionMap(params.head);
                           val ffn = varfcn.metaFunc(params.tail);
