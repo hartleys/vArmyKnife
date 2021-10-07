@@ -201,6 +201,26 @@
     gtExpr (Optional) (STRING) 
     varExpr (Optional) (STRING) 
 
+### COLLATE\(inputDelimName,outputDelimOuter,outputDelimInner,x\.\.\.\)
+
+    
+    This takes multiple ordered info fields and collates them. The 
+        new output INFO field will be a list of lists. The first 
+        list in the list of lists will be composed of The first 
+        element of the first field, the first element of the second 
+        field, the first element of the third field, and so on. The 
+        second list in the list of lists will be composed of the 
+        second element of the first field, the second element of 
+        the second field, and so on. Delimiters in the input lists 
+        as well as the two delimiters used in the output can have 
+        the following names: colon, comma, bar, slash, period, or 
+        ampersand. Note that the input delim can be a 
+        slash-delimited list of delimiter names.
+    inputDelimName (CONST:String) 
+    outputDelimOuter (CONST:String) 
+    outputDelimInner (CONST:String) 
+    x... (INFO:String) 
+
 ### MAX\(x\.\.\.\)
 
     

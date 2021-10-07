@@ -1896,6 +1896,87 @@ object SVcfTagFunctions {
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
+              id = "COLLATE",synon = Seq(),
+              shortDesc = "Collates multiple ordered info fields",
+              desc = "This takes multiple ordered info fields and collates them. The new output "+
+                     "INFO field will be a list of lists. The first list in the list of lists will be composed of "+
+                     "The first element of the first field, the first element of the second field, the first element of the third field, and so on. "+
+                     "The second list in the list of lists will be composed of the second element of the first field, the second element of the second field, and so on. "+
+                     "Delimiters in the input lists as well as the two delimiters used in the output can have the following names: colon, comma, bar, slash, period, or ampersand. "+
+                     "Note that the input delim can be a slash-delimited list of delimiter names.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "inputDelimName", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "outputDelimOuter", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "outputDelimInner", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=true )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              override val outType = "String";
+              override val outNum = ".";
+              //val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
+              val inDelim = paramValues.head.split("[/]");
+              
+              def getDelim(delim : String) : String = {
+                    if(delim.toUpperCase() == "COLON"){
+                      ":"
+                    } else if(delim.toUpperCase() == "SLASH"){
+                      "/"
+                    } else if(delim.toUpperCase() == "COMMA"){
+                      ","
+                    } else if(delim.toUpperCase() == "BAR"){
+                      "|"
+                    } else if(delim.toUpperCase() == "AMPERSAND"){
+                      "&"
+                    } else if(delim.toUpperCase() == "PERIOD"){
+                      "."
+                    } else {
+                      error("ERROR: Unrecognized delimiter name: "+delim+"! Legal options are: slash, comma, bar, ampersand, and period.");
+                      ""
+                    }
+              }
+              
+              def getDelimRegex(delimList : Seq[String]) : String = {
+                 "["+delimList.map{ delim => {
+                      getDelim(delim);
+                 }}.mkString("")+"]"
+              }
+              
+              val inDelimRegex = getDelimRegex( inDelim );
+              val outDelim1 = getDelim(  paramValues(1)  );
+              val outDelim2 = getDelim(  paramValues(2)  );
+              val infoFields = paramValues.drop(3);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                /*val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
+                  soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
+                }}.toVector.sorted.mkString(",")
+                writeString(vout,out)*/
+                val infoseq = infoFields.map{ ff => { vc.info.getOrElse(ff,None).map{ kk => kk.split(inDelimRegex).toSeq }.getOrElse(Seq()) }}
+                val infolens = infoseq.map{ xx => xx.length }
+                if( (infolens.toSet - 1).size > 1){
+                  error("ERROR: Attempting to COLLATE info fields, but info fields have different lengths: ("+
+                           infoFields.zip(infolens).map{ case (z1,z2) => { z1+":"+z2 } }.mkString(", ")+"):");
+                }
+                val infolen = infolens.max;
+                val collatedSeq = infoseq.foldLeft( Range(0,infolen).toSeq.map{ yy => { Seq[String]() }} ){ case (soFar,xx) => {
+                  if( xx.length == 1){
+                    soFar.map{ y => { y :+ xx.head }};
+                  } else {
+                    soFar.zip(xx).map{ case (y,x) => { y :+ x }};
+                  }
+                }}
+                writeString(vout, collatedSeq.map{ kk => { kk.mkString(outDelim2)} }.mkString(outDelim1) )
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
               id = "CONCAT",synon = Seq(),
               shortDesc = "Concatenates the input",
               desc = "This simple function concatenates the values of the input parameters. Input parameters can be any combination of INFO fields or constant strings.",

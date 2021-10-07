@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.2.56 (Updated Wed Aug 11 14:33:15 EDT 2021)</p>
+  <p>Version 3.2.59 (Updated Tue Aug 17 15:29:59 EDT 2021)</p>
 </blockquote>
 
 </div><h1 class="collapsible">GENERAL SYNTAX:</h1><div  class="collapseSection">
@@ -1251,6 +1251,26 @@ B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:F-
     false, will return missing.
 gtExpr (Optional) (STRING) 
 varExpr (Optional) (STRING)
+</code></pre>
+
+<h3>COLLATE(inputDelimName,outputDelimOuter,outputDelimInner,x...)</h3>
+
+<pre><code>This takes multiple ordered info fields and collates them. The 
+    new output INFO field will be a list of lists. The first 
+    list in the list of lists will be composed of The first 
+    element of the first field, the first element of the second 
+    field, the first element of the third field, and so on. The 
+    second list in the list of lists will be composed of the 
+    second element of the first field, the second element of 
+    the second field, and so on. Delimiters in the input lists 
+    as well as the two delimiters used in the output can have 
+    the following names: colon, comma, bar, slash, period, or 
+    ampersand. Note that the input delim can be a 
+    slash-delimited list of delimiter names.
+inputDelimName (CONST:String) 
+outputDelimOuter (CONST:String) 
+outputDelimInner (CONST:String) 
+x... (INFO:String)
 </code></pre>
 
 <h3>MAX(x...)</h3>
