@@ -31,7 +31,7 @@
 
 ### addInfo
 
->  This is a set of functions that all take one or more input parameters and outputs one new INFO field\. The syntax is: \-\-fcn "addInfo|newTagName|fcn\(param1,param2,\.\.\.\)"\. Optionally you can add "|desc=tag description"\. There are numerous addInfo functions\. For more information, go to the section on addInfo Functions below, or use the help command: varmyknife help addInfo
+>  This is a set of functions that all take one or more input parameters and outputs one new INFO field\. The syntax is: \-\-fcn "addInfo|newTagName|fcn\(param1,param2,\.\.\.\)"\. Optionally you can add "|desc=tag description"\. There are numerous addInfo functions\. See the section in the help doc titled INFO TAG FUNCTIONS, or use the help command: varmyknife help addInfo
 
 
     func: (String, required)
@@ -49,8 +49,7 @@
     --fcn "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
     desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF 
         (or zero if all are missing)."\
-    --fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\
-    desc=Indicates whether the variant maxAF is less than 0.01."\
+    --fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)"\
     infile.vcf.gz outfile.vcf.gz
 ###### End Example
 ###### Example 2:

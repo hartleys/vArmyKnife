@@ -5,8 +5,7 @@
     Info Tag Functions are simple modular functions that take one 
         variant at a time and add a new INFO field.
     Basic Syntax:
-    --FCN addInfoTag|newTagID|fcn=infoTagFunction|params=p1,p2,... 
-        
+        --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )
 
 ## Available Functions:
 
@@ -17,7 +16,7 @@
     
     Input should be a numeric INFO field. output will be the 
         natural log of that field.
-    x (INT|FLOAT|INFO:Int|INFO:Float) 
+    x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### MULT\(x,y\)
 
@@ -29,8 +28,8 @@
         are missing, in which case the output will be missing. 
         Output field type will be an integer if all inputs are 
         integers and otherwise a float.
-    x (INT|FLOAT|INFO:Int|INFO:Float) 
-    y (INT|FLOAT|INFO:Int|INFO:Float) 
+    x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+    y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### DIFF\(x,y\)
 
@@ -42,8 +41,8 @@
         fields and all are missing, in which case the output will 
         be missing. Output field type will be an integer if all 
         inputs are integers and otherwise a float.
-    x (INT|FLOAT|INFO:Int|INFO:Float) 
-    y (INT|FLOAT|INFO:Int|INFO:Float) 
+    x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+    y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### SUM\(x\.\.\.\)
 
@@ -55,7 +54,7 @@
         missing, in which case the output will be missing. Output 
         field type will be an integer if all inputs are integers 
         and otherwise a float.
-    x... (INT|FLOAT|INFO:Int|INFO:Float) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### FLAGSET\(x\.\.\.\)
 
@@ -74,7 +73,7 @@
     The new field will be an integer field equal to the length of 
         the input field. Will be missing if the input field is 
         missing.
-    x (INFO:String,INFO:Int,INFO:Float) 
+    x (INFO:String|INFO:Int|INFO:Float) 
 
 ### RANDFLAG\(x,seed\)
 
@@ -92,21 +91,21 @@
         treated as ZEROS unless all params are INFO fields and all 
         are missing, in which case the output will be missing. 
         Output field type will be a float.
-    x (INT|FLOAT|INFO:Int|INFO:Float) 
-    y (INT|FLOAT|INFO:Int|INFO:Float) 
+    x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+    y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### MIN\(x\.\.\.\)
 
     
     
-    x... (INT|FLOAT|INFO:Int|INFO:Float) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
     Input should be an INFO field. Converts field to a Integer.
     x (INFO:String) 
-    defaultValue (Optional) (Int) 
+    defaultValue (Optional) (CONST:Int) 
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 
@@ -116,7 +115,7 @@
         dropped. Note that NaN and Inf will be dropped / replaced 
         with the default.
     x (INFO:String) 
-    defaultValue (Optional) (Float) 
+    defaultValue (Optional) (CONST:Float) 
 
 ### EXPR\(expr\)
 
@@ -140,14 +139,14 @@
     This simple function concatenates the values of the input 
         parameters. Input parameters can be any combination of INFO 
         fields or constant strings.
-    x... (String|INFO:String) 
+    x... (INFO:String|CONST:String) 
 
 ### LOG10\(x\)
 
     
     Input should be a numeric INFO field. output will be the log10 
         of that field.
-    x (INT|FLOAT|INFO:Int|INFO:Float) 
+    x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 
@@ -159,7 +158,7 @@
         are missing, in which case the output will be missing. 
         Output field type will be an integer if all inputs are 
         integers and otherwise a float.
-    x... (INT|FLOAT|INFO:Int|INFO:Float) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### SETS\.DIFF\(x,y\)
 
@@ -170,12 +169,10 @@
         colons.Output field will be a comma delimited string 
         containing the elements in the first set with the second 
         set subtracted out.
-    x 
-        (String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:Stri-
-        ng)
-    y 
-        (String|INFO:String|INT|FLOAT|INFO:Int|INFO:Float|FILE:Stri-
-        ng)
+    x (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CON-
+        ST:Int|CONST:Float)
+    y (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CON-
+        ST:Int|CONST:Float)
 
 ### SWITCH\.EXPR\(expr,A,B\)
 
@@ -187,9 +184,10 @@
         field will be equal to A if the logical expression is TRUE, 
         and otherwise will be B.
     expr (STRING) 
-    A (INFO:Int|INFO:Float|INFO:String|Int|Float|String) 
-    B (Optional) (INFO:Int|INFO:Float|INFO:String|Int|Float|String) 
-        
+    A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:-
+        String)
+    B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:F-
+        loat|CONST:String)
 
 ### GT\.EXPR\(gtExpr,varExpr\)
 
@@ -207,7 +205,7 @@
 
     
     
-    x... (INT|FLOAT|INFO:Int|INFO:Float) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### PICK\.RANDOM\(seed,x,y\.\.\.\)
 
@@ -224,8 +222,8 @@
         several additional parameters, in which case it will select 
         randomly from the set of parameters.
     seed (String) 
-    x (String|INFO:String|FILE:String) 
-    y... (Optional) (String|INFO:String) 
+    x (INFO:String|FILE:String|CONST:String) 
+    y... (Optional) (INFO:String|CONST:String) 
 
 ### SETS\.UNION\(x\.\.\.\)
 
@@ -251,10 +249,10 @@
         FILE:fileName, or a constant set delimited with colons. 
         Output field will be a comma delimited string containing 
         the intersect between the supplied sets.
-    x... (String|INFO:String|FILE:String) 
+    x... (INFO:String|FILE:String|CONST:String) 
 
 ### CONST\(x\)
 
     
     Input should be a simple string of characters
-    x (STRING) 
+    x (CONST:String) 

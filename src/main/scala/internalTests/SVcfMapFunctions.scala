@@ -105,7 +105,7 @@ object SVcfMapFunctions {
        //       //  class AddFunctionTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
        ParamStrSet("addInfo" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new INFO field. "+
                                           "The syntax is: --fcn \"addInfo|newTagName|fcn(param1,param2,...)\". Optionally you can add \"|desc=tag description\". "+
-                                          "There are numerous addInfo functions. For more information, go to the section on addInfo Functions below, or use the help command: "+
+                                          "There are numerous addInfo functions. See the section in the help doc titled INFO TAG FUNCTIONS, or use the help command: "+
                                           "varmyknife help addInfo",
            synon = Seq("addInfoTag"),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -124,8 +124,7 @@ object SVcfMapFunctions {
              "   varmyknife walkVcf \\\n"+
              "          --fcn \"addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\\\n"+
              "                          desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF (or zero if all are missing).\"\\\n"+
-             "          --fcn \"addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\\\n"+
-             "                          desc=Indicates whether the variant maxAF is less than 0.01.\"\\\n"+
+             "          --fcn \"addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)\"\\\n"+
              "          infile.vcf.gz outfile.vcf.gz\n"),
            Seq[String](
              "   varmyknife walkVcf \\\n"+
