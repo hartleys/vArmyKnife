@@ -978,7 +978,7 @@ object SVcfMapFunctions {
                              superGroupList : Option[String],
                 genomeFA : Option[String],
                 calcStatGtTag : String
-
+ 
       ) : Seq[SVcfWalker] = {
           /*val burdenWriterMap = burdenCountsFile.map{ bcf => 
             val cc = bcf.split("[:]");

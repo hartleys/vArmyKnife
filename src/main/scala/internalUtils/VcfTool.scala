@@ -1122,7 +1122,7 @@ object VcfTool {
         reportln("     readVcf() adding progress reporting... ("+getDateAndTimeString+")","debug")
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputVariantLine(line)), 
+                           bufLines.map(line => SVcfInputVariantLine(line).headerInput(header)), 
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1131,7 +1131,7 @@ object VcfTool {
       } else {
         reportln("     readVcf() skipping progress reporting... ("+getDateAndTimeString+")","debug")
         //rawVariantLines.map(line => SVcfInputVariantLine(line,header))
-        bufLines.map(line => SVcfInputVariantLine(line))
+        bufLines.map(line => SVcfInputVariantLine(line).headerInput(header))
       }
       reportln("     readVcf() done... ("+getDateAndTimeString+")","debug")
       (header,variantLines);
@@ -1778,6 +1778,14 @@ object VcfTool {
     def genotypes : SVcfGenotypeSet;
     lazy val variantIV = internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length)); 
     
+    def setHeader( h : SVcfHeader )
+    def getHeader() : SVcfHeader
+    
+    def header( h : SVcfHeader ) : SVcfVariantLine = {
+      this.setHeader(h);
+      return this;
+    }
+    
     //Note: zero based!
     def start : Int = pos;
     def end : Int = pos + ref.length;
@@ -1937,6 +1945,14 @@ object VcfTool {
     lazy val lzy_genotypes = SVcfGenotypeSet.getGenotypeSet(lzy_genotypeStrings, format);
     def genotypes = lzy_genotypes;
     
+    private var header : SVcfHeader = null;
+    def setHeader( h : SVcfHeader ){
+      header = h;
+    }
+    def getHeader() : SVcfHeader = {
+      header;
+    }
+    
   }
   
   case class SVcfInputVariantLine(inputLine : String) extends SVcfVariantLine {
@@ -1986,8 +2002,17 @@ object VcfTool {
       lzy_genotypeStrings.map( gts => (gts.split(":",-1).padTo(gtIdx+1,".")).apply(gtIdx))
     }
     
-
-    
+    private var header : SVcfHeader = null;
+    def setHeader( h : SVcfHeader ){
+      header = h;
+    }
+    def getHeader() : SVcfHeader = {
+      header;
+    }
+    def headerInput( h : SVcfHeader ) : SVcfInputVariantLine = {
+      this.setHeader(h);
+      return this;
+    }
     //def getSampleList : Seq[String] = in_header.titleLine.sampleList;
     //def header = in_header;
   }
@@ -2041,7 +2066,17 @@ object VcfTool {
     vm.make();
   }
      */
-    
+    private var header : SVcfHeader = null;
+    def setHeader( h : SVcfHeader ){
+      header = h;
+    }
+    def getHeader() : SVcfHeader = {
+      header;
+    }
+    def headerOutput(h : SVcfHeader) : SVcfOutputVariantLine = {
+      this.setHeader(h);
+      return this;
+    }
 
   }
   

@@ -452,23 +452,6 @@ object SVcfWalkerMain {
         )
         
         
-            /*
-             --varMatch
-               --varMatchDbName
-               --varMatchDbFile
-               --varMatchPathoExpression
-               --varMatchBenignExpression
-               --varMatchMetadataList
-            AddDatabaseMatching(txToGeneFile =txToGeneFile , refSeqFile =addCanonicalTags,
-                            chromList = chromList, 
-                            geneSet : Option[Set[String]],
-                            dbdata : Seq[(String,String,String,Option[String],Option[String],Seq[String])],
-                               //dbName,dbFile,idTag,pathoExpression,benExpression,metaDataTags
-                            tagInfix : String = ""
-                            
-                            )
-            */
-        
       addProgressReportFunction(f = (i) => {
         getWarningAndNoticeTallies("   ").mkString("\n      ")
       })

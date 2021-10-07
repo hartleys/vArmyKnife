@@ -2378,6 +2378,7 @@ object SVcfTagFunctions {
 
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
+        vc.genotypes.sampList = vcfHeader.titleLine.sampleList.toList;
         vc.genotypes.sampGrp = Some(sampleToGroupMap);
         fcn.run(v,vc);
         vc;
