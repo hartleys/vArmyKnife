@@ -14653,7 +14653,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   /////////////////////////////////////////  /////////////////////////////////////////  /////////////////////////////////////////
 
 
-  class DuplicateStats(countDupTag : String, byValue : Seq[String] = Seq[String]()) extends internalUtils.VcfTool.SVcfWalker { 
+  class DuplicateStats(countDupTag : String, byValue : Seq[String] = Seq[String]()) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "DuplicateStat"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
     
@@ -14691,6 +14691,66 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
             tally(cdt+"_DUPCT",vbg.length);
           }
           vbg
+        }}
+      }}, closeAction = (() => { 
+        //do nothing
+      })),outHeader)
+    }
+  }
+  
+
+
+  class DuplicateMerge(countDupTag : String) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "DuplicateStat"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    //groupBySpan[A,B](iter : BufferedIterator[A])(f : (A => B))
+    val cdt = countDupTag;
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      initNotice("DROP_VAR_N");
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      outHeader.infoLines.foreach{ infoln => {
+        outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = infoln.tag,ID = infoln.ID, Number = ".", Type = infoln.Type, desc = infoln.desc));
+      }}
+      outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = "INFO",ID = cdt+"_CT", Number = "1", Type = "Integer", desc = "Number of duplicates"));
+
+      tally(cdt+"_DUPSETCT",0)
+      tally(cdt+"_DUPCT",0)
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = groupBySpan(vcIter.buffered){ v => { (v.chrom,v.pos) } }.flatMap{vg => {
+        val swaps = vg.map{ v => (v.ref,v.alt.head)}.distinct.sorted
+        swaps.flatMap{ case (r,a) => {
+          val vbgRAW = vg.filter{ v => v.ref == r && v.alt.head == a }
+          val vb = vbgRAW.head.getOutputLine()
+          if(vbgRAW.length > 1){
+            tally(cdt+"_DUPSETCT",1);
+            tally(cdt+"_DUPCT",vbgRAW.length);
+            val currInfos = vbgRAW.flatMap{ vv => vv.info.keySet }.toSet
+            currInfos.foreach{ cc => {
+              vb.addInfo( cc, vbgRAW.map{ vv => {
+                  vv.info.getOrElse(cc, None)
+                }}.filter{ ii => {
+                  ii.isDefined
+                }}.map{ ii => ii.get }.mkString(",")
+              )
+            }}
+          }
+          vb.addInfo(cdt+"_CT",vbgRAW.length+"");
+          Seq(vb)
+          /*val vbg = vbgRAW.zipWithIndex.map{ case (v,ii) => {
+            val vb = v.getOutputLine()
+            vb.addInfo(cdt+"_CT",vbgRAW.length+"");
+            vb.addInfo(cdt+"_IDX",ii+"");
+            vb
+          }}
+          if(vbg.length > 1){
+            tally(cdt+"_DUPSETCT",1);
+            tally(cdt+"_DUPCT",vbg.length);
+          }
+          vbg*/
         }}
       }}, closeAction = (() => { 
         //do nothing

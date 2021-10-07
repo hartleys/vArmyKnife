@@ -188,13 +188,13 @@ case class ClinVarMetadata(
     }}
   }
   
-  def getClinVarAssertSeqFromStringV2(s : String, delims : String = ",", subDelim : String = "|") : Seq[ClinVarAssertInfo] = {
+  def getClinVarAssertSeqFromStringV2(s : String, delims : String = ",", subDelim : String = "[|]") : Seq[ClinVarAssertInfo] = {
     s.split(delims).toSeq.withFilter{ ss => ss != "." && ss != "" }.map{ss => {
       getClinVarAssertFromStringV2(ss,subDelim);
     }}
   }
 
-  def getClinVarAssertFromStringV2(s : String, subDelim : String = "|") : ClinVarAssertInfo = {
+  def getClinVarAssertFromStringV2(s : String, subDelim : String = "[|]") : ClinVarAssertInfo = {
     val cells = s.split(subDelim);
     if(cells.length != 9){
       warning("ClinVar Assert String too short: \n"+
@@ -210,7 +210,7 @@ case class ClinVarMetadata(
     val recordStatus=cells(6);
     val origins = "";
     val methods = ""
-    val interpretation = cells(5);
+    val interpretation = cells(5).toUpperCase;
     val interpretationDate = cells(8);
     val disease = Seq()
     
@@ -322,7 +322,7 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
 
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"num",Number="1",Type="Integer",      desc=ssDesc+" Num reports."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"originSet",Number=".",Type="String", desc=ssDesc+" Set of all observed reported origins."));
-        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertSet",Number=".",Type="String", desc=ssDesc+" The set of all observed pathogenicity assertion levels."));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertSet",Number=".",Type="String", desc=ssDesc+" The set of all observed pathogenicity assertion levels: P/LP/VUS/LB/B/UNK"));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"isPerfAgree",Number="1",Type="Integer", desc=ssDesc+" Equal to 1 iff all non-misc reports have the exact same asserted status."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"perfAgree",Number="1",Type="String", desc=ssDesc+" Equal to the agreed-upon assertion level iff all non-misc reports have the exact same asserted status. Otherwise set to missing."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"call",Number="1",Type="String", desc=ssDesc+" Composite pathogenicity call. Considering only badged lab reports, "+
@@ -402,7 +402,8 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
               val interpSeq = Seq(us,b,lb,p,lp).zip(Seq("VUS","B","LB","P","LP"));
               val (plp,blb) = (p + lp, b + lb);
               val interpSum = interpCts.sum
-              
+
+
               //vc.addInfo(tagPrefix+"metadata_badged_perfAgree",     (if( interpSeq.filter(_._1 > 0).length == 1 ){ interpSeq.filter(_._1 > 0).head._2 } else { "." }));
               vc.addInfo(tagPrefix+ssName+"numVUS",""+us);
               vc.addInfo(tagPrefix+ssName+"numB",""+b);
@@ -411,7 +412,6 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
               vc.addInfo(tagPrefix+ssName+"numLP",""+lp);
               vc.addInfo(tagPrefix+ssName+"numMisc",""+othr);
               vc.addInfo(tagPrefix+ssName+"numMalformat",""+bad);
-
               vc.addInfo(tagPrefix+ssName+"num",""+assertData.length);
               vc.addInfo(tagPrefix+ssName+"originSet",  assertData.map{_.origins}.toVector.distinct.sorted.padTo(1,".").mkString(","));
               val assertSet = interpSeq.filter{case (ct,lvl) => ct > 0}.map{_._2}.toSet
@@ -539,10 +539,12 @@ class ClinVarAssessor(tagPrefix : String = "", badgeIdList : Set[String] = DEFAU
 
   
 
-class ClinVarAssessorV2(tagPrefix : String = "", badgeIdList : Set[String] = DEFAULT_badgeIdList) extends SVcfWalker {
-  val rawDataTag = tagPrefix+"rawdata"
-  val alleIdTag = tagPrefix+"alleID";
-  val varIdTag = tagPrefix+"varID"
+class ClinVarAssessorV2(tagPrefix : String = "", 
+                        badgeIdList : Set[String] = DEFAULT_badgeIdList,
+                        rawDataTag : String = "rawdata") extends SVcfWalker {
+  //val rawDataTag = tagPrefix+"rawdata"
+  //val alleIdTag = tagPrefix+"alleID";
+  //val varIdTag = tagPrefix+"varID"
   
   val effectScoreSet = Set("PATHOGENIC","LIKELY_PATHOGENIC","BENIGN","LIKELY_BENIGN","UNCERTAIN_SIGNIFICANCE");
     def isGermline( cva : ClinVarAssertInfo) : Boolean = {
@@ -552,28 +554,9 @@ class ClinVarAssessorV2(tagPrefix : String = "", badgeIdList : Set[String] = DEF
       cva.origins.toUpperCase == "GERMLINE" || cva.origins.toUpperCase == "UNKNOWN"
     }
     def isBadged( cva : ClinVarAssertInfo) : Boolean = {
-      badgeIdList.contains(cva.orgID)
+      badgeIdList.contains(cva.orgName)
     }
     
-   /* val subsetFuncs : Seq[(String,String, ClinVarAssertInfo => Boolean)] = Seq(
-        ("","",( (cva : ClinVarAssertInfo) => true )),
-        ("germLine_"," origin eq germline",( (cva : ClinVarAssertInfo) => isGermline(cva) )),
-        ("germOrUnk_"," origin eq germline or unknown", ( (cva : ClinVarAssertInfo) => isGermlineOrUnk(cva) )),
-        ("NH_","out haplotype assertions", ( (cva : ClinVarAssertInfo) => cva.isMultiVarHaplo == 0 )),
-        ("HAPLO_"," ONLY haplotype assertions", ( (cva : ClinVarAssertInfo) => cva.isMultiVarHaplo > 0 ))
-      ).flatMap{ case (ssName,ssDesc, f) => {
-        val (allDescFmt,bdgDescFmt) = if(ssDesc == ""){
-          ("(All reports)","(Badged lab reports only)")
-        } else {
-          ("(Restricted to: reports with"+ssDesc+")",
-           "(Restricted to: badged lab reports with"+ssDesc+")")
-        }
-        
-        Seq(
-            (ssName,allDescFmt,f),
-            ("badged_"+ssName,bdgDescFmt, ((cva : ClinVarAssertInfo) => f(cva) && isBadged(cva)))
-        );
-      }}*/
       val subsetFuncs : Seq[(String,String, ClinVarAssertInfo => Boolean)] = Seq(
         ("","",( (cva : ClinVarAssertInfo) => true ))
       ).flatMap{ case (ssName,ssDesc, f) => {
@@ -608,6 +591,7 @@ class ClinVarAssessorV2(tagPrefix : String = "", badgeIdList : Set[String] = DEF
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"num",Number="1",Type="Integer",      desc=ssDesc+" Num reports."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"originSet",Number=".",Type="String", desc=ssDesc+" Set of all observed reported origins."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertSet",Number=".",Type="String", desc=ssDesc+" The set of all observed pathogenicity assertion levels."));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertions",Number=".",Type="String", desc=ssDesc+" The count of each assertion type."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"isPerfAgree",Number="1",Type="Integer", desc=ssDesc+" Equal to 1 iff all non-misc reports have the exact same asserted status."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"perfAgree",Number="1",Type="String", desc=ssDesc+" Equal to the agreed-upon assertion level iff all non-misc reports have the exact same asserted status. Otherwise set to missing."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"call",Number="1",Type="String", desc=ssDesc+" Composite pathogenicity call. Considering only badged lab reports, "+
@@ -659,10 +643,10 @@ class ClinVarAssessorV2(tagPrefix : String = "", badgeIdList : Set[String] = DEF
       (vcMap(vcIter){ v => {
         val vc  = v.getOutputLine();
         val assertField = v.info.getOrElse(rawDataTag,None).getOrElse(".")
-        val alleID = v.info.getOrElse(alleIdTag,None).getOrElse(".").split(",").toVector.distinct.sorted.mkString(",");
-        val varID = v.info.getOrElse(varIdTag,None).getOrElse(".").split(",").toVector.distinct.sorted.mkString(",");
-        vc.addInfo(alleIdTag,alleID);
-        vc.addInfo(varIdTag, varID);
+        //val alleID = v.info.getOrElse(alleIdTag,None).getOrElse(".").split(",").toVector.distinct.sorted.mkString(",");
+        //val varID = v.info.getOrElse(varIdTag,None).getOrElse(".").split(",").toVector.distinct.sorted.mkString(",");
+        //vc.addInfo(alleIdTag,alleID);
+        //vc.addInfo(varIdTag, varID);
         
         if(assertField != "."){
           
@@ -687,6 +671,9 @@ class ClinVarAssessorV2(tagPrefix : String = "", badgeIdList : Set[String] = DEF
               val interpSeq = Seq(us,b,lb,p,lp).zip(Seq("VUS","B","LB","P","LP"));
               val (plp,blb) = (p + lp, b + lb);
               val interpSum = interpCts.sum
+              
+              val interpString = p+"P/"+lp+"LP/"+us+"VUS/"+lb+"LN/"+b+"N/"+othr+"OTHR"
+              vc.addInfo(tagPrefix+ssName+"assertions",""+interpString);
               
               //vc.addInfo(tagPrefix+"metadata_badged_perfAgree",     (if( interpSeq.filter(_._1 > 0).length == 1 ){ interpSeq.filter(_._1 > 0).head._2 } else { "." }));
               vc.addInfo(tagPrefix+ssName+"numVUS",""+us);
@@ -722,19 +709,25 @@ class ClinVarAssessorV2(tagPrefix : String = "", badgeIdList : Set[String] = DEF
                                                                    "."
                                                                  } else if( plp > blb && plp > us ) {
                                                                    if(p > lp){
+                                                                     notice("Final Call: P "+interpString,"FINAL_CALL_P",10);
                                                                      "P"
                                                                    } else {
+                                                                     notice("Final Call: LP "+interpString,"FINAL_CALL_LP",10);
                                                                      "LP"
                                                                    }
                                                                  } else if( us >= blb && us >= plp ){
+                                                                     notice("Final Call: VUS "+interpString,"FINAL_CALL_VUS",10);
                                                                      "VUS"
                                                                  } else if( blb > plp && blb > us ) {
                                                                    if(b > lb){
+                                                                     notice("Final Call: B "+interpString,"FINAL_CALL_B",10);
                                                                      "B"
                                                                    } else {
+                                                                     notice("Final Call: LB "+interpString,"FINAL_CALL_LB",10);
                                                                      "LB"
                                                                    }
                                                                  } else {
+                                                                   notice("Final Call: ERR "+interpString,"FINAL_CALL_ERR",10);
                                                                    "ERROR"
                                                                  }));
               

@@ -1,4 +1,4 @@
-> Version 3.2.59 (Updated Tue Aug 17 15:29:59 EDT 2021)
+> Version 3.2.61 (Updated Wed Aug 18 17:08:55 EDT 2021)
 
 # GENERAL SYNTAX:
 
@@ -285,6 +285,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### markDup
 
 >  This map function will detect duplicate variant lines and add two new INFO fields: mapID\_CT and mapID\_IDX\. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0\. All nonduplicates will be marked with CT=1 and IDX=0\. VCF FILE MUST BE SORTED\!
+
+
+    (This function takes no parameters)
+
+### mergeDup
+
+>  Merges duplicated lines\. NOTE: REQUIRES THE VCF TO BE SORTED\. NOTE: DOES NOT WORK ON GENOTYPES\.NOTE: Splitting multiallelics and left\-align\-and\-trim are also require for it to work properly with multiallelics and indels respectively\.
 
 
     (This function takes no parameters)

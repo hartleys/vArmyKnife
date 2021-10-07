@@ -179,6 +179,13 @@
 
     (This function takes no parameters)
 
+### mergeDup
+
+>  Merges duplicated lines\. NOTE: REQUIRES THE VCF TO BE SORTED\. NOTE: DOES NOT WORK ON GENOTYPES\.NOTE: Splitting multiallelics and left\-align\-and\-trim are also require for it to work properly with multiallelics and indels respectively\.
+
+
+    (This function takes no parameters)
+
 ##### Variant Formatting/Conversion
 
 

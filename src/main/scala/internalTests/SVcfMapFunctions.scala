@@ -235,6 +235,7 @@ object SVcfMapFunctions {
         * 
        */
        
+
        
        //unPhaseAndSortGenotypes
        ParamStrSet("unPhaseAndSortGenotypes" ,  desc = "This function removes phasing and sorts genotypes (so that heterozygotes are always listed as 0/1 and never 1/0).", 
@@ -671,6 +672,12 @@ object SVcfMapFunctions {
               
          )), category = "General-Purpose Tools"
        ),
+       ParamStrSet("mergeDup" ,  desc = "Merges duplicated lines. NOTE: REQUIRES THE VCF TO BE SORTED. NOTE: DOES NOT WORK ON GENOTYPES."+
+                                        "NOTE: Splitting multiallelics and left-align-and-trim are also require for it to work properly with multiallelics and indels respectively.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](           
+         )), category = "General-Purpose Tools"
+       ),
+       
        /*
         *             duplicateTag.toSeq.map{ dt => {
               new DuplicateStats(dt)
@@ -1552,6 +1559,9 @@ object SVcfMapFunctions {
                Some(new DropNs());
              } else if(mapType == "markDup"){
                 Some(new DuplicateStats(params("mapID")))
+             } else if(mapType == "mergeDup"){
+                Some(new DuplicateMerge(params("mapID")))
+                
              } else if(mapType == "convertToStdVcf"){
                Some( new StdVcfConverter(thirdAlleleChar = None) )
 

@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.2.59 (Updated Tue Aug 17 15:29:59 EDT 2021)</p>
+  <p>Version 3.2.61 (Updated Wed Aug 18 17:08:55 EDT 2021)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -362,6 +362,15 @@ expr: The variant expression, which is a true/false expression
 
 <blockquote>
   <p>This map function will detect duplicate variant lines and add two new INFO fields: mapID_CT and mapID_IDX. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0. All nonduplicates will be marked with CT=1 and IDX=0. VCF FILE MUST BE SORTED!</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>mergeDup</h3>
+
+<blockquote>
+  <p>Merges duplicated lines. NOTE: REQUIRES THE VCF TO BE SORTED. NOTE: DOES NOT WORK ON GENOTYPES.NOTE: Splitting multiallelics and left-align-and-trim are also require for it to work properly with multiallelics and indels respectively.</p>
 </blockquote>
 
 <pre><code>(This function takes no parameters)
