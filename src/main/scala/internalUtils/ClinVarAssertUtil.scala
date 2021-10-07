@@ -592,6 +592,7 @@ class ClinVarAssessorV2(tagPrefix : String = "",
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"originSet",Number=".",Type="String", desc=ssDesc+" Set of all observed reported origins."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertSet",Number=".",Type="String", desc=ssDesc+" The set of all observed pathogenicity assertion levels."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertions",Number=".",Type="String", desc=ssDesc+" The count of each assertion type."));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"assertionsByDate",Number=".",Type="String", desc=ssDesc+" The assertions in order by date."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"isPerfAgree",Number="1",Type="Integer", desc=ssDesc+" Equal to 1 iff all non-misc reports have the exact same asserted status."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"perfAgree",Number="1",Type="String", desc=ssDesc+" Equal to the agreed-upon assertion level iff all non-misc reports have the exact same asserted status. Otherwise set to missing."));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=tagPrefix+ssName+"call",Number="1",Type="String", desc=ssDesc+" Composite pathogenicity call. Considering only badged lab reports, "+
@@ -672,7 +673,7 @@ class ClinVarAssessorV2(tagPrefix : String = "",
               val (plp,blb) = (p + lp, b + lb);
               val interpSum = interpCts.sum
               
-              val interpString = p+"P/"+lp+"LP/"+us+"VUS/"+lb+"LN/"+b+"N/"+othr+"OTHR"
+              val interpString = p+"P/"+lp+"LP/"+us+"VUS/"+lb+"LB/"+b+"B/"+othr+"OTHR"
               vc.addInfo(tagPrefix+ssName+"assertions",""+interpString);
               
               //vc.addInfo(tagPrefix+"metadata_badged_perfAgree",     (if( interpSeq.filter(_._1 > 0).length == 1 ){ interpSeq.filter(_._1 > 0).head._2 } else { "." }));
@@ -766,45 +767,91 @@ class ClinVarAssessorV2(tagPrefix : String = "",
                                                                  } else {
                                                                    "0"
                                                                  })
-              vc.addInfo(tagPrefix+ssName+"warn_tieBrokenByDate", tbbdWarn);
-              val anyWarn = if(tbbdWarn == "1" ||  plp > 0 && blb > 0 || (us > 0 && (plp > 0 || blb > 0)) || badSet.size > 0){
-                "1"
-              } else {
-                "0"
-              }
-              vc.addInfo(tagPrefix+ssName+"warn_any", anyWarn);
 
-              val tbbdCall = (if(interpSum == 0){
-                                                                   "."
+
+              val (tbbd_primaryCall,tiebreak_primaryCall) = (if(interpSum == 0){
+                                                                   (".",0)
                                                                  } else if( (plp > blb && plp > us) ) {
-                                                                   if(p > lp){
-                                                                     "P"
-                                                                   } else if(p == lp){
-                                                                     assertsSortedByDate.filter{a => Set("P","LP").contains(a)}.last;
+                                                                   ("PLP",0)
+                                                                 } else if( us > blb && us > plp ){
+                                                                   ("VUS",0)
+                                                                 } else if( blb > plp && blb > us ){
+                                                                   ("BLB",0)
+                                                                 } else if( plp == blb && plp > us ){
+                                                                   if( Set("P","LP").contains( assertsSortedByDate.filter{ a => Set("P","LP","B","LB").contains(a)}.last ) ){
+                                                                     ("PLP",1)
                                                                    } else {
-                                                                     "LP"
+                                                                     ("BLB",1)
                                                                    }
-                                                                 } else if( us > blb && us > plp ){ 
-                                                                   "VUS"
+                                                                 } else if( plp == us && plp == blb ){
+                                                                   val mostRecent = assertsSortedByDate.filter{ a => Set("P","LP","B","LB","VUS").contains(a)}.last
+                                                                   if(mostRecent == "P" || mostRecent == "LP"){
+                                                                     ("PLP",1)
+                                                                   } else if(mostRecent == "VUS"){
+                                                                     ("VUS",1)
+                                                                   } else {
+                                                                     ("BLB",1)
+                                                                   }
+
                                                                  } else if( us >= blb && us >= plp ){
-                                                                   if( plp == us && us > blb ){
+                                                                   val mostRecent = if( plp == us && us > blb ){
                                                                      assertsSortedByDate.filter{ a => Set("P","LP","VUS").contains(a)}.last
                                                                    } else if( us == plp && us == blb ){
                                                                      assertsSortedByDate.filter{ a => Set("P","LP","B","LB","VUS").contains(a)}.last
                                                                    } else {
                                                                      assertsSortedByDate.filter{ a => Set("B","LB","VUS").contains(a)}.last
                                                                    }
-                                                                 } else if( blb > plp && blb > us ) {
-                                                                   if(b > lb){
-                                                                     "B"
-                                                                   } else if(b == lb){
-                                                                     assertsSortedByDate.filter{a => Set("B","LB").contains(a)}.last;
+                                                                   if(mostRecent == "P" || mostRecent == "LP"){
+                                                                     ("PLP",1)
+                                                                   } else if(mostRecent == "VUS"){
+                                                                     ("VUS",1)
                                                                    } else {
-                                                                     "LB"
+                                                                     ("BLB",1)
                                                                    }
                                                                  } else {
-                                                                   "ERROR"
+                                                                   ("ERROR",1)
                                                                  })
+              
+              val (tbbdCall,tiebreak_secondaryCall) = if( tbbd_primaryCall == "." ){
+                 (".",0)
+              } else if( tbbd_primaryCall == "PLP" ){
+                if( p > lp ){
+                  ("P",0)
+                } else if( lp > p ){
+                  ("LP",0)
+                } else {                 
+                   (assertsSortedByDate.filter{ a => Set("P","LP").contains(a)}.last,true)
+                }
+              } else if( tbbd_primaryCall == "BLB" ){
+                if( b > lb ){
+                  ("B",0)
+                } else if( lb > b ){
+                  ("LB",0)
+                } else {                 
+                 ( assertsSortedByDate.filter{ a => Set("B","LB").contains(a)}.last, 1)
+                }               
+              } else if( tbbd_primaryCall == "VUS") {
+                ("VUS",0)
+              } else {
+                notice("Final Call TBBD: ERR "+interpString,"FINAL_CALL_TBBD_ERR",10);
+                ("ERROR",0)
+              }
+              val tiebreak = if( tiebreak_secondaryCall == 1 || tiebreak_primaryCall == 1 ){
+                1
+              } else {
+                0
+              }
+              //assertionsByDate
+              vc.addInfo(tagPrefix+ssName+"assertionsByDate",assertsSortedByDate.filter{ a => Set("P","LP","B","LB","VUS").contains(a)}.mkString(","));
+
+              
+              vc.addInfo(tagPrefix+ssName+"warn_tieBrokenByDate",""+ tiebreak);
+              val anyWarn = if(tiebreak == 1 ||  plp > 0 && blb > 0 || (us > 0 && (plp > 0 || blb > 0)) || badSet.size > 0){
+                "1"
+              } else {
+                "0"
+              }
+              vc.addInfo(tagPrefix+ssName+"warn_any", anyWarn);
               //assertsSortedByDateWithDate
               vc.addInfo(tagPrefix+ssName+"TBbD_call", tbbdCall);
           }}
