@@ -1,4 +1,4 @@
-> Version 3.2.55 (Updated Tue Aug 10 16:11:14 EDT 2021)
+> Version 3.2.56 (Updated Wed Aug 11 14:33:15 EDT 2021)
 
 # GENERAL SYNTAX:
 
@@ -46,6 +46,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 #### --infileListInfix infileList.txt:
 
 > If this command is included, then all input files are treated very differently. The input VCF file path (or multiple VCFs, if you are running a VCF merge of some sort) must contain a BAR character. The file path string will be split at the bar character and the string infixes from the supplied infileList.txt infix file will be inserted into the break point. This can be very useful for merging multiple chromosomes or genomic-region-split VCFs. (String)
+
+#### --listInfix infix1,infix2,...:
+
+> If this command is included, then all input files are treated very differently. The input VCF file path (or multiple VCFs, if you are running a VCF merge of some sort) must contain a BAR character. The file path string will be split at the bar character and the string infixes from the supplied list will be inserted into the break point. This can be very useful for merging multiple chromosomes or genomic-region-split VCFs. (String)
 
 #### --numLinesRead N:
 

@@ -224,6 +224,16 @@ object SVcfWalkerMain {
                                                     "infileList.txt infix file will be inserted into the break point. This can be very useful for merging multiple "+
                                                     "chromosomes or genomic-region-split VCFs."
                                         ).meta(false,"Input Parameters") ::
+                    new BinaryOptionArgument[String](
+                                         name = "listInfix", 
+                                         arg = List("--listInfix"), 
+                                         valueName = "infix1,infix2,...",  
+                                         argDesc =  "If this command is included, then all input files are treated very differently. "+
+                                                    "The input VCF file path (or multiple VCFs, if you are running a VCF merge of some sort) must contain a BAR "+
+                                                    "character. The file path string will be split at the bar character and the string infixes from the supplied "+
+                                                    "list will be inserted into the break point. This can be very useful for merging multiple "+
+                                                    "chromosomes or genomic-region-split VCFs."
+                                        ).meta(false,"Input Parameters") ::
                                         
                                         
                     new UnaryArgument( name = "splitOutputByChrom",
@@ -305,6 +315,7 @@ object SVcfWalkerMain {
                        superGroupList = parser.get[Option[String]]("superGroupList"),
                        infileList = parser.get[Boolean]("infileList"),
                        infileListInfix = parser.get[Option[String]]("infileListInfix"),
+                       listInfix = parser.get[Option[String]]("listInfix"),
                        numLinesRead = parser.get[Option[Int]]("numLinesRead"),
                 splitOutputByChrom = parser.get[Boolean]("splitOutputByChrom"),
                 splitOutputByBed = parser.get[Option[String]]("splitOutputByBed"),
@@ -329,6 +340,7 @@ object SVcfWalkerMain {
                 superGroupList : Option[String],
                 infileList : Boolean = false,
                 infileListInfix : Option[String] = None,
+                listInfix : Option[String] = None,
                 vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
                 numLinesRead : Option[Int] = None,
                 splitOutputByChrom : Boolean = false,
@@ -516,7 +528,12 @@ object SVcfWalkerMain {
       })
 
 
-      
+    val infixesList = infileListInfix.map{ ili => {
+      getLinesSmartUnzip(ili).toVector
+    }}.getOrElse(Vector()) ++ listInfix.map{ li => {
+      li.split(",").toVector;
+    }}.getOrElse(Vector());
+    
       
     if(ccFcnIdx >= 0){
       val preWalker : SVcfWalker = chainSVcfWalkers(initWalkers);
@@ -524,20 +541,14 @@ object SVcfWalkerMain {
       if( ! vcffile.contains(';') ) error("Error: runEnsembleMerger is set, the infile parameter must contain semicolons (\";\")");
       val vcfList = vcffile.split(";");
       val (iterSeq,headerSeq) = vcfList.toSeq.zipWithIndex.map{ case (vf,idx) => {
-          val (infiles,infixes) : (String,Vector[String]) = infileListInfix match {
-            case Some(ili) => {
-              val (infilePrefix,infileSuffix) = (vf.split("\\|").head,vf.split("\\|")(1));
-              val infixes = getLinesSmartUnzip(ili).toVector
-              (infixes.map{ infix => infilePrefix+infix+infileSuffix }.mkString(","), infixes)
-            }
-            case None => {
-              (vf,Vector());
-            }
+          val (infiles,infixes) : (String,Vector[String]) = if(infixesList.length > 0){
+            val (infilePrefix,infileSuffix) = (vf.split("\\|").head,vf.split("\\|")(1));
+            (infixesList.map{ infix => infilePrefix+infix+infileSuffix }.mkString(","), infixesList)
+          } else {
+            (vf,Vector())
           }
-          val ifl = infileListInfix match {
-            case Some(ifi) => false;
-            case None => infileList;
-          }
+          val ifl = infixes.length > 0 || infileList;
+          
           val (vcIterRaw, vcfHeaderRaw) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = ifl, withProgress = idx == 0, infixes = infixes);
           val (vcIter,vcfHeader) = preWalker.walkVCF(vcIterRaw,vcfHeaderRaw);
           val vcIterBuf = vcIter.buffered;
