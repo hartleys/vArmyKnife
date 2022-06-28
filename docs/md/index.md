@@ -1,4 +1,4 @@
-> Version 3.2.85 (Updated Wed May  4 14:58:04 EDT 2022)
+> Version 3.2.87 (Updated Thu May 12 11:34:48 EDT 2022)
 
 # GENERAL SYNTAX:
 
@@ -1227,6 +1227,12 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     
     oldField (INFO:INT|INFO:Float|INFO:String) 
+
+### CONVERT\.FLAG\.TO\.BOOLEAN\(x\)
+
+    
+    Input should be a single INFO field of type Flag
+    x (CONST:String) 
 
 ### SETS\.INTERSECT\(x\.\.\.\)
 

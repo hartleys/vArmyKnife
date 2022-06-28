@@ -2648,7 +2648,9 @@ object VcfTool {
           }
           var currOutFileInfix : Option[String] = None //splitFuncVc(bufIter.head);
           var currOut : Option[WriterUtil] = None
-          val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+          //BUGFIX: don't walkVCF twice! fixed 2022-05-12, v3.2.87
+          //val (newIter,newHeader) = walkVCF(vcIter,vcfHeader);
+          
           def setOutfile(vc : SVcfVariantLine){
             val newInfix = splitFuncVc(vc);
             if(newInfix.isEmpty && currOut.isDefined){
@@ -2666,7 +2668,7 @@ object VcfTool {
               reportln("Starting new file: "+outPrefix+currOutFileInfix.get+outSuffix,"progress")
               currOut = Some( openWriterSmart(outPrefix+currOutFileInfix.get+outSuffix) )
               currOut.foreach(out => {
-                newHeader.getVcfLines.foreach{ line => {
+                vcfHeader.getVcfLines.foreach{ line => {
                   out.write(line+"\n")
                 }}
               })
@@ -2674,14 +2676,14 @@ object VcfTool {
           }
           
           if(dropGenotypes){
-            newIter.foreach{ line => {
+            vcIter.foreach{ line => {
               setOutfile(line);
               currOut.foreach{ writer => {
                 writer.write(line.getVcfStringNoGenotypes+"\n");
               }}
             }}
           } else {
-            newIter.foreach{ line => {
+            vcIter.foreach{ line => {
               setOutfile(line);
               currOut.foreach{ writer => {
                 writer.write(line.getVcfString+"\n");

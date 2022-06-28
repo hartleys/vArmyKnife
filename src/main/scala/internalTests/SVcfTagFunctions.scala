@@ -139,12 +139,14 @@ object SVcfTagFunctions {
     val defaultTagType = TYS.map{ tt => {
         tt.split("[:]").head
     }}.filter{ tt => {
-        tt == "GENO" || tt == "FORMAT" || tt == "INFO" || tt == "FILE"
+        tt == "GENO" || tt == "FORMAT" || tt == "INFO" || tt == "FILE" || tt == "CONST"
     }}.map{ tt => {
         if(tt == "GENO" || tt == "FORMAT"){
           ParamSrc.GENO
         } else if(tt == "FILE"){
           ParamSrc.FILE
+        } else if(tt == "CONST"){
+          ParamSrc.CONST
         } else {
           ParamSrc.INFO
         }
@@ -1754,7 +1756,35 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "CONVERT.FLAG.TO.BOOLEAN",synon = Seq(),
+              shortDesc = "Takes a FLAG typed INFO field and creates a new INFO field which is of Integer type that has values 0 or 1 depending on whether the original flag variable was present or not.",
+              desc = "Input should be a single INFO field of type Flag",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "CONST:String",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val x = paramValues.head;
+              override val outType = "Integer";
+              override val outNum = "1";
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                    if(vc.info.keySet.contains(x)){
+                      writeString(vout, "1")
+                    } else {
+                      writeString(vout, "0")
+                    }
+                    
+                  
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(

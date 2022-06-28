@@ -287,6 +287,12 @@
     
     oldField (INFO:INT|INFO:Float|INFO:String) 
 
+### CONVERT\.FLAG\.TO\.BOOLEAN\(x\)
+
+    
+    Input should be a single INFO field of type Flag
+    x (CONST:String) 
+
 ### SETS\.INTERSECT\(x\.\.\.\)
 
     
