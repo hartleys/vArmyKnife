@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.2.87 (Updated Thu May 12 11:34:48 EDT 2022)</p>
+  <p>Version 3.2.88 (Updated Thu May 26 14:10:01 EDT 2022)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -327,19 +327,14 @@ desc: The description in the header line for the new INFO
 
 <h6>Example 1:</h6>
 
-<pre><code>Make a new FORMAT field which is the maximum from several 
-    allele frequencies (which are already in the file) Then 
-    make a 0/1 INFO field that is 1 if the max AF is less than 
-    0.01. Note the CONST:0 term, which allows you to include 
-    constant values in these functions. In this case it makes 
-    it so that if the AF is missing in all three populations, 
-    the maxAF will be 0 rather than missing.
+<pre><code>This example makes a new FORMAT field which is the ratio 
+    between the coverage on the first ALT allele and the total 
+    coverage across all alleles.
 varmyknife walkVcf \
---fcn "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
-desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF 
-    (or zero if all are missing)."\
---fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\
-desc=Indicates whether the variant maxAF is less than 0.01."\
+--fcn "addFormat|AlleleDepth_ALTALLE|extractIDX(AD,1)|\
+desc=The observed allele depth for the first alt allele."\
+--fcn "addFormat|AlleleDepth_TOTAL|SUM(AD)|\
+desc=The observed allele depth for the first alt allele."\
 infile.vcf.gz outfile.vcf.gz
 </code></pre>
 
@@ -937,7 +932,7 @@ genomeFA: The genome fasta file containing the reference
 <h3>tally</h3>
 
 <blockquote>
-  <p>This is a set of functions that takes various counts and totals across the whole VCF.</p>
+  <p>This is a set of functions that takes various stats from each variant and sums them up across the whole VCF. These functions DO NOT change the VCF itself, they simply emit meta information about the VCF. See the help section on TALLY FUNCTIONS.</p>
 </blockquote>
 
 <pre><code>func: (String, required)
@@ -1195,6 +1190,34 @@ SAMPLES.drop: (String)
     variant at a time and add a new INFO field.
 Basic Syntax:
     --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )
+Make a new INFO field which is the maximum from several allele 
+    frequencies (which are already in the file) Then make a 0/1 
+    INFO field that is 1 if the max AF is less than 0.01. Note 
+    the CONST:0 term, which allows you to include constant 
+    values in these functions. In this case it makes it so that 
+    if the AF is missing in all three populations, the maxAF 
+    will be 0 rather than missing.
+varmyknife walkVcf \
+</code></pre>
+
+<p>--fcn 
+        "addInfo|maxAF|MAX(CEU<em>AF,AFR</em>AF,JPT_AF,CONST:0)|\</p>
+
+<pre><code>    desc=The max allele frequency from CEU_AF, AFR_AF, or 
+    JPT_AF (or zero if all are missing)."\
+</code></pre>
+
+<p>--fcn 
+        "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)"\
+ infile.vcf.gz 
+        outfile.vcf.gz
+    varmyknife walkVcf \
+ --fcn 
+        "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
+ desc=The sum 
+        of the info tags: hetCount and homAltCount."\</p>
+
+<pre><code>    infile.vcf.gz outfile.vcf.gz
 </code></pre>
 
 </section> <h2>Available Functions:</h2> <section>

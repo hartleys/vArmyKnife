@@ -133,7 +133,7 @@ object SVcfMapFunctions {
              "          infile.vcf.gz outfile.vcf.gz\n")
          )
        ),
-       ParamStrSet("tally" ,  desc = "This is a set of functions that takes various counts and totals across the whole VCF.", 
+       ParamStrSet("tally" ,  desc = "This is a set of functions that takes various stats from each variant and sums them up across the whole VCF. These functions DO NOT change the VCF itself, they simply emit meta information about the VCF. See the help section on TALLY FUNCTIONS.", 
            synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
@@ -170,7 +170,7 @@ object SVcfMapFunctions {
                                           "The syntax is: --fcn \"addInfo|newTagName|fcn(param1,param2,...)\". Optionally you can add \"|desc=tag description\". "+
                                           "There are numerous addInfo functions. For more information, go to the section on addFormat Functions below, or use the help command: "+
                                           "varmyknife help addFormat",
-           synon = Seq("addInfoTag"),
+           synon = Seq("addFmtTag","addFmt","addGeno"),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "func",synon=Seq(),ty="String",valueString="func",desc="",req=true,initParam = true),
            ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="The description in the header line for the new INFO field.",req=false,defaultValue = Some("No desc provided")),
@@ -178,16 +178,13 @@ object SVcfMapFunctions {
          )), category = "General-Purpose Tools",
          exampleCode = Seq[Seq[String]](
            Seq[String](
-             "Make a new FORMAT field which is the maximum from several allele frequencies (which are already in the file) "+
-             "Then make a 0/1 INFO field that is 1 if the max AF is less than 0.01. "+
-             "Note the CONST:0 term, which allows you to include constant values in these functions. "+
-             "In this case it makes it so that if the AF is missing in all three populations, the maxAF "+
-             "will be 0 rather than missing.\n",
+             "This example makes a new FORMAT field which is the ratio between the coverage on the first ALT allele and the total coverage across all alleles. "+
+             "\n",
              "   varmyknife walkVcf \\\n"+
-             "          --fcn \"addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\\\n"+
-             "                          desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF (or zero if all are missing).\"\\\n"+
-             "          --fcn \"addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\\\n"+
-             "                          desc=Indicates whether the variant maxAF is less than 0.01.\"\\\n"+
+             "          --fcn \"addFormat|AlleleDepth_ALTALLE|extractIDX(AD,1)|\\\n"+
+             "                          desc=The observed allele depth for the first alt allele.\"\\\n"+
+             "          --fcn \"addFormat|AlleleDepth_TOTAL|SUM(AD)|\\\n"+
+             "                          desc=The observed allele depth for the first alt allele.\"\\\n"+
              "          infile.vcf.gz outfile.vcf.gz\n"),
            Seq[String](
              "   varmyknife walkVcf \\\n"+

@@ -68,19 +68,14 @@
     desc: The description in the header line for the new INFO 
         field.(String, default=No desc provided)
 ###### Example 1:
-    Make a new FORMAT field which is the maximum from several 
-        allele frequencies (which are already in the file) Then 
-        make a 0/1 INFO field that is 1 if the max AF is less than 
-        0.01. Note the CONST:0 term, which allows you to include 
-        constant values in these functions. In this case it makes 
-        it so that if the AF is missing in all three populations, 
-        the maxAF will be 0 rather than missing.
+    This example makes a new FORMAT field which is the ratio 
+        between the coverage on the first ALT allele and the total 
+        coverage across all alleles.
     varmyknife walkVcf \
-    --fcn "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
-    desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF 
-        (or zero if all are missing)."\
-    --fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\
-    desc=Indicates whether the variant maxAF is less than 0.01."\
+    --fcn "addFormat|AlleleDepth_ALTALLE|extractIDX(AD,1)|\
+    desc=The observed allele depth for the first alt allele."\
+    --fcn "addFormat|AlleleDepth_TOTAL|SUM(AD)|\
+    desc=The observed allele depth for the first alt allele."\
     infile.vcf.gz outfile.vcf.gz
 ###### End Example
 ###### Example 2:
@@ -605,7 +600,7 @@
 
 ### tally
 
->  This is a set of functions that takes various counts and totals across the whole VCF\.
+>  This is a set of functions that takes various stats from each variant and sums them up across the whole VCF\. These functions DO NOT change the VCF itself, they simply emit meta information about the VCF\. See the help section on TALLY FUNCTIONS\.
 
 
     func: (String, required)

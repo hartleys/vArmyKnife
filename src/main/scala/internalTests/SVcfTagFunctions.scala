@@ -627,6 +627,60 @@ object SVcfTagFunctions {
     }
   }
   
+  case class VcfTagFunctionGenoParamReaderIntSeqSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Seq[Option[Int]]]] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      Some( string2int(pprm.VAL) )
+    } else {
+      None
+    }
+    def get(v : SVcfVariantLine) : Option[Vector[Seq[Option[Int]]]] = if(isConst()){
+      Some( repToVector(Seq(x),v.genotypes.genotypeValues.head.length) );
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).filter{z => z != "."}.filter{z => string2intOpt(z).isDefined}.map{ z => {
+        //z.split(",").filter{a => a != "."}.map{string2int(_)}.toVector;
+        //string2intOpt(z)
+        repToVector(Seq(string2intOpt(z)),v.genotypes.genotypeValues.head.length) ;
+      }}
+    } else if(pprm.SRC == ParamSrc.GENO){
+      val gtIdx = v.genotypes.fmt.indexOf( pprm.VAL );
+      if(gtIdx == -1){
+        None
+      } else {
+        Some( v.genotypes.genotypeValues(gtIdx).toVector.map{ g => g.split(",").toSeq.map( gg => string2intOpt(gg) ) } )
+      }
+    } else {
+      None
+    }
+  }
+  case class VcfTagFunctionGenoParamReaderFloatSeqSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Seq[Option[Float]]]] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      Some( string2float(pprm.VAL) )
+    } else {
+      None
+    }
+    def get(v : SVcfVariantLine) : Option[Vector[Seq[Option[Float]]]] = if(isConst()){
+      Some( repToVector(Seq(x),v.genotypes.genotypeValues.head.length) );
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).filter{z => z != "."}.filter{z => string2floatOpt(z).isDefined}.map{ z => {
+        //z.split(",").filter{a => a != "."}.map{string2int(_)}.toVector;
+        //string2intOpt(z)
+        repToVector(Seq(string2floatOpt(z)),v.genotypes.genotypeValues.head.length) ;
+      }}
+    } else if(pprm.SRC == ParamSrc.GENO){
+      val gtIdx = v.genotypes.fmt.indexOf( pprm.VAL );
+      if(gtIdx == -1){
+        None
+      } else {
+        Some( v.genotypes.genotypeValues(gtIdx).toVector.map{ g => g.split(",").toSeq.map( gg => string2floatOpt(gg) ) } )
+      }
+    } else {
+      None
+    }
+  }
+  
+  
   case class VcfTagFunctionParamReaderFloatSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Double]] {
     def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
     val x = if(isConst()){
@@ -1123,8 +1177,7 @@ object SVcfTagFunctions {
               id = "SUM",synon = Seq(),
               shortDesc = "Sum of several tags or numeric constants.",
               desc = "Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). "+
-                     "Output field will be the sum of the inputs. Missing fields will be treated as zeros "+
-                     "unless all params are INFO/FORMAT fields and all are missing, in which case the output will be missing. "+
+                     "Output field will be the sum of the inputs. Missing fields will be treated as zeros. "+
                      "Output field type will be an integer if all inputs are integers and otherwise a float.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float",req=true,dotdot=true )
@@ -1139,9 +1192,9 @@ object SVcfTagFunctions {
               override val outType = getSuperType(typeInfo);
               override val outNum = "1";
               val dd = if(outType == "Integer"){
-                Left(typeInfo.map{  pprm => VcfTagFunctionGenoParamReaderIntSeq(pprm)})
+                Left(typeInfo.map{  pprm => VcfTagFunctionGenoParamReaderIntSeqSeq(pprm)})
               } else {
-                Right(typeInfo.map{ pprm => VcfTagFunctionGenoParamReaderFloatSeq(pprm)})
+                Right(typeInfo.map{ pprm => VcfTagFunctionGenoParamReaderFloatSeqSeq(pprm)})
               }
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 dd match {
@@ -1151,7 +1204,7 @@ object SVcfTagFunctions {
                       val arr = Array.ofDim[Int](vc.genotypes.genotypeValues.head.length);
                       v.foreach{ d => {
                         d.zipWithIndex.foreach{ case (dd,i) => {
-                          arr(i) = arr(i) + dd.getOrElse(0);
+                          arr(i) = arr(i) + dd.map{ ddx => ddx.getOrElse(0) }.sum;
                         }}
                       }}
                       vout.genotypes.addGenotypeArray( newTag, arr.map{_.toString} );
@@ -1164,7 +1217,7 @@ object SVcfTagFunctions {
                       val arr = Array.ofDim[Double](vc.genotypes.genotypeValues.head.length);
                       v.foreach{ d => { 
                         d.zipWithIndex.foreach{ case (dd,i) => {
-                          arr(i) = arr(i) + dd.getOrElse(0.toFloat);
+                          arr(i) = arr(i) + dd.map{ ddx => ddx.getOrElse(0.toFloat) }.sum;
                         }}
                       }}
                       vout.genotypes.addGenotypeArray( newTag, arr.map{_.toString} );
@@ -2788,11 +2841,11 @@ object SVcfTagFunctions {
       })),outHeader)
     }
   }
+
   
-      
-      
-      
-      
+   val formatFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "addFormat" )
+   val infoFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "addInfo" )
+   val tallyFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "tally" )
       
    val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("INFO TAG FUNCTIONS"),
@@ -2800,7 +2853,7 @@ object SVcfTagFunctions {
                                                                "one variant at a time and add a new INFO field. "+
                                                                "",
                                                                "Basic Syntax:",
-                                                               "    --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )"), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+                                                               "    --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )")++infoFunctionParamBlock.exampleCode.flatten, level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
@@ -2819,6 +2872,65 @@ object SVcfTagFunctions {
       }}
    }}
    
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   
+   
+   val FMTFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
+       internalUtils.commandLineUI.UserManualBlock(title=Some("FORMAT TAG FUNCTIONS"),
+                                                   lines = Seq(formatFunctionParamBlock.desc+"",
+                                                               "Basic Syntax:",
+                                                               "    --FCN addInfo|newTagID|FCN( param1, param2, etc. )\n")++formatFunctionParamBlock.exampleCode.flatten, level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+       internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
+                                                   lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
+   ) ++ vcfFormatFunMap.flatMap{ case (fcnID,mf) => {
+      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
+                                                   lines = Seq("",
+                                                               mf.metadata.desc), 
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=8)
+      Seq(fcnTitleLine) ++
+          mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
+        internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+
+                                                            pp.desc +{ if(pp.req){
+                                                              ""
+                                                            } else {
+                                                              "(Optional) "
+                                                            }}+"("+pp.ty+") "+pp.desc ), indentTitle = 4, indentBlock = 12, indentFirst=10,mdCaret=true)
+      }}
+   }}
+   
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   val TALLYFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
+       internalUtils.commandLineUI.UserManualBlock(title=Some("TALLY FUNCTIONS"),
+                                                   lines = Seq(""+tallyFunctionParamBlock.desc,
+                                                               "",
+                                                               "Basic Syntax:",
+                                                               "    --FCN tally|x|FCN( param1, param2, etc. )\n")++tallyFunctionParamBlock.exampleCode.flatten, level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+       internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
+                                                   lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
+   ) ++ vcfTagFcnMap_sideEffecting.flatMap{ case (fcnID,mf) => {
+      val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
+                                                   lines = Seq("",
+                                                               mf.metadata.desc), 
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=8)
+      Seq(fcnTitleLine) ++
+          mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
+        internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+
+                                                            pp.desc +{ if(pp.req){
+                                                              ""
+                                                            } else {
+                                                              "(Optional) "
+                                                            }}+"("+pp.ty+") "+pp.desc ), indentTitle = 4, indentBlock = 12, indentFirst=10,mdCaret=true)
+      }}
+   }}
      
    def TAGFUNCTIONS_getBlockStringManual : String = TAGFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
      umb.getBlockString()
@@ -2828,10 +2940,20 @@ object SVcfTagFunctions {
    }}.mkString("\n")
       
       
+   def FMTFUNCTIONS_getBlockStringManual : String = FMTFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getBlockString()
+   }}.mkString("\n")
+   def FMTFUNCTIONS_getMarkdownStringManual : String = FMTFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getMarkdownString();
+   }}.mkString("\n")
+       
       
-      
-      
-      
+   def TALLYFUNCTIONS_getBlockStringManual : String = TALLYFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getBlockString()
+   }}.mkString("\n")
+   def TALLYFUNCTIONS_getMarkdownStringManual : String = TALLYFUNCTIONS_USERMANUALBLOCKS.map{ umb => {
+     umb.getMarkdownString();
+   }}.mkString("\n")
       
       
 }

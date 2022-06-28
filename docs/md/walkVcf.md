@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.87 (Updated Thu May 12 11:34:48 EDT 2022)
+> Version 3.2.88 (Updated Thu May 26 14:10:01 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -183,19 +183,14 @@ This utility performs a series of transformations on an input VCF file and adds 
     desc: The description in the header line for the new INFO 
         field.(String, default=No desc provided)
 ###### Example 1:
-    Make a new FORMAT field which is the maximum from several 
-        allele frequencies (which are already in the file) Then 
-        make a 0/1 INFO field that is 1 if the max AF is less than 
-        0.01. Note the CONST:0 term, which allows you to include 
-        constant values in these functions. In this case it makes 
-        it so that if the AF is missing in all three populations, 
-        the maxAF will be 0 rather than missing.
+    This example makes a new FORMAT field which is the ratio 
+        between the coverage on the first ALT allele and the total 
+        coverage across all alleles.
     varmyknife walkVcf \
-    --fcn "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
-    desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF 
-        (or zero if all are missing)."\
-    --fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)|\
-    desc=Indicates whether the variant maxAF is less than 0.01."\
+    --fcn "addFormat|AlleleDepth_ALTALLE|extractIDX(AD,1)|\
+    desc=The observed allele depth for the first alt allele."\
+    --fcn "addFormat|AlleleDepth_TOTAL|SUM(AD)|\
+    desc=The observed allele depth for the first alt allele."\
     infile.vcf.gz outfile.vcf.gz
 ###### End Example
 ###### Example 2:
@@ -720,7 +715,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### tally
 
->  This is a set of functions that takes various counts and totals across the whole VCF\.
+>  This is a set of functions that takes various stats from each variant and sums them up across the whole VCF\. These functions DO NOT change the VCF itself, they simply emit meta information about the VCF\. See the help section on TALLY FUNCTIONS\.
 
 
     func: (String, required)
@@ -952,6 +947,30 @@ This utility performs a series of transformations on an input VCF file and adds 
         variant at a time and add a new INFO field.
     Basic Syntax:
         --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )
+    Make a new INFO field which is the maximum from several allele 
+        frequencies (which are already in the file) Then make a 0/1 
+        INFO field that is 1 if the max AF is less than 0.01. Note 
+        the CONST:0 term, which allows you to include constant 
+        values in these functions. In this case it makes it so that 
+        if the AF is missing in all three populations, the maxAF 
+        will be 0 rather than missing.
+    varmyknife walkVcf \
+ --fcn 
+        "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
+ 
+        desc=The max allele frequency from CEU_AF, AFR_AF, or 
+        JPT_AF (or zero if all are missing)."\
+ --fcn 
+        "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)"\
+ infile.vcf.gz 
+        outfile.vcf.gz
+    varmyknife walkVcf \
+ --fcn 
+        "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
+ desc=The sum 
+        of the info tags: hetCount and homAltCount."\
+ 
+        infile.vcf.gz outfile.vcf.gz
 
 ## Available Functions:
 
@@ -1255,7 +1274,136 @@ This utility performs a series of transformations on an input VCF file and adds 
     Input should be a simple string of characters
     x (CONST:String) 
 
-# VARIANT EXPRESSIONS
+
+# FORMAT TAG FUNCTIONS
+
+    This is a set of functions that all take one or more input 
+        parameters and outputs one new FORMAT field. The syntax is: 
+        --fcn "addInfo|newTagName|fcn(param1,param2,...)". 
+        Optionally you can add "|desc=tag description". There are 
+        numerous addInfo functions. For more information, go to the 
+        section on addFormat Functions below, or use the help 
+        command: varmyknife help addFormat
+    Basic Syntax:
+        --FCN addInfo|newTagID|FCN( param1, param2, etc. )
+
+    This example makes a new FORMAT field which is the ratio 
+        between the coverage on the first ALT allele and the total 
+        coverage across all alleles.
+    varmyknife walkVcf \
+ --fcn 
+        "addFormat|AlleleDepth_ALTALLE|extractIDX(AD,1)|\
+ desc=The 
+        observed allele depth for the first alt allele."\
+ --fcn 
+        "addFormat|AlleleDepth_TOTAL|SUM(AD)|\
+ desc=The observed 
+        allele depth for the first alt allele."\
+ infile.vcf.gz 
+        outfile.vcf.gz
+    varmyknife walkVcf \
+ --fcn 
+        "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
+ desc=The sum 
+        of the info tags: hetCount and homAltCount."\
+ 
+        infile.vcf.gz outfile.vcf.gz
+
+## Available Functions:
+
+    
+
+### SUM\(x\.\.\.\)
+
+    
+    Input should be a set of format tags and/or numeric constants 
+        (which must be specified as CONST:n) or info tags (which 
+        must be specified as INFO:n). Output field will be the sum 
+        of the inputs. Missing fields will be treated as zeros. 
+        Output field type will be an integer if all inputs are 
+        integers and otherwise a float.
+    x... 
+        (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Fl-
+        oat)
+
+### DIV\(x,y\)
+
+    
+    Input should be a set of format tags and/or numeric constants 
+        (which must be specified as CONST:n) or info tags (which 
+        must be specified as INFO:n). Output field will be the sum 
+        of the inputs. Any missing values result in a missing 
+        result.
+    x 
+        (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Fl-
+        oat)
+    y 
+        (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Fl-
+        oat)
+
+### extractIDX\(x,i,delim\)
+
+    
+       
+    x (GENO:Int|GENO:Float|GENO:String) 
+    i (CONST:Int) 
+    delim (Optional) (CONST:String) 
+
+### EXPR\(gtExpr,varExpr\)
+
+    
+       
+    gtExpr (CONST:String) 
+    varExpr (Optional) (CONST:String) 
+
+### IF\.AB\(gtExpr,A,B\)
+
+    
+       
+    gtExpr (CONST:String) 
+    A (GENO:String|INFO:String|CONST:String) 
+    B (GENO:String|INFO:String|CONST:String) 
+
+
+# TALLY FUNCTIONS
+
+    This is a set of functions that takes various stats from each 
+        variant and sums them up across the whole VCF. These 
+        functions DO NOT change the VCF itself, they simply emit 
+        meta information about the VCF. See the help section on 
+        TALLY FUNCTIONS.
+    
+    Basic Syntax:
+        --FCN tally|x|FCN( param1, param2, etc. )
+
+
+## Available Functions:
+
+    
+
+### TALLY\.SUM\.IF\(expr,x\.\.\.\)
+
+    
+    Takes as input a variant expression expr and a constant or INFO 
+        field x. Output will be the sum of all x where expr is 
+        TRUE. Set x to CONST:1 to simply count variants.
+    expr (String) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+
+### TALLY\.SUM\.IF\.byGROUP\(expr,group\.\.\.,x\.\.\.\)
+
+    
+    Takes a variant expression expr, an INFO field "group" and an 
+        INFO field x. Will output an entry for each unique value of 
+        the group variable. For each distinct value of the group 
+        variable g, will output the sum of all x in which the group 
+        variable equals g AND where expr is TRUE. This is 
+        especially useful for generating counts for each gene.
+    expr (String) 
+    group... (INFO:String) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+
+# VARIANT\-LEVEL BOOLEAN EXPRESSIONS
 
 
 
@@ -1520,7 +1668,7 @@ between\)\.
 
 
 
-# GENOTYPE\-LEVEL EXPRESSIONS
+# GENOTYPE\-LEVEL BOOLEAN EXPRESSIONS
 
 
 

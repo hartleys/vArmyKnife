@@ -54,8 +54,8 @@ object SVcfWalkerMain {
   class WalkVcf extends CommandLineRunUtil {
      override def priority = 1;
      
-     val vcfFilterManualTitle = "VARIANT EXPRESSIONS"
-     val gtFilterManualTitle = "GENOTYPE-LEVEL EXPRESSIONS"
+     val vcfFilterManualTitle = "VARIANT-LEVEL BOOLEAN EXPRESSIONS"
+     val gtFilterManualTitle = "GENOTYPE-LEVEL BOOLEAN EXPRESSIONS"
      
      val vcfFilterManualDesc = ""+
                               ""+
@@ -103,15 +103,19 @@ object SVcfWalkerMain {
      val manualExtras = 
                         internalTests.SVcfMapFunctions.MAPFUNCTIONS_getBlockStringManual +"\n"+
                         internalTests.SVcfTagFunctions.TAGFUNCTIONS_getBlockStringManual+"\n"+
+                        internalTests.SVcfTagFunctions.FMTFUNCTIONS_getBlockStringManual+"\n"+
+                        internalTests.SVcfTagFunctions.TALLYFUNCTIONS_getBlockStringManual+"\n"+
                         sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +"\n"+
                         sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +"\n"+
                         altCommandDocText.map{ acm => {
                           wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
                         }}.mkString("\n");
                         
-     val markdownManualExtras = 
+     val markdownManualExtras =  
                         internalTests.SVcfMapFunctions.MAPFUNCTIONS_getMarkdownStringManual +"\n\n"+
                         internalTests.SVcfTagFunctions.TAGFUNCTIONS_getMarkdownStringManual+"\n\n"+
+                        internalTests.SVcfTagFunctions.FMTFUNCTIONS_getMarkdownStringManual +"\n\n"+
+                        internalTests.SVcfTagFunctions.TALLYFUNCTIONS_getMarkdownStringManual+"\n\n"+
                         sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +"\n\n"+
                         sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +"\n\n"+
                         altCommandDocMd.map{ acm => {

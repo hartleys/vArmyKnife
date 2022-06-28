@@ -6,6 +6,30 @@
         variant at a time and add a new INFO field.
     Basic Syntax:
         --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )
+    Make a new INFO field which is the maximum from several allele 
+        frequencies (which are already in the file) Then make a 0/1 
+        INFO field that is 1 if the max AF is less than 0.01. Note 
+        the CONST:0 term, which allows you to include constant 
+        values in these functions. In this case it makes it so that 
+        if the AF is missing in all three populations, the maxAF 
+        will be 0 rather than missing.
+    varmyknife walkVcf \
+ --fcn 
+        "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
+ 
+        desc=The max allele frequency from CEU_AF, AFR_AF, or 
+        JPT_AF (or zero if all are missing)."\
+ --fcn 
+        "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)"\
+ infile.vcf.gz 
+        outfile.vcf.gz
+    varmyknife walkVcf \
+ --fcn 
+        "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
+ desc=The sum 
+        of the info tags: hetCount and homAltCount."\
+ 
+        infile.vcf.gz outfile.vcf.gz
 
 ## Available Functions:
 
