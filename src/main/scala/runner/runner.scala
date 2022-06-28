@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "3.2.64"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Thu Aug 26 10:59:28 EDT 2021"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1629989968; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "3.2.68"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Wed Mar 16 17:25:52 EDT 2022"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1647465952; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -238,8 +238,8 @@ object runner {
     } catch {
       case e : Exception => {
         internalUtils.Reporter.reportln("============================FATAL_ERROR============================\n"+
-                                        "QoRTs encountered a FATAL ERROR. For general help, use command:\n"+
-                                        "          java -jar path/to/jar/QoRTs.jar --man\n"+
+                                        "varmyknife encountered a FATAL ERROR. For general help, use command:\n"+
+                                        "          varmyknife help\n"+
                                         "============================FATAL_ERROR============================\n"+
                                         "Error info:","note");
         throw e;

@@ -174,11 +174,11 @@ object SimSeqError {
     
     val newHeader = samHeader;
     
-    val rawpgid = "QoRTs.SimSeqError"
+    val rawpgid = "varmyknife.SimSeqError"
     val pggen = new SAMFileHeader.PgIdGenerator(samHeader);
     val pgid = pggen.getNonCollidingId(rawpgid);
     val pgRecord = new SAMProgramRecord(pgid);
-    pgRecord.setCommandLine("java -jar QoRTs.jar "+internalUtils.optionHolder.TOPLEVEL_COMMAND_LINE_ARGS.mkString(" "));
+    pgRecord.setCommandLine("varmyknife "+internalUtils.optionHolder.TOPLEVEL_COMMAND_LINE_ARGS.mkString(" "));
     pgRecord.setProgramName(rawpgid);
     pgRecord.setProgramVersion(runner.runner.UTIL_COMPLETE_VERSION)
     newHeader.addProgramRecord(pgRecord);

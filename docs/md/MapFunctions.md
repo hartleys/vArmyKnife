@@ -798,3 +798,10 @@
 
 
     columnID: (String, required)
+
+### copyInfoToGeno
+
+>  This utility copies the contents of one of the INFO fields into the genotype level\.
+
+
+    info: (String, required)

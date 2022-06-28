@@ -1785,6 +1785,43 @@ object SVcfWalkerUtils {
     }
   }
   
+  case class CopyInfoToGeno(info : String, geno : String) extends SVcfWalker {
+    def walkerName : String = "CopyInfoToGeno"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("info",  info),
+        ("geno",geno)
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      val copyInfoPairs = Seq((info,geno));
+      
+      val sampleCt = vcfHeader.titleLine.sampleList.length;
+      
+     outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",geno,Number=".",Type="String",desc="Info column copied from "+info+" (todo copy over info)"))
+      
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        vc.genotypes.dropGenotypeArray( geno );
+          v.info.getOrElse(info,None).map{ infovalue => {
+            val cleanvalue = infovalue.replace(":","/");
+            
+            vc.genotypes.addGenotypeArray(geno,Array.fill(sampleCt)( infovalue ))
+          }}
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
+  
   
   class addDistToFeature(file : String, tag : String, desc : String) extends SVcfWalker {
     

@@ -750,6 +750,13 @@ object SVcfMapFunctions {
                ParamStr(id = "columnID",synon=Seq(),ty="String",valueString="FILTER|ID|REF|ALT|etc",desc="",req=true)
          )), category = "File Formatting/Conversion"
        ),
+       
+       ParamStrSet("copyInfoToGeno" ,  desc = "This utility copies the contents of one of the INFO fields into the genotype level.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "info",synon=Seq(),ty="String",valueString="infoFieldToCopy",desc="",req=true,initParam=true)
+           )), category = "File Formatting/Conversion"
+       ),
        //,
       //ParamStrSet("dropVariantsWithNs" ,  desc = "Removes all variants with N's in the REF or ALT sequences. Some callers will produce variants like this, and some tools will crash if given such variants.", 
       //     (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1583,6 +1590,14 @@ object SVcfMapFunctions {
                val alt   = if(params("columnID") == "ALT") Some(params("mapID")) else None
 
                Some(CopyFieldsToInfo( qualTag = qual, filterTag = filt, idTag = idtag, refTag = ref, altTag=alt ))
+               
+             } else if(mapType == "copyInfoToGeno"){
+
+               val geno = params("mapID");
+               val info = params("info");
+               
+               Some( CopyInfoToGeno(info=info,geno=geno) );
+               
                /*
                 * CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], copyFilterToGeno : Option[String],copyQualToGeno : Option[String],
                               copyInfoToGeno : List[String])

@@ -2375,7 +2375,7 @@ object LegacyVcfWalkers {
             val linesWithMatch = matchIdx.map{case (currAlleIdx,(otherLineIdx,otherAlleIdx)) => otherLineIdx}.toSet.toSeq.sorted;
             val linesWithoutMatch = (otherLines.indices.toSet -- linesWithMatch.toSet).toVector.sorted;
             val numLinesWithMatch = linesWithMatch.size;
-            
+             
             if(otherLines.length > 1){
               notice("Multiple lines found at location (Caller "+inputVcfTypes(otherFileIdx)+", POS="+vcSeq.head.chrom+":"+currPos+")","MULTILINE_LOCUS_"+otherFileType,5);
               ensembleWarnings = ensembleWarnings + ("MULTILINELOCUS_"+inputVcfTypes(otherFileIdx));

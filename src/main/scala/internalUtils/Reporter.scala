@@ -144,8 +144,8 @@ object Reporter {
    *     } catch {
       case e : Exception => {
         internalUtils.Reporter.reportln("============================FATAL_ERROR============================\n"+
-                                        "QoRTs encountered a FATAL ERROR. For general help, use command:\n"+
-                                        "          java -jar path/to/jar/QoRTs.jar --help\n"+
+                                        "varmyknife encountered a FATAL ERROR. For general help, use command:\n"+
+                                        "          varmyknife help\n"+
                                         "============================FATAL_ERROR============================\n"+
                                         "Error info:","note");
         throw e;
