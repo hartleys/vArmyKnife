@@ -1802,13 +1802,13 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              //val typeInfo = getTypeInfo(md.params,pv,h)
               
               val ostr : String = pv(0);
               val nstr : String = pv(1);
               val info : String = pv(2);
               
-              val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
+              //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
               
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){

@@ -392,6 +392,7 @@ object fileUtils {
     if(infile.length > 3 && infile.takeRight(3) == ".gz"){
         return scala.io.Source.fromInputStream(new GZIPInputStream(new BufferedInputStream(new FileInputStream(infile)))).getLines;
     }
+
     if(infile.length > 4 && infile.takeRight(4) == ".zip"){
         return scala.io.Source.fromInputStream(new ZipInputStream(new BufferedInputStream(new FileInputStream(infile)))).getLines;
     }
