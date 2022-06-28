@@ -1,4 +1,4 @@
-> Version 3.2.68 (Updated Wed Mar 16 17:25:52 EDT 2022)
+> Version 3.2.69 (Updated Thu Mar 17 10:46:51 EDT 2022)
 
 # GENERAL SYNTAX:
 
@@ -1025,6 +1025,14 @@ This utility performs a series of transformations on an input VCF file and adds 
     Input should be an INFO field. Converts field to a Integer.
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
+
+### STRING\_REPLACE\(old,new,info\)
+
+    
+    
+    old (CONST:String) 
+    new (CONST:String) 
+    info (INFO:String) 
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 

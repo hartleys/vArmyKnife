@@ -1812,7 +1812,7 @@ object SVcfWalkerUtils {
           v.info.getOrElse(info,None).map{ infovalue => {
             val cleanvalue = infovalue.replace(":","/");
             
-            vc.genotypes.addGenotypeArray(geno,Array.fill(sampleCt)( infovalue ))
+            vc.genotypes.addGenotypeArray(geno,Array.fill(sampleCt)( cleanvalue ))
           }}
         vc
       }}, closeAction = (() => {

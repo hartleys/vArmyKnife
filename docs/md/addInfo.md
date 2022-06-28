@@ -107,6 +107,14 @@
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
 
+### STRING\_REPLACE\(old,new,info\)
+
+    
+    
+    old (CONST:String) 
+    new (CONST:String) 
+    info (INFO:String) 
+
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 
     
