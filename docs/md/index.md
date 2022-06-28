@@ -1,4 +1,4 @@
-> Version 3.2.77 (Updated Wed Apr  6 10:19:52 EDT 2022)
+> Version 3.2.78 (Updated Mon Apr 11 15:02:22 EDT 2022)
 
 # GENERAL SYNTAX:
 
@@ -1112,6 +1112,13 @@ This utility performs a series of transformations on an input VCF file and adds 
         ST:Int|CONST:Float)
     y (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CON-
         ST:Int|CONST:Float)
+
+### blanksToDots\(info\)
+
+    
+    If a field is left blank, this will properly replace the blank 
+        with a period, which is the proper missing value symbol
+    info (INFO:String) 
 
 ### SWITCH\.EXPR\(expr,A,B\)
 

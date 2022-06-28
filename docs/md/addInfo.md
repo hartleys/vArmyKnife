@@ -193,6 +193,13 @@
     y (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CON-
         ST:Int|CONST:Float)
 
+### blanksToDots\(info\)
+
+    
+    If a field is left blank, this will properly replace the blank 
+        with a period, which is the proper missing value symbol
+    info (INFO:String) 
+
 ### SWITCH\.EXPR\(expr,A,B\)
 
     
