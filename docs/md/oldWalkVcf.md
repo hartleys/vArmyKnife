@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.88 (Updated Thu May 26 14:10:01 EDT 2022)
+> Version 3.2.89 (Updated Fri May 27 10:13:30 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1029,6 +1029,13 @@ This utility performs a series of transformations on an input VCF file and adds 
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
+### TO\.UPPER\.CASE\(x\)
+
+    
+    Input should be an INFO field. All alphabetic characters in the 
+        field will be converted to Upper case.
+    x (INFO:String) 
+
 ### DIFF\(x,y\)
 
     
@@ -1079,6 +1086,13 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     x (FLOAT) 
     seed (INT) 
+
+### TO\.LOWER\.CASE\(x\)
+
+    
+    Input should be an INFO field. All alphabetic characters in the 
+        field will be converted to Lower case.
+    x (INFO:String) 
 
 ### DIV\(x,y\)
 
@@ -1135,7 +1149,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### DECODE\(x,decoder\)
 
     
-    
+    Decodes an INFO field
     x (INFO:String) 
     decoder (FILE:String) 
 

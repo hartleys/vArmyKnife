@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.2.88 (Updated Thu May 26 14:10:01 EDT 2022)</p>
+  <p>Version 3.2.89 (Updated Fri May 27 10:13:30 EDT 2022)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -1151,6 +1151,13 @@ x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
+<h3>TO.UPPER.CASE(x)</h3>
+
+<pre><code>Input should be an INFO field. All alphabetic characters in the 
+    field will be converted to Upper case.
+x (INFO:String)
+</code></pre>
+
 <h3>DIFF(x,y)</h3>
 
 <pre><code>Input should be a pair of info fields and/or numeric constants 
@@ -1199,6 +1206,13 @@ x (INFO:String|INFO:Int|INFO:Float)
 
 <pre><code>x (FLOAT) 
 seed (INT)
+</code></pre>
+
+<h3>TO.LOWER.CASE(x)</h3>
+
+<pre><code>Input should be an INFO field. All alphabetic characters in the 
+    field will be converted to Lower case.
+x (INFO:String)
 </code></pre>
 
 <h3>DIV(x,y)</h3>
@@ -1253,7 +1267,8 @@ expr (STRING)
 
 <h3>DECODE(x,decoder)</h3>
 
-<pre><code>x (INFO:String) 
+<pre><code>Decodes an INFO field
+x (INFO:String) 
 decoder (FILE:String)
 </code></pre>
 
