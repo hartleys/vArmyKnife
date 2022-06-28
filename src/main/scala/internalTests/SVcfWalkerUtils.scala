@@ -5849,9 +5849,9 @@ object SVcfWalkerUtils {
                 }
               }}.sorted
             }
-            val depthMedian = sumDepthSorted(medianIdx);
-            val depthLQ = sumDepthSorted(lqIdx);
-            val depthUQ = sumDepthSorted(uqIdx);
+            val depthMedian = sumDepthSorted.lift(medianIdx).map{ _.toString }.getOrElse(".")
+            val depthLQ = sumDepthSorted.lift(lqIdx).map{ _.toString }.getOrElse(".")
+            val depthUQ = sumDepthSorted.lift(uqIdx).map{ _.toString }.getOrElse(".")
             
             vc.addInfo(outputTagPrefix+"DEPTH_MEDIAN",depthMedian.toString);
             vc.addInfo(outputTagPrefix+"DEPTH_LQ",depthLQ.toString);
