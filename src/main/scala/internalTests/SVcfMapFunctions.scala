@@ -147,6 +147,19 @@ object SVcfMapFunctions {
            ParamStr(id = "matchCutoff",synon=Seq(),ty="Float",valueString="x",desc="matches below this threshold will not be written to file.",req=false, defaultValue=Some("0.5"))
          )), category = "Data/Table Extraction",
        ),
+       //                Some(ExtractFormatMatrix(matchFile=params.get("file").getOrElse("gt.matrix.txt") , gtTag=params.get("gtTag").getOrElse("GT"), infoFields=params.get("infoFields").map{ ff => ff.split(",").toSeq }.getOrElse(Seq()) ))
+       //longForm : Boolean = false, noVarInfo : Boolean = false
+       ParamStrSet("extractFormatMatrix" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="output.table.txt",desc="",req=true),
+           ParamStr(id = "gtTag",synon=Seq(),ty="String",valueString="",desc="The genotype FORMAT field.",req=false,defaultValue = Some("GT")),
+           ParamStr(id = "infoFields",synon=Seq(),ty="String",valueString="x",desc="Comma delimited list of info fields to include after the CHROM/POS/ID/REF/ALT in the output matrix.",req=false, defaultValue=Some(".")),
+           ParamStr(id = "longForm",synon=Seq(),ty="Flag",valueString="",desc="If this flag is used, matrix will be printed in 'long form' in which each element in the matrix gets its own entire line.",req=false),
+           ParamStr(id = "noVarInfo",synon=Seq(),ty="Flag",valueString="",desc="If this flag is used, the variant info CHROM/POS/ID/REF/ALT is omitted from each line.",req=false)
+         )), category = "Data/Table Extraction",
+       ),
+       
+       
        ParamStrSet("addFormat" ,  desc = "This is a set of functions that all take one or more input parameters and outputs one new FORMAT field. "+
                                           "The syntax is: --fcn \"addInfo|newTagName|fcn(param1,param2,...)\". Optionally you can add \"|desc=tag description\". "+
                                           "There are numerous addInfo functions. For more information, go to the section on addFormat Functions below, or use the help command: "+
@@ -1098,6 +1111,28 @@ object SVcfMapFunctions {
               * CountMatchMatrix(matchFile : String, gtTag : String = "GT", matchPctCutoff : Double = 0.5 ) 
               */
                 Some(CountMatchMatrix(matchFile=params.get("file").getOrElse("match.matrix.txt") , gtTag=params.get("gtTag").getOrElse("GT"), matchPctCutoff=string2double(params.get("matchCutoff").getOrElse("0.5")) ))
+             } else if(mapType == "extractFormatMatrix" ){
+             /*
+                     ParamStrSet("calculateMatchMatrix" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="output.table.txt",desc="",req=true),
+           ParamStr(id = "gtTag",synon=Seq(),ty="String",valueString="",desc="The genotype FORMAT field.",req=false,defaultValue = Some("GT")),
+           ParamStr(id = "matchCutoff",synon=Seq(),ty="Float",valueString="x",desc="matches below this threshold will not be written to file.",req=false, defaultValue=Some("0.5"))
+         )), category = "Data/Table Extraction",
+       ),
+              * CountMatchMatrix(matchFile : String, gtTag : String = "GT", matchPctCutoff : Double = 0.5 ) 
+              *   case class ExtractFormatMatrix(matchFile : String, gtTag : String = "GT", infoFields : Seq[String] = Seq(), 
+              *   longForm : Boolean = false, noVarInfo : Boolean = false) extends SVcfWalker {
+              * 
+              */
+                Some(ExtractFormatMatrix(matchFile=params.get("file").getOrElse("gt.matrix.txt") , 
+                                         gtTag=params.get("gtTag").getOrElse("GT"), 
+                                         infoFields=params.get("infoFields").map{ ff => ff.split(",").toSeq }.filter{ ff => ff != "." }.getOrElse(Seq()),
+                                         longForm=params.isSet("longForm"),
+                                         noVarInfo=params.isSet("noVarInfo")
+                                         ))
+             
+             //longForm : Boolean = false, noVarInfo
              } else if(mapType == "addFormat"){
                 val rawFunc = params("func").split("[(]").head;
                 val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {

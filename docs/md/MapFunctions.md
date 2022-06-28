@@ -620,6 +620,22 @@
     matchCutoff: matches below this threshold will not be written 
         to file.(Float, default=0.5)
 
+### extractFormatMatrix
+
+>  \.\.\.\.
+
+
+    file: (String, required)
+    gtTag: The genotype FORMAT field.(String, default=GT)
+    infoFields: Comma delimited list of info fields to include 
+        after the CHROM/POS/ID/REF/ALT in the output 
+        matrix.(String, default=.)
+    longForm: If this flag is used, matrix will be printed in 'long 
+        form' in which each element in the matrix gets its own 
+        entire line.(Flag)
+    noVarInfo: If this flag is used, the variant info 
+        CHROM/POS/ID/REF/ALT is omitted from each line.(Flag)
+
 ### calcBurdenCounts
 
 >  This function generates the \.

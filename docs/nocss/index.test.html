@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.2.79 (Updated Tue Apr 12 16:34:35 EDT 2022)</p>
+  <p>Version 3.2.83 (Updated Mon May  2 11:40:10 EDT 2022)</p>
 </blockquote>
 
 </div><h1 class="collapsible">GENERAL SYNTAX:</h1><div  class="collapseSection">
@@ -862,6 +862,24 @@ genomeFA: The genome fasta file containing the reference
 gtTag: The genotype FORMAT field.(String, default=GT)
 matchCutoff: matches below this threshold will not be written 
     to file.(Float, default=0.5)
+</code></pre>
+
+<h3>extractFormatMatrix</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>file: (String, required)
+gtTag: The genotype FORMAT field.(String, default=GT)
+infoFields: Comma delimited list of info fields to include 
+    after the CHROM/POS/ID/REF/ALT in the output 
+    matrix.(String, default=.)
+longForm: If this flag is used, matrix will be printed in 'long 
+    form' in which each element in the matrix gets its own 
+    entire line.(Flag)
+noVarInfo: If this flag is used, the variant info 
+    CHROM/POS/ID/REF/ALT is omitted from each line.(Flag)
 </code></pre>
 
 <h3>calcBurdenCounts</h3>

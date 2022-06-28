@@ -1,4 +1,4 @@
-> Version 3.2.79 (Updated Tue Apr 12 16:34:35 EDT 2022)
+> Version 3.2.83 (Updated Mon May  2 11:40:10 EDT 2022)
 
 # GENERAL SYNTAX:
 
@@ -729,6 +729,22 @@ This utility performs a series of transformations on an input VCF file and adds 
     gtTag: The genotype FORMAT field.(String, default=GT)
     matchCutoff: matches below this threshold will not be written 
         to file.(Float, default=0.5)
+
+### extractFormatMatrix
+
+>  \.\.\.\.
+
+
+    file: (String, required)
+    gtTag: The genotype FORMAT field.(String, default=GT)
+    infoFields: Comma delimited list of info fields to include 
+        after the CHROM/POS/ID/REF/ALT in the output 
+        matrix.(String, default=.)
+    longForm: If this flag is used, matrix will be printed in 'long 
+        form' in which each element in the matrix gets its own 
+        entire line.(Flag)
+    noVarInfo: If this flag is used, the variant info 
+        CHROM/POS/ID/REF/ALT is omitted from each line.(Flag)
 
 ### calcBurdenCounts
 

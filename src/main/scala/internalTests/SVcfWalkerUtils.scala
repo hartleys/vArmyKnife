@@ -250,7 +250,76 @@ object SVcfWalkerUtils {
       
     }
   }
+
+  case class ExtractFormatMatrix(matchFile : String, gtTag : String = "GT", infoFields : Seq[String] = Seq(), longForm : Boolean = false, noVarInfo : Boolean = false) extends SVcfWalker {
     
+    def walkerName : String = "ExtractFormatMatrix"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("gtTag", gtTag)
+    );
+    
+    reportln("CountMatchMatrix: file="+matchFile+", gt="+gtTag,"note");
+    
+    //val refFastaTool = internalUtils.GatkPublicCopy.refFastaTool(genomeFa = genomeFa);
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      
+      //val matchct = scala.Array.ofDim[Int](vcfHeader.sampleCt,vcfHeader.sampleCt)
+      //val totalct = scala.Array.ofDim[Int](vcfHeader.sampleCt)
+      val out = openWriter(matchFile+".txt");
+      
+      val gtTagList = gtTag.split(",").toVector;
+      val emptySeq = vcfHeader.titleLine.sampleList.map{ x => "." }.toArray;
+      val sampIndices = vcfHeader.titleLine.sampleList.indices;
+      val titleRowStart = if(noVarInfo) "" else "#CHROM\tPOS\tID\tREF\tALT\t"
+      
+      if(longForm){
+        out.write(titleRowStart+infoFields.mkString("\t")+( if( infoFields.length > 0) "\t" else "" )+"sampleID\t"+gtTagList.mkString("\t")+"\n");
+      } else {
+         out.write(titleRowStart+infoFields.mkString("\t")+( if( infoFields.length > 0) "\t" else "" )+vcfHeader.titleLine.sampleList.mkString("\t")+"\n");
+      }
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {        
+        //val vc = v.getOutputLine();
+        //val gtidx = v.genotypes.fmt.indexOf(gtTag);
+        val gtval = gtTagList.map{ gg => {
+          val gtidx = v.genotypes.fmt.indexOf(gtTag)
+          if( gtidx < 0 ){
+            emptySeq
+          } else {
+            v.genotypes.genotypeValues(gtidx)
+          }
+        }}
+        val ifval = infoFields.map{ ff => { 
+          v.info.getOrElse(ff,None).getOrElse(".")
+        }}
+        //val gt = v.genotypes.genotypeValues(gtidx);
+        val rowStart = if( noVarInfo ) "" else (v.chrom+"\t"+v.pos+"\t"+v.id+"\t"+v.ref+"\t"+v.alt.mkString(",")+"\t");
+        if(longForm){
+          sampIndices.foreach{ ii => {
+            out.write(rowStart+ ifval.mkString("\t")+( if( ifval.length > 0) "\t" else "" )+vcfHeader.titleLine.sampleList(ii)+"\t"+ gtval.map{ ggv => {
+                ggv(ii)
+              }}.mkString("\t")+"\n");
+          }}
+        } else {
+          out.write(rowStart+ ifval.mkString("\t")+( if( ifval.length > 0) "\t" else "" )+ sampIndices.map{ ii => {
+            gtval.map{ ggv => {
+              ggv(ii)
+            }}.mkString("|");
+          }}.mkString("\t") +"\n");
+        }
+
+        v
+      }}, closeAction = (() => {
+        out.close();
+      })),outHeader)
+      
+    }
+  }
+  
     
   class CmdConvertToStandardVcf extends CommandLineRunUtil {
      override def priority = 1;
