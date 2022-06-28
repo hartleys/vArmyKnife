@@ -19,7 +19,7 @@
 <div class="wrapper">
 
 <div><blockquote>
-  <p>Version 3.2.83 (Updated Mon May  2 11:40:10 EDT 2022)</p>
+  <p>Version 3.2.84 (Updated Tue May  3 09:25:33 EDT 2022)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -887,11 +887,16 @@ matchCutoff: matches below this threshold will not be written
 <h3>extractFormatMatrix</h3>
 
 <blockquote>
-  <p>....</p>
+  <p>This utility will create a matrix file with information extracted from the FORMAT fields of the VCF. There are two optional formats: standard and longForm. Standard format will have each variant output a row, the first columns will be Chrom/pos/id/ref/alt (unless noVarInfo is used, in which case these will be ommitted), followed by the info fields listed in the infoFields param, followed by one cell for each sample in the VCF, containing a bar-delimited list of the genotype fields listed in the gtTag parameter. If the longForm option is used, instead each variant will print its own line for each sample. Note that this method is generally easier to manipulate for large sample sets, but will generally result in a much larger file since the variant data is repeated many times.</p>
 </blockquote>
 
 <pre><code>file: (String, required)
-gtTag: The genotype FORMAT field.(String, default=GT)
+gtTag: A comma delimited list of the desired FORMAT fields. If 
+    more than one is specified then all will be included in the 
+    matrix. If written in standard format, each matrix cell 
+    will contain the given fields delimited with bars. If in 
+    longform format (see the longForm flag below) then these 
+    fields will be tab delimited.(String, default=GT)
 infoFields: Comma delimited list of info fields to include 
     after the CHROM/POS/ID/REF/ALT in the output 
     matrix.(String, default=.)

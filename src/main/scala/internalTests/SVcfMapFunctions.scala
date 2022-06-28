@@ -149,10 +149,16 @@ object SVcfMapFunctions {
        ),
        //                Some(ExtractFormatMatrix(matchFile=params.get("file").getOrElse("gt.matrix.txt") , gtTag=params.get("gtTag").getOrElse("GT"), infoFields=params.get("infoFields").map{ ff => ff.split(",").toSeq }.getOrElse(Seq()) ))
        //longForm : Boolean = false, noVarInfo : Boolean = false
-       ParamStrSet("extractFormatMatrix" ,  desc = "....", 
+       ParamStrSet("extractFormatMatrix" ,  desc = "This utility will create a matrix file with information extracted from the FORMAT fields of the VCF. "+
+                                                   "There are two optional formats: standard and longForm. Standard format will have each variant output a row, "+
+                                                   "the first columns will be Chrom/pos/id/ref/alt (unless noVarInfo is used, in which case these will be ommitted), followed by the "+
+                                                   "info fields listed in the infoFields param, followed by one cell for each sample in the VCF, containing a bar-delimited list of the "+
+                                                   "genotype fields listed in the gtTag parameter. "+
+                                                   "If the longForm option is used, instead each variant will print its own line for each sample. Note that this method is generally easier to manipulate for large sample sets, but will generally result in a much larger file since the variant data is repeated many times."+
+                                                   "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "file",synon=Seq(),ty="String",valueString="output.table.txt",desc="",req=true),
-           ParamStr(id = "gtTag",synon=Seq(),ty="String",valueString="",desc="The genotype FORMAT field.",req=false,defaultValue = Some("GT")),
+           ParamStr(id = "gtTag",synon=Seq(),ty="String",valueString="",desc="A comma delimited list of the desired FORMAT fields. If more than one is specified then all will be included in the matrix. If written in standard format, each matrix cell will contain the given fields delimited with bars. If in longform format (see the longForm flag below) then these fields will be tab delimited.",req=false,defaultValue = Some("GT")),
            ParamStr(id = "infoFields",synon=Seq(),ty="String",valueString="x",desc="Comma delimited list of info fields to include after the CHROM/POS/ID/REF/ALT in the output matrix.",req=false, defaultValue=Some(".")),
            ParamStr(id = "longForm",synon=Seq(),ty="Flag",valueString="",desc="If this flag is used, matrix will be printed in 'long form' in which each element in the matrix gets its own entire line.",req=false),
            ParamStr(id = "noVarInfo",synon=Seq(),ty="Flag",valueString="",desc="If this flag is used, the variant info CHROM/POS/ID/REF/ALT is omitted from each line.",req=false)

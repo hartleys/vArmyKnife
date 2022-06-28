@@ -286,7 +286,7 @@ object SVcfWalkerUtils {
         //val vc = v.getOutputLine();
         //val gtidx = v.genotypes.fmt.indexOf(gtTag);
         val gtval = gtTagList.map{ gg => {
-          val gtidx = v.genotypes.fmt.indexOf(gtTag)
+          val gtidx = v.genotypes.fmt.indexOf(gg)
           if( gtidx < 0 ){
             emptySeq
           } else {
