@@ -151,6 +151,7 @@
     noAlleCalc: (Flag)
     noHetHomCalc: (Flag)
     noMultiHetCalc: (Flag)
+    addOtherCountsCalc: (Flag)
     samplePrintLimit: (String)
     noDepthStats: (Flag)
     noSampleLists: (Flag)

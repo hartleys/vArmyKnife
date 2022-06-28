@@ -321,6 +321,7 @@ object SVcfMapFunctions {
            ParamStr(id = "noAlleCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
            ParamStr(id = "noHetHomCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
            ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "addOtherCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
            
            ParamStr(id = "samplePrintLimit",synon=Seq(),ty="String",valueString="",desc="",req=false),
 
@@ -1277,6 +1278,7 @@ object SVcfMapFunctions {
                                                 vcfCodes = vcfCodes,
                                                 addAlle = ! params.isSet("noAlleCalc"), addCounts = ! params.isSet("noCountsCalc"), addFreq = ! params.isSet("noFreqCalc"), addMiss = ! params.isSet("noMissCalc"),
                                                 addHetHom = ! params.isSet("noHetHomCalc"), addMultiHet = ! params.isSet("noMultiHetCalc"),
+                                                addOtherCountsCalc = params.isSet("addOtherCountsCalc"),
                                                 expr=params.get("expr")
                                                 ))
                }).toSeq

@@ -53,6 +53,12 @@
     TRUE iff tag t is either not present, set to missing, or a 
         number greater than k.
     (Param Types: )
+    GTAG.inAnyOf:t:k
+    TRUE iff the first parameter, a FORMAT field, is equal to any 
+        of the following parameters or is a list containing any of 
+        the following parameters, using commas, bars, or slashes as 
+        delimiters.
+    (Param Types: )
     GTAG.isAnyAlt:t
     TRUE iff the tag t, which must be a genotype-style-formatted 
         field, is present and not set to missing and contains the 

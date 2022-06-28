@@ -266,12 +266,17 @@ object VcfTool {
         var nMahCt_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"MultiHetCt"
         var nMisCt_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"MisCt"
         var nOthCt_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"OtherCt"
+        var nNMissCt_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"NonMissCt"
+        var nHomRefCt_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"HomRefCt"
+        
         var nNonrefCt_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"NonrefCt"
         var nHomFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"HomFreq"
         var nHetFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"HetFreq"
         var nAltFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"AltFreq"
         var nMahFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"MultiHetFreq"
-
+        var nNMissFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"NonMissFreq"
+        var nHomRefFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"HomRefFreq"
+        
         var nMisFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"MisFreq"
         var nOthFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"OtherFreq"
         var nNonrefFrq_TAG : String = TOP_LEVEL_VCF_TAG+"CT_"+CT_INFIX+"NonrefFreq"
@@ -4132,8 +4137,30 @@ object VcfTool {
                         }
                       ),
                       
+/*
+         FilterFunction(funcName="INFO.inAnyOfN", numParam = -1,desc="TRUE iff INFO field t is a list delimited with commas, bars, slashes, OR COLONS, and contains any of the parameters k1,k2,...",paramNames=Seq("t","k1","k2","..."),paramTypes=Seq("info","string"),
+                        (params : Seq[String]) => {
+                          val tag = params(0);
+                          val v = params.tail.toSet;
+                          (a : SVcfVariantLine) => {
+                            tagNonMissing(tag,a) && a.info(tag).get.split(",").flatMap{s => s.split("[:\\|/]")}.toSet.intersect(v).size > 0 ;
+                          }
+                        }
+                      ),
+ * 
+ */
+        FilterFunction(funcName="GTAG.inAnyOf",numParam=2,desc="TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a list containing any of the following parameters, using commas, bars, or slashes as delimiters.",paramNames=Seq("t","k"),paramTypes=Seq(),
+                        (params : Seq[String]) => {
+                          val tag = params(0);
+                          val v = params.tail.toSet;
+                          (a : (SVcfVariantLine,Int)) => {
+                            val values = getTag(tag,a).toSeq.map{ s => s.split("[,\\|/]").toSeq }.flatten.toSet
+                            ! v.intersect(values).isEmpty
+                          }
+                        }
+                      ),
                       
-                      
+
         FilterFunction(funcName="GTAGARRAY.gt",numParam=3,desc="TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is greater than k.",paramNames=Seq("t","i","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);

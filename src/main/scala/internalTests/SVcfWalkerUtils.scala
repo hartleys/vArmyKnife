@@ -5947,6 +5947,7 @@ object SVcfWalkerUtils {
   case class SAddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]], 
              addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true, 
              addAlle : Boolean= true, addHetHom : Boolean = true, 
+             addOtherCountsCalc : Boolean = false,
              sepRef : Boolean = true, countMissing : Boolean = true,
              addMultiHet : Boolean = true,
              noMultiAllelics : Boolean = false,
@@ -5971,6 +5972,7 @@ object SVcfWalkerUtils {
           ("sepRef",sepRef.toString),
           ("countMissing",countMissing.toString),
           ("noMultiAllelics",noMultiAllelics.toString),
+          ("addOtherCountsCalc",addOtherCountsCalc.toString),
           ("GTTag",GTTag),
           ("tagPrefix",if(tagPrefix == "") "None" else tagPrefix),
           ("vcfCodesInfix",vcfCodes.CT_INFIX)
@@ -6035,7 +6037,11 @@ object SVcfWalkerUtils {
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAltFrq_TAG + gtag, anum, "Float", "The frequency of calls that are het or homalt"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are missing"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nOthFrq_TAG + gtag, "1", "Integer", "The frequency of calls include a different allele"+groupDesc  +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefFrq_TAG + gtag, "1", "Integer", "The frequency of calls include any nonref allele "+groupDesc  +adesc+ ".")
+            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefFrq_TAG + gtag, "1", "Integer", "The frequency of calls include any nonref allele "+groupDesc 
+            
+            addOtherCountsCalc
+            
+             +adesc+ ".")
           )*/
           List(new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAF_TAG + gtag, anum, "Float", "The alt allele frequency"+groupDesc+adesc+"."))++
           (if(addHetHom){
@@ -6049,6 +6055,12 @@ object SVcfWalkerUtils {
           (if(addMiss){
             List(
               new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are missing"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addOtherCountsCalc){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNMissFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are NOT missing"+groupDesc  +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHomRefFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are homozygous for the REFERENCE allele "+groupDesc  +adesc+ ".")
             )
           } else { List() }) ++
           (if(addAlle){
@@ -6075,6 +6087,12 @@ object SVcfWalkerUtils {
           (if(addMiss){
             List(
               new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisCt_TAG + gtag, "1", "Integer", "The number of calls that are missing"+groupDesc  +adesc+ ".")
+            )
+          } else { List() }) ++
+          (if(addOtherCountsCalc){
+            List(
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNMissCt_TAG + gtag, "1", "Integer", "The number of calls that are NOT missing"+groupDesc  +adesc+ "."),
+              new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nHomRefCt_TAG + gtag, "1", "Integer", "The number of calls that are homozygous for the REFERENCE allele "+groupDesc  +adesc+ ".")
             )
           } else { List() }) ++
           (if(addAlle){
@@ -6175,6 +6193,10 @@ object SVcfWalkerUtils {
             val othAltCts = Array.fill[Int](fullGroupList.length)(0);
             val othCts = Array.fill[Int](fullGroupList.length)(0);
             val unkCts = Array.fill[Int](fullGroupList.length)(0);
+            
+            val homRefCts = Array.fill[Int](fullGroupList.length)(0);
+            val nMissCts = Array.fill[Int](fullGroupList.length)(0);
+            
             //val mahCts = Array.fill[Int](fullGroupList.length)(0);
             
             val filtCts = Array.fill[Int](fullGroupList.length)(0);
@@ -6262,6 +6284,24 @@ object SVcfWalkerUtils {
                 arr(groupIdx(ii)) += 1;
                 ii += 1;
               }
+              
+              if(addOtherCountsCalc){
+                if(gt.forall(_ == "0")){
+                  var ii = 0;
+                  while(ii < groupIdx.length){
+                    homRefCts(groupIdx(ii)) += 1;
+                    ii += 1;
+                  }
+                }
+                if(gt.exists(_ != ".")){
+                  var ii = 0;
+                  while(ii < groupIdx.length){
+                    nMissCts(groupIdx(ii)) += 1;
+                    ii += 1;
+                  }
+                }
+              }
+              
               i += 1;
             }
             groupAnno.foreach{case (grp,i,gtag,groupDesc,groupSize) => {
@@ -6273,6 +6313,13 @@ object SVcfWalkerUtils {
                  if(addAlle) vb.addInfo(vcfCodes.nAltCt_TAG + gtag, (homCts(i) + hetCts(i) + othAltCts(i)).toString);
                  if(addHetHom) vb.addInfo(vcfCodes.nNonrefCt_TAG + gtag, (homCts(i) + hetCts(i) + othAltCts(i) + othCts(i)).toString);
                  if(addMultiHet) vb.addInfo(vcfCodes.nMahCt_TAG + gtag, (othAltCts(i)).toString);
+                 if(addOtherCountsCalc){
+                   // homRefCts nMissCts
+                   vb.addInfo(vcfCodes.nNMissCt_TAG + gtag, nMissCts(i).toString);
+                   vb.addInfo(vcfCodes.nHomRefCt_TAG + gtag, homRefCts(i).toString);
+                 }
+                 if(addHetHom) vb.addInfo(vcfCodes.nHomCt_TAG + gtag, homCts(i).toString);
+                 
                  if(tagFilter.isDefined){
                    vb.addInfo(vcfCodes.nFiltCt_TAG + gtag, (filtCts(i)).toString);
                  }
@@ -6291,7 +6338,12 @@ object SVcfWalkerUtils {
                  if(addAlle) vb.addInfo(vcfCodes.nAltFrq_TAG + gtag, ((homCts(i) + hetCts(i) + othAltCts(i)).toDouble / n).toString);
                  if(addHetHom) vb.addInfo(vcfCodes.nNonrefFrq_TAG + gtag, ((homCts(i) + hetCts(i) + othAltCts(i) + othCts(i)).toDouble / n).toString);
                  if(addMultiHet) vb.addInfo(vcfCodes.nMahFrq_TAG + gtag, ((othAltCts(i)).toDouble / n).toString);
-
+                 if(addOtherCountsCalc){
+                   // homRefCts nMissCts
+                   vb.addInfo(vcfCodes.nNMissFrq_TAG + gtag, (nMissCts(i).toDouble / n).toString);
+                   vb.addInfo(vcfCodes.nHomRefFrq_TAG + gtag, (homRefCts(i).toDouble / n).toString);
+                 }
+                 
                  if(tagFilter.isDefined){
                    vb.addInfo(vcfCodes.nFiltFrq_TAG + gtag, (filtCts(i).toDouble / n).toString);
                  }

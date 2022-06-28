@@ -1,4 +1,4 @@
-> Version 3.2.71 (Updated Mon Mar 21 12:27:26 EDT 2022)
+> Version 3.2.74 (Updated Wed Mar 30 14:34:33 EDT 2022)
 
 # GENERAL SYNTAX:
 
@@ -261,6 +261,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     noAlleCalc: (Flag)
     noHetHomCalc: (Flag)
     noMultiHetCalc: (Flag)
+    addOtherCountsCalc: (Flag)
     samplePrintLimit: (String)
     noDepthStats: (Flag)
     noSampleLists: (Flag)
@@ -1545,6 +1546,10 @@ between\)\.
 #### GTAG\.gtm:t:k
 
 > TRUE iff tag t is either not present, set to missing, or a number greater than k\.
+
+#### GTAG\.inAnyOf:t:k
+
+> TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a list containing any of the following parameters, using commas, bars, or slashes as delimiters\.
 
 #### GTAG\.isAnyAlt:t
 
