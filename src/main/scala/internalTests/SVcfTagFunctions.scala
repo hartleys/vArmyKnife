@@ -544,6 +544,34 @@ object SVcfTagFunctions {
       None
     }
   }
+  
+  case class VcfTagFunctionGenoParamReaderStringSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Option[String]]] {
+    def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
+    val x = if(isConst()){
+      Some( (pprm.VAL) )
+    } else {
+      None
+    }
+    def get(v : SVcfVariantLine) : Option[Vector[Option[String]]] = if(isConst()){
+      Some( repToVector(x,v.genotypes.genotypeValues.head.length) );
+    } else if(pprm.SRC == ParamSrc.INFO){
+      v.info.getOrElse( pprm.VAL, None).filter{z => z != "."}.filter{z => string2intOpt(z).isDefined}.map{ z => {
+        //z.split(",").filter{a => a != "."}.map{string2int(_)}.toVector;
+        //string2intOpt(z)
+        repToVector(Some(z),v.genotypes.genotypeValues.head.length) ;
+      }}
+    } else if(pprm.SRC == ParamSrc.GENO){
+      val gtIdx = v.genotypes.fmt.indexOf( pprm.VAL );
+      if(gtIdx == -1){
+        None
+      } else {
+        Some( v.genotypes.genotypeValues(gtIdx).toVector.map{ g => Some(g) } )
+      }
+    } else {
+      None
+    }
+  }
+  
   case class VcfTagFunctionGenoParamReaderIntSeq(pprm : VcfFcnParsedParam) extends VcfTagFunctionParamReader[Vector[Option[Int]]] {
     def isConst() : Boolean = { pprm.SRC == ParamSrc.CONST }
     val x = if(isConst()){
@@ -1290,6 +1318,72 @@ object SVcfTagFunctions {
             }
 
           }
+        },
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "IF.AB",synon = Seq(),
+              shortDesc = "",
+              desc = " "+
+                     " "+
+                     " "+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "gtExpr", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "A", ty = "GENO:String|INFO:String|CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "B", ty = "GENO:String|INFO:String|CONST:String",req=true,dotdot=false )                  
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true; 
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = "Integer";
+              override val outNum = "1"; 
+              val gtexpr = paramValues.head;
+              val gtparser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
+              //val varparser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              
+              val gtfilter : SFilterLogic[(SVcfVariantLine,Int)] = gtparser.parseString(gtexpr);
+              
+              val missArray = Array.fill[String](outHeader.titleLine.sampleList.length)(".");
+              
+              val dda = VcfTagFunctionGenoParamReaderStringSeq(typeInfo(1));
+              val ddb = VcfTagFunctionGenoParamReaderStringSeq(typeInfo(2));
+
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                val A = dda.get(vc).map{ aa => aa.map{aaa => aaa.getOrElse(".") }.toArray}.getOrElse( missArray );
+                val B = ddb.get(vc).map{ aa => aa.map{aaa => aaa.getOrElse(".") }.toArray}.getOrElse( missArray );
+                
+                val k = Range(0,outHeader.sampleCt).map{ii => {
+                  if(gtfilter.keep((vc,ii))){
+                    A(ii)
+                  } else {
+                    B(ii)
+                  }
+                }}.toArray
+                vout.genotypes.addGenotypeArray( newTag, k)
+                
+                /*val k = if( varfilter.keep(vc) ){
+                  Range(0,outHeader.sampleCt).map{ii => {
+                    if(  gtfilter.keep((vc,ii)) ){
+                      "1"
+                    } else {
+                      "0"
+                    }
+                  }}.toArray
+                } else {
+                  zeroArray
+                }
+                vout.genotypes.addGenotypeArray( newTag, k);*/
+                
+                //notice(newTag+"="+k+" tagged for variant:\n    "+vc.getSimpleVcfString(),"TAGGED_"+newTag,5);
+                //writeString(vout,k);
+              }
+            }
+
+          }
         }
         ).map{ ff => {
         (ff.metadata.id,ff)
@@ -1333,6 +1427,61 @@ object SVcfTagFunctions {
                     val v = ddf.flatMap{ d => d.get(vc).getOrElse(Vector()) }
                     if(v.length > 0){
                       writeNum(vout,v.sum)
+                    }
+                  }
+                }
+              }
+            }
+
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "SUM.GENO",synon = Seq(),
+              shortDesc = "Sum of several tags or numeric constants.",
+              desc = "Input should be a genotype field. "+
+                     "Output field will be the sum of the given genotype field. If the field is missing across all samples, the INFO field will also be missing, otherwise missing values will be treated as zeros. "+
+                     "Output field type will be an integer if the inputs is an integer field and otherwise a float.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = getSuperType(typeInfo);
+              override val outNum = "1";
+              /*val dd = if(outType == "Integer"){
+                Left(typeInfo.map{ pprm => VcfTagFunctionParamReaderIntSeq(pprm)})
+              } else {
+                Right(typeInfo.map{ pprm => VcfTagFunctionParamReaderFloatSeq(pprm)})
+              }*/
+              val dd = if(outType == "Integer"){
+                Left(typeInfo.map{  pprm => VcfTagFunctionGenoParamReaderIntSeq(pprm)})
+              } else {
+                Right(typeInfo.map{ pprm => VcfTagFunctionGenoParamReaderFloatSeq(pprm)})
+              }
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                dd match {
+                  case Left(ddi) => {
+                    val v = ddi.map{ d => d.get(vc) }.filter{ d => d.isDefined }.map{ d => d.get }
+                    if(v.length > 0){
+                      val vx = v.map{ d => {
+                        d.map{ dd => dd.getOrElse(0) }.sum
+                      }}.sum
+                      writeNum(vout,vx)
+                    }
+                  }
+                  case Right(ddf) => {
+                    val v = ddf.map{ d => d.get(vc) }.filter{ d => d.isDefined }.map{ d => d.get }
+                    if(v.length > 0){
+                      val vx = v.map{ d => {
+                        d.map{ dd => dd.getOrElse(0.toFloat) }.sum
+                      }}.sum
+                      writeNum(vout,vx)
                     }
                   }
                 }

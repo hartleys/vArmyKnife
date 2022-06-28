@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.2.74 (Updated Wed Mar 30 14:34:33 EDT 2022)</p>
+  <p>Version 3.2.76 (Updated Thu Mar 31 11:57:38 EDT 2022)</p>
 </blockquote>
 
 </div><h1 class="collapsible">GENERAL SYNTAX:</h1><div  class="collapseSection">
@@ -1217,6 +1217,17 @@ decoder (FILE:String)
     parameters. Input parameters can be any combination of INFO 
     fields or constant strings.
 x... (INFO:String|CONST:String)
+</code></pre>
+
+<h3>SUM.GENO(x)</h3>
+
+<pre><code>Input should be a genotype field. Output field will be the sum 
+    of the given genotype field. If the field is missing across 
+    all samples, the INFO field will also be missing, otherwise 
+    missing values will be treated as zeros. Output field type 
+    will be an integer if the inputs is an integer field and 
+    otherwise a float.
+x (GENO:Int|GENO:Float)
 </code></pre>
 
 <h3>LOG10(x)</h3>

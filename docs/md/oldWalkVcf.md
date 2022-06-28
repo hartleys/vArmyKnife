@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.74 (Updated Wed Mar 30 14:34:33 EDT 2022)
+> Version 3.2.76 (Updated Thu Mar 31 11:57:38 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1106,6 +1106,17 @@ This utility performs a series of transformations on an input VCF file and adds 
         parameters. Input parameters can be any combination of INFO 
         fields or constant strings.
     x... (INFO:String|CONST:String) 
+
+### SUM\.GENO\(x\)
+
+    
+    Input should be a genotype field. Output field will be the sum 
+        of the given genotype field. If the field is missing across 
+        all samples, the INFO field will also be missing, otherwise 
+        missing values will be treated as zeros. Output field type 
+        will be an integer if the inputs is an integer field and 
+        otherwise a float.
+    x (GENO:Int|GENO:Float) 
 
 ### LOG10\(x\)
 
