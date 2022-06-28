@@ -1338,7 +1338,7 @@ object SVcfTagFunctions {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true; 
-              val typeInfo = getTypeInfo(md.params,pv,h)
+              val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
               override val outType = "Integer";
               override val outNum = "1"; 
               val gtexpr = paramValues.head;
@@ -1349,8 +1349,8 @@ object SVcfTagFunctions {
               
               val missArray = Array.fill[String](outHeader.titleLine.sampleList.length)(".");
               
-              val dda = VcfTagFunctionGenoParamReaderStringSeq(typeInfo(1));
-              val ddb = VcfTagFunctionGenoParamReaderStringSeq(typeInfo(2));
+              val dda = VcfTagFunctionGenoParamReaderStringSeq(typeInfo(0));
+              val ddb = VcfTagFunctionGenoParamReaderStringSeq(typeInfo(1));
 
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val A = dda.get(vc).map{ aa => aa.map{aaa => aaa.getOrElse(".") }.toArray}.getOrElse( missArray );
