@@ -761,13 +761,20 @@ object SVcfMapFunctions {
          )), category = "Filtering"
        ),
        
-       ParamStrSet("copyColumnToInfo" ,  desc = "This utility copies the contents of one of the VCF columns to a new INFO field.",
+       ParamStrSet("copyColumnToInfo" ,  desc = "This utility copies the contents of one of the VCF columns to a new INFO field. Note that some columns allow "+
+                                                "characters that are not allowed in INFO fields, such as equal signs. Any illegal characters will be automatically replaced with underscores.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
                ParamStr(id = "columnID",synon=Seq(),ty="String",valueString="FILTER|ID|REF|ALT|etc",desc="",req=true)
          )), category = "File Formatting/Conversion"
        ),
-       
+       ParamStrSet("copyInfoToColumn" ,  desc = "This utility copies the contents of an INFO field to one of the the other VCF columns.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "infoColumn",synon=Seq(),ty="String",valueString="myInfoColumn",desc="",req=true),
+               ParamStr(id = "columnID",synon=Seq(),ty="String",valueString="FILTER|ID|REF|ALT|POS|CHROM|QUAL|etc",desc="",req=true)
+         )), category = "File Formatting/Conversion"
+       ),
        ParamStrSet("copyInfoToGeno" ,  desc = "This utility copies the contents of one of the INFO fields into the genotype level.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](

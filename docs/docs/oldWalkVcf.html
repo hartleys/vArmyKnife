@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.2.89 (Updated Fri May 27 10:13:30 EDT 2022)</p>
+  <p>Version 3.2.90 (Updated Wed Jun  1 15:32:30 EDT 2022)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -1169,10 +1169,20 @@ SAMPLES.drop: (String)
 <h3>copyColumnToInfo</h3>
 
 <blockquote>
-  <p>This utility copies the contents of one of the VCF columns to a new INFO field.</p>
+  <p>This utility copies the contents of one of the VCF columns to a new INFO field. Note that some columns allow characters that are not allowed in INFO fields, such as equal signs. Any illegal characters will be automatically replaced with underscores.</p>
 </blockquote>
 
 <pre><code>columnID: (String, required)
+</code></pre>
+
+<h3>copyInfoToColumn</h3>
+
+<blockquote>
+  <p>This utility copies the contents of an INFO field to one of the the other VCF columns.</p>
+</blockquote>
+
+<pre><code>infoColumn: (String, required)
+columnID: (String, required)
 </code></pre>
 
 <h3>copyInfoToGeno</h3>
@@ -1332,7 +1342,12 @@ defaultValue (Optional) (CONST:Int)
 
 <h3>STRING_REPLACE(old,new,info)</h3>
 
-<pre><code>old (CONST:String) 
+<pre><code>Simple string replacement. First parameter should be the old 
+    string, second parameter the replacement string, and the 
+    third parameter an INFO field. Any time the old string 
+    appears in the INFO field it will be replaced by the new 
+    string. Does not do pattern matching, simple replacement.
+old (CONST:String) 
 new (CONST:String) 
 info (INFO:String)
 </code></pre>
@@ -1358,7 +1373,13 @@ expr (STRING)
 
 <h3>DECODE(x,decoder)</h3>
 
-<pre><code>Decodes an INFO field
+<pre><code>Decodes an INFO field. Decoder must be a simple 2-column 
+    tab-delimited file with the old ID first. Any time an 
+    element in the INFO field x matches an element in the first 
+    column of the text file, it will be swapped with the 
+    corresponding entry in the second column of the text file. 
+    Elements that do not match any element in the first column 
+    will be unchanged.
 x (INFO:String) 
 decoder (FILE:String)
 </code></pre>
