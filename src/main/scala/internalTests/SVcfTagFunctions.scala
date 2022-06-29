@@ -1044,7 +1044,7 @@ object SVcfTagFunctions {
               id = "TALLY.SUM.IF",synon = Seq(),
               shortDesc = "Calculates a conditional sum across the whole file.",
               desc = "Takes as input a variant expression expr and a constant or INFO field x. "+
-                     "Output will be the sum of all x where expr is TRUE. Set x to CONST:1 to simply count variants."+
+                     "Output will be the sum of all x where expr is TRUE. Set x to CONST:1 to simply count the number of variants."+
                      ""+
                      "",
               params = Seq[VcfTagFunctionParam](
@@ -1098,8 +1098,8 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "GTCOUNT.BYSAMPLE",synon = Seq(),
               shortDesc = "Calculates a conditional sum across the whole file.",
-              desc = "Takes as input a variant expression expr and a constant or INFO field x. "+
-                     "Output will be the sum of all x where expr is TRUE. Set x to CONST:1 to simply count variants."+
+              desc = "Takes as input a variant expression varExpr and a genotype level expression gtExpr. "+
+                     "This function will report a file-wide count of the number of genotypes where both varExpr is true at the variant level AND gtExpr is true on the individual level."+
                      ""+
                      "",
               params = Seq[VcfTagFunctionParam](
@@ -1127,6 +1127,7 @@ object SVcfTagFunctions {
                 if(internalUtils.Reporter.sampleList.length == 0){
                   internalUtils.Reporter.sampleList = outHeader.titleLine.sampleList
                 }
+                initSampleTally( newTag );
                 
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 if(varfilter.keep(vc)){
@@ -1336,8 +1337,8 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "extractIDX",synon = Seq(),
               shortDesc = "",
-              desc = " "+
-                     " "+
+              desc = "This function takes a genotype field x which must be a list field and an index i. The newly created FORMAT field will be "+
+                     "equal to element i from the field x (counting from 0). If there is no element i, it will be set to the missing value (.)."+
                      " "+
                      "",
               params = Seq[VcfTagFunctionParam](
@@ -1373,8 +1374,8 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "EXPR",synon = Seq(),
               shortDesc = "",
-              desc = " "+
-                     " "+
+              desc = "This function takes a genotype-level logical expressiong gtExpr and a variant-level logical expression varExpr. "+
+                     "The new FORMAT field will be equal to 1 if and only if both gtExpr and varExpr return TRUE. Otherwise the field will equal 0. "+
                      " "+
                      "",
               params = Seq[VcfTagFunctionParam](
@@ -1429,10 +1430,10 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "IF.AB",synon = Seq(),
               shortDesc = "",
-              desc = " "+
-                     " "+
-                     " "+
-                     "",
+              desc = "This function takes a genotype-level logical expression gtExpr and two additional variables A and B. "+
+                     "A and B can each be a FORMAT field, a INFO field (specified as INFO:x), or a string constant (specified as CONST:x). "+
+                     "If gtExpr returns TRUE, then the new FORMAT field will equal the corresponding value of A. If the gtExpr returns FALSE, "+
+                     "the new FORMAT field will equal the corresponding value of B.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "gtExpr", ty = "CONST:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "A", ty = "GENO:String|INFO:String|CONST:String",req=true,dotdot=false ),
@@ -1544,9 +1545,9 @@ object SVcfTagFunctions {
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "SUM.GENO",synon = Seq(),
-              shortDesc = "Sum of several tags or numeric constants.",
+              shortDesc = "Sum of one or more tags or numeric constants.",
               desc = "Input should be a genotype field. "+
-                     "Output field will be the sum of the given genotype field. If the field is missing across all samples, the INFO field will also be missing, otherwise missing values will be treated as zeros. "+
+                     "Output field will be the sum of the given genotype field or fields. If the field is missing across all samples, the INFO field will also be missing, otherwise missing values will be treated as zeros. "+
                      "Output field type will be an integer if the inputs is an integer field and otherwise a float.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float",req=true,dotdot=false )
@@ -1863,7 +1864,8 @@ object SVcfTagFunctions {
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "CONVERT.FLAG.TO.BOOLEAN",synon = Seq(),
-              shortDesc = "Takes a FLAG typed INFO field and creates a new INFO field which is of Integer type that has values 0 or 1 depending on whether the original flag variable was present or not.",
+              shortDesc = "Takes a FLAG typed INFO field and creates a new INFO field which is of Integer type that has values 0 or 1 depending on whether the original flag variable was present or not. "+
+                          "This can be useful because some utilities do not support the FLAG field type and will crash or produce errors when a VCF contains flags.",
               desc = "Input should be a single INFO field of type Flag",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "CONST:String",req=true,dotdot=false )
@@ -1924,7 +1926,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "CONVERT.TO.INT",synon = Seq(),
               shortDesc = "",
-              desc = "Input should be an INFO field. Converts field to a Integer.",
+              desc = "Input should be an INFO field, usually of type String. Converts field to a Integer. By default failed conversions will simply be left out. if the defaultValue option is included, then failed conversions will be set to the defaultValue.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "defaultValue", ty = "CONST:Int",req=false,dotdot=false )

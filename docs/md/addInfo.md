@@ -141,7 +141,10 @@
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
-    Input should be an INFO field. Converts field to a Integer.
+    Input should be an INFO field, usually of type String. Converts 
+        field to a Integer. By default failed conversions will 
+        simply be left out. if the defaultValue option is included, 
+        then failed conversions will be set to the defaultValue.
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
 
@@ -201,11 +204,11 @@
 
     
     Input should be a genotype field. Output field will be the sum 
-        of the given genotype field. If the field is missing across 
-        all samples, the INFO field will also be missing, otherwise 
-        missing values will be treated as zeros. Output field type 
-        will be an integer if the inputs is an integer field and 
-        otherwise a float.
+        of the given genotype field or fields. If the field is 
+        missing across all samples, the INFO field will also be 
+        missing, otherwise missing values will be treated as zeros. 
+        Output field type will be an integer if the inputs is an 
+        integer field and otherwise a float.
     x (GENO:Int|GENO:Float) 
 
 ### LOG10\(x\)
