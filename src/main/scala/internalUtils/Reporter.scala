@@ -336,7 +336,7 @@ object Reporter {
     tallyFloat.update(str,tallyFloat(str)+v);
   }
   def tally(str : String, v: Double,v2 : Int){
-    talliesCol2.update(str,talliesCol2(str)+v2);
+    tallies.update(str,tallies(str)+v2);
     tallyFloat.update(str,tallyFloat(str)+v);
   }
   def tally(str : String,v : Int, v2 : Int){
@@ -354,30 +354,6 @@ object Reporter {
     reportln("    Tallying str:\""+str+"\": "+ v + "/"+tallyFloat(str),"debug");
     tallyFloat.update(str,tallyFloat(str)+v);
   }
-  
-  var sampleList : Seq[String] = Seq()
-  def initSampleList( s : Seq[String] ){
-    sampleList = s;
-  }
-  val sampleTallyInt : scala.collection.mutable.Map[String,Array[Int]] = scala.collection.mutable.Map[String,Array[Int]]();
-  def sampleTally(str : String) : Array[Int] = {
-    val arr = if( sampleTallyInt.contains(str) ){
-      sampleTallyInt(str);
-    } else {
-      val a = Array.ofDim[Int](sampleList.length)
-      sampleTallyInt.put(str,a);
-      a
-    }
-    arr
-  }
-  def initSampleTally(str : String) {
-      val a = Array.ofDim[Int](sampleList.length)
-      sampleTallyInt.put(str,a);
-  }
-/*  val sampleTallyFloat : scala.collection.mutable.Map[String,Seq[Double]] = scala.collection.mutable.Map[String,Seq[Double]]();
-  def sampleTally(str : String, vv : Seq[Double]){
-    sampleTallyFloat.put( str, vv );
-  }*/
   
   def error(str : String){
     reportln("<====== FATAL ERROR! ======>","error");
@@ -425,28 +401,19 @@ object Reporter {
     Seq[String](indent+"---------------")
   }
   def getWarningAndNoticeTalliesTable(delim : String = "\t") : Seq[String] = {
-    (if( talliesCol2.size > 0 ){
+    if( talliesCol2.size > 0 ){
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)+delim+".") ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x)+delim+".")++
       (tallies.keySet).toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x)+delim+talliesCol2.getOrElse(x,"."))
     } else if(tallyFloat.size > 0){
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)+delim+".") ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x)+delim+".")++
-      (tallies.keySet).toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x)+delim+talliesCol2.getOrElse(x,"."));
-      (tallyFloat.keySet).toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallyFloat(x)+delim+talliesCol2.getOrElse(x,"."));
+      (tallies.keySet ++ tallyFloat.keySet).toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallyFloat(x)+delim+tallies.getOrElse(x,"."))
     } else {
       warningCount.keySet.toSeq.sorted.map(x => x+delim+"WARNING"+delim+warningCount(x)) ++ 
       noticeCount.keySet.toSeq.sorted.map(x => x+delim+"NOTICE"+delim+noticeCount(x))++
       tallies.keySet.toSeq.sorted.map(x => x+delim+"TALLY"+delim+tallies(x))
-    }) ++ (if( sampleTallyInt.size > 0 ){
-      Seq( "SAMPLE"+delim+"SAMPLETALLY"+delim+sampleList.mkString(delim) ) ++ 
-      sampleTallyInt.toSeq.sortBy{ case (st,vv) => st }.map{ case (st,vv) => {
-        st+delim+"SAMPLETALLY"+delim+vv.mkString(delim)
-      }}
-    } else {
-      Seq()
-    })
-    
+    }
   }
   
   

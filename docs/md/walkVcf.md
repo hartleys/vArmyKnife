@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.95 (Updated Wed Jun 29 10:52:19 EDT 2022)
+> Version 3.2.88 (Updated Thu May 26 14:10:01 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -209,22 +209,12 @@ This utility performs a series of transformations on an input VCF file and adds 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
     inputGT: The input genotype FORMAT field.(String)
-    noCountsCalc: If this is set, then no Ct fields will be 
-        generated.(Flag)
-    noFreqCalc: If this is set, then no Freq fields will be 
-        generated.(Flag)
-    noMissCalc: If this is set, then Ct and Freq fields will not be 
-        generated to count the number or rate of missing 
-        genotypes.(Flag)
-    noAlleCalc: If this is set, then Ct and Freq fields will not be 
-        generated to count allele counts and frequencies.(Flag)
-    noHetHomCalc: If this is set, then Ct and Freq fields will not 
-        be generated to count the number of HomAlt and Het 
-        genotypes.(Flag)
-    noMultiHetCalc: If this is set, then the number of multiallelic 
-        heterozygotes will not be counted.(Flag)
-    addOtherCountsCalc: If this is set, additional optional counts 
-        will be added.(Flag)
+    noCountsCalc: (Flag)
+    noFreqCalc: (Flag)
+    noMissCalc: (Flag)
+    noAlleCalc: (Flag)
+    noHetHomCalc: (Flag)
+    noMultiHetCalc: (Flag)
     expr: The variant expression, which is a true/false expression 
         using the variant expression syntax.(String)
 
@@ -247,13 +237,9 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     inputGT: The input genotype FORMAT field.(String)
-    inputAD: The input allele depth or AD field.(String)
-    inputDP: The input total depth or DP field.(String)
-    restrictToGroup: If this variable is set, then all stats will 
-        be restricted to the given sample subgroup. Note that 
-        sample group information must be supplied either for this 
-        function or globally using the --groupFile 
-        parameter.(String)
+    inputAD: (String)
+    inputDP: (String)
+    restrictToGroup: (String)
     groupFile: A tab-delimited file containing sample ID's and a 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
@@ -267,35 +253,19 @@ This utility performs a series of transformations on an input VCF file and adds 
         list of group IDs for each sample. See the --groupFile 
         parameter of walkVcf.(String)
     inputGT: The input genotype FORMAT field.(String)
-    inputAD: The input allele depth or AD field.(String)
-    inputDP: The input total depth or DP field.(String)
-    noCountsCalc: If this is set, then no Ct fields will be 
-        generated.(Flag)
-    noFreqCalc: If this is set, then no Freq fields will be 
-        generated.(Flag)
-    noMissCalc: If this is set, then Ct and Freq fields will not be 
-        generated to count the number or rate of missing 
-        genotypes.(Flag)
-    noAlleCalc: If this is set, then Ct and Freq fields will not be 
-        generated to count allele counts and frequencies.(Flag)
-    noHetHomCalc: If this is set, then Ct and Freq fields will not 
-        be generated to count the number of HomAlt and Het 
-        genotypes.(Flag)
-    noMultiHetCalc: If this is set, then the number of multiallelic 
-        heterozygotes will not be counted.(Flag)
-    addOtherCountsCalc: If this is set, additional optional counts 
-        will be added.(Flag)
-    samplePrintLimit: This limits the number of samples that will 
-        be listed in the SAMPLIST fields. This can be useful to 
-        reduce file sizes and prevent problems when importing into 
-        excel due to overly long fields.(String)
-    noDepthStats: If this is set, depth statistic fields (including 
-        total depth, depth quantiles, and hetAB stats) will not be 
-        created.(Flag)
-    noSampleLists: If this is set, then SAMPLIST fields will not be 
-        generated.(Flag)
-    noSampleCounts: If this is set, then sample count and frequency 
-        fields will not be generated.(Flag)
+    inputAD: (String)
+    inputDP: ()
+    noCountsCalc: (Flag)
+    noFreqCalc: (Flag)
+    noMissCalc: (Flag)
+    noAlleCalc: (Flag)
+    noHetHomCalc: (Flag)
+    noMultiHetCalc: (Flag)
+    addOtherCountsCalc: (Flag)
+    samplePrintLimit: (String)
+    noDepthStats: (Flag)
+    noSampleLists: (Flag)
+    noSampleCounts: (Flag)
     expr: The variant expression, which is a true/false expression 
         using the variant expression syntax.(String)
 
@@ -430,25 +400,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### snpSiftAnno
 
->  This function runs a SnpSift anno command\. SnpSift's java library has been packaged internally within vArmyKnife and is called directly, producing results identical to a separate snpSift command\.
+>  This function runs a SnpSift anno command
 
 
-    cmd: A valid SnpSift command. In general you should specify the 
-        -info and -name options followed by a VCF file to annotate 
-        with. (String)
-###### Example 1:
-    This example annotates the current VCF file with the AC and AN 
-        fields from another VCF file. Note that the annotation VCF 
-        file must be sorted and indexed using tabix.
-    varmyknife walkVcf \
-    --fcn "snpSiftAnno|gnomad|cmd=-info AC,AN -name GNOM_ 
-        /path/to/anno/file/gnomad.vcf.gz "\
-    infile.vcf.gz outfile.vcf.gz
-###### End Example
+    cmd: A valid SnpSift command(String)
 
 ### snpSiftAnnoMulti
 
->  This function runs several snpSiftAnno commands one after another\. See the help for the snpSiftAnno function above\. This will be faster than several separate snpSiftAnno function calls\. It uses SnpEff/Sift version 4\.3t\.
+>  This function runs several SnpSift anno commands in series\. This will be faster than several separate snpSiftAnno function calls\.
 
 
     cmds: A semicolon delimited list of valid snpSift 
@@ -456,19 +415,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### snpSiftDbnsfp
 
->  This function runs the SnpSift dbnsfp command\. SnpSift's java library has been packaged internally within vArmyKnife and is called directly, producing results identical to a separate snpSift command\. It uses SnpEff/Sift version 4\.3t\.
+>  This function runs the SnpSift dbnsfp command
 
 
     cmd: A valid SnpSift command(String)
-###### Example 1:
-    This example annotates the current VCF file with a DBNSFP 
-        database that has been downloaded and prepared by SNPSIFT.
-    varmyknife walkVcf \
-    --fcn "snpSiftDbnsfp|dbnsfp|cmd=-f genename,cds_strand,refcodon 
-        -db /path/to/db/dbNSFP/v3.5a/dbNSFP3.5a_hg19_sorted.txt.gz 
-        "\
-    infile.vcf.gz outfile.vcf.gz
-###### End Example
 
 ### snpEff
 
@@ -485,7 +435,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### snpEffExtract
 
->  This utility is designed to extract information from ANN fields generated by either SNPEFF or VEP\. While the ANN field contains a large amount of information, the structure and organization of this field is often difficult to parse and operate on\. ANN fields are structured as a series of entries each specifying a gene, transcript, and effect\. For example, if a variant causes a missense change in transcript A and causes a splicing change in transcript B then there would be two entries, one for each effect\. This function can extract whatever specific information desired from the ANN\-formatted field and filters, collates, and reorganizes it in a way that is easier to use\. The various keep and drop lists allow you to extract or ignore ANN entries based on biotype, effect, or warnings\. The geneList function allows you to specify a gene list, any entries that do not pertain to a gene on that list will be ignored\. This can allow you to \(for example\) create a new field that lists the effects only for the desired gene\(s\)\. This can avoid certain common errors\. For example: where one extracts a gene list and then extracts all Loss\-of\-Function variants and ends up with a number of variants that have synonymous effect or simply nearby a gene of interest but are also loss\-of\-function for some other gene which is NOT a gene of interest\.
+>  
 
 
     annTag: A valid ANN formatted field, usually generated by 
@@ -499,14 +449,8 @@ This utility performs a series of transformations on an input VCF file and adds 
     warningDropList: A comma delimited list of warnings. Any 
         entries that include a listed warning will be 
         ignored.(String)
-    geneList: If this variant is set, then all operations will be 
-        restricted to only the ANN entries that correspond to any 
-        gene in the supplied list of genes. This can be useful for 
-        extracting only the effect on specific genes of 
-        interest.(String)
-    geneListName: The name you want to give to the given gene list. 
-        Should only be used in conjunction with the geneList 
-        option.(String)
+    geneListName: (String)
+    geneList: (String)
     severityList: Must be a list of severity levels, listed as some 
         combination of effectseverity types delimited with slashes. 
         Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which 
@@ -534,92 +478,9 @@ This utility performs a series of transformations on an input VCF file and adds 
         myNewField_MODERATE. Note that if this function as a whole 
         has a mapID set, then both field names will be prefixed by 
         that overall ID.(String)
-    geneNameIdx: This sets the index of the geneName to be used for 
-        collating information by gene. By default this is set to 4 
-        which as per the ANN field specification is the "geneID" 
-        (usually the ensembl ID). If desired this can be set to 3 
-        which is the "common gene name" (usually the gene symbol), 
-        or even 6 which is the transcriptID (which will cause this 
-        tool to perform all operations on the transcript level 
-        rather than the gene level. This variable can also be 
-        useful if you have a nonstandard ANN-style input.(String, 
-        default=4)
-    biotypeIdx: This sets the ANN field index for the warning 
-        field. As per the specification of the ANN field this 
-        should always be set to the default (7), but for certain 
-        older versions it may be different.(String, default=7)
-    warnIdx: This sets the ANN field index for the warning field. 
-        As per the specification of the ANN field this should 
-        always be set to the default (15), but for certain older 
-        versions it may be different.(String, default=15)
-###### Example 1:
-    The following command will extract various useful information 
-        from the ANN field. Entries that do not refer to protein 
-        coding transcripts will be ignored. Entries that refer to 
-        effects that are not included in the provided 
-        effectKeepList will be ignored. Any entries with the listed 
-        warnings will be ignored. Several types of output fields 
-        will be generated for various effect severities.
-    GENEEFFECT: This will be a list of geneName:Effect pairs that 
-        pass the above filters.
-    ENSGID: This will be a list of ensemble gene ID's from any 
-        entries that pass the above filters.
-    ENSTID: This will be a list of ensemble transcript ID's from 
-        any entries that pass the above filters.
-    TXCHANGE: These will be a list of TXID:HGVSc transcript change 
-        pairs that pass the above filters.
-    FIRSTEFFECT: Like the GENEEFFECT fields, this will be a list of 
-        geneName:Effect pairs that pass the above filters, but if 
-        multiple effects are listed it will only list the first 
-        effect.
-    
-    New fields will be created for each of the above and each of 
-        the listed effect severities. For example:
-    ANNEX_GENEEFFECT_HIGH: This will list only gene:effect pairs 
-        that pass the above filters and have severity HIGH.
-    ANNEX_GENEEFFECT_MODERATE: This will list only gene:effect 
-        pairs that pass the above filters and have severity 
-        MODERATE.
-    ANNEX_GENEEFFECT_NS: This will list only gene:effect pairs that 
-        pass the above filters and have severity HIGH or MODERATE.
-    and so on...
-    
-    varmyknife walkVcf
-    --fcn "snpEffExtract|ANNEX|annTag=ANN|\
-    bioTypeKeepList=protein_coding\
-    effectKeepList=\
-    coding_sequence_variant,inframe_insertion,disruptive_inframe_in-
-        sertion,\
-    conservative_inframe_insertion,inframe_deletion,disruptive_infr-
-        ame_deletion,\
-    conservative_inframe_insertion,exon_variant,exon_loss_variant,d-
-        uplication,\
-    inversion,frameshift_variant,missense_variant,start_retained_va-
-        riant,\
-    stop_retained_variant,initiator_codon_variant,rare_amino_acid_v-
-        ariant,\
-    splice_acceptor_variant,splice_donor_variant,stop_lost,start_lo-
-        st,stop_gained,\
-    synonymous_variant,start_retained,splice_region_variant,\\n 
-        5_prime_UTR_premature,start_codon_gain_variant,\
-    3_prime_UTR_truncation,5_prime_UTR_truncation,\
-    3_prime_UTR_variant,5_prime_UTR_variant,\
-    intron_variant,conserved_intron_variant\
-    warningDropList=WARNING_TRANSCRIPT_INCOMPLETE,WARNING_TRANSCRIP-
-        T_MULTIPLE_STOP_CODONS,\
-    WARNING_TRANSCRIPT_NO_START_CODON,WARNING_TRANSCRIPT_NO_STOP_CO-
-        DON\
-    extractFields=GENEEFFECT:3/FIRSTEFFECT:set of gene-effect 
-        pairs:HIGH/MODERATE/NS:.,\
-    ENSGID:4:Gene ensemble ID:HIGH/NS:.,\
-    ENSTID:6:Affected Transcript ID:HIGH/NS:.,\
-    TXCHANGE:6/9:TranscriptID and HGVSc change:HIGH/NS:.,\
-    FIRSTEFFECT:FIRSTEFFECT:Extracted First 
-        Effect:HIGH/MODERATE/LOW/NS/ANY:.|\
-    geneNameIdx=3\
-    severityList=HIGH/MODERATE/NS/LOW"\
-    infile.vcf.gz outfile.vcf.gz
-###### End Example
+    geneNameIdx: (String, default=4)
+    biotypeIdx: (String, default=7)
+    warnIdx: (String, default=15)
 
 ### getLocusDepthFromWig
 
@@ -734,8 +595,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 >  This function drops variants based on a given true/false expression\.
 
 
-    expr: A variant-level expression. See the HELP section on 
-        Variant-Level Logical Expressions.(String)
+    expr: (String)
 
 ### extractRegion
 
@@ -813,7 +673,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### addTrinucleotideComplexity
 
->  This function adds a new INFO field containing the trinucleotide complexity for the given genomic window around the variant locus, defined as the sum of the squares of the proportions of each 3\-bp combination\.
+>  This function adds a new INFO field containing the trinucleotide complexity, defined as the sum of the squares of the proportions of each 3\-bp combination\.
 
 
     windowSize: The number of bases to include in the context 
@@ -1029,18 +889,12 @@ This utility performs a series of transformations on an input VCF file and adds 
 >  This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples\. This can substantially reduce file sizes\.
 
 
-    FORMAT.keep: If this is set, then ALL format fields EXCEPT the 
-        ones listed here will be dropped.(String)
-    FORMAT.drop: IF this is set, then the listed format fields will 
-        be dropped.(String)
-    INFO.keep: If this is set, then ALL info fields EXCEPT the ones 
-        listed here will be dropped.(String)
-    INFO.drop: If this is set, then the listed info fields will be 
-        dropped.(String)
-    SAMPLES.keep: IF this is set, then ALL samples EXCEPT the ones 
-        listed here will be dropped.(String)
-    SAMPLES.drop: If this is set, the listed samples will be 
-        dropped.(String)
+    FORMAT.keep: (String)
+    FORMAT.drop: (String)
+    INFO.keep: (String)
+    INFO.drop: (String)
+    SAMPLES.keep: (String)
+    SAMPLES.drop: (String)
 
 ### sanitize
 
@@ -1072,17 +926,9 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### copyColumnToInfo
 
->  This utility copies the contents of one of the VCF columns to a new INFO field\. Note that some columns allow characters that are not allowed in INFO fields, such as equal signs\. Any illegal characters will be automatically replaced with underscores\.
+>  This utility copies the contents of one of the VCF columns to a new INFO field\.
 
 
-    columnID: (String, required)
-
-### copyInfoToColumn
-
->  This utility copies the contents of an INFO field to one of the the other VCF columns\.
-
-
-    infoColumn: (String, required)
     columnID: (String, required)
 
 ### copyInfoToGeno
@@ -1150,13 +996,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
-### TO\.UPPER\.CASE\(x\)
-
-    
-    Input should be an INFO field. All alphabetic characters in the 
-        field will be converted to Upper case.
-    x (INFO:String) 
-
 ### DIFF\(x,y\)
 
     
@@ -1208,13 +1047,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     x (FLOAT) 
     seed (INT) 
 
-### TO\.LOWER\.CASE\(x\)
-
-    
-    Input should be an INFO field. All alphabetic characters in the 
-        field will be converted to Lower case.
-    x (INFO:String) 
-
 ### DIV\(x,y\)
 
     
@@ -1236,21 +1068,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
-    Input should be an INFO field, usually of type String. Converts 
-        field to a Integer. By default failed conversions will 
-        simply be left out. if the defaultValue option is included, 
-        then failed conversions will be set to the defaultValue.
+    Input should be an INFO field. Converts field to a Integer.
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
 
 ### STRING\_REPLACE\(old,new,info\)
 
     
-    Simple string replacement. First parameter should be the old 
-        string, second parameter the replacement string, and the 
-        third parameter an INFO field. Any time the old string 
-        appears in the INFO field it will be replaced by the new 
-        string. Does not do pattern matching, simple replacement.
+    
     old (CONST:String) 
     new (CONST:String) 
     info (INFO:String) 
@@ -1277,13 +1102,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### DECODE\(x,decoder\)
 
     
-    Decodes an INFO field. Decoder must be a simple 2-column 
-        tab-delimited file with the old ID first. Any time an 
-        element in the INFO field x matches an element in the first 
-        column of the text file, it will be swapped with the 
-        corresponding entry in the second column of the text file. 
-        Elements that do not match any element in the first column 
-        will be unchanged.
+    
     x (INFO:String) 
     decoder (FILE:String) 
 
@@ -1299,11 +1118,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
     Input should be a genotype field. Output field will be the sum 
-        of the given genotype field or fields. If the field is 
-        missing across all samples, the INFO field will also be 
-        missing, otherwise missing values will be treated as zeros. 
-        Output field type will be an integer if the inputs is an 
-        integer field and otherwise a float.
+        of the given genotype field. If the field is missing across 
+        all samples, the INFO field will also be missing, otherwise 
+        missing values will be treated as zeros. Output field type 
+        will be an integer if the inputs is an integer field and 
+        otherwise a float.
     x (GENO:Int|GENO:Float) 
 
 ### LOG10\(x\)
@@ -1525,11 +1344,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### extractIDX\(x,i,delim\)
 
     
-    This function takes a genotype field x which must be a list 
-        field and an index i. The newly created FORMAT field will 
-        be equal to element i from the field x (counting from 0). 
-        If there is no element i, it will be set to the missing 
-        value (.).
+       
     x (GENO:Int|GENO:Float|GENO:String) 
     i (CONST:Int) 
     delim (Optional) (CONST:String) 
@@ -1537,23 +1352,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### EXPR\(gtExpr,varExpr\)
 
     
-    This function takes a genotype-level logical expressiong gtExpr 
-        and a variant-level logical expression varExpr. The new 
-        FORMAT field will be equal to 1 if and only if both gtExpr 
-        and varExpr return TRUE. Otherwise the field will equal 0.
+       
     gtExpr (CONST:String) 
     varExpr (Optional) (CONST:String) 
 
 ### IF\.AB\(gtExpr,A,B\)
 
     
-    This function takes a genotype-level logical expression gtExpr 
-        and two additional variables A and B. A and B can each be a 
-        FORMAT field, a INFO field (specified as INFO:x), or a 
-        string constant (specified as CONST:x). If gtExpr returns 
-        TRUE, then the new FORMAT field will equal the 
-        corresponding value of A. If the gtExpr returns FALSE, the 
-        new FORMAT field will equal the corresponding value of B.
+       
     gtExpr (CONST:String) 
     A (GENO:String|INFO:String|CONST:String) 
     B (GENO:String|INFO:String|CONST:String) 
@@ -1580,21 +1386,9 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     Takes as input a variant expression expr and a constant or INFO 
         field x. Output will be the sum of all x where expr is 
-        TRUE. Set x to CONST:1 to simply count the number of 
-        variants.
+        TRUE. Set x to CONST:1 to simply count variants.
     expr (String) 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
-
-### GTCOUNT\.BYSAMPLE\(varExpr,gtExpr\)
-
-    
-    Takes as input a variant expression varExpr and a genotype 
-        level expression gtExpr. This function will report a 
-        file-wide count of the number of genotypes where both 
-        varExpr is true at the variant level AND gtExpr is true on 
-        the individual level.
-    varExpr (String) 
-    gtExpr (String) 
 
 ### TALLY\.SUM\.IF\.byGROUP\(expr,group\.\.\.,x\.\.\.\)
 

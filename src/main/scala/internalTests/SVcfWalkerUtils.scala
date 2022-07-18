@@ -1820,10 +1820,10 @@ object SVcfWalkerUtils {
           vc.addInfo(tagID, v.qual)
         }}
         filterTag.map{ tagID => {
-          vc.addInfo(tagID, v.filter.replaceAll("[;= ]","."))
+          vc.addInfo(tagID, v.filter.replaceAll("[,;= ]","."))
         }}
         idTag.map{ tagID => {
-          vc.addInfo(tagID, v.id.replaceAll("[;= ]","."))
+          vc.addInfo(tagID, v.id)
         }}
         refTag.map{ tagID => {
           vc.addInfo(tagID, v.ref)
@@ -1846,79 +1846,6 @@ object SVcfWalkerUtils {
         copyQualToGeno.map{ tagID => {
           vc.genotypes.addGenotypeArray(tagID,Array.fill(sampleCt)( v.qual ))
         }}
-        vc
-      }}, closeAction = (() => {
-        //do nothing
-      })),outHeader)
-      //vc.dropInfo(overwriteInfos);
-    }
-  }
-  
-  case class copyInfoToField(infoField : String, columnID: String) extends SVcfWalker {
-    def walkerName : String = "copyInfoToField"
-    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
-        ("infoField",   infoField),
-        ("columnID", columnID)
-    );
-    
-    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
-      val outHeader = vcfHeader.copyHeader
-      outHeader.addWalk(this);
-
-      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
-      if( overwriteInfos.nonEmpty ){
-        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
-      }
-      outHeader.reportAddedInfos(this)
-      
-      val columnIDoptions = Seq("CHROM","POS","ID","REF","ALT","QUAL","FILTER")
-      if( ! columnIDoptions.contains( columnID )) {
-        error("ERROR: copyInfoToField: columnID param must be one of: "+columnIDoptions.mkString(","));
-      }
-      
-      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
-        val vc = v.getOutputLine();
-        val x = v.info.getOrElse(infoField,None).getOrElse(".");
-        columnID match {
-          case "CHROM"   => vc.in_chrom = x;
-          case "POS"     => vc.in_pos = string2int(x);
-          case "ID"      => vc.in_id  = x;
-          case "REF"     => vc.in_ref = x;
-          case "ALT"     => vc.in_alt = x.split(",").toSeq;
-          case "QUAL"    => vc.in_qual = x;
-          case "FILTER"  => vc.in_filter = x;
-        }
-        //vc.dropInfo(overwriteInfos);
-        /*qualTag.map{ tagID => {
-          vc.addInfo(tagID, v.qual)
-        }}
-        filterTag.map{ tagID => {
-          vc.addInfo(tagID, v.filter.replaceAll("[;= ]","."))
-        }}
-        idTag.map{ tagID => {
-          vc.addInfo(tagID, v.id.replaceAll("[;= ]","."))
-        }}
-        refTag.map{ tagID => {
-          vc.addInfo(tagID, v.ref)
-        }}
-        altTag.map{ tagID => {
-          vc.addInfo(tagID, v.alt.mkString(","))
-        }}
-        
-        copyInfoPairs.map{ case (info,geno) => {
-          v.info.getOrElse(info,None).map{ infovalue => {
-            vc.genotypes.addGenotypeArray(geno,Array.fill(sampleCt)( infovalue ))
-          }}
-          //addGenotypeArray
-        }}
-        copyFilterToGeno.map{ tagID => {
-          
-          vc.genotypes.addGenotypeArray(tagID,Array.fill(sampleCt)( v.filter.replaceAll("[,;= ]",".") ))
-          //addGenotypeArray
-        }}
-        copyQualToGeno.map{ tagID => {
-          vc.genotypes.addGenotypeArray(tagID,Array.fill(sampleCt)( v.qual ))
-        }}*/
         vc
       }}, closeAction = (() => {
         //do nothing

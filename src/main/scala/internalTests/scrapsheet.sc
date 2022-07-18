@@ -5,10 +5,6 @@ package main.scala.internalTests
 object scrapsheet {
   println("Welcome to the Scala worksheet")
   
-"Hello".replace("l","o");
-"Hello".replace("llo","@");
-"Hello".replace("[A-Z]","@");
-
 
 import htsjdk.variant._;
 import htsjdk.variant.variantcontext._;

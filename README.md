@@ -1,5 +1,5 @@
-# vArmyKnife v3.2.95
-(Compiled Wed Jun 29 10:52:19 EDT 2022)
+# vArmyKnife v3.2.88
+(Compiled Thu May 26 14:10:01 EDT 2022)
 
 The [vArmyKnife software package](http://hartleys.github.io/vArmyKnife/) is a fast, efficient, and portable 
 multifunction toolkit designed to assist in

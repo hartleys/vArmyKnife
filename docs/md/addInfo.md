@@ -55,13 +55,6 @@
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
-### TO\.UPPER\.CASE\(x\)
-
-    
-    Input should be an INFO field. All alphabetic characters in the 
-        field will be converted to Upper case.
-    x (INFO:String) 
-
 ### DIFF\(x,y\)
 
     
@@ -113,13 +106,6 @@
     x (FLOAT) 
     seed (INT) 
 
-### TO\.LOWER\.CASE\(x\)
-
-    
-    Input should be an INFO field. All alphabetic characters in the 
-        field will be converted to Lower case.
-    x (INFO:String) 
-
 ### DIV\(x,y\)
 
     
@@ -141,21 +127,14 @@
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
-    Input should be an INFO field, usually of type String. Converts 
-        field to a Integer. By default failed conversions will 
-        simply be left out. if the defaultValue option is included, 
-        then failed conversions will be set to the defaultValue.
+    Input should be an INFO field. Converts field to a Integer.
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
 
 ### STRING\_REPLACE\(old,new,info\)
 
     
-    Simple string replacement. First parameter should be the old 
-        string, second parameter the replacement string, and the 
-        third parameter an INFO field. Any time the old string 
-        appears in the INFO field it will be replaced by the new 
-        string. Does not do pattern matching, simple replacement.
+    
     old (CONST:String) 
     new (CONST:String) 
     info (INFO:String) 
@@ -182,13 +161,7 @@
 ### DECODE\(x,decoder\)
 
     
-    Decodes an INFO field. Decoder must be a simple 2-column 
-        tab-delimited file with the old ID first. Any time an 
-        element in the INFO field x matches an element in the first 
-        column of the text file, it will be swapped with the 
-        corresponding entry in the second column of the text file. 
-        Elements that do not match any element in the first column 
-        will be unchanged.
+    
     x (INFO:String) 
     decoder (FILE:String) 
 
@@ -204,11 +177,11 @@
 
     
     Input should be a genotype field. Output field will be the sum 
-        of the given genotype field or fields. If the field is 
-        missing across all samples, the INFO field will also be 
-        missing, otherwise missing values will be treated as zeros. 
-        Output field type will be an integer if the inputs is an 
-        integer field and otherwise a float.
+        of the given genotype field. If the field is missing across 
+        all samples, the INFO field will also be missing, otherwise 
+        missing values will be treated as zeros. Output field type 
+        will be an integer if the inputs is an integer field and 
+        otherwise a float.
     x (GENO:Int|GENO:Float) 
 
 ### LOG10\(x\)
