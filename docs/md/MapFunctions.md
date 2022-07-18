@@ -926,6 +926,12 @@
         listed here will be dropped.(String)
     SAMPLES.drop: If this is set, the listed samples will be 
         dropped.(String)
+    INFO.rename: This is used to rename INFO fields. This should be 
+        set to a comma-delimited list of FROM:TO pairs, with each 
+        pair separated with a colon.(String)
+    FORMAT.rename: This is used to rename FORMAT fields. This 
+        should be set to a comma-delimited list of FROM:TO pairs, 
+        with each pair separated with a colon.(String)
 
 ### sanitize
 

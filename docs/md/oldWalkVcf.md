@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.96 (Updated Wed Jun 29 11:20:28 EDT 2022)
+> Version 3.2.98 (Updated Mon Jul 18 14:46:55 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1076,6 +1076,12 @@ This utility performs a series of transformations on an input VCF file and adds 
         listed here will be dropped.(String)
     SAMPLES.drop: If this is set, the listed samples will be 
         dropped.(String)
+    INFO.rename: This is used to rename INFO fields. This should be 
+        set to a comma-delimited list of FROM:TO pairs, with each 
+        pair separated with a colon.(String)
+    FORMAT.rename: This is used to rename FORMAT fields. This 
+        should be set to a comma-delimited list of FROM:TO pairs, 
+        with each pair separated with a colon.(String)
 
 ### sanitize
 

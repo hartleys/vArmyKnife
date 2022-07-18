@@ -7370,7 +7370,7 @@ ALT VERSION: allows title line!
         case Some(renamePairStrings) => {
           val rmap = renamePairStrings.map{x => {
             val cells = x.split(":")
-            if(cells.length != 2) error("renameInfoCells must consist of comma delimited pairs, with each pair separated by a colon");
+            if(cells.length != 2) error("FORMAT.rename must consist of comma delimited list of pairs, with each pair separated by a colon (from:to)");
             ((cells(0),cells(1)))
           }}.toMap
           outHeader.formatLines = outHeader.formatLines.map{ f => {
@@ -7392,7 +7392,7 @@ ALT VERSION: allows title line!
         case Some(renamePairStrings) => {
           val rmap = renamePairStrings.map{x => {
             val cells = x.split(":")
-            if(cells.length != 2) error("renameInfoCells must consist of comma delimited pairs, with each pair separated by a colon");
+            if(cells.length != 2) error("INFO.rename must consist of comma delimited pairs, with each pair separated by a colon (from:to)");
             ((cells(0),cells(1)))
           }}.toMap
           outHeader.infoLines = outHeader.infoLines.map{ f => {

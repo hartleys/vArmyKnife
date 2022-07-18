@@ -359,7 +359,10 @@ object SVcfMapFunctions {
            ParamStr(id = "INFO.keep",synon=Seq(),ty="String",valueString="",desc="If this is set, then ALL info fields EXCEPT the ones listed here will be dropped.",req=false),
            ParamStr(id = "INFO.drop",synon=Seq(),ty="String",valueString="",desc="If this is set, then the listed info fields will be dropped.",req=false),
            ParamStr(id = "SAMPLES.keep",synon=Seq(),ty="String",valueString="",desc="IF this is set, then ALL samples EXCEPT the ones listed here will be dropped.",req=false),
-           ParamStr(id = "SAMPLES.drop",synon=Seq(),ty="String",valueString="",desc="If this is set, the listed samples will be dropped.",req=false)
+           ParamStr(id = "SAMPLES.drop",synon=Seq(),ty="String",valueString="",desc="If this is set, the listed samples will be dropped.",req=false),
+           ParamStr(id = "INFO.rename",synon=Seq(),ty="String",valueString="expr",desc="This is used to rename INFO fields. This should be set to a comma-delimited list of FROM:TO pairs, with each pair separated with a colon.",req=false),
+           ParamStr(id = "FORMAT.rename",synon=Seq(),ty="String",valueString="expr",desc="This is used to rename FORMAT fields. This should be set to a comma-delimited list of FROM:TO pairs, with each pair separated with a colon.",req=false)
+
          )), category = "File Formatting/Conversion"
        ),
        
@@ -1407,6 +1410,10 @@ object SVcfMapFunctions {
                  val dropGeno = params.get("FORMAT.drop").map{ _.split(",").toList }.toList.flatten
                  val dropInfo = params.get("INFO.drop").map{ _.split(",").toList }.toList.flatten
                  val dropSamp = params.get("SAMPLES.drop").map{ _.split(",").toList }.toList.flatten
+                 
+                 val renameInfo = params.get("INFO.rename").map{ _.split(",").toList }
+                 val renameGeno = params.get("FORMAT.rename").map{ _.split(",").toList }
+
                  Some( FilterTags(
                      keepGenotypeTags = keepGeno,
                      dropGenotypeTags = dropGeno,
@@ -1416,7 +1423,8 @@ object SVcfMapFunctions {
                      keepSamples = keepSamp,
                      dropSamples = dropSamp,
                      alphebetizeHeader = false,
-                     renameInfoTags = None
+                     renameInfoTags = renameInfo,
+                     renameGenoTags = renameGeno
                   ))
              } else if(mapType == "keepVariants"){
                 Some(VcfExpressionFilter(filterExpr = params("expr")))
