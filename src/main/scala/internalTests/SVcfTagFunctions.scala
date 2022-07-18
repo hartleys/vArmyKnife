@@ -1943,6 +1943,83 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "TO.UPPER.CASE",synon = Seq(),
+              shortDesc = "",
+              desc = "Input should be an INFO field. All alphabetic characters in the field will be converted to Upper case.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+
+              val x = if( paramValues.head.startsWith("INFO:") ){
+                paramValues.head.drop(5)
+              } else {
+                paramValues.head
+              }
+              override val outType = "String"
+              override val outNum = outHeader.infoLines.find( a => a.ID == x ).map{ a => a.Number }.getOrElse(".");
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                vc.info.getOrElse(x,None).foreach{ xx => {
+                  writeString(vout,xx.toUpperCase());
+                  /*(string2doubleOpt(xx).filter{ zz => ! ( zz.isNaN() || zz.isInfinite() ) } match {
+                    case Some(zz) => Some(zz);
+                    case None => dv
+                  }).foreach{ zz => {
+                    writeDouble(vout,zz);
+                  }}*/
+                }}
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "TO.LOWER.CASE",synon = Seq(),
+              shortDesc = "",
+              desc = "Input should be an INFO field. All alphabetic characters in the field will be converted to Lower case.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+
+              val x = if( paramValues.head.startsWith("INFO:") ){
+                paramValues.head.drop(5)
+              } else {
+                paramValues.head
+              }
+              override val outType = "String"
+              override val outNum = outHeader.infoLines.find( a => a.ID == x ).map{ a => a.Number }.getOrElse(".");
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                vc.info.getOrElse(x,None).foreach{ xx => {
+                  writeString(vout,xx.toLowerCase());
+                  /*(string2doubleOpt(xx).filter{ zz => ! ( zz.isNaN() || zz.isInfinite() ) } match {
+                    case Some(zz) => Some(zz);
+                    case None => dv
+                  }).foreach{ zz => {
+                    writeDouble(vout,zz);
+                  }}*/
+                }}
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "FLAGSET",synon = Seq(),
@@ -1983,7 +2060,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "DECODE",synon = Seq(),
               shortDesc = "",
-              desc = "",
+              desc = "Decodes an INFO field",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "decoder", ty = "FILE:String",req=true,dotdot=false ),
@@ -2010,7 +2087,13 @@ object SVcfTagFunctions {
                 }}.toVector.sorted.mkString(",")*/
                 //reportln("SETS.UNION.run:"+out,"deepDebug");
                 //error("NOT YET IMPLEMENTED!");
-                val out = vc.info.getOrElse(pv(0).drop(5),None).map{ vv => {
+              val x = if( paramValues.head.startsWith("INFO:") ){
+                paramValues.head.drop(5)
+              } else {
+                paramValues.head
+              }
+                
+                val out = vc.info.getOrElse(x,None).map{ vv => {
                   vv.split(",").map{ vvv => { decoder.getOrElse(vvv,vvv) }}.padTo(1,".").mkString(",")
                 }}.getOrElse(".");
                 writeString(vout,out)

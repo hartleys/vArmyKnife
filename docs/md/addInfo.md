@@ -55,6 +55,13 @@
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
+### TO\.UPPER\.CASE\(x\)
+
+    
+    Input should be an INFO field. All alphabetic characters in the 
+        field will be converted to Upper case.
+    x (INFO:String) 
+
 ### DIFF\(x,y\)
 
     
@@ -105,6 +112,13 @@
     
     x (FLOAT) 
     seed (INT) 
+
+### TO\.LOWER\.CASE\(x\)
+
+    
+    Input should be an INFO field. All alphabetic characters in the 
+        field will be converted to Lower case.
+    x (INFO:String) 
 
 ### DIV\(x,y\)
 
@@ -161,7 +175,7 @@
 ### DECODE\(x,decoder\)
 
     
-    
+    Decodes an INFO field
     x (INFO:String) 
     decoder (FILE:String) 
 
