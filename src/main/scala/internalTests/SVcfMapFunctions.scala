@@ -550,7 +550,7 @@ object SVcfMapFunctions {
               COMMON_PARAMS("genomeFA")
          )), category = "Genomic Locus Annotation"
        ),//AddTrinucleotideComplexity(tagPrefix : String, genomeFa : String, windowSize : Int)
-       ParamStrSet("addTrinucleotideComplexity" ,  desc = "This function adds a new INFO field containing the trinucleotide complexity, defined as the sum of the squares of the proportions of each 3-bp combination.", 
+       ParamStrSet("addTrinucleotideComplexity" ,  desc = "This function adds a new INFO field containing the trinucleotide complexity for the given genomic window around the variant locus, defined as the sum of the squares of the proportions of each 3-bp combination.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "windowSize",synon=Seq(),ty="String",valueString="k",desc="The number of bases to include in the context window",req=true),
               COMMON_PARAMS("genomeFA")

@@ -2985,18 +2985,60 @@ object SVcfTagFunctions {
     }
   }
 
+  /*
+         val examples = mf.exampleCode.zipWithIndex.flatMap{ case (exampleCodeSeq,idx) => {
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### Example "+(idx+1)+":"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        ) ++
+        exampleCodeSeq.map{ exampleCodeString => {
+            internalUtils.commandLineUI.UserManualBlock(lines = exampleCodeString.split("\n").map{x => x.trim()}.toSeq,
+                mdIndentBlock = 8, mdIndentFirst = 4,
+                hiddenInPlain = true)
+        }} ++
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### End Example"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        )
+      }}
+
+      ++
+                                                               .flatten
+   */
   
    val formatFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "addFormat" )
    val infoFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "addInfo" )
    val tallyFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "tally" )
       
-   val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
+   val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = 
+     Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("INFO TAG FUNCTIONS"),
                                                    lines = Seq("","Info Tag Functions are simple modular functions that take  "+
                                                                "one variant at a time and add a new INFO field. "+
                                                                "",
                                                                "Basic Syntax:",
-                                                               "    --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )")++infoFunctionParamBlock.exampleCode.flatten, level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+                                                               "    --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )"), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2)
+      ) ++                                                               
+      infoFunctionParamBlock.exampleCode.zipWithIndex.flatMap{ case (exampleCodeSeq,idx) => {
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### Example "+(idx+1)+":"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        ) ++
+        exampleCodeSeq.map{ exampleCodeString => {
+            internalUtils.commandLineUI.UserManualBlock(lines = exampleCodeString.split("\n").map{x => x.trim()}.toSeq,
+                mdIndentBlock = 8, mdIndentFirst = 4,
+                hiddenInPlain = true)
+        }} ++
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### End Example"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        )
+      }} ++
+   Seq[internalUtils.commandLineUI.UserManualBlock](                                                 
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
@@ -3020,13 +3062,37 @@ object SVcfTagFunctions {
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+    
    
+   .exampleCode.flatten
+ */
    
-   val FMTFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
+   val FMTFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = 
+    Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("FORMAT TAG FUNCTIONS"),
-                                                   lines = Seq(formatFunctionParamBlock.desc+"",
+                                                   lines = Seq(formatFunctionParamBlock.desc,
                                                                "Basic Syntax:",
-                                                               "    --FCN addInfo|newTagID|FCN( param1, param2, etc. )\n")++formatFunctionParamBlock.exampleCode.flatten, level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+                                                               "    --FCN addFormat|newTagID|FCN( param1, param2, etc. )"), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2)
+      ) ++                                                               
+      formatFunctionParamBlock.exampleCode.zipWithIndex.flatMap{ case (exampleCodeSeq,idx) => {
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### Example "+(idx+1)+":"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        ) ++
+        exampleCodeSeq.map{ exampleCodeString => {
+            internalUtils.commandLineUI.UserManualBlock(lines = exampleCodeString.split("\n").map{x => x.trim()}.toSeq,
+                mdIndentBlock = 8, mdIndentFirst = 4,
+                hiddenInPlain = true)
+        }} ++
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### End Example"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        )
+      }} ++
+   Seq[internalUtils.commandLineUI.UserManualBlock](                                                 
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfFormatFunMap.flatMap{ case (fcnID,mf) => {
@@ -3044,19 +3110,41 @@ object SVcfTagFunctions {
                                                             }}+"("+pp.ty+") "+pp.desc ), indentTitle = 4, indentBlock = 12, indentFirst=10,mdCaret=true)
       }}
    }}
-   
+
+      
+      //++tallyFunctionParamBlock.exampleCode.flatten
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   val TALLYFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = Seq[internalUtils.commandLineUI.UserManualBlock](
+   val TALLYFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = 
+     Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("TALLY FUNCTIONS"),
                                                    lines = Seq(""+tallyFunctionParamBlock.desc,
                                                                "",
                                                                "Basic Syntax:",
-                                                               "    --FCN tally|x|FCN( param1, param2, etc. )\n")++tallyFunctionParamBlock.exampleCode.flatten, level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+                                                               "    --FCN tally|x|FCN( param1, param2, etc. )\n"), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2),
+   ) ++
+      tallyFunctionParamBlock.exampleCode.zipWithIndex.flatMap{ case (exampleCodeSeq,idx) => {
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### Example "+(idx+1)+":"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        ) ++
+        exampleCodeSeq.map{ exampleCodeString => {
+            internalUtils.commandLineUI.UserManualBlock(lines = exampleCodeString.split("\n").map{x => x.trim()}.toSeq,
+                mdIndentBlock = 8, mdIndentFirst = 4,
+                hiddenInPlain = true)
+        }} ++
+        Seq[internalUtils.commandLineUI.UserManualBlock](
+            internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### End Example"),
+                mdIndentBlock = 0, mdIndentFirst = 0,
+                hiddenInPlain = true)
+        )
+      }} ++
+   Seq[internalUtils.commandLineUI.UserManualBlock](                                                 
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFcnMap_sideEffecting.flatMap{ case (fcnID,mf) => {

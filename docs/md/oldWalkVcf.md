@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.94 (Updated Tue Jun 28 12:35:03 EDT 2022)
+> Version 3.2.96 (Updated Wed Jun 29 11:20:28 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -848,7 +848,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### addTrinucleotideComplexity
 
->  This function adds a new INFO field containing the trinucleotide complexity, defined as the sum of the squares of the proportions of each 3\-bp combination\.
+>  This function adds a new INFO field containing the trinucleotide complexity for the given genomic window around the variant locus, defined as the sum of the squares of the proportions of each 3\-bp combination\.
 
 
     windowSize: The number of bases to include in the context 
@@ -1134,6 +1134,7 @@ This utility performs a series of transformations on an input VCF file and adds 
         variant at a time and add a new INFO field.
     Basic Syntax:
         --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )
+###### Example 1:
     Make a new INFO field which is the maximum from several allele 
         frequencies (which are already in the file) Then make a 0/1 
         INFO field that is 1 if the max AF is less than 0.01. Note 
@@ -1142,22 +1143,18 @@ This utility performs a series of transformations on an input VCF file and adds 
         if the AF is missing in all three populations, the maxAF 
         will be 0 rather than missing.
     varmyknife walkVcf \
- --fcn 
-        "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
- 
-        desc=The max allele frequency from CEU_AF, AFR_AF, or 
-        JPT_AF (or zero if all are missing)."\
- --fcn 
-        "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)"\
- infile.vcf.gz 
-        outfile.vcf.gz
+    --fcn "addInfo|maxAF|MAX(CEU_AF,AFR_AF,JPT_AF,CONST:0)|\
+    desc=The max allele frequency from CEU_AF, AFR_AF, or JPT_AF 
+        (or zero if all are missing)."\
+    --fcn "addInfo|isRare|EXPR(INFO.lt:maxAF:0.01)"\
+    infile.vcf.gz outfile.vcf.gz
+###### End Example
+###### Example 2:
     varmyknife walkVcf \
- --fcn 
-        "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
- desc=The sum 
-        of the info tags: hetCount and homAltCount."\
- 
-        infile.vcf.gz outfile.vcf.gz
+    --fcn "addInfo|CarryCt|SUM(hetCount,homAltCount)|\
+    desc=The sum of the info tags: hetCount and homAltCount."\
+    infile.vcf.gz outfile.vcf.gz
+###### End Example
 
 ## Available Functions:
 

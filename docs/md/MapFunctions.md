@@ -698,7 +698,7 @@
 
 ### addTrinucleotideComplexity
 
->  This function adds a new INFO field containing the trinucleotide complexity, defined as the sum of the squares of the proportions of each 3\-bp combination\.
+>  This function adds a new INFO field containing the trinucleotide complexity for the given genomic window around the variant locus, defined as the sum of the squares of the proportions of each 3\-bp combination\.
 
 
     windowSize: The number of bases to include in the context 
