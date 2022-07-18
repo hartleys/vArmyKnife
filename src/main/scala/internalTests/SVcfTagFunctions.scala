@@ -1096,6 +1096,57 @@ object SVcfTagFunctions {
         },
         new VcfTagFcnFactorySideEffecting(){
           val mmd =  new VcfTagFcnMetadata(
+              id = "GTCOUNT.BYSAMPLE",synon = Seq(),
+              shortDesc = "Calculates a conditional sum across the whole file.",
+              desc = "Takes as input a variant expression expr and a constant or INFO field x. "+
+                     "Output will be the sum of all x where expr is TRUE. Set x to CONST:1 to simply count variants."+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "varExpr", ty = "String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "gtExpr", ty = "String",req=true,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcnSideEffecting = {
+            new VcfTagFcnSideEffecting(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
+              override val outType = "String";
+              override val outNum = "1";
+              
+              val varexpr = paramValues.head;
+              val varparser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
+              val varfilter : SFilterLogic[SVcfVariantLine] = varparser.parseString(varexpr);
+              
+              val gtexpr = paramValues.last;
+              val gtparser: SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
+              val gtfilter : SFilterLogic[(SVcfVariantLine,Int)] = gtparser.parseString(gtexpr);
+              
+                if(internalUtils.Reporter.sampleList.length == 0){
+                  internalUtils.Reporter.sampleList = outHeader.titleLine.sampleList
+                }
+                
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                if(varfilter.keep(vc)){
+                  val arr = sampleTally( newTag )
+                  arr.indices.map{ ii => {
+                    if( gtfilter.keep(vc,ii) ){
+                      arr(ii) = arr(ii) + 1;
+                    }
+                  }}
+                }
+              }
+              def close(){
+                
+              }
+            }
+
+          }
+        },
+        new VcfTagFcnFactorySideEffecting(){
+          val mmd =  new VcfTagFcnMetadata(
               id = "TALLY.SUM.IF.byGROUP",synon = Seq("TALLY.SUM.IF.GROUP"),
               shortDesc = "Sum of several tags or numeric constants.",
               desc = "Takes a variant expression expr, an INFO field \"group\" and an INFO field x. "+

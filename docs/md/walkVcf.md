@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.90 (Updated Wed Jun  1 15:32:30 EDT 2022)
+> Version 3.2.93 (Updated Thu Jun  2 11:30:46 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1421,6 +1421,15 @@ This utility performs a series of transformations on an input VCF file and adds 
         TRUE. Set x to CONST:1 to simply count variants.
     expr (String) 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+
+### GTCOUNT\.BYSAMPLE\(varExpr,gtExpr\)
+
+    
+    Takes as input a variant expression expr and a constant or INFO 
+        field x. Output will be the sum of all x where expr is 
+        TRUE. Set x to CONST:1 to simply count variants.
+    varExpr (String) 
+    gtExpr (String) 
 
 ### TALLY\.SUM\.IF\.byGROUP\(expr,group\.\.\.,x\.\.\.\)
 
