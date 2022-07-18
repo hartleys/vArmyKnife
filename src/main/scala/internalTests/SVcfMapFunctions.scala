@@ -293,12 +293,13 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
-           ParamStr(id = "noCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noFreqCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noMissCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noAlleCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noHetHomCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "noCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then no Ct fields will be generated.",req=false),
+           ParamStr(id = "noFreqCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then no Freq fields will be generated.",req=false),
+           ParamStr(id = "noMissCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then Ct and Freq fields will not be generated to count the number or rate of missing genotypes.",req=false),
+           ParamStr(id = "noAlleCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then Ct and Freq fields will not be generated to count allele counts and frequencies.",req=false),
+           ParamStr(id = "noHetHomCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then Ct and Freq fields will not be generated to count the number of HomAlt and Het genotypes.",req=false),
+           ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then the number of multiallelic heterozygotes will not be counted.",req=false),
+           ParamStr(id = "addOtherCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, additional optional counts will be added.",req=false),
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="The variant expression, "+
                                                   "which is a true/false expression using the variant expression syntax.",req=false,defaultValue=None)
            )), category = "General-Purpose Tools"
@@ -316,9 +317,9 @@ object SVcfMapFunctions {
        ParamStrSet("depthStats" ,  desc = "This function calculates various statistics on total read depth and hetAB.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
-           ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "inputDP",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "restrictToGroup",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="AD",desc="The input allele depth or AD field.",req=false),
+           ParamStr(id = "inputDP",synon=Seq(),ty="String",valueString="DP",desc="The input total depth or DP field.",req=false),
+           ParamStr(id = "restrictToGroup",synon=Seq(),ty="String",valueString="",desc="If this variable is set, then all stats will be restricted to the given sample subgroup. Note that sample group information must be supplied either for this function or globally using the --groupFile parameter.",req=false),
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList")
            //restrictToGroup
            )), category = "General-Purpose Tools"
@@ -328,22 +329,23 @@ object SVcfMapFunctions {
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
            
-           ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "inputDP",synon=Seq(),ty="",valueString="",desc="",req=false),
+          ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="AD",desc="The input allele depth or AD field.",req=false),
+           ParamStr(id = "inputDP",synon=Seq(),ty="String",valueString="DP",desc="The input total depth or DP field.",req=false),
+ 
            
-           ParamStr(id = "noCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noFreqCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noMissCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noAlleCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noHetHomCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "addOtherCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "noCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then no Ct fields will be generated.",req=false),
+           ParamStr(id = "noFreqCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then no Freq fields will be generated.",req=false),
+           ParamStr(id = "noMissCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then Ct and Freq fields will not be generated to count the number or rate of missing genotypes.",req=false),
+           ParamStr(id = "noAlleCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then Ct and Freq fields will not be generated to count allele counts and frequencies.",req=false),
+           ParamStr(id = "noHetHomCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then Ct and Freq fields will not be generated to count the number of HomAlt and Het genotypes.",req=false),
+           ParamStr(id = "noMultiHetCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then the number of multiallelic heterozygotes will not be counted.",req=false),
+           ParamStr(id = "addOtherCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, additional optional counts will be added.",req=false),
            
-           ParamStr(id = "samplePrintLimit",synon=Seq(),ty="String",valueString="",desc="",req=false),
+           ParamStr(id = "samplePrintLimit",synon=Seq(),ty="String",valueString="",desc="This limits the number of samples that will be listed in the SAMPLIST fields. This can be useful to reduce file sizes and prevent problems when importing into excel due to overly long fields.",req=false),
 
-           ParamStr(id = "noDepthStats",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noSampleLists",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
-           ParamStr(id = "noSampleCounts",synon=Seq(),ty="Flag",valueString="",desc="",req=false),
+           ParamStr(id = "noDepthStats",synon=Seq(),ty="Flag",valueString="",desc="If this is set, depth statistic fields (including total depth, depth quantiles, and hetAB stats) will not be created.",req=false),
+           ParamStr(id = "noSampleLists",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then SAMPLIST fields will not be generated.",req=false),
+           ParamStr(id = "noSampleCounts",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then sample count and frequency fields will not be generated.",req=false),
            
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="The variant expression, "+
                                                   "which is a true/false expression using the variant expression syntax.",req=false,defaultValue=None)
@@ -352,12 +354,12 @@ object SVcfMapFunctions {
        ParamStrSet("filterTags" ,  desc = "This function can be used to remove unwanted INFO or FORMAT fields, "+
                                                   "or remove unwanted samples. This can substantially reduce file sizes.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-           ParamStr(id = "FORMAT.keep",synon=Seq(),ty="String",valueString="expr",desc="",req=false),
-           ParamStr(id = "FORMAT.drop",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "INFO.keep",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "INFO.drop",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "SAMPLES.keep",synon=Seq(),ty="String",valueString="",desc="",req=false),
-           ParamStr(id = "SAMPLES.drop",synon=Seq(),ty="String",valueString="",desc="",req=false)
+           ParamStr(id = "FORMAT.keep",synon=Seq(),ty="String",valueString="expr",desc="If this is set, then ALL format fields EXCEPT the ones listed here will be dropped.",req=false),
+           ParamStr(id = "FORMAT.drop",synon=Seq(),ty="String",valueString="",desc="IF this is set, then the listed format fields will be dropped.",req=false),
+           ParamStr(id = "INFO.keep",synon=Seq(),ty="String",valueString="",desc="If this is set, then ALL info fields EXCEPT the ones listed here will be dropped.",req=false),
+           ParamStr(id = "INFO.drop",synon=Seq(),ty="String",valueString="",desc="If this is set, then the listed info fields will be dropped.",req=false),
+           ParamStr(id = "SAMPLES.keep",synon=Seq(),ty="String",valueString="",desc="IF this is set, then ALL samples EXCEPT the ones listed here will be dropped.",req=false),
+           ParamStr(id = "SAMPLES.drop",synon=Seq(),ty="String",valueString="",desc="If this is set, the listed samples will be dropped.",req=false)
          )), category = "File Formatting/Conversion"
        ),
        
@@ -369,7 +371,7 @@ object SVcfMapFunctions {
         */
        ParamStrSet("keepVariants" ,  desc = "This function drops variants based on a given true/false expression.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="",req=false)
+           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A variant-level expression. See the HELP section on Variant-Level Logical Expressions.",req=false)
          )), category = "Filtering"
        ),
        ParamStrSet("extractRegion" ,  desc = "This function extracts a single region from the VCF. NOTE: the VCF MUST BE SORTED!", 
@@ -378,21 +380,37 @@ object SVcfMapFunctions {
            ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="0",desc="The size of the window around the genomic region to extract.",req=false,initParam = true)
          )), category = "Filtering"
        ),
-       ParamStrSet("snpSiftAnno" ,  desc = "This function runs a SnpSift anno command", 
+       ParamStrSet("snpSiftAnno" ,  desc = "This function runs a SnpSift anno command. SnpSift's java library has been packaged internally within vArmyKnife and is called directly, producing results identical to a separate snpSift command.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-           ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
-         )), category = "File/Database Annotation"
+           ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command. In general you should specify the -info and -name options followed by a VCF file to annotate with. ",req=false)
+         )), category = "File/Database Annotation",
+         exampleCode = Seq[Seq[String]](
+           Seq[String](
+             "This example annotates the current VCF file with the AC and AN fields from another VCF file. Note that the annotation VCF file must be sorted and indexed using tabix. "+
+             "\n",
+             "   varmyknife walkVcf \\\n"+
+             "          --fcn \"snpSiftAnno|gnomad|cmd=-info AC,AN -name GNOM_ /path/to/anno/file/gnomad.vcf.gz \"\\\n"+
+             "          infile.vcf.gz outfile.vcf.gz\n"),
+         )
        ),
-       ParamStrSet("snpSiftAnnoMulti" ,  desc = "This function runs several SnpSift anno commands in series. This will be faster than several separate snpSiftAnno function calls.", 
+       ParamStrSet("snpSiftAnnoMulti" ,  desc = "This function runs several snpSiftAnno commands one after another. See the help for the snpSiftAnno function above. This will be faster than several separate snpSiftAnno function calls. It uses SnpEff/Sift version 4.3t.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmds",synon=Seq(),ty="String",valueString="cmds",desc="A semicolon delimited list of valid snpSift commands.",req=false)
          )), category = "File/Database Annotation"
        ),
        
-       ParamStrSet("snpSiftDbnsfp" ,  desc = "This function runs the SnpSift dbnsfp command", 
+       ParamStrSet("snpSiftDbnsfp" ,  desc = "This function runs the SnpSift dbnsfp command. SnpSift's java library has been packaged internally within vArmyKnife and is called directly, producing results identical to a separate snpSift command. It uses SnpEff/Sift version 4.3t.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command",req=false)
-         )), category = "File/Database Annotation"
+         )), category = "File/Database Annotation",
+         exampleCode = Seq[Seq[String]](
+           Seq[String](
+             "This example annotates the current VCF file with a DBNSFP database that has been downloaded and prepared by SNPSIFT. "+
+             "\n",
+             "   varmyknife walkVcf \\\n"+
+             "          --fcn \"snpSiftDbnsfp|dbnsfp|cmd=-f genename,cds_strand,refcodon -db /path/to/db/dbNSFP/v3.5a/dbNSFP3.5a_hg19_sorted.txt.gz \"\\\n"+
+             "          infile.vcf.gz outfile.vcf.gz\n"),
+         )         
        ),
        ParamStrSet("snpEff" ,  desc = "This function runs SnpEff by calling the SnpEff library internally. It uses SnpEff version 4.3t.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -405,15 +423,24 @@ object SVcfMapFunctions {
              "          infile.vcf.gz outfile.vcf.gz\n")
          )
        ),
-       ParamStrSet("snpEffExtract" ,  desc = "", 
+       ParamStrSet("snpEffExtract" ,  desc = "This utility is designed to extract information from ANN fields generated by either SNPEFF or VEP. While the ANN field contains a large amount of information, "+
+                                             "the structure and organization of this field is often difficult to parse and operate on. "+
+                                             "ANN fields are structured as a series of entries each specifying a gene, transcript, and effect. For example, if a "+
+                                             "variant causes a missense change in transcript A and causes a splicing change in transcript B then there would be two entries, one for each effect. "+
+                                             "This function can extract whatever specific information desired from the ANN-formatted field and filters, collates, and reorganizes it in a way that is easier to use. "+
+                                             "The various keep and drop lists allow you to extract or ignore ANN entries based on biotype, effect, or warnings. "+
+                                             "The geneList function allows you to specify a gene list, any entries that do not pertain to a gene on that list will be ignored. This can allow you to (for example) create a new field "+
+                                             "that lists the effects only for the desired gene(s). This can avoid certain common errors. For example: where one extracts a gene list and then extracts all Loss-of-Function variants and ends up with a "+
+                                             "number of variants that have synonymous effect or simply nearby a gene of interest but are also loss-of-function for some other gene which is NOT a gene of interest."+
+                                             "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               ParamStr(id = "annTag",synon=Seq(),ty="String",valueString="tag",desc="A valid ANN formatted field, usually generated by SNPeff.",req=false,defaultValue=Some("ANN")),
               ParamStr(id = "bioTypeKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="A comma delimited list of the transcript biotypes that you want to keep. All other biotypes will be ignored.",req=false),
               ParamStr(id = "effectKeepList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="A comma delimited list of the effect types that you want to keep. All other EFFECT values will be ignored.",req=false),
               ParamStr(id = "warningDropList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="A comma delimited list of warnings. Any entries that include a listed warning will be ignored.",req=false),
               //ParamStr(id = "keepIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
-              ParamStr(id = "geneListName",synon=Seq(),ty="String",valueString="myGeneListName",desc="",req=false),
-              ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false),
+              ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="t1,t2,...",desc="If this variant is set, then all operations will be restricted to only the ANN entries that correspond to any gene in the supplied list of genes. This can be useful for extracting only the effect on specific genes of interest.",req=false),
+              ParamStr(id = "geneListName",synon=Seq(),ty="String",valueString="myGeneListName",desc="The name you want to give to the given gene list. Should only be used in conjunction with the geneList option.",req=false),
               
               ParamStr(id = "severityList",synon=Seq(),ty="String",valueString="...",desc="Must be a list of severity levels, listed as some combination of effectseverity types delimited with slashes. "+
                                  "Legal types are: HIGH, MODERATE, LOW, and MODIFIER, which are standard SnpEFF effect types, and also: "+
@@ -431,11 +458,56 @@ object SVcfMapFunctions {
                     "both field names will be prefixed by that overall ID."
                     ,req=false),
               //(tagPrefix+svexOutTag+"_",svexIdx,svexFullDesc,svexSevSet, noCollapse)
-             ParamStr(id = "geneNameIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false,defaultValue = Some("4") ),
-             ParamStr(id = "biotypeIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false,defaultValue = Some("7") ),
-             ParamStr(id = "warnIdx",synon=Seq(),ty="String",valueString="t1,t2,...",desc="",req=false,defaultValue = Some("15") )
+             ParamStr(id = "geneNameIdx",synon=Seq(),ty="String",valueString="i",desc="This sets the index of the geneName to be used for collating information by gene. By default this is set to 4 which as per the ANN field specification is the \"geneID\" (usually the ensembl ID). If desired this can be set to 3 which is the \"common gene name\" (usually the gene symbol), or even 6 which is the transcriptID (which will cause this tool to perform all operations on the transcript level rather than the gene level. This variable can also be useful if you have a nonstandard ANN-style input.",req=false,defaultValue = Some("4") ),
+             ParamStr(id = "biotypeIdx",synon=Seq(),ty="String",valueString="i",desc="This sets the ANN field index for the warning field. As per the specification of the ANN field this should always be set to the default (7), but for certain older versions it may be different.",req=false,defaultValue = Some("7") ),
+             ParamStr(id = "warnIdx",synon=Seq(),ty="String",valueString="i",desc="This sets the ANN field index for the warning field. As per the specification of the ANN field this should always be set to the default (15), but for certain older versions it may be different.",req=false,defaultValue = Some("15") )
               //TODO: figure out how to include snpEffVarExtracts!
-         )), category = "File/Database Annotation"
+         )), category = "File/Database Annotation",
+         synon=Seq("extractANN"),
+         exampleCode = Seq[Seq[String]](
+             Seq[String](
+             "The following command will extract various useful information from the ANN field. Entries that do not refer to protein coding transcripts will be ignored. "+
+             "Entries that refer to effects that are not included in the provided effectKeepList will be ignored. "+
+             "Any entries with the listed warnings will be ignored. "+
+             "Several types of output fields will be generated for various effect severities. \n"+
+             "   GENEEFFECT: This will be a list of geneName:Effect pairs that pass the above filters. \n"+
+             "   ENSGID: This will be a list of ensemble gene ID's from any entries that pass the above filters. \n"+
+             "   ENSTID: This will be a list of ensemble transcript ID's from any entries that pass the above filters. \n"+
+             "   TXCHANGE: These will be a list of TXID:HGVSc transcript change pairs that pass the above filters. \n"+
+             "   FIRSTEFFECT: Like the GENEEFFECT fields, this will be a list of geneName:Effect pairs that pass the above filters, but if multiple effects are listed it will only list the first effect.\n"+
+             "\n"+             
+             "New fields will be created for each of the above and each of the listed effect severities. For example: \n"+
+             "   ANNEX_GENEEFFECT_HIGH: This will list only gene:effect pairs that pass the above filters and have severity HIGH.\n"+
+             "   ANNEX_GENEEFFECT_MODERATE: This will list only gene:effect pairs that pass the above filters and have severity MODERATE.\n"+
+             "   ANNEX_GENEEFFECT_NS: This will list only gene:effect pairs that pass the above filters and have severity HIGH or MODERATE.\n"+
+             "and so on...\n"+
+             "\n"+
+             "varmyknife walkVcf \n"+
+             "    --fcn \"snpEffExtract|ANNEX|annTag=ANN|\\\n"+
+             "            bioTypeKeepList=protein_coding\\\n"+
+             "            effectKeepList=\\\n"+
+             "                coding_sequence_variant,inframe_insertion,disruptive_inframe_insertion,\\\n"+
+             "                conservative_inframe_insertion,inframe_deletion,disruptive_inframe_deletion,\\\n"+
+             "                conservative_inframe_insertion,exon_variant,exon_loss_variant,duplication,\\\n"+
+             "                inversion,frameshift_variant,missense_variant,start_retained_variant,\\\n"+
+             "                stop_retained_variant,initiator_codon_variant,rare_amino_acid_variant,\\\n"+
+             "                splice_acceptor_variant,splice_donor_variant,stop_lost,start_lost,stop_gained,\\\n"+
+             "                synonymous_variant,start_retained,splice_region_variant,\\\\n"+
+             "                5_prime_UTR_premature,start_codon_gain_variant,\\\n"+
+             "                3_prime_UTR_truncation,5_prime_UTR_truncation,\\\n"+
+             "                3_prime_UTR_variant,5_prime_UTR_variant,\\\n"+
+             "                intron_variant,conserved_intron_variant\\\n"+
+             "            warningDropList=WARNING_TRANSCRIPT_INCOMPLETE,WARNING_TRANSCRIPT_MULTIPLE_STOP_CODONS,\\\n"+
+             "                            WARNING_TRANSCRIPT_NO_START_CODON,WARNING_TRANSCRIPT_NO_STOP_CODON\\\n"+
+             "            extractFields=GENEEFFECT:3/FIRSTEFFECT:set of gene-effect pairs:HIGH/MODERATE/NS:.,\\\n"+
+             "               ENSGID:4:Gene ensemble ID:HIGH/NS:.,\\\n"+
+             "               ENSTID:6:Affected Transcript ID:HIGH/NS:.,\\\n"+
+             "               TXCHANGE:6/9:TranscriptID and HGVSc change:HIGH/NS:.,\\\n"+
+             "               FIRSTEFFECT:FIRSTEFFECT:Extracted First Effect:HIGH/MODERATE/LOW/NS/ANY:.|\\\n"+
+             "            geneNameIdx=3\\\n"+
+             "            severityList=HIGH/MODERATE/NS/LOW\"\\\n"+
+             "          infile.vcf.gz outfile.vcf.gz\n")
+         )         
        ),
        /*
                            new SnpEffInfoExtract(tagID = params("annTag"),

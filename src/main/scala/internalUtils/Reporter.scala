@@ -370,6 +370,10 @@ object Reporter {
     }
     arr
   }
+  def initSampleTally(str : String) {
+      val a = Array.ofDim[Int](sampleList.length)
+      sampleTallyInt.put(str,a);
+  }
 /*  val sampleTallyFloat : scala.collection.mutable.Map[String,Seq[Double]] = scala.collection.mutable.Map[String,Seq[Double]]();
   def sampleTally(str : String, vv : Seq[Double]){
     sampleTallyFloat.put( str, vv );
