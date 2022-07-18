@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.89 (Updated Fri May 27 10:13:30 EDT 2022)
+> Version 3.2.90 (Updated Wed Jun  1 15:32:30 EDT 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -926,9 +926,17 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### copyColumnToInfo
 
->  This utility copies the contents of one of the VCF columns to a new INFO field\.
+>  This utility copies the contents of one of the VCF columns to a new INFO field\. Note that some columns allow characters that are not allowed in INFO fields, such as equal signs\. Any illegal characters will be automatically replaced with underscores\.
 
 
+    columnID: (String, required)
+
+### copyInfoToColumn
+
+>  This utility copies the contents of an INFO field to one of the the other VCF columns\.
+
+
+    infoColumn: (String, required)
     columnID: (String, required)
 
 ### copyInfoToGeno
@@ -1089,7 +1097,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### STRING\_REPLACE\(old,new,info\)
 
     
-    
+    Simple string replacement. First parameter should be the old 
+        string, second parameter the replacement string, and the 
+        third parameter an INFO field. Any time the old string 
+        appears in the INFO field it will be replaced by the new 
+        string. Does not do pattern matching, simple replacement.
     old (CONST:String) 
     new (CONST:String) 
     info (INFO:String) 
@@ -1116,7 +1128,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### DECODE\(x,decoder\)
 
     
-    Decodes an INFO field
+    Decodes an INFO field. Decoder must be a simple 2-column 
+        tab-delimited file with the old ID first. Any time an 
+        element in the INFO field x matches an element in the first 
+        column of the text file, it will be swapped with the 
+        corresponding entry in the second column of the text file. 
+        Elements that do not match any element in the first column 
+        will be unchanged.
     x (INFO:String) 
     decoder (FILE:String) 
 

@@ -2060,7 +2060,7 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "DECODE",synon = Seq(),
               shortDesc = "",
-              desc = "Decodes an INFO field",
+              desc = "Decodes an INFO field. Decoder must be a simple 2-column tab-delimited file with the old ID first. Any time an element in the INFO field x matches an element in the first column of the text file, it will be swapped with the corresponding entry in the second column of the text file. Elements that do not match any element in the first column will be unchanged.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "INFO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "decoder", ty = "FILE:String",req=true,dotdot=false ),
@@ -2105,7 +2105,10 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "STRING_REPLACE",synon = Seq(),
               shortDesc = "",
-              desc = "",
+              desc = "Simple string replacement. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field. "+
+                     "Any time the old string appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement."+
+                     ""+
+                     "",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "old", ty = "CONST:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "new", ty = "CONST:String",req=true,dotdot=false ),
@@ -2134,7 +2137,7 @@ object SVcfTagFunctions {
                 //reportln("SETS.UNION.run:"+out,"deepDebug");
                 //error("NOT YET IMPLEMENTED!");
                 val out = vc.info.getOrElse(info,None).map{ xx => {
-                  xx.replace(ostr,nstr);
+                  xx.replaceAllLiterally(ostr,nstr);
                 }}.getOrElse(".");
                 writeString(vout,out)
               }
@@ -2916,6 +2919,10 @@ object SVcfTagFunctions {
       }
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
+        
+        vc.genotypes.sampList = vcfHeader.titleLine.sampleList.toList;
+        vc.genotypes.sampGrp = Some(sampleToGroupMap);
+        
         vc.dropInfo(overwriteInfos);
         fcn.run(v,vc);
         vc;

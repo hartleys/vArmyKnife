@@ -811,9 +811,17 @@
 
 ### copyColumnToInfo
 
->  This utility copies the contents of one of the VCF columns to a new INFO field\.
+>  This utility copies the contents of one of the VCF columns to a new INFO field\. Note that some columns allow characters that are not allowed in INFO fields, such as equal signs\. Any illegal characters will be automatically replaced with underscores\.
 
 
+    columnID: (String, required)
+
+### copyInfoToColumn
+
+>  This utility copies the contents of an INFO field to one of the the other VCF columns\.
+
+
+    infoColumn: (String, required)
     columnID: (String, required)
 
 ### copyInfoToGeno

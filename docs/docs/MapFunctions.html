@@ -948,10 +948,20 @@ SAMPLES.drop: (String)
 <h3>copyColumnToInfo</h3>
 
 <blockquote>
-  <p>This utility copies the contents of one of the VCF columns to a new INFO field.</p>
+  <p>This utility copies the contents of one of the VCF columns to a new INFO field. Note that some columns allow characters that are not allowed in INFO fields, such as equal signs. Any illegal characters will be automatically replaced with underscores.</p>
 </blockquote>
 
 <pre><code>columnID: (String, required)
+</code></pre>
+
+<h3>copyInfoToColumn</h3>
+
+<blockquote>
+  <p>This utility copies the contents of an INFO field to one of the the other VCF columns.</p>
+</blockquote>
+
+<pre><code>infoColumn: (String, required)
+columnID: (String, required)
 </code></pre>
 
 <h3>copyInfoToGeno</h3>
