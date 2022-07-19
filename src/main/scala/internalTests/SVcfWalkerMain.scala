@@ -108,7 +108,7 @@ object SVcfWalkerMain {
                         sVcfFilterLogicParser.getManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +"\n"+
                         sGenotypeFilterLogicParser.getManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc)) +"\n"+
                         altCommandDocText.map{ acm => {
-                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "        ", false) 
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.MD_CONSOLE_LINE_WIDTH, "        ", false) 
                         }}.mkString("\n");
                         
      val markdownManualExtras =  
@@ -119,7 +119,7 @@ object SVcfWalkerMain {
                         sVcfFilterLogicParser.getMarkdownManualString(Some(vcfFilterManualTitle),Some(vcfFilterManualDesc)) +"\n\n"+
                         sGenotypeFilterLogicParser.getMarkdownManualString(Some(gtFilterManualTitle),Some(gtFilterManualDesc))  +"\n\n"+
                         altCommandDocMd.map{ acm => {
-                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH, "", false) 
+                          wrapLinesWithIndent(acm, internalUtils.commandLineUI.MD_CONSOLE_LINE_WIDTH, "", false) 
                         }}.mkString("\n")+"\n\n";
 
      /*

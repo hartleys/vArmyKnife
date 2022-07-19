@@ -1,21 +1,15 @@
-<pre><code>Genotype-level expressions are logical expressions that are 
-    performed at the GENOTYPE level. In other words, for each 
-    sample in each variant line. They are used by several parts 
-    of vArmyKnife, usually when filtering or differentiating 
-    genotypes based on their properties/stats. For any given 
-    variant, a genotype expression will return either TRUE or 
-    FALSE for each sample. Genotype expressions are parsed as a 
-    series of logical functions connected with AND, OR, NOT, 
-    and parentheses. All expressions MUST be separated with 
-    whitespace, though it does not matter how much whitespace 
-    or what kind. Alternatively, expressions can be read 
-    directly from file by setting the expression to 
+<pre><code>Genotype-level expressions are logical expressions that are performed at the GENOTYPE level. In 
+    other words, for each sample in each variant line. They are used by several parts of 
+    vArmyKnife, usually when filtering or differentiating genotypes based on their 
+    properties/stats. For any given variant, a genotype expression will return either TRUE or 
+    FALSE for each sample. Genotype expressions are parsed as a series of logical functions 
+    connected with AND, OR, NOT, and parentheses. All expressions MUST be separated with 
+    whitespace, though it does not matter how much whitespace or what kind. Alternatively, 
+    expressions can be read directly from file by setting the expression to 
     EXPRESSIONFILE:filepath.
-Genotype Expression functions are all of the format 
-    FILTERNAME:PARAM1:PARAM2:etc. Some filters have no 
-    parameters; other filters can accept a variable number of 
-    parameters. All expression functions return TRUE or FALSE. 
-    Filters can be inverted using the NOT operator before the 
+Genotype Expression functions are all of the format FILTERNAME:PARAM1:PARAM2:etc. Some filters 
+    have no parameters; other filters can accept a variable number of parameters. All expression 
+    functions return TRUE or FALSE. Filters can be inverted using the NOT operator before the 
     filter (with whitespace in between).
 </code></pre>
 
@@ -25,130 +19,108 @@ Genotype Expression functions are all of the format
 Never pass
 (Param Types: )
 GTAG.altDepthForAlle.gt:gt:ad:v
-TRUE iff for AD-style tag ad and GT-style tag gt, the sample is 
-    called as having an allele K while having less than v reads 
-    covering said allele.
+TRUE iff for AD-style tag ad and GT-style tag gt, the sample is called as having an allele K 
+    while having less than v reads covering said allele.
 (Param Types: )
 GTAG.altProportion.lt:t:k
-TRUE iff the tag t, which must be a AD-style-formatted field, 
-    has an observed alt-allele-frequency less than k.
+TRUE iff the tag t, which must be a AD-style-formatted field, has an observed 
+    alt-allele-frequency less than k.
 (Param Types: )
 GTAG.eq:t:s
-TRUE iff GT field t equals the string s. DROP if tag t is not 
-    present or set to missing.
+TRUE iff GT field t equals the string s. DROP if tag t is not present or set to missing.
 (Param Types: )
 GTAG.ge:t:k
-TRUE iff tag t is present and not set to missing, and is a 
-    number greater than or equal to k.
+TRUE iff tag t is present and not set to missing, and is a number greater than or equal to k.
 (Param Types: )
 GTAG.gem:t:k
-TRUE iff tag t is either not present, set to missing, or a 
-    number greater than or equal to k.
+TRUE iff tag t is either not present, set to missing, or a number greater than or equal to k.
 (Param Types: )
 GTAG.gt:t:k
-TRUE iff tag t is present and not set to missing, and is a 
-    number greater than k.
+TRUE iff tag t is present and not set to missing, and is a number greater than k.
 (Param Types: )
 GTAG.gtm:t:k
-TRUE iff tag t is either not present, set to missing, or a 
-    number greater than k.
+TRUE iff tag t is either not present, set to missing, or a number greater than k.
 (Param Types: )
 GTAG.inAnyOf:t:k
-TRUE iff the first parameter, a FORMAT field, is equal to any 
-    of the following parameters or is a list containing any of 
-    the following parameters, using commas, bars, or slashes as 
-    delimiters.
+TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a 
+    list containing any of the following parameters, using commas, bars, or slashes as delimiters.
 (Param Types: )
 GTAG.isAnyAlt:t
-TRUE iff the tag t, which must be a genotype-style-formatted 
-    field, is present and not set to missing and contains the 
-    alt allele.
+TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
+    missing and contains the alt allele.
 (Param Types: )
 GTAG.isCleanHet:t
-TRUE iff the tag t, which must be a genotype-style-formatted 
-    field, is present and not set to missing and is 
-    heterozygous between the alt and reference allele.
+TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
+    missing and is heterozygous between the alt and reference allele.
 (Param Types: )
 GTAG.isHet:t
-TRUE iff the tag t, which must be a genotype-style-formatted 
-    field, is present and not set to missing and is 
-    heterozygous.
+TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
+    missing and is heterozygous.
 (Param Types: )
 GTAG.isHomAlt:t
-TRUE iff the tag t, which must be a genotype-style-formatted 
-    field, is present and not set to missing and is 
-    homozygous-alt.
+TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
+    missing and is homozygous-alt.
 (Param Types: )
 GTAG.isHomRef:t
-TRUE iff the tag t, which must be a genotype-style-formatted 
-    field, is present and not set to missing and is 
-    homozygous-reference.
+TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
+    missing and is homozygous-reference.
 (Param Types: )
 GTAG.le:t:k
-TRUE iff tag t is present and not set to missing, and is a 
-    number less than or equal to k.
+TRUE iff tag t is present and not set to missing, and is a number less than or equal to k.
 (Param Types: )
 GTAG.lem:t:k
-TRUE iff tag t is either not present, set to missing, or a 
-    number less than or equal to k.
+TRUE iff tag t is either not present, set to missing, or a number less than or equal to k.
 (Param Types: )
 GTAG.lt:t:k
-TRUE iff tag t is present and not set to missing, and is a 
-    number less than k.
+TRUE iff tag t is present and not set to missing, and is a number less than k.
 (Param Types: )
 GTAG.ltm:t:k
-TRUE iff tag t is either not present, set to missing, or a 
-    number less than k.
+TRUE iff tag t is either not present, set to missing, or a number less than k.
 (Param Types: )
 GTAG.m:t:k
 TRUE iff the GT field t is is not present or set to missing.
 (Param Types: )
 GTAG.mg:t
-TRUE iff the GT field t is not present or is missing or is set 
-    to a missing genotype (./.).
+TRUE iff the GT field t is not present or is missing or is set to a missing genotype (./.).
 (Param Types: )
 GTAG.ne:t:k
-TRUE iff GT field t does not equal the string s. DROP if tag t 
-    is not present or set to missing.
+TRUE iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.
 (Param Types: )
 GTAG.nm:t
 TRUE iff the GT field t is present and not set to missing.
 (Param Types: )
 GTAG.nmg:t
-TRUE iff the GT field t is present and not set to missing and 
-    is not set to a missing genotype (./.).
+TRUE iff the GT field t is present and not set to missing and is not set to a missing genotype 
+    (./.).
 (Param Types: )
 GTAGARRAY.gt:t:i:k
-TRUE iff the tag t is present and not set to missing, and is a 
-    list with at least i elements, and the i-th element of 
-    which is greater than k.
+TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and 
+    the i-th element of which is greater than k.
 (Param Types: )
 GTAGARRAY.lt:t:i:k
-TRUE iff the tag t is present and not set to missing, and is a 
-    list with at least i elements, and the i-th element of 
-    which is less than k.
+TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and 
+    the i-th element of which is less than k.
 (Param Types: )
 GTAGARRAYSUM.gt:t:k
-TRUE iff the tag t is present and not set to missing, and is a 
-    list of numbers the sum of which is greater than k.
+TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which 
+    is greater than k.
 (Param Types: )
 GTAGARRAYSUM.lt:t:k
-TRUE iff the tag t is present and not set to missing, and is a 
-    list of numbers the sum of which is greater than k.
+TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which 
+    is greater than k.
 (Param Types: )
 SAMPGRP.in:g
 TRUE iff the sample is a member of group g.
 (Param Types: )
 TAGPAIR.match:t1:t2
-TRUE iff the two tags t1 and t2 are both present and not set to 
-    missing, and are equal to one another.
+TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one 
+    another.
 (Param Types: )
 TRUE:
 Always pass
 (Param Types: )
 VAREXPR:fcn:params
-Variant passes variant-level logical function. Note that you 
-    cannot include AND/OR/NOT inside this logical function, it 
-    must be a single variant-level logical function.
+Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside 
+    this logical function, it must be a single variant-level logical function.
 (Param Types: :...)
 </code></pre>

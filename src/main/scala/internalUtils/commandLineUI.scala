@@ -39,7 +39,7 @@ object commandLineUI {
         }) + wrapLineWithIndent(escapeToMarkdown(lmrd),internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,0)+"\n"
       }}.mkString("\n")+*/
     }
-    def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,
+    def getMarkdownString(lineLen : Int = internalUtils.commandLineUI.MD_CONSOLE_LINE_WIDTH,
                           baseLevel : Int = 0) : String = {
       val LPrefS = if(mdCaret) "> " else "";
       val LPrefE = if(mdCaret) "\n" else "";
@@ -130,6 +130,7 @@ object commandLineUI {
   final val MANUAL_COMMAND_LIST : List[String] = List("?","'?'", "\"?\"","man","-man","--man", "help", "-help", "--help");
   
   var CLUI_CONSOLE_LINE_WIDTH = 68;
+  var MD_CONSOLE_LINE_WIDTH = 102;
   
   final val ALWAYS_DEBUG_MODE = true;
   final val DEBUG_MODE_FLAG = "--debug";

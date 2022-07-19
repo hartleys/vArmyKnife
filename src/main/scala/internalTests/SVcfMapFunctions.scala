@@ -329,7 +329,7 @@ object SVcfMapFunctions {
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
            ParamStr(id = "inputGT",synon=Seq(),ty="String",valueString="GT",desc="The input genotype FORMAT field.",req=false),
            
-          ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="AD",desc="The input allele depth or AD field.",req=false),
+           ParamStr(id = "inputAD",synon=Seq(),ty="String",valueString="AD",desc="The input allele depth or AD field.",req=false),
            ParamStr(id = "inputDP",synon=Seq(),ty="String",valueString="DP",desc="The input total depth or DP field.",req=false),
  
            
