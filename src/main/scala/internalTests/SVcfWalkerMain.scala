@@ -96,7 +96,7 @@ object SVcfWalkerMain {
                             "which perform other tasks. ",
                             "These tools can be invoked with the command:\n",
                             "    varmyknife --CMD commandName [options]\n",
-                            "For more information see the [secondary command page](secondaryCommands.html), or use the command:\n" ,
+                            "For more information see the [secondary command page](docs/secondaryCommands.html), or use the command:\n" ,
                             "    varmyknife --help CMD\n",
                             "For a listing of all secondary commands, use the command: \n",
                             "    varmyknife --help secondaryCommands\n") 

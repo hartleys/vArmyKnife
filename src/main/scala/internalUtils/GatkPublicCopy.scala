@@ -998,7 +998,45 @@ object GatkPublicCopy {
     def refToUpper(rs : Array[Byte]) : Array[Byte] = {
       rs.map{ c => c.toChar.toUpper.toByte }
     }
-  
+
+
+  case class SFilterVariantsOffChromosomeEnd(genomeFa : String, strict : Boolean = true) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "SFilterVariantsOffChromosomeEnd"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)]()
+
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)    
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      outHeader.addWalk(this);
+      
+      (vcIter.filter{vc => {
+        if(strict){ 
+          refSeqFile.getSequenceDictionary().getReferenceLength() >= vc.pos + vc.ref.length() - 1
+        } else {
+          refSeqFile.getSequenceDictionary().getReferenceLength() >= vc.pos
+        }
+        
+        /*val filtLen = vc.alt.filter(x => x != "." && x != internalUtils.VcfTool.UNKNOWN_ALT_TAG_STRING).length
+        if(filtLen > 1){
+          error("ERROR: must split multiallelics before attempting to drop nonvariant lines!");
+          false
+        } else if(filtLen == 0){
+          notice("Filtering variant with no alt alleles:\n    "+vc.getSimpleVcfString(),"DROPPED_NOALT_VARIANT",10);
+          false
+        } else if(dropEqualRefAlt && vc.alt.head == vc.ref) {
+          notice("Filtering variant with equal ref and alt allele:\n    "+vc.getSimpleVcfString(),"DROPPED_REFeqALT_VARIANT",10);
+          false
+        } else {
+          true
+        }*/
+      }},outHeader)
+    }
+  }
     
   case class LeftAlignAndTrimWalker(genomeFa : String, windowSize : Int = 200, tagPrefix : Option[String] = Some("GATK_LAT_"),
                                     useGatkLibCall : Boolean = false) extends SVcfWalker {
@@ -1072,19 +1110,33 @@ object GatkPublicCopy {
       tally("CHANGE_LEFTALIGNANDTRIM",0)
        newHeader.reportAddedInfos(this)
       ((addIteratorCloseAction(bufferedGroupedResorting(vcMap(vcIter){ vc => {
-        if(vc.alt.length == 2){
-          if(vc.alt.last != "*"){
+        try {
+          if(vc.alt.length == 2){
+            if(vc.alt.last != "*"){
+              error("ERROR: Cannot have multiallelic variants in leftAlignAndTrim. \n   Offending Variant:\n   "+vc.getSimpleVcfString());
+            }
+          } else if(vc.alt.length != 1){
             error("ERROR: Cannot have multiallelic variants in leftAlignAndTrim. \n   Offending Variant:\n   "+vc.getSimpleVcfString());
           }
-        } else if(vc.alt.length != 1){
-          error("ERROR: Cannot have multiallelic variants in leftAlignAndTrim. \n   Offending Variant:\n   "+vc.getSimpleVcfString());
-        }
-        val rc = getReferenceContext(vc.chrom,vc.start,vc.end);
-        if(useGatkLibCall){
-          warning("WARNING: USING DEPRECATED LeftAlignAndTrim Function!!!","DEPRECATED_LAT",10)
-          trimAlign(vc,rc,tagPrefix)._1;
-        } else {
-          trimAlignNoLib(vc,rc,tagPrefix,windowSize)._1;
+          val rc = getReferenceContext(vc.chrom,vc.start,vc.end);
+          if(useGatkLibCall){
+            warning("WARNING: USING DEPRECATED LeftAlignAndTrim Function!!!","DEPRECATED_LAT",10)
+            trimAlign(vc,rc,tagPrefix)._1;
+          } else {
+            try {
+               trimAlignNoLib(vc,rc,tagPrefix,windowSize)._1;
+            } catch {
+              case e : Exception => {
+                reportln( "LeftAlignAndTrim.trimAlignNoLib throwing Exception on line: \n   \""+vc.getSimpleVcfString()+"\"","warn");
+                throw e;
+              }
+            }
+          }
+        } catch {
+          case e: Exception => {
+            reportln( "LeftAlignAndTrim throwing Exception on line: \n   \""+vc.getSimpleVcfString()+"\"","warn");
+            throw e;
+          }
         }
       }},windowSize * 4){vc => vc.pos}{vc => vc.chrom}{vc => (vc.pos,vc.ref,vc.alt.head)}, closeAction = (() => {
         notice("Trimmed "+trimCt+" lines and leftAligned "+leftAlignCt+" lines.","TRIM_NOTICE",10);

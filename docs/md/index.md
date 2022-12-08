@@ -1,4 +1,4 @@
-> Version 3.2.99 (Updated Tue Jul 19 10:03:11 EDT 2022)
+> Version 3.2.101 (Updated Wed Oct 12 12:46:52 EDT 2022)
 
 # GENERAL SYNTAX:
 
@@ -9,7 +9,10 @@
                                   ...etc...\
                                   infile.vcf.gz outfile.vcf.gz
     
-    Note that either infile or outfile can be '-' to read from STDIN or STDOUT respectively.    
+    Note that either infile or outfile can be '-' to read from STDIN or STDOUT respectively.        varmyknife [java_options] walkVcf [options] \
+                                  --FCN "fcnName1|stepName1|param1|param2"\
+                                  infile.vcf.gz - | bgzip > outfile.vcf.gz
+    
     vArmyKnife also comes packaged with a few other tools that don't run on VCF files.
     To use these other secondary tools:
         varmyknife [java_options] otherCommandName [options]
@@ -633,6 +636,16 @@ This utility performs a series of transformations on an input VCF file and adds 
     windowSize: The size of the window around the genomic region to extract.(Int)
 
 ### dropNullVariants
+
+>  This drops variants if they appear beyond the endpoint of the genome builds chromosome\. Certain tools will occasionally create variants like this and they will crash many other functions like left\-align\-and\-trim or GC\-content calculations, etc\.
+
+
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
+
+### dropVariantsBeyondChromEnd
 
 >  This function drops all lines with no alt alleles \('\.' in the ALT column\), or lines where the ALT allele is identical to the REF\. Note: you must split multiallelics first\. See the 'splitMultiallelics' function\.
 
@@ -1817,7 +1830,8 @@ In addition to the standard command which parses a VCF or variant table, vArmyKn
 ancillary tools which perform other tasks.
 These tools can be invoked with the command:
     varmyknife --CMD commandName [options]
-For more information see the [secondary command page](secondaryCommands.html), or use the command:
+For more information see the [secondary command page](docs/secondaryCommands.html), or use the 
+command:
     varmyknife --help CMD
 For a listing of all secondary commands, use the command: 
     varmyknife --help secondaryCommands

@@ -9758,7 +9758,6 @@ ALT VERSION: allows title line!
     }
   }
   
-
   
   case class SFilterChromWalker(chromList : Option[List[String]]) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "SFilterChromWalker"

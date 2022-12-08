@@ -580,11 +580,17 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "General-Purpose Tools"
        ),//dropNullVariants
-       ParamStrSet("dropNullVariants" ,  desc = "This function drops all lines with no alt alleles ('.' in the ALT column), or lines where the ALT allele is identical to the REF. "+
+       ParamStrSet("dropNullVariants" ,  desc = "This drops variants if they appear beyond the endpoint of the genome builds chromosome. Certain tools will "+
+                                                "occasionally create variants like this and they will crash many other functions like left-align-and-trim or GC-content calculations, etc.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              COMMON_PARAMS("genomeFA")
+         )),category = "Filtering"
+       ),//dropVariantsBeyondChromEnd
+       ParamStrSet("dropVariantsBeyondChromEnd" ,  desc = "This function drops all lines with no alt alleles ('.' in the ALT column), or lines where the ALT allele is identical to the REF. "+
                                                 "Note: you must split multiallelics first. See the 'splitMultiallelics' function.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "Filtering"
-       ),
+       ),//
        ParamStrSet("dropSpanIndels" ,  desc = "This function drops Spanning indel lines ('*' alleles). Note: you must split multiallelics first!", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "Filtering"
@@ -1673,6 +1679,8 @@ object SVcfMapFunctions {
                Some( new internalUtils.GatkPublicCopy.FixDotAltVcfLines(genomeFa = params("genomeFA") ) )
              } else if(mapType == "dropNullVariants"){
                Some(SFilterNonVariantWalker())
+             } else if(mapType == "dropVariantsBeyondChromEnd"){
+               Some( internalUtils.GatkPublicCopy.SFilterVariantsOffChromosomeEnd(genomeFa=params("genomeFA"), true) )
              } else if(mapType == "dropSpanIndels"){
                Some(new DropSpanIndels())
              } else if(mapType == "getLocusDepthFromWig"){

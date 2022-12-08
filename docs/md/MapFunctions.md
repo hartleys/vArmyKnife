@@ -524,6 +524,16 @@
 
 ### dropNullVariants
 
+>  This drops variants if they appear beyond the endpoint of the genome builds chromosome\. Certain tools will occasionally create variants like this and they will crash many other functions like left\-align\-and\-trim or GC\-content calculations, etc\.
+
+
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
+
+### dropVariantsBeyondChromEnd
+
 >  This function drops all lines with no alt alleles \('\.' in the ALT column\), or lines where the ALT allele is identical to the REF\. Note: you must split multiallelics first\. See the 'splitMultiallelics' function\.
 
 

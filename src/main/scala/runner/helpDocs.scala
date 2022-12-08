@@ -214,7 +214,7 @@ object helpDocs {
       val sb = new StringBuilder("");
       sb.append("# "+runner.UTILITY_TITLE+"\n");
       sb.append("> Version" + runner.UTIL_VERSION + " (Updated " + runner.UTIL_COMPILE_DATE +")\n\n");
-      sb.append("> ([back to help base](secondaryCommands.html))\n\n");
+      sb.append("> ([back to help base](docs/secondaryCommands.html))\n\n");
       sb.append("## General Help\n\n");
       
       sb.append("## DESCRIPTION:\n\n");

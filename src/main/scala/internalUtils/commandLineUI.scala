@@ -569,6 +569,9 @@ List(
       sb.append("                                  infile.vcf.gz outfile.vcf.gz"+"\n");
       sb.append("    "+"\n");
       sb.append("    Note that either infile or outfile can be '-' to read from STDIN or STDOUT respectively.");
+      sb.append("        varmyknife [java_options] walkVcf [options] \\"+"\n");
+      sb.append("                                  --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
+      sb.append("                                  infile.vcf.gz - | bgzip > outfile.vcf.gz"+"\n");
       sb.append("    "+"\n");
       sb.append("    vArmyKnife also comes packaged with a few other tools that don't run on VCF files."+"\n");
       sb.append("    To use these other secondary tools:"+"\n");
