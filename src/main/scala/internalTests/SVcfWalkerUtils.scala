@@ -1963,7 +1963,103 @@ object SVcfWalkerUtils {
       //vc.dropInfo(overwriteInfos);
     }
   }
-  
+  case class MergeSamplesIntoSingleColumn(prefixes : Seq[String], sampID : String) extends SVcfWalker {
+    def walkerName : String = "MergeSamplesIntoSingleColumn"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("prefixes",  prefixes.mkString("/"))
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      val samps = vcfHeader.titleLine.sampleList
+      val sampleCt = vcfHeader.titleLine.sampleList.length;
+      if( prefixes.length != sampleCt){
+        error("MergeSamplesIntoSingleColumn requires a comma-delimited list with length equal to the sample ct");
+      }
+      var prx = prefixes;
+      if( prefixes.head.split(":").length == 2 ){
+        val prxdec = prefixes.map{ x => { x.split(":") }}.map{ x => {
+          if( x.length != 2){
+            error("MergeSamplesIntoSingleColumn attempting to assign prefixes but some prefix entries have colons and some do not");
+          }
+          (x(0),x(1))
+        }}.toMap;
+        prx = samps.map{ ss => {
+          if( ! prxdec.contains(ss) ){
+            error("MergeSamplesIntoSingleColumn attempting to assign prefixes but some names not found in the file: "+ss+" (samps in file are: "+samps.mkString(",")+")");
+          }
+          prxdec(ss);
+        }}
+      }
+      val prz = prefixes.zip(samps);
+      
+      outHeader.formatLines = Seq[SVcfCompoundHeaderLine]()
+      
+      for( fxx <- vcfHeader.formatLines ){
+        for( (sxx,sid) <- prz ){
+          outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT", fxx.ID+sxx, Number=fxx.Number,Type=fxx.Type,desc="Merged column "+fxx.ID+" for sample "+sid+". "+fxx.desc))
+        }
+      }
+      val genotypesFMT = vcfHeader.formatLines.map{ fxx => fxx.ID }.map{ gx => {
+          prz.map{ case (sxx,sid) => {
+            gx + sxx;
+          }}
+      }}.flatten
+      
+      
+     //outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",geno,Number=".",Type="String",desc="Info column copied from "+info+" (todo copy over info)"))
+      
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        val genotypeVAL = vcfHeader.formatLines.map{ fxx => fxx.ID }.map{ gx => {
+           v.genotypes.getGtTag(gx) match {
+             case Some(garr) => {
+               garr.toSeq.map{ gg => {
+                 Array[String](gg);
+               }}
+             }
+             case None => {
+               Seq[Array[String]]()
+             }
+           }
+        }}.flatten.toArray
+        val genotypeFMT = vcfHeader.formatLines.map{ fxx => fxx.ID }.map{ gx => {
+           v.genotypes.getGtTag(gx) match {
+             case Some(garr) => {
+                prz.map{ case (sxx,sid) => {
+                  gx + sxx;
+                }}
+             }
+             case None => {
+               Seq[String]()
+             }
+           }
+
+        }}.flatten
+        
+        vc.in_genotypes = SVcfGenotypeSet(
+             fmt = genotypesFMT,
+             genotypeValues = genotypeVAL
+        )
+        /*
+         SVcfGenotypeSet(var fmt : Seq[String],
+                             var genotypeValues : Array[Array[String]])
+         */
+       
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
   
   class addDistToFeature(file : String, tag : String, desc : String) extends SVcfWalker {
     

@@ -838,3 +838,10 @@
 
 
     info: (String, required)
+
+### mergeSamplesIntoSingleColumn
+
+>  This utility copies multiple samples into a single merged sample\.
+
+
+    prefixes: (String, required)

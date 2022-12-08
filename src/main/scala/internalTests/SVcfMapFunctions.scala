@@ -862,6 +862,12 @@ object SVcfMapFunctions {
                ParamStr(id = "info",synon=Seq(),ty="String",valueString="infoFieldToCopy",desc="",req=true,initParam=true)
            )), category = "File Formatting/Conversion"
        ),
+       ParamStrSet("mergeSamplesIntoSingleColumn" ,  desc = "This utility copies multiple samples into a single merged sample.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "prefixes",synon=Seq(),ty="String",valueString="Sample Prefixes",desc="",req=true,initParam=true)
+           )), category = "File Formatting/Conversion"
+       ),
        //,
       //ParamStrSet("dropVariantsWithNs" ,  desc = "Removes all variants with N's in the REF or ALT sequences. Some callers will produce variants like this, and some tools will crash if given such variants.", 
       //     (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1727,6 +1733,18 @@ object SVcfMapFunctions {
                val alt   = if(params("columnID") == "ALT") Some(params("mapID")) else None
 
                Some(CopyFieldsToInfo( qualTag = qual, filterTag = filt, idTag = idtag, refTag = ref, altTag=alt ))
+               
+             } else if( mapType == "mergeSamplesIntoSingleColumn" ){
+        /*ParamStrSet("mergeSamplesIntoSingleColumn" ,  desc = "This utility copies multiple samples into a single merged sample.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "prefixes",synon=Seq(),ty="String",valueString="Sample Prefixes",desc="",req=true,initParam=true)
+           )), category = "File Formatting/Conversion"
+       ),*/
+               val prefixes = params("prefixes").split(",");
+               val sampID = params("sampID")
+               
+               Some( MergeSamplesIntoSingleColumn( prefixes=prefixes,sampID=sampID));
                
              } else if(mapType == "copyInfoToGeno"){
 
