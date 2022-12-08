@@ -512,7 +512,7 @@
 
 
     expr: A variant-level expression. See the HELP section on Variant-Level Logical 
-        Expressions.(String)
+        Expressions.(String, required)
 
 ### extractRegion
 

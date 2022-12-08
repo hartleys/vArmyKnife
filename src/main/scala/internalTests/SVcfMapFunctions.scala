@@ -374,7 +374,7 @@ object SVcfMapFunctions {
         */
        ParamStrSet("keepVariants" ,  desc = "This function drops variants based on a given true/false expression.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A variant-level expression. See the HELP section on Variant-Level Logical Expressions.",req=false)
+           ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="A variant-level expression. See the HELP section on Variant-Level Logical Expressions.",req=true, initParam=true)
          )), category = "Filtering"
        ),
        ParamStrSet("extractRegion" ,  desc = "This function extracts a single region from the VCF. NOTE: the VCF MUST BE SORTED!", 
@@ -1178,14 +1178,16 @@ object SVcfMapFunctions {
                   if(pp.trim().last != ')'){
                     error("Error: hanging open paren in string: "+params("func"));
                   }
-                  pp.init.split(",").toSeq.map{ _.trim() }
+                  //pp.init.split(",").toSeq.map{ _.trim() }
+                  pp.trim().init.split(",(?![^()]*+\\))").toSeq.map{ _.trim() };
                 }} match {
                   case Some(rp) => {
                     rp;
                   }
                   case None => {
                     params.get("params").map{ pp => {
-                      pp.split(",").toSeq;
+                      //pp.split(",").toSeq;
+                      pp.trim().split(",(?![^()]*+\\))").toSeq.map{ _.trim() };
                     }}.getOrElse(Seq[String]())
                   }
                 }

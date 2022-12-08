@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.101 (Updated Wed Oct 12 12:46:52 EDT 2022)
+> Version 3.2.105 (Updated Thu Nov 17 14:47:10 EST 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -627,7 +627,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     expr: A variant-level expression. See the HELP section on Variant-Level Logical 
-        Expressions.(String)
+        Expressions.(String, required)
 
 ### extractRegion
 

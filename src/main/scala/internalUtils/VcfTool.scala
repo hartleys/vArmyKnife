@@ -3163,6 +3163,7 @@ object VcfTool {
           //PAREN-STYLE:
           val closeIdx = findMatchedParenIdx(strs.tail);
           val filterID = strs.head
+          //val fcnString = filterID+":"+strs.tail.take(closeIdx).tail.init.mkString("").split(",").mkString(":")
           val fcnString = filterID+":"+strs.tail.take(closeIdx).tail.init.mkString("").split(",").mkString(":")
           parseLogicFunc( parseFilter(fcnString),strs.tail.drop(closeIdx) );
         } else {
