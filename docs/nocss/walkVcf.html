@@ -1,7 +1,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 3.2.106 (Updated Tue Nov 29 14:59:10 EST 2022)</p>
+  <p>Version 3.3.8 (Updated Fri Dec  2 14:38:34 EST 2022)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -1136,7 +1136,9 @@ columnID: (String, required)
   <p>This utility copies multiple samples into a single merged sample.</p>
 </blockquote>
 
-<pre><code>prefixes: (String, required)
+<pre><code>suffixes: Must be a comma delimited list with a short name for each sample column.(String, 
+    required)
+sampID: The name for the new sample column(String, required)
 </code></pre>
 
 <h1>INFO TAG FUNCTIONS</h1>
@@ -1242,6 +1244,15 @@ x (INFO:String|INFO:Int|INFO:Float)
 seed (INT)
 </code></pre>
 
+<h3>SETS.KEEP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
+
+<pre><code>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
+    field that contain the string will be dropped. Does not do pattern matching, simple 
+    replacement.
+info (INFO:String) 
+str (CONST:String)
+</code></pre>
+
 <h3>TO.LOWER.CASE(x)</h3>
 
 <pre><code>Input should be an INFO field. All alphabetic characters in the field will be converted to Lower 
@@ -1264,6 +1275,15 @@ y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 <pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
+<h3>SETS.DROP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
+
+<pre><code>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
+    field that contain the string will be dropped. Does not do pattern matching, simple 
+    replacement.
+info (INFO:String) 
+str (CONST:String)
+</code></pre>
+
 <h3>CONVERT.TO.INT(x,defaultValue)</h3>
 
 <pre><code>Input should be an INFO field, usually of type String. Converts field to a Integer. By default 
@@ -1273,7 +1293,15 @@ x (INFO:String)
 defaultValue (Optional) (CONST:Int)
 </code></pre>
 
-<h3>STRING_REPLACE(old,new,info)</h3>
+<h3>CONVERT.TO.FLOAT(x,defaultValue)</h3>
+
+<pre><code>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
+    non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
+x (INFO:String) 
+defaultValue (Optional) (CONST:Float)
+</code></pre>
+
+<h3>STRING.REPLACE(old,new,info)</h3>
 
 <pre><code>Simple string replacement. First parameter should be the old string, second parameter the 
     replacement string, and the third parameter an INFO field. Any time the old string appears in 
@@ -1282,14 +1310,6 @@ defaultValue (Optional) (CONST:Int)
 old (CONST:String) 
 new (CONST:String) 
 info (INFO:String)
-</code></pre>
-
-<h3>CONVERT.TO.FLOAT(x,defaultValue)</h3>
-
-<pre><code>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
-    non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
-x (INFO:String) 
-defaultValue (Optional) (CONST:Float)
 </code></pre>
 
 <h3>EXPR(expr)</h3>
@@ -1308,6 +1328,15 @@ expr (STRING)
     file. Elements that do not match any element in the first column will be unchanged.
 x (INFO:String) 
 decoder (FILE:String)
+</code></pre>
+
+<h3>STRING.REPLACE.WITHCOMMA(old,info)</h3>
+
+<pre><code>Simple string replacement. First parameter should be the old string, second parameter an INFO 
+    field. Any time the old string appears in the INFO field it will be replaced by a comma. Does 
+    not do pattern matching, simple replacement.
+old (CONST:String) 
+info (INFO:String)
 </code></pre>
 
 <h3>CONCAT(x...)</h3>

@@ -2156,7 +2156,7 @@ object SVcfTagFunctions {
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
-              id = "STRING_REPLACE",synon = Seq(),
+              id = "STRING.REPLACE",synon = Seq("STRING_REPLACE"),
               shortDesc = "",
               desc = "Simple string replacement. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field. "+
                      "Any time the old string appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement."+
@@ -2191,6 +2191,134 @@ object SVcfTagFunctions {
                 //error("NOT YET IMPLEMENTED!");
                 val out = vc.info.getOrElse(info,None).map{ xx => {
                   xx.replaceAllLiterally(ostr,nstr);
+                }}.getOrElse(".");
+                writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "STRING.REPLACE.WITHCOMMA",synon = Seq(),
+              shortDesc = "",
+              desc = "Simple string replacement. First parameter should be the old string, second parameter an INFO field. "+
+                     "Any time the old string appears in the INFO field it will be replaced by a comma. Does not do pattern matching, simple replacement."+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "old", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "info", ty = "INFO:String",req=true,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params,pv,h)
+              
+              val ostr : String = pv(0);
+              val nstr : String = ",";
+              val info : String = pv(1);
+              
+              //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
+              //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                
+                /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector.sorted.mkString(",")*/
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+                //error("NOT YET IMPLEMENTED!");
+                val out = vc.info.getOrElse(info,None).map{ xx => {
+                  xx.replaceAllLiterally(ostr,nstr);
+                }}.getOrElse(".");
+                writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "SETS.DROP.ELEMENTS.THAT.CONTAIN",synon = Seq(),
+              shortDesc = "",
+              desc = "First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped. "+
+                     " Does not do pattern matching, simple replacement."+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "info", ty = "INFO:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "str", ty = "CONST:String",req=true,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params,pv,h)
+              
+              val info : String = pv(0);
+              val str : String = pv(1);
+              
+              //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
+              //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                
+                /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector.sorted.mkString(",")*/
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+                //error("NOT YET IMPLEMENTED!");
+                val out = vc.info.getOrElse(info,None).map{ xx => {
+                  xx.split(",").filter{ x => {
+                    ! x.contains( str );
+                  }}.mkString(",");
+                }}.getOrElse(".");
+                writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "SETS.KEEP.ELEMENTS.THAT.CONTAIN",synon = Seq(),
+              shortDesc = "",
+              desc = "First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped. "+
+                     " Does not do pattern matching, simple replacement."+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "info", ty = "INFO:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "str", ty = "CONST:String",req=true,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params,pv,h)
+              
+              val info : String = pv(0);
+              val str : String = pv(1);
+              
+              //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
+              //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                
+                /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector.sorted.mkString(",")*/
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+                //error("NOT YET IMPLEMENTED!");
+                val out = vc.info.getOrElse(info,None).map{ xx => {
+                  xx.split(",").filter{ x => {
+                    x.contains( str );
+                  }}.mkString(",");
                 }}.getOrElse(".");
                 writeString(vout,out)
               }

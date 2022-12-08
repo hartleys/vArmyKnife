@@ -1995,6 +1995,7 @@ object SVcfWalkerUtils {
       }
       val prz = prefixes.zip(samps);
       
+      outHeader.titleLine = SVcfTitleLine( Seq(sampID) );
       outHeader.formatLines = Seq[SVcfCompoundHeaderLine]()
       
       for( fxx <- vcfHeader.formatLines ){
@@ -2002,11 +2003,7 @@ object SVcfWalkerUtils {
           outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT", fxx.ID+sxx, Number=fxx.Number,Type=fxx.Type,desc="Merged column "+fxx.ID+" for sample "+sid+". "+fxx.desc))
         }
       }
-      val genotypesFMT = vcfHeader.formatLines.map{ fxx => fxx.ID }.map{ gx => {
-          prz.map{ case (sxx,sid) => {
-            gx + sxx;
-          }}
-      }}.flatten
+
       
       
      //outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",geno,Number=".",Type="String",desc="Info column copied from "+info+" (todo copy over info)"))
@@ -2018,7 +2015,19 @@ object SVcfWalkerUtils {
       outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
-        val genotypeVAL = vcfHeader.formatLines.map{ fxx => fxx.ID }.map{ gx => {
+        val genotypeVAL = v.genotypes.genotypeValues.map{ gv => {
+          gv.toSeq.map{ gg => {
+            Array[String](gg);
+          }}
+        }}.flatten.toArray
+        
+        val genotypeFMT = v.genotypes.fmt.map{ gx => {
+          prz.map{ case (sxx,sid) => {
+            gx + sxx;
+          }}
+        }}.flatten
+        
+        /*val genotypeVAL = vcfHeader.formatLines.map{ fxx => fxx.ID }.map{ gx => {
            v.genotypes.getGtTag(gx) match {
              case Some(garr) => {
                garr.toSeq.map{ gg => {
@@ -2042,10 +2051,14 @@ object SVcfWalkerUtils {
              }
            }
 
-        }}.flatten
+        }}.flatten*/
+        
+        if( genotypeFMT.length != genotypeVAL.length ){
+          warning("genotype FMT and VAL do not match length: "+genotypeFMT.length+" vs "+genotypeVAL.length,"GENOTYPE_FMT_VAL_NONMATCH_LEN",30);
+        }
         
         vc.in_genotypes = SVcfGenotypeSet(
-             fmt = genotypesFMT,
+             fmt = genotypeFMT,
              genotypeValues = genotypeVAL
         )
         /*

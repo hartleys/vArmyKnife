@@ -865,7 +865,8 @@ object SVcfMapFunctions {
        ParamStrSet("mergeSamplesIntoSingleColumn" ,  desc = "This utility copies multiple samples into a single merged sample.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-               ParamStr(id = "prefixes",synon=Seq(),ty="String",valueString="Sample Prefixes",desc="",req=true,initParam=true)
+               ParamStr(id = "suffixes",synon=Seq(),ty="String",valueString="Sample,Suffixes",desc="Must be a comma delimited list with a short name for each sample column.",req=true),
+               ParamStr(id = "sampID",synon=Seq(),ty="String",valueString="newSampID",desc="The name for the new sample column",req=true)
            )), category = "File Formatting/Conversion"
        ),
        //,
@@ -1741,7 +1742,7 @@ object SVcfMapFunctions {
                ParamStr(id = "prefixes",synon=Seq(),ty="String",valueString="Sample Prefixes",desc="",req=true,initParam=true)
            )), category = "File Formatting/Conversion"
        ),*/
-               val prefixes = params("prefixes").split(",");
+               val prefixes = params("suffixes").split(",");
                val sampID = params("sampID")
                
                Some( MergeSamplesIntoSingleColumn( prefixes=prefixes,sampID=sampID));

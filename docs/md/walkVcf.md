@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.2.106 (Updated Tue Nov 29 14:59:10 EST 2022)
+> Version 3.3.8 (Updated Fri Dec  2 14:38:34 EST 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -959,7 +959,9 @@ This utility performs a series of transformations on an input VCF file and adds 
 >  This utility copies multiple samples into a single merged sample\.
 
 
-    prefixes: (String, required)
+    suffixes: Must be a comma delimited list with a short name for each sample column.(String, 
+        required)
+    sampID: The name for the new sample column(String, required)
 
 
 
@@ -1061,6 +1063,15 @@ This utility performs a series of transformations on an input VCF file and adds 
     x (FLOAT) 
     seed (INT) 
 
+### SETS\.KEEP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
+
+    
+    First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
+        field that contain the string will be dropped. Does not do pattern matching, simple 
+        replacement.
+    info (INFO:String) 
+    str (CONST:String) 
+
 ### TO\.LOWER\.CASE\(x\)
 
     
@@ -1084,6 +1095,15 @@ This utility performs a series of transformations on an input VCF file and adds 
     
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
+### SETS\.DROP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
+
+    
+    First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
+        field that contain the string will be dropped. Does not do pattern matching, simple 
+        replacement.
+    info (INFO:String) 
+    str (CONST:String) 
+
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
     
@@ -1093,7 +1113,15 @@ This utility performs a series of transformations on an input VCF file and adds 
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
 
-### STRING\_REPLACE\(old,new,info\)
+### CONVERT\.TO\.FLOAT\(x,defaultValue\)
+
+    
+    Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
+        non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
+    x (INFO:String) 
+    defaultValue (Optional) (CONST:Float) 
+
+### STRING\.REPLACE\(old,new,info\)
 
     
     Simple string replacement. First parameter should be the old string, second parameter the 
@@ -1103,14 +1131,6 @@ This utility performs a series of transformations on an input VCF file and adds 
     old (CONST:String) 
     new (CONST:String) 
     info (INFO:String) 
-
-### CONVERT\.TO\.FLOAT\(x,defaultValue\)
-
-    
-    Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
-        non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
-    x (INFO:String) 
-    defaultValue (Optional) (CONST:Float) 
 
 ### EXPR\(expr\)
 
@@ -1129,6 +1149,15 @@ This utility performs a series of transformations on an input VCF file and adds 
         file. Elements that do not match any element in the first column will be unchanged.
     x (INFO:String) 
     decoder (FILE:String) 
+
+### STRING\.REPLACE\.WITHCOMMA\(old,info\)
+
+    
+    Simple string replacement. First parameter should be the old string, second parameter an INFO 
+        field. Any time the old string appears in the INFO field it will be replaced by a comma. Does 
+        not do pattern matching, simple replacement.
+    old (CONST:String) 
+    info (INFO:String) 
 
 ### CONCAT\(x\.\.\.\)
 

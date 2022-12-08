@@ -844,4 +844,6 @@
 >  This utility copies multiple samples into a single merged sample\.
 
 
-    prefixes: (String, required)
+    suffixes: Must be a comma delimited list with a short name for each sample column.(String, 
+        required)
+    sampID: The name for the new sample column(String, required)
