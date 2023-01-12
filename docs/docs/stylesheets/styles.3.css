@@ -20,12 +20,58 @@ body {
   background: var(--BASE);
 }
 
+
 .tocColumn {
-	
+
 }
 
 .toc {
-	
+
+}
+
+.closexbox {
+    position: relative;
+    margin-right: 0.1em;
+    margin-top: 0.1em;
+    margin-bottom:0.1em;
+    height: 15px; /* this can be anything */
+    width: 15px;  /* ...but maintain 1:1 aspect ratio */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+	border: 0.05em solid black;
+
+}
+
+.closexbox::before,
+.closexbox::after {
+    position: absolute;
+    content: '';
+    width: 100%;
+    height: 2px; /* cross thickness */
+    background-color: black;
+    padding: 0px;
+}
+.closexbox::before {
+    transform: rotate(45deg);
+}
+.closexbox::after {
+    transform: rotate(-45deg);
+}
+.closexbox:hover::after {
+	background-color: #72D0EB;
+}
+.closexbox:hover::before {
+	background-color: #72D0EB;
+}
+
+.closexbox:hover {
+    cursor: pointer;
+	border: 0.15em solid #72D0EB;
+	background-color: #dae7f0;
+    margin-right: 0em;
+    margin-top: 0em;
+    margin-bottom:0em;
 }
 
 .collapsible {
@@ -49,6 +95,8 @@ body {
 }
 
 .entryBox {
+    display: block;
+    align-items: center;
 	background-color: var(--white);
 	border-radius: 0.2em;
 	min-height: 1.25em;
@@ -58,10 +106,21 @@ body {
 	padding: 10px 5px 10px;
 	margin: 10px 5px 10px;
 }
+
 .entryBox:hover {
     cursor: pointer;
 	border-left: 0.25em solid #72D0EB;
 	background-color: #dae7f0;
+
+}
+
+.entryBoxTitle {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   border: 0em solid white;
+   padding: 0px;
+   margin: 0px 0px 0px;
 }
 
 h3,h4,h6 {
@@ -77,7 +136,7 @@ p,blockquote {
 blockquote {
 	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
     font-size: 16px;
-    font-style: normal;	
+    font-style: normal;
 }
 
 pre {
@@ -85,7 +144,7 @@ pre {
 	margin: 0.1em 0.5em 0.1em;
 	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
     font-size: 16px;
-    font-style: normal;	
+    font-style: normal;
 }
 
 .inlineTitle {
@@ -96,7 +155,7 @@ pre {
 	float:right;
 	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
     font-size: 14px;
-    font-style: normal;	
+    font-style: normal;
 }
 
 .hiddenEntryContent {
@@ -111,6 +170,48 @@ pre {
 	padding: 0.2em;
 }
 
+
+@media (max-width: 1080px) {
+  .wrapper {
+    width: 95%;
+  }
+  h1,h2,h3,h4,h5,h6 {
+	margin: 0.05em 0em 0.05em;
+	font-size: 15px;
+	font-style: bold;
+	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
+  }
+  p,blockquote {
+	margin: 0.05em 0.1em 0.05em;
+    font-size: 12px;
+  }
+  div {
+    font-size: 12px;
+  }
+  blockquote {
+	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
+    font-size: 12px;
+    font-style: normal;
+  }
+  pre {
+	padding: 0em 0em 0em;
+	margin: 0.05em 0.05em 0.05em;
+	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
+    font-size: 12px;
+    font-style: normal;
+  }
+  .inlineTitle {
+	display:inline;
+  }
+  .shortEntryDesc {
+    float: none;
+    margin-right:0.05em;
+	font-family: "Source Code Pro", Monaco, "Ubuntu Mono Regular", "Lucida Console", monospace;
+    font-size: 12px;
+    font-style: normal;
+  }
+}
+
 /*
 
 :root {
@@ -121,7 +222,7 @@ pre {
   --LT2: #c3c8d5;
   --LT1: #a5adc0;
   --MID: #7883a1;
-  --DK1: #5e6a87;	
+  --DK1: #5e6a87;
   --DK2: #485167;
   --DK3: #343b4b;
   --DK4: #1f232d;
@@ -155,14 +256,14 @@ pre {
   --bioTextDK: #26301d;
   --engTextDK: #3b1312;
   --psyTextDK: #221d2f;
-  
+
   --LT4WASHOUT: #e4e5e7;
   --LT3WASHOUT: #c9cbcf;
   --LT2WASHOUT: #aeb1b7;
-  
+
   --costTextLT: #ffffff;
   --costTextDK: #000000;
-  
+
   --textWarnRed: #AE2626;
   --textWarnGreen: #179A1B;
 }
@@ -180,12 +281,12 @@ pre {
   --LT2: #97b082;
   --LT1: #8aa772;
   --MID: #647d4f;
-  --DK1: #5a7247;	
+  --DK1: #5a7247;
   --DK2: #576e45;
   --DK3: #4b5e3b;
   --DK4: #3e4e31;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #beceb1;
   --costTextDK: #2B5F00;
 }
@@ -198,12 +299,12 @@ pre {
   --LT2: #97b082;
   --LT1: #8aa772;
   --MID: #647d4f;
-  --DK1: #5a7247;	
+  --DK1: #5a7247;
   --DK2: #576e45;
   --DK3: #4b5e3b;
   --DK4: #3e4e31;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #beceb1;
   --costTextDK: #2B5F00;
 }
@@ -216,12 +317,12 @@ pre {
   --LT2: #b87b7a;
   --LT1: #af6b6a;
   --MID: #955251;
-  --DK1: #854847;	
+  --DK1: #854847;
   --DK2: #743f3e;
   --DK3: #633636;
   --DK4: #532d2d;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #d2adac;
   --costTextDK: #940000;
 }
@@ -234,12 +335,12 @@ pre {
   --LT2: #c7c0d8;
   --LT1: #b9b0cf;
   --MID: #9c90bb;
-  --DK1: #8071a8;	
+  --DK1: #8071a8;
   --DK2: #72619e;
   --DK3: #67578e;
   --DK4: #50446f;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #e3dfec;
   --costTextDK: #5328C0;
 }
@@ -254,12 +355,12 @@ pre {
   --LT2: #97b082;
   --LT1: #8aa772;
   --MID: #647d4f;
-  --DK1: #5a7247;	
+  --DK1: #5a7247;
   --DK2: #576e45;
   --DK3: #4b5e3b;
   --DK4: #3e4e31;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #beceb1;
   --costTextDK: #2B5F00;
 }
@@ -272,12 +373,12 @@ pre {
   --LT2: #b87b7a;
   --LT1: #af6b6a;
   --MID: #955251;
-  --DK1: #854847;	
+  --DK1: #854847;
   --DK2: #743f3e;
   --DK3: #633636;
   --DK4: #532d2d;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #d2adac;
   --costTextDK: #940000;
 }
@@ -290,12 +391,12 @@ pre {
   --LT2: #c7c0d8;
   --LT1: #b9b0cf;
   --MID: #9c90bb;
-  --DK1: #8071a8;	
+  --DK1: #8071a8;
   --DK2: #72619e;
   --DK3: #67578e;
   --DK4: #50446f;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #e3dfec;
   --costTextDK: #5328C0;
 }
@@ -309,12 +410,12 @@ pre {
   --LT2: #97b08222;
   --LT1: #8aa77222;
   --MID: #647d4f;
-  --DK1: #5a7247;	
+  --DK1: #5a7247;
   --DK2: #576e45;
   --DK3: #4b5e3b;
   --DK4: #3e4e31;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #beceb1;
   --costTextDK: #2B5F00;
 }
@@ -327,12 +428,12 @@ pre {
   --LT2: #b87b7a22;
   --LT1: #af6b6a22;
   --MID: #955251;
-  --DK1: #854847;	
+  --DK1: #854847;
   --DK2: #743f3e;
   --DK3: #633636;
   --DK4: #532d2d;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #d2adac;
   --costTextDK: #940000;
 }
@@ -344,12 +445,12 @@ pre {
   --LT2: #c7c0d822;
   --LT1: #b9b0cf22;
   --MID: #9c90bb;
-  --DK1: #8071a8;	
+  --DK1: #8071a8;
   --DK2: #72619e;
   --DK3: #67578e;
   --DK4: #50446f;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #e3dfec;
   --costTextDK: #5328C0;
 }
@@ -363,12 +464,12 @@ pre {
   --LT2: #b87b7a;
   --LT1: #af6b6a;
   --MID: #955251;
-  --DK1: #854847;	
+  --DK1: #854847;
   --DK2: #743f3e;
   --DK3: #633636;
   --DK4: #532d2d;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #d2adac;
   --costTextDK: #940000;
 }
@@ -380,12 +481,12 @@ pre {
   --LT2: #c7c0d8;
   --LT1: #b9b0cf;
   --MID: #9c90bb;
-  --DK1: #8071a8;	
+  --DK1: #8071a8;
   --DK2: #72619e;
   --DK3: #67578e;
   --DK4: #50446f;
   --baseBG: #e7b2b1;
-  
+
   --costTextLT: #e3dfec;
   --costTextDK: #5328C0;
 }
@@ -397,7 +498,7 @@ pre {
   --LT2: #a2a6a9;
   --LT1: #95999d;
   --MID: #888c91;
-  --DK1: #6e7377;	
+  --DK1: #6e7377;
   --DK2: #62666a;
   --DK3: #56595d;
   --DK4: #494d50;
@@ -424,7 +525,7 @@ pre {
   --LT2: #e7b2b1;
   --LT1: #db8b8a;
   --MID: #c9514f;
-  --DK1: #bd3d3a;	
+  --DK1: #bd3d3a;
   --DK2: #892c2a;
   --DK3: #621f1e;
   --DK4: #4e1918;
@@ -438,7 +539,7 @@ pre {
   --DK2: #e7b2b1;
   --DK1: #db8b8a;
   --MID: #c9514f;
-  --LT1: #bd3d3a;	
+  --LT1: #bd3d3a;
   --LT2: #892c2a;
   --LT3: #621f1e;
   --LT4: #4e1918;
@@ -453,7 +554,7 @@ pre {
   --DK2: #c3c8d5;
   --DK1: #a5adc0;
   --MID: #7883a1;
-  --LT1: #5e6a87;	
+  --LT1: #5e6a87;
   --LT2: #485167;
   --LT3: #343b4b;
   --LT4: #1f232d;
@@ -467,7 +568,7 @@ pre {
   --LT2: #c3c8d5;
   --LT1: #a5adc0;
   --MID: #7883a1;
-  --DK1: #5e6a87;	
+  --DK1: #5e6a87;
   --DK2: #485167;
   --DK3: #343b4b;
   --DK4: #1f232d;
@@ -864,7 +965,7 @@ h1 {
   border-style: outset;
   border-width: 2px;
   border-radius: 2px 30px 2px 2px;
-  
+
 }
 
 .exampleCode {
@@ -880,7 +981,7 @@ h1 {
   border-style: outset;
   border-width: 2px;
   border-radius: 1px 20px 1px 1px;
-  
+
 }
 .exampleBox {
   margin: 10px 10px 10px 10px;
@@ -891,12 +992,12 @@ h1 {
 
 .toc {
 	padding: 20px 20px 20px 20px;
-	
+
 }
 .tocInner {
 	padding: 5px 5px 5px 5px;
 	border: 1px dotted var(--LT1)
-	
+
 }
 .collapseSection {
   padding: 15px 20px;
@@ -936,7 +1037,7 @@ h1 {
 
 #sidebar {
 	float: right;
-	display: inline; 
+	display: inline;
 	width: 300px;
 	margin: 0px 20px;
 	background: #CCCCCC;

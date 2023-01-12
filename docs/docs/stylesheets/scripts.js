@@ -96,7 +96,7 @@ for (var i = 0; i < collEx.length; i++) {
 	var curr = cc.nextElementSibling;
 	//groupHolder.textContent = "EXAMPLES:"
 	groupHolder.appendChild(cc);
-	
+
 	while( curr !== null && ( curr.classList.contains("exampleCode") || curr.classList.contains("exampleCollapseSection") )){
 		console.log("adding to group: "+curr.classList)
 		var prev = curr;
@@ -107,7 +107,7 @@ for (var i = 0; i < collEx.length; i++) {
 	console.log("curr = ");
 	console.log(curr)
   }
-  
+
 }
 
 
@@ -120,13 +120,20 @@ for (var i = 0; i < listH34.length; i++) {
 	  cc.isEntry = true;
 	  sib3 = nextSib.nextElementSibling;
 	  var entryBox = document.createElement("div");
+	  var entryBoxTitle = document.createElement("div");
+      var closexbox = document.createElement("div");
 	  var shortDesc = document.createElement("span");
+	  closexbox.classList.add("closexbox");
+
+	  entryBoxTitle.classList.add("entryBoxTitle");
 	  shortDesc.classList.add("shortEntryDesc")
 	  entryBox.classList.add("entryBox");
       cc.parentElement.insertBefore(entryBox,cc);
-	  entryBox.appendChild(cc);
+      entryBoxTitle.appendChild(cc)
+      entryBoxTitle.appendChild(closexbox);
+	  entryBox.appendChild(entryBoxTitle);
 	  entryBox.appendChild(shortDesc);
-	  
+
 	  var shortDescString = " &nbsp&nbsp&nbsp "+nextSib.textContent.split(".")[0].trim() + ".";
 	  if( shortDescString.length > 100 ){
 		  shortDescString = shortDescString.substr(0,100)+"...";
@@ -135,16 +142,19 @@ for (var i = 0; i < listH34.length; i++) {
 	  //shortDesc.classList.add( "hiddenEntryContent" );
 	  entryBox.shortDesc = shortDesc;
 	  entryBox.appendChild(shortDesc);
-	  
+
 	  entryBox.appendChild(nextSib);
-	  
+      entryBox.classList.add("closedEntryBox")
+      
 	  entryBox.titleElem = cc;
-	  entryBox.contentElemList = [nextSib];
+	  entryBox.contentElemList = [closexbox,nextSib];
+	  entryBox.closexbox = closexbox;
+      closexbox.entryBox = entryBox;
 	  nextSib.boxParent = cc;
 	  cc.isTripleEntry = false;
 	  entryBox.isTripleEntry = false;
 	  cc.classList.toggle("inlineTitle")
-	  
+
 	  while(sib3 !== null && (sib3.tagName == "BLOCKQUOTE" || sib3.tagName == "PRE" || sib3.classList.contains("exampleBox"))){
 		      var sib4 = sib3.nextElementSibling;
 		  	  entryBox.appendChild(sib3);
@@ -171,14 +181,44 @@ for (var i = 0; i < listEB.length; i++) {
       bb.classList.toggle("hiddenEntryContent");
   }
 
-  cc.addEventListener("click", function() {
-    for(var j=0; j < this.contentElemList.length; j++){
-      var bb = this.contentElemList[j];
-	  bb.classList.toggle("hiddenEntryContent")
-	}
-	this.shortDesc.classList.toggle("hiddenEntryContent")	
-	this.titleElem.classList.toggle("inlineTitle")
-  })
+  if( entryBox.closexbox == null ){
+    cc.addEventListener("click", function() {
+      for(var j=0; j < this.contentElemList.length; j++){
+        var bb = this.contentElemList[j];
+  	    bb.classList.toggle("hiddenEntryContent")
+  	  }
+	  this.shortDesc.classList.toggle("hiddenEntryContent")
+	  this.titleElem.classList.toggle("inlineTitle")
+    })
+  } else {
+    var ccx = cc.closexbox;
+
+    cc.addEventListener("click", function( e ) {
+      if( this.classList.contains( "closedEntryBox" ) ){
+        for(var j=0; j < this.contentElemList.length; j++){
+          var bb = this.contentElemList[j];
+  	      bb.classList.toggle("hiddenEntryContent")
+  	    }
+	    this.shortDesc.classList.toggle("hiddenEntryContent")
+	    this.titleElem.classList.toggle("inlineTitle")
+        this.classList.toggle("closedEntryBox")
+      }
+      e.stopPropagation()
+    })
+    ccx.addEventListener("click", function( e ) {
+        for(var j=0; j < this.entryBox.contentElemList.length; j++){
+          var bb = this.entryBox.contentElemList[j];
+  	      bb.classList.toggle("hiddenEntryContent")
+  	    }
+	    this.entryBox.shortDesc.classList.toggle("hiddenEntryContent")
+	    this.entryBox.titleElem.classList.toggle("inlineTitle")
+        this.entryBox.classList.toggle("closedEntryBox")
+        this.entryBox.classList.add("TEST");
+        e.stopPropagation()
+    })
+  }
+
+
 
 
 }
