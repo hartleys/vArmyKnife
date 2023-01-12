@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.3.31 (Updated Fri Jan  6 09:54:13 EST 2023)</p>
+  <p>Version 3.3.37 (Updated Tue Jan 10 11:23:52 EST 2023)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -366,6 +366,17 @@ expr: The variant expression, which is a true/false expression using the variant
 </blockquote>
 
 <pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>longInfoVcfToStandardFormatVcf</h3>
+
+<blockquote>
+  <p>This map function is intended to convert a VCF that does not have a format field but  instead has duplicate lines when a variant appears in two samples. One of the INFO fields must be a sample ID. this function will copy the INFO fields to the genotype columns, using the sampField parameter to determine the sample column.</p>
+</blockquote>
+
+<pre><code>sampField: Indicates which INFO field contains the VCF line's sample ID.(String)
+sampList: The list of samples. Lines in which the infoField field does not match one of these 
+    sample IDs will be ignored.(String)
 </code></pre>
 
 <h3>mergeDup</h3>
@@ -1273,11 +1284,30 @@ x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 x... (INFO:Int)
 </code></pre>
 
+<h3>SORT.ALPHANUMERIC(info,delim)</h3>
+
+<pre><code>Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses 
+    standard java/scala alphanumeric string sorting order.The default delimiter is commas. The 
+    delim field can be used for other delimiters. The string 'BAR' can be used to use the bar 
+    character as the delimiter.
+info (INFO:String) 
+delim (Optional) (INFO:String)
+</code></pre>
+
 <h3>LEN(x)</h3>
 
 <pre><code>The new field will be an integer field equal to the length of the input field. Will be missing if 
     the input field is missing.
 x (INFO:String|INFO:Int|INFO:Float)
+</code></pre>
+
+<h3>STRING.REPLACE.COMMAWITH(new,info)</h3>
+
+<pre><code>Simple string replacement. First parameter should be the new string, second parameter an INFO 
+    field. Any time a comma appears in the INFO field it will be replaced by the new string. Does 
+    not do pattern matching, simple replacement.
+new (CONST:String) 
+info (INFO:String)
 </code></pre>
 
 <h3>RANDFLAG(x,seed)</h3>

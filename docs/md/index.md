@@ -1,4 +1,4 @@
-> Version 3.3.31 (Updated Fri Jan  6 09:54:13 EST 2023)
+> Version 3.3.37 (Updated Tue Jan 10 11:23:52 EST 2023)
 
 # GENERAL SYNTAX:
 
@@ -289,6 +289,15 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     (This function takes no parameters)
+
+### longInfoVcfToStandardFormatVcf
+
+>  This map function is intended to convert a VCF that does not have a format field but  instead has duplicate lines when a variant appears in two samples\. One of the INFO fields must be a sample ID\. this function will copy the INFO fields to the genotype columns, using the sampField parameter to determine the sample column\.
+
+
+    sampField: Indicates which INFO field contains the VCF line's sample ID.(String)
+    sampList: The list of samples. Lines in which the infoField field does not match one of these 
+        sample IDs will be ignored.(String)
 
 ### mergeDup
 
@@ -1083,12 +1092,31 @@ This utility performs a series of transformations on an input VCF file and adds 
         including missing fields, will be treated as 0.
     x... (INFO:Int) 
 
+### SORT\.ALPHANUMERIC\(info,delim\)
+
+    
+    Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses 
+        standard java/scala alphanumeric string sorting order.The default delimiter is commas. The 
+        delim field can be used for other delimiters. The string 'BAR' can be used to use the bar 
+        character as the delimiter.
+    info (INFO:String) 
+    delim (Optional) (INFO:String) 
+
 ### LEN\(x\)
 
     
     The new field will be an integer field equal to the length of the input field. Will be missing if 
         the input field is missing.
     x (INFO:String|INFO:Int|INFO:Float) 
+
+### STRING\.REPLACE\.COMMAWITH\(new,info\)
+
+    
+    Simple string replacement. First parameter should be the new string, second parameter an INFO 
+        field. Any time a comma appears in the INFO field it will be replaced by the new string. Does 
+        not do pattern matching, simple replacement.
+    new (CONST:String) 
+    info (INFO:String) 
 
 ### RANDFLAG\(x,seed\)
 

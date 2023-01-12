@@ -235,6 +235,17 @@ expr: The variant expression, which is a true/false expression using the variant
 <pre><code>(This function takes no parameters)
 </code></pre>
 
+<h3>longInfoVcfToStandardFormatVcf</h3>
+
+<blockquote>
+  <p>This map function is intended to convert a VCF that does not have a format field but  instead has duplicate lines when a variant appears in two samples. One of the INFO fields must be a sample ID. this function will copy the INFO fields to the genotype columns, using the sampField parameter to determine the sample column.</p>
+</blockquote>
+
+<pre><code>sampField: Indicates which INFO field contains the VCF line's sample ID.(String)
+sampList: The list of samples. Lines in which the infoField field does not match one of these 
+    sample IDs will be ignored.(String)
+</code></pre>
+
 <h3>mergeDup</h3>
 
 <blockquote>

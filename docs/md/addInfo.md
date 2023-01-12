@@ -83,12 +83,31 @@
         including missing fields, will be treated as 0.
     x... (INFO:Int) 
 
+### SORT\.ALPHANUMERIC\(info,delim\)
+
+    
+    Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses 
+        standard java/scala alphanumeric string sorting order.The default delimiter is commas. The 
+        delim field can be used for other delimiters. The string 'BAR' can be used to use the bar 
+        character as the delimiter.
+    info (INFO:String) 
+    delim (Optional) (INFO:String) 
+
 ### LEN\(x\)
 
     
     The new field will be an integer field equal to the length of the input field. Will be missing if 
         the input field is missing.
     x (INFO:String|INFO:Int|INFO:Float) 
+
+### STRING\.REPLACE\.COMMAWITH\(new,info\)
+
+    
+    Simple string replacement. First parameter should be the new string, second parameter an INFO 
+        field. Any time a comma appears in the INFO field it will be replaced by the new string. Does 
+        not do pattern matching, simple replacement.
+    new (CONST:String) 
+    info (INFO:String) 
 
 ### RANDFLAG\(x,seed\)
 

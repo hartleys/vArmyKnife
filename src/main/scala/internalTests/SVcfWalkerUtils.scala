@@ -15230,7 +15230,77 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     }
   }
   
-
+  class longInfoVcfToStandardFormatVcf(countDupTag : String, sampField : String, samplist : Seq[String]) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "DuplicateStat"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    //groupBySpan[A,B](iter : BufferedIterator[A])(f : (A => B))
+    val cdt = countDupTag;
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      var errCt = 0;
+      initNotice("DROP_VAR_N");
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //countDupTag.foreach{ cdt => {
+      outHeader.addInfoLine( new SVcfCompoundHeaderLine(in_tag = "INFO",ID = cdt+"_CT", Number = "1", Type = "Integer", desc = "Number of duplicates"));
+      
+      val infolines = vcfHeader.infoLines.map{ ff => ff.ID };
+      val infolinesToCopy = infolines.filter{ ff => ff != sampField }
+      
+      vcfHeader.infoLines.foreach{ fx => {
+          outHeader.addFormatLine( new SVcfCompoundHeaderLine(in_tag="FORMAT", ID=fx.ID, Number=fx.Number, Type=fx.Type, desc=fx.desc ));
+      }}
+      //if( ! infolines.contains("GT") ){
+      //  outHeader.addFormatLine( new SVcfCompoundHeaderLine(in_tag="FORMAT", ID="GT", Number="1", Type="String", desc="Dummy GT" ));
+      //}
+      outHeader.titleLine = SVcfTitleLine( samplist );
+      
+      tally(cdt+"_DUPSETCT",0)
+      tally(cdt+"_DUPCT",0)
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = groupBySpan(vcIter.buffered){ v => { (v.chrom,v.pos) } }.flatMap{vg => {
+        val swaps = vg.map{ v => (v.ref,v.alt.head)}.distinct.sorted
+        swaps.map{ case (r,a) => {          
+          val vbgRAW = vg.filter{ v => v.ref == r && v.alt.head == a }
+          val vbMAP = vbgRAW.map{ v => v.info.getOrElse(sampField,None) }.zip(vbgRAW).filter{ case (ss,vv) => {
+            ss.isDefined
+          }}.map{ case (ss,vv) => {
+            (ss.get,vv)
+          }}.toMap
+          
+          //filter{ v => v.info.getOrElse(sampField,None).isDefined }.map{ v => (v.info.getOrElse,v)}
+          val vb = vbgRAW.head.getOutputLine();
+          vcfHeader.infoLines.map{ fx => fx.ID }.foreach{ fx => {
+            val vvi = vbgRAW.zipWithIndex.map{ case (v,ii) => {
+              v.info.getOrElse(fx,None).getOrElse(".").replaceAll(",","/");
+            }}.mkString(",");
+            vb.addInfo(fx,vvi)
+          }}
+          //vb.genotypes = getGenotypeSet(genotypeStrings : vcfHeader.infoLines.map{ fx => fx.ID }.toSeq,)
+//SVcfGenotypeSet(var fmt : Seq[String],
+//                             var genotypeValues : Array[Array[String]])
+          vb.in_genotypes = SVcfGenotypeSet( infolinesToCopy.toSeq,
+                 infolinesToCopy.map{fx => {
+                   samplist.map{ ss => {
+                     vbMAP.get(ss).map{ vv => {
+                       vv.info.getOrElse(fx,None).getOrElse(".")
+                     }}.getOrElse(".")
+                   }}.toArray
+                 }}.toArray )
+          
+          vb.addInfo(cdt+"_CT",vbgRAW.length+"");
+          
+          if(vbgRAW.length > 1){
+            tally(cdt+"_DUPSETCT",1);
+            tally(cdt+"_DUPCT",vbgRAW.length);
+          }
+          vb
+        }}
+      }}, closeAction = (() => { 
+        //do nothing
+      })),outHeader)
+    }
+  }
 
   class DuplicateMerge(countDupTag : String) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "DuplicateStat"

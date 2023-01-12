@@ -2309,6 +2309,95 @@ object SVcfTagFunctions {
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
+              id = "STRING.REPLACE.COMMAWITH",synon = Seq(),
+              shortDesc = "",
+              desc = "Simple string replacement. First parameter should be the new string, second parameter an INFO field. "+
+                     "Any time a comma appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement."+
+                     ""+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "new", ty = "CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "info", ty = "INFO:String",req=true,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params,pv,h)
+              
+              val ostr : String = ",";
+              val nstr : String = VcfTagFcn_stripParamType(pv(0));
+              val info : String = VcfTagFcn_stripParamType(pv(1));
+              
+              //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
+              //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                
+                /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector.sorted.mkString(",")*/
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+                //error("NOT YET IMPLEMENTED!");
+                val out = vc.info.getOrElse(info,None).map{ xx => {
+                  xx.replaceAllLiterally(ostr,nstr);
+                }}.getOrElse(".");
+                writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "SORT.ALPHANUMERIC",synon = Seq(),
+              shortDesc = "",
+              desc = "Takes a single INFO field with delimited elements and sorts the elements alphanumerically."+
+                     " Uses standard java/scala alphanumeric string sorting order."+
+                     "The default delimiter is commas. The delim field can be used for other delimiters. The string 'BAR' can be used to use the bar character as the delimiter."+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "info", ty = "INFO:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "delim", ty = "INFO:String",req=false,dotdot=false ),
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              //val typeInfo = getTypeInfo(md.params,pv,h)
+              
+              val info : String = VcfTagFcn_stripParamType(pv(0));
+              val delim : String = if( pv.length == 1){
+                ","
+              } else if(VcfTagFcn_stripParamType(pv(1)) == "BAR" ){
+                "|"
+              } else {
+                VcfTagFcn_stripParamType(pv(1))
+              }
+              
+              //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
+              //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                
+                /*val out = dds.foldLeft(Set[String]() ){ case (soFar,curr) => {
+                  soFar ++ curr.get(vc).getOrElse(Vector()).toSet
+                }}.toVector.sorted.mkString(",")*/
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+                //error("NOT YET IMPLEMENTED!");
+                val out = vc.info.getOrElse(info,None).map{ xx => {
+                  xx.split(delim).toSeq.sorted.mkString(delim);
+                }}.getOrElse(".");
+                writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
               id = "SETS.DROP.ELEMENTS.THAT.CONTAIN",synon = Seq(),
               shortDesc = "",
               desc = "First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped. "+

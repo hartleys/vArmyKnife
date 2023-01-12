@@ -770,6 +770,17 @@ object SVcfMapFunctions {
               
          )), category = "General-Purpose Tools"
        ),
+       //               Some(new longInfoVcfToStandardFormatVcf(countDupTag=params("mapID"), sampField=params("sampField"), samplist=params("sampList").split(",").toSeq ))
+      ParamStrSet("longInfoVcfToStandardFormatVcf" ,  desc = "This map function is intended to convert a VCF that does not have a format field but  "+
+                                                    "instead has duplicate lines when a variant appears in two samples. One of the INFO fields must be a sample ID. "+
+                                                    "this function will copy the INFO fields to the genotype columns, using the sampField parameter to determine the sample column.", 
+                                                    synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "sampField",synon=Seq(),ty="String",valueString="infoField",desc="Indicates which INFO field contains the VCF line's sample ID.",req=false),
+              ParamStr(id = "sampList",synon=Seq(),ty="String",valueString="s1,s2,s3,...",desc="The list of samples. Lines in which the infoField field does not match one of these sample IDs will be ignored.",req=false)
+         )), category = "General-Purpose Tools"
+       ),
+       
        ParamStrSet("mergeDup" ,  desc = "Merges duplicated lines. NOTE: REQUIRES THE VCF TO BE SORTED. NOTE: DOES NOT WORK ON GENOTYPES."+
                                         "NOTE: Splitting multiallelics and left-align-and-trim are also require for it to work properly with multiallelics and indels respectively.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](           
@@ -1743,6 +1754,12 @@ object SVcfMapFunctions {
                Some(new DropNs());
              } else if(mapType == "markDup"){
                 Some(new DuplicateStats(params("mapID")))
+             } else if(mapType == "longInfoVcfToStandardFormatVcf"){
+               
+               
+               Some(new longInfoVcfToStandardFormatVcf(countDupTag=params("mapID"), sampField=params("sampField"), samplist=params("sampList").split(",").toSeq ))
+               //  class longInfoVcfToStandardFormatVcf(countDupTag : String, sampField : String, samplist : Seq[String]) extends internalUtils.VcfTool.SVcfWalker {
+
              } else if(mapType == "mergeDup"){
                 Some(new DuplicateMerge(params("mapID")))
                 

@@ -177,6 +177,15 @@
 
     (This function takes no parameters)
 
+### longInfoVcfToStandardFormatVcf
+
+>  This map function is intended to convert a VCF that does not have a format field but  instead has duplicate lines when a variant appears in two samples\. One of the INFO fields must be a sample ID\. this function will copy the INFO fields to the genotype columns, using the sampField parameter to determine the sample column\.
+
+
+    sampField: Indicates which INFO field contains the VCF line's sample ID.(String)
+    sampList: The list of samples. Lines in which the infoField field does not match one of these 
+        sample IDs will be ignored.(String)
+
 ### mergeDup
 
 >  Merges duplicated lines\. NOTE: REQUIRES THE VCF TO BE SORTED\. NOTE: DOES NOT WORK ON GENOTYPES\.NOTE: Splitting multiallelics and left\-align\-and\-trim are also require for it to work properly with multiallelics and indels respectively\.
