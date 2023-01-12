@@ -107,7 +107,7 @@ body {
 	margin: 10px 5px 10px;
 }
 
-.entryBox:hover {
+.closedEntryBox:hover {
     cursor: pointer;
 	border-left: 0.25em solid #72D0EB;
 	background-color: #dae7f0;

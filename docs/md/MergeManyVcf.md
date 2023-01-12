@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.38 (Updated Thu Jan 12 11:49:33 EST 2023)
+> Version 3.3.39 (Updated Thu Jan 12 12:56:52 EST 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
