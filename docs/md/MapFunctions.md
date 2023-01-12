@@ -839,6 +839,13 @@
 
     info: (String, required)
 
+### copyAllInfoToGeno
+
+>  This utility copies the contents of ALL info fields plus the FILTER column into the genotype FORMAT columns\. This can be useful for preserving sample\-level information stored in the INFO column of a single\-sample VCF prior to merging across multiple samples\.
+
+
+    (This function takes no parameters)
+
 ### mergeSamplesIntoSingleColumn
 
 >  This utility copies multiple samples into a single merged sample\.

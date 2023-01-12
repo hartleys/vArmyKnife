@@ -862,6 +862,12 @@ object SVcfMapFunctions {
                ParamStr(id = "info",synon=Seq(),ty="String",valueString="infoFieldToCopy",desc="",req=true,initParam=true)
            )), category = "File Formatting/Conversion"
        ),
+       ParamStrSet("copyAllInfoToGeno" ,  desc = "This utility copies the contents of ALL info fields plus the FILTER column into the genotype FORMAT columns. This can be useful for preserving sample-level information stored in the INFO column of a single-sample VCF prior to merging across multiple samples.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+
+           )), category = "File Formatting/Conversion"
+       ),
        ParamStrSet("mergeSamplesIntoSingleColumn" ,  desc = "This utility copies multiple samples into a single merged sample.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](

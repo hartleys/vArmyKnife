@@ -19,7 +19,7 @@
 <div class="wrapper">
 
 <div><blockquote>
-  <p>Version 3.3.17 (Updated Thu Dec 15 14:47:17 EST 2022)</p>
+  <p>Version 3.3.24 (Updated Fri Dec 16 11:38:30 EST 2022)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -1146,6 +1146,15 @@ columnID: (String, required)
 </blockquote>
 
 <pre><code>info: (String, required)
+</code></pre>
+
+<h3>copyAllInfoToGeno</h3>
+
+<blockquote>
+  <p>This utility copies the contents of ALL info fields plus the FILTER column into the genotype FORMAT columns. This can be useful for preserving sample-level information stored in the INFO column of a single-sample VCF prior to merging across multiple samples.</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
 </code></pre>
 
 <h3>mergeSamplesIntoSingleColumn</h3>

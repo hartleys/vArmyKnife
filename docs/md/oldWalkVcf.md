@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.17 (Updated Thu Dec 15 14:47:17 EST 2022)
+> Version 3.3.24 (Updated Fri Dec 16 11:38:30 EST 2022)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -988,6 +988,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     info: (String, required)
+
+### copyAllInfoToGeno
+
+>  This utility copies the contents of ALL info fields plus the FILTER column into the genotype FORMAT columns\. This can be useful for preserving sample\-level information stored in the INFO column of a single\-sample VCF prior to merging across multiple samples\.
+
+
+    (This function takes no parameters)
 
 ### mergeSamplesIntoSingleColumn
 
