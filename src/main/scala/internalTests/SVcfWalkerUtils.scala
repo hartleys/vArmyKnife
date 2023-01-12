@@ -15533,7 +15533,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
             callerSupport = callerSupport + callerName;
             vc.info.map{ case (oldTag,fieldVal) => {
               if(! currInfoLines.contains(oldTag)){
-                report("ERROR INCOMING: Cannot find tag \""+oldTag+"\"!\n"+
+                report("ERROR INCOMING: Cannot find tag \""+oldTag+"\" in callerName=\""+callerName+"\"\n"+
                     "    available tags are: ["+currInfoLines.map{_._1}.mkString(",")+"]",
                     "note")
               }

@@ -236,7 +236,7 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "sampleOrdering",synon=Seq(),ty="String",valueString="samp1,samp2,...",desc="A simple list of all the samples, in the desired order.",req=false),
            ParamStr(id = "sampleOrderingFile",synon=Seq(),ty="String",valueString="orderingFile.txt",desc="A file containing one sampleID per line. "+
-                                                  "The samples will be reordered to match the order found in the file.",req=true),
+                                                  "The samples will be reordered to match the order found in the file.",req=false),
            ParamStr(id = "alphabetical",synon=Seq(),ty="Flag",valueString="",desc="If this flag is set, then the samples will be reordered alphabetically.",req=false)
          )), category = "File Formatting/Conversion"
        ),
@@ -1350,9 +1350,9 @@ object SVcfMapFunctions {
             //    None
              } else if(mapType == "sampleReorder"){
                val sampleOrd = (params.get("sampleOrdering") match {
-                 case Some(s) => Some(s);
-                 case None => params.get("sampleOrderingFile")
-               }).map{ s => s.split(",").toList }.getOrElse(List[String]());
+                 case Some(s) => Some( s.split(",").toList );
+                 case None => params.get("sampleOrderingFile").map{ getLines(_).toList }
+               }).getOrElse(List[String]());
                Some( new ReorderSamples(sampleOrdering = sampleOrd, sort = params.isSet("alphabetical")) )
                //              Seq[SVcfWalker]( new ReorderSamples(sampleOrdering = inputSampleOrdering.getOrElse(List[String]()), sort = inputSampleOrderingAlphabetical) )
                //None

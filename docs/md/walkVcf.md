@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.29 (Updated Thu Dec 22 11:43:31 EST 2022)
+> Version 3.3.31 (Updated Fri Jan  6 09:54:13 EST 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -889,7 +889,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     sampleOrdering: A simple list of all the samples, in the desired order.(String)
     sampleOrderingFile: A file containing one sampleID per line. The samples will be reordered to 
-        match the order found in the file.(String, required)
+        match the order found in the file.(String)
     alphabetical: If this flag is set, then the samples will be reordered alphabetically.(Flag)
 
 ### filterTags

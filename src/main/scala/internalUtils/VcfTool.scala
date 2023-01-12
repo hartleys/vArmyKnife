@@ -2102,19 +2102,29 @@ object VcfTool {
     lazy val lzy_qual : String  = cells(5);
     lazy val lzy_filter : String = cells(6);
     lazy val lzy_info : Map[String,Option[String]] = if(cells.isDefinedAt(7)){ 
-      cells(7).split(";").map(s => {
-        val c = s.split("=",2);
-        if(c.length == 1){
-          (c(0),None)
-        } else {
-          (c(0),Some(c(1)));
-        }
-      }).toMap
+      if(cells(7) == "" || cells(7) == "." || cells(7) == ".;" || cells(7) == ";"){
+        scala.collection.immutable.Map[String,Option[String]]()
+      } else {
+        cells(7).split(";").map(s => {
+          val c = s.split("=",2);
+          if(c.length == 1){
+            (c(0),None)
+          } else {
+            (c(0),Some(c(1)));
+          }
+        }).toMap
+      }
     } else {
       warning("Vcf file has no info column. Setting info to empty.","VCF_MALFORMAT_NO_INFO",10);
       Map[String,Option[String]]();
     }
-    lazy val lzy_format = if(cells.isDefinedAt(8)) cells(8).split(":") else Array[String]();
+    lazy val lzy_format = if(cells.isDefinedAt(8)){
+      if(cells(8) == "." || cells(8) == ""){
+        Array[String]();
+      } else {
+        cells(8).split(":") 
+      }
+    } else Array[String]();
     lazy val lzy_genotypeStrings = if(cells.isDefinedAt(9)) cells.drop(9) else Array[String]();
     
     def chrom = lzy_chrom;
