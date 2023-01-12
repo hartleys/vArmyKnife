@@ -1747,6 +1747,10 @@ object SVcfMapFunctions {
                
                Some( MergeSamplesIntoSingleColumn( prefixes=prefixes,sampID=sampID));
                
+             } else if(mapType == "copyAllInfoToGeno"){
+               
+               Some( CopyAllToGeno() );
+               
              } else if(mapType == "copyInfoToGeno"){
 
                val geno = params("mapID");

@@ -1963,6 +1963,60 @@ object SVcfWalkerUtils {
       //vc.dropInfo(overwriteInfos);
     }
   }
+  
+  case class CopyAllToGeno() extends SVcfWalker {
+    def walkerName : String = "CopyAllToGeno"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //val copyInfoPairs = Seq((info,geno));
+      
+      val sampleCt = vcfHeader.titleLine.sampleList.length;
+      
+      vcfHeader.infoLines.foreach{ vi => {
+        if( vi.Type == "Flag" ){
+           outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",vi.ID,Number="1",Type="Integer",desc="Info flag copied and converted to numeric, "+vi.desc))
+        } else {         
+           outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",vi.ID,Number=vi.Number,Type=vi.Type,desc="Info column copied, "+vi.desc))
+        }
+      }}
+      outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT","FILTER",Number=".",Type="String",desc="FILTER column copied to FORMAT."))
+     
+      
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        vcfHeader.infoLines.foreach{ vi => {
+          vc.genotypes.dropGenotypeArray( vi.ID );
+          if( vi.Type == "Flag" ){
+            val cleanvalue = if( v.info.contains( vi.ID ) ) "1" else "0";
+            vc.genotypes.addGenotypeArray(vi.ID,Array.fill(sampleCt)( cleanvalue ))
+          } else {
+            v.info.getOrElse(vi.ID,None).foreach{ infovalue => {
+              val cleanvalue = infovalue.replace(":","/");
+              vc.genotypes.addGenotypeArray(vi.ID,Array.fill(sampleCt)( cleanvalue ))
+            }}
+          }
+        }}
+        vc.genotypes.addGenotypeArray("FILTER",Array.fill(sampleCt)( v.filter.replace(":","/") ))
+          
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
+  
+  
   case class MergeSamplesIntoSingleColumn(prefixes : Seq[String], sampID : String) extends SVcfWalker {
     def walkerName : String = "MergeSamplesIntoSingleColumn"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
