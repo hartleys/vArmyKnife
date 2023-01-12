@@ -2040,19 +2040,19 @@ object SVcfWalkerUtils {
         case Some(x) => {
           headerLine = headerLine.updateNumber(x)
         }
-        case None => { reportln("   Leaving Number along for field "+field,"deepDebug") }
+        case None => ()
       }
       desc match {
         case Some(x) => {
           headerLine = headerLine.updateDesc(x)
         }
-        case None => { reportln("   Leaving desc along for field "+field,"deepDebug") }
+        case None => ()
       }
       ty match {
         case Some(x) => {
           headerLine = headerLine.updateType(x)
         }
-        case None => { reportln("   Leaving Type along for field "+field,"deepDebug") }
+        case None => ()
       }
       outHeader.addFormatLine(headerLine);
 
@@ -2092,16 +2092,19 @@ object SVcfWalkerUtils {
         case Some(x) => {
           headerLine = headerLine.updateNumber(x)
         }
+        case None => ()
       }
       desc match {
         case Some(x) => {
           headerLine = headerLine.updateDesc(x)
         }
+        case None => ()
       }
       ty match {
         case Some(x) => {
           headerLine = headerLine.updateType(x)
         }
+        case None => ()
       }
       outHeader.addInfoLine(headerLine);
 

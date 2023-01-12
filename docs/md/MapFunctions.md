@@ -560,6 +560,13 @@
 
     (This function takes no parameters)
 
+### dropInvalidAlleleLines
+
+>  This utility strips all symbolic alleles\. See the VCF v4\.2 specification for more information on the definition of valid allele columns\. Some tools return invalid alleles, and many tools will crash when fed such data\.
+
+
+    (This function takes no parameters)
+
 ### dropVariantsWithNs
 
 >  This utility drops variants if they contain Ns in either the REF or ALT columns\.

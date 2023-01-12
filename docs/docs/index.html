@@ -28,7 +28,7 @@
 
 <section>
 <blockquote>
-  <p>Version 3.3.27 (Updated Tue Dec 20 15:23:25 EST 2022)</p>
+  <p>Version 3.3.29 (Updated Thu Dec 22 11:43:31 EST 2022)</p>
 </blockquote>
 
 </section> <h1>GENERAL SYNTAX:</h1> <section>
@@ -833,6 +833,15 @@ windowSize: The size of the window around the genomic region to extract.(Int)
 
 <blockquote>
   <p>This utility strips all symbolic alleles. See the VCF v4.2 specification for more information on what those are and what they are used for. Many older tools will return errors if fed symbolic alleles.</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>dropInvalidAlleleLines</h3>
+
+<blockquote>
+  <p>This utility strips all symbolic alleles. See the VCF v4.2 specification for more information on the definition of valid allele columns. Some tools return invalid alleles, and many tools will crash when fed such data.</p>
 </blockquote>
 
 <pre><code>(This function takes no parameters)
