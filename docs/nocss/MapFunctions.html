@@ -975,6 +975,32 @@ columnID: (String, required)
 <pre><code>(This function takes no parameters)
 </code></pre>
 
+<h3>fixInfoFieldMetadata</h3>
+
+<blockquote>
+  <p>This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.</p>
+</blockquote>
+
+<pre><code>field: (String, required)
+Type: (String)
+Number: (String)
+desc: (String)
+removeMeta: (Flag)
+</code></pre>
+
+<h3>fixFormatFieldMetadata</h3>
+
+<blockquote>
+  <p>This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.</p>
+</blockquote>
+
+<pre><code>field: (String, required)
+Type: (String)
+Number: (String)
+desc: (String)
+removeMeta: (Flag)
+</code></pre>
+
 <h3>mergeSamplesIntoSingleColumn</h3>
 
 <blockquote>

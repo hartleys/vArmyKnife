@@ -846,6 +846,28 @@
 
     (This function takes no parameters)
 
+### fixInfoFieldMetadata
+
+>  This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc\. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields\.
+
+
+    field: (String, required)
+    Type: (String)
+    Number: (String)
+    desc: (String)
+    removeMeta: (Flag)
+
+### fixFormatFieldMetadata
+
+>  This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc\. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields\.
+
+
+    field: (String, required)
+    Type: (String)
+    Number: (String)
+    desc: (String)
+    removeMeta: (Flag)
+
 ### mergeSamplesIntoSingleColumn
 
 >  This utility copies multiple samples into a single merged sample\.

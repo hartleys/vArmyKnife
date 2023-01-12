@@ -2015,6 +2015,109 @@ object SVcfWalkerUtils {
       //vc.dropInfo(overwriteInfos);
     }
   }
+  case class FixFormatFieldMetadata( field : String, num : Option[String], desc : Option[String], ty : Option[String] , removeMeta : Boolean ) extends SVcfWalker {
+    def walkerName : String = "FixFormatFieldMetadata"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("field",field),
+        ("num",num.getOrElse("None")),
+        ("desc",desc.getOrElse("None")),
+        ("ty",ty.getOrElse("None"))
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //val copyInfoPairs = Seq((info,geno));
+      var headerLine = vcfHeader.formatLines.find{ hh => {
+        hh.ID == field
+      }}.get
+      
+      if(removeMeta){
+        headerLine = new SVcfCompoundHeaderLine("FORMAT",headerLine.ID,Number=headerLine.Number,Type=headerLine.Type,desc=headerLine.desc)
+      }
+      
+      num match {
+        case Some(x) => {
+          headerLine = headerLine.updateNumber(x)
+        }
+        case None => { reportln("   Leaving Number along for field "+field,"deepDebug") }
+      }
+      desc match {
+        case Some(x) => {
+          headerLine = headerLine.updateDesc(x)
+        }
+        case None => { reportln("   Leaving desc along for field "+field,"deepDebug") }
+      }
+      ty match {
+        case Some(x) => {
+          headerLine = headerLine.updateType(x)
+        }
+        case None => { reportln("   Leaving Type along for field "+field,"deepDebug") }
+      }
+      outHeader.addFormatLine(headerLine);
+
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        v
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
+  case class FixInfoFieldMetadata( field : String, num : Option[String], desc : Option[String], ty : Option[String], removeMeta : Boolean) extends SVcfWalker {
+    def walkerName : String = "FixFormatFieldMetadata"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("field",field),
+        ("num",num.getOrElse("None")),
+        ("desc",desc.getOrElse("None")),
+        ("ty",ty.getOrElse("None"))
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //val copyInfoPairs = Seq((info,geno));
+      var headerLine = vcfHeader.infoLines.find{ hh => {
+        hh.ID == field
+      }}.get
+      if(removeMeta){
+        headerLine = new SVcfCompoundHeaderLine("INFO",headerLine.ID,Number=headerLine.Number,Type=headerLine.Type,desc=headerLine.desc)
+      }
+      num match {
+        case Some(x) => {
+          headerLine = headerLine.updateNumber(x)
+        }
+      }
+      desc match {
+        case Some(x) => {
+          headerLine = headerLine.updateDesc(x)
+        }
+      }
+      ty match {
+        case Some(x) => {
+          headerLine = headerLine.updateType(x)
+        }
+      }
+      outHeader.addInfoLine(headerLine);
+
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        v
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
   
   
   case class MergeSamplesIntoSingleColumn(prefixes : Seq[String], sampID : String) extends SVcfWalker {

@@ -19,7 +19,7 @@
 <div class="wrapper">
 
 <div><blockquote>
-  <p>Version 3.3.24 (Updated Fri Dec 16 11:38:30 EST 2022)</p>
+  <p>Version 3.3.27 (Updated Tue Dec 20 15:23:25 EST 2022)</p>
 </blockquote>
 
 <h1>GENERAL SYNTAX:</h1>
@@ -1155,6 +1155,32 @@ columnID: (String, required)
 </blockquote>
 
 <pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>fixInfoFieldMetadata</h3>
+
+<blockquote>
+  <p>This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.</p>
+</blockquote>
+
+<pre><code>field: (String, required)
+Type: (String)
+Number: (String)
+desc: (String)
+removeMeta: (Flag)
+</code></pre>
+
+<h3>fixFormatFieldMetadata</h3>
+
+<blockquote>
+  <p>This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.</p>
+</blockquote>
+
+<pre><code>field: (String, required)
+Type: (String)
+Number: (String)
+desc: (String)
+removeMeta: (Flag)
 </code></pre>
 
 <h3>mergeSamplesIntoSingleColumn</h3>

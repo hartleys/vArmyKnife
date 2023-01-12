@@ -1,4 +1,4 @@
-> Version 3.3.24 (Updated Fri Dec 16 11:38:30 EST 2022)
+> Version 3.3.27 (Updated Tue Dec 20 15:23:25 EST 2022)
 
 # GENERAL SYNTAX:
 
@@ -958,6 +958,28 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     (This function takes no parameters)
+
+### fixInfoFieldMetadata
+
+>  This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc\. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields\.
+
+
+    field: (String, required)
+    Type: (String)
+    Number: (String)
+    desc: (String)
+    removeMeta: (Flag)
+
+### fixFormatFieldMetadata
+
+>  This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc\. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields\.
+
+
+    field: (String, required)
+    Type: (String)
+    Number: (String)
+    desc: (String)
+    removeMeta: (Flag)
 
 ### mergeSamplesIntoSingleColumn
 

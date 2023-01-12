@@ -868,6 +868,26 @@ object SVcfMapFunctions {
 
            )), category = "File Formatting/Conversion"
        ),
+       ParamStrSet("fixInfoFieldMetadata" ,  desc = "This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+                 ParamStr(id = "field",synon=Seq(),ty="String",valueString="myInfoColumn",desc="",req=true),
+                 ParamStr(id = "Type",synon=Seq("TYPE","type"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "Number",synon=Seq("number","NUMBER"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "desc",synon=Seq("Desc","DESC"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "removeMeta",synon=Seq(),ty="Flag",valueString=".",desc="",req=false)
+           )), category = "File Formatting/Conversion"
+       ),
+       ParamStrSet("fixFormatFieldMetadata" ,  desc = "This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+                 ParamStr(id = "field",synon=Seq(),ty="String",valueString="myInfoColumn",desc="",req=true),
+                 ParamStr(id = "Type",synon=Seq("TYPE","type"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "Number",synon=Seq("number","NUMBER"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "desc",synon=Seq("Desc","DESC"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "removeMeta",synon=Seq(),ty="Flag",valueString=".",desc="",req=false)
+           )), category = "File Formatting/Conversion"
+       ),
        ParamStrSet("mergeSamplesIntoSingleColumn" ,  desc = "This utility copies multiple samples into a single merged sample.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1763,6 +1783,24 @@ object SVcfMapFunctions {
                val info = params("info");
                
                Some( CopyInfoToGeno(info=info,geno=geno) );
+             } else if(mapType == "fixInfoFieldMetadata"){
+               
+               val field = params("field");
+               val ty = params.get("Type")
+               val num = params.get("Number")
+               val desc = params.get("desc")
+               val removeMeta = params.isSet("dropMetadata")
+               
+               Some(new FixInfoFieldMetadata(field = field,num=num,desc=desc,ty=ty,removeMeta=removeMeta))
+               //FixInfoFieldMetadata( field : String, num : Option[String], desc : Option[String], ty : Option[String] )
+             } else if(mapType == "fixFormatFieldMetadata"){
+               val field = params("field");
+               val ty = params.get("Type")
+               val num = params.get("Number")
+               val desc = params.get("desc")
+               val removeMeta = params.isSet("dropMetadata")
+               
+               Some(new FixFormatFieldMetadata(field = field,num=num,desc=desc,ty=ty,removeMeta=removeMeta))
                
                /*
                 * CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], copyFilterToGeno : Option[String],copyQualToGeno : Option[String],
@@ -1770,6 +1808,25 @@ object SVcfMapFunctions {
                 */
                
                /*
+
+       ParamStrSet("fixInfoFieldMetadata" ,  desc = "This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+                 ParamStr(id = "infoField",synon=Seq(),ty="String",valueString="myInfoColumn",desc="",req=true),
+                 ParamStr(id = "Type",synon=Seq("TYPE","type"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "Number",synon=Seq("number","NUMBER"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "desc",synon=Seq("Desc","DESC"),ty="String",valueString=".",desc="",req=false),
+           )), category = "File Formatting/Conversion"
+       ),
+       ParamStrSet("fixFormatFieldMetadata" ,  desc = "This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+                 ParamStr(id = "infoColumn",synon=Seq(),ty="String",valueString="myInfoColumn",desc="",req=true),
+                 ParamStr(id = "Type",synon=Seq("TYPE","type"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "Number",synon=Seq("number","NUMBER"),ty="String",valueString=".",desc="",req=false),
+                 ParamStr(id = "desc",synon=Seq("Desc","DESC"),ty="String",valueString=".",desc="",req=false),
+            )), category = "File Formatting/Conversion"
+       ),
                 
                        ParamStrSet("copyAltToInfo" ,  desc = "",
                   synon = Seq("addAltSeq"),
