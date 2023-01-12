@@ -2544,6 +2544,39 @@ object SVcfWalkerUtils {
       })),outHeader)
     }
   }
+  class FilterInvalidAlleleLines() extends SVcfWalker {
+    def walkerName : String = "FilterInvalidAlleleLines"
+    
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      outHeader.addWalk(this);
+      var dropct = 0;
+      outHeader.reportAddedInfos(this)
+      
+      val validRefChecker : java.util.regex.Pattern = java.util.regex.Pattern.compile("[ACTGNactgn]+")
+      val validAltChecker : java.util.regex.Pattern = java.util.regex.Pattern.compile("[ACTGNactgn]+?")
+
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        val refValid = ( v.ref.startsWith("<") && v.ref.endsWith(">") ) || 
+                       ( validRefChecker.matcher(v.ref).matches() )
+        val altValid = ( v.alt.length == 1 && v.alt.head == ".") || ( v.alt.forall{ a => {
+          a == "*" || (a.startsWith("<") && a.endsWith(">")) || validRefChecker.matcher(a).matches()
+        }} )
+        if( ( ! refValid ) || ( ! altValid ) ){
+          dropct = dropct + 1;
+          notice("Dropped invalid allele variant:\n    "+v.getSimpleVcfString(),"Dropped_Invalid_Variant",10);
+          None          
+        } else {
+          Some(v);
+        }
+      }}, closeAction = (() => {
+        reportln("Dropped "+dropct+" variant/allele lines due to the presence of invalid alleles","note");
+      })),outHeader)
+    }
+  }
+  
   class MergeBooleanTags(tagID : String, mergeTags : List[String], tagNames : Option[List[String]]) extends SVcfWalker {
     def walkerName : String = "MergeBooleanTags"
     val tagTitles = tagNames.getOrElse(mergeTags);

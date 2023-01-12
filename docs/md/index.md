@@ -1,4 +1,4 @@
-> Version 3.3.8 (Updated Fri Dec  2 14:38:34 EST 2022)
+> Version 3.3.13 (Updated Wed Dec 14 14:41:03 EST 2022)
 
 # GENERAL SYNTAX:
 
@@ -1328,6 +1328,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 ## Available Functions:
 
     
+
+### convertBPtoGT\(x,delim\)
+
+    
+     . 
+    x (GENO:String) 
+    delim (Optional) (CONST:String) 
 
 ### SUM\(x\.\.\.\)
 

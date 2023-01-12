@@ -1086,6 +1086,14 @@ object VcfTool {
       }
       (header,variantLines);
     }
+
+    def readTableToVcfAdv(lines : Iterator[String], withProgress : Boolean = true, hasIDcol : Boolean = true) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
+      if(hasIDcol){
+        return(readTableToVcf(lines=lines,withProgress=withProgress))
+      } else {
+        return(readTableToVcfNoID(lines=lines,withProgress=withProgress))
+      }
+    }
     
     def readTableToVcf(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
       val bufLines = lines.buffered;
@@ -1113,6 +1121,68 @@ object VcfTool {
       
       (header,variantLines);
     }
+    
+    def readTableToVcfNoID(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
+      val bufLines = lines.buffered;
+      val headerLine = bufLines.next
+      val header = readTableHeaderNoID(headerLine);
+      val headerColumns = headerLine.split("\t").toSeq.drop(4)
+      
+      val variantLines = if(withProgress){
+                         internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfVariantLine](
+                           //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
+                           bufLines.map(line => SVcfInputTableVariantLineNoID(line,headerColumns)), 
+                           internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfVariantLine](
+                                elementTitle = "lines", lineSec = 60,
+                                reportFunction  = ((vc : SVcfVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                           )
+                         )
+      
+      } else {
+        //rawVariantLines.map(line => SVcfInputVariantLine(line,header))
+        bufLines.map(line => SVcfInputTableVariantLineNoID(line,headerColumns))
+      }
+      
+      (header,variantLines);
+    }
+    /*
+    def readTableToVcfAdv(lines : Iterator[String], withProgress : Boolean = true,
+                   skipLines : Int = 0, 
+                   columnNameCHROM : String = "CHROM",columnNamePOS : String  = "POS", columnNameREF : String = "REF",columnNameALT : String = "ALT"
+    ) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
+      val bufLines = lines.drop(skipLines).buffered;
+      //if(! bufLines.head.startsWith("#CHROM\tPOS\tID\tREF\tALT")){
+      //  error("Error: table must begin with string: \"#CHROM\tPOS\tID\tREF\tALT\"");
+      //}
+      
+      val headerLine = bufLines.next();
+      val headerColumnsRaw = headerLine.split("\t").toSeq
+      val headerElemList = Seq("CHROM","POS","REF","ALT");
+      val headerIdxList = headerElemList.map{ h => {
+        headerColumnsRaw.
+      }}
+      val tableLines = bufLines.map{ 
+        
+      }
+      
+      val variantLines = if(withProgress){
+                         internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfVariantLine](
+                           //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
+                           bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns)), 
+                           internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfVariantLine](
+                                elementTitle = "lines", lineSec = 60,
+                                reportFunction  = ((vc : SVcfVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                           )
+                         )
+      
+      } else {
+        //rawVariantLines.map(line => SVcfInputVariantLine(line,header))
+        bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns))
+      }
+      
+      (header,variantLines);
+    }*/
+    
     
     def readVcf(lines : Iterator[String], withProgress : Boolean = true) : (SVcfHeader,Iterator[SVcfInputVariantLine]) = {
       reportln("     readVcf() init: buffering lines ... ("+getDateAndTimeString+")","debug")
@@ -1152,9 +1222,20 @@ object VcfTool {
     def readTableHeader( line : String ) : SVcfHeader = {
       var infoLines = line.split("\t").drop(5).toSeq.map{ ss => {
         new SVcfCompoundHeaderLine(in_tag = "INFO",ID=ss,Number = ".", Type = "String",desc = "No desc available");
+      }}//SVcfHeaderLine(in_tag : String, var in_value : String)
+      var formatLines = Seq[SVcfCompoundHeaderLine]();
+      var otherHeaderLines = Seq[SVcfHeaderLine]( new SVcfHeaderLine("fileformat","VCFv4.2") );
+      var walkLines = Seq[SVcfWalkHeaderLine]();
+      var titleLine = SVcfTitleLine(Seq[String]())
+      
+      SVcfHeader(infoLines, formatLines, otherHeaderLines,walkLines, titleLine);
+    }
+    def readTableHeaderNoID( line : String ) : SVcfHeader = {
+      var infoLines = line.split("\t").drop(4).toSeq.map{ ss => {
+        new SVcfCompoundHeaderLine(in_tag = "INFO",ID=ss,Number = ".", Type = "String",desc = "No desc available");
       }}
       var formatLines = Seq[SVcfCompoundHeaderLine]();
-      var otherHeaderLines = Seq[SVcfHeaderLine]();
+      var otherHeaderLines = Seq[SVcfHeaderLine]( new SVcfHeaderLine("fileformat","VCFv4.2") );
       var walkLines = Seq[SVcfWalkHeaderLine]();
       var titleLine = SVcfTitleLine(Seq[String]())
       
@@ -1959,6 +2040,54 @@ object VcfTool {
     }
     
   }
+  case class SVcfInputTableVariantLineNoID(inputLine : String, headerColumns : Seq[String]) extends SVcfVariantLine {
+    lazy val cells : Array[String] = inputLine.split("\t");
+    lazy val lzy_chrom : String = cells(0);
+    lazy val lzy_pos : Int = string2int(cells(1));
+    lazy val lzy_id : String = "."
+    lazy val lzy_ref : String = cells(2);
+    lazy val lzy_alt : Array[String] = cells(3).split(",");
+    lazy val lzy_qual : String  = if(headerColumns.contains("QUAL")){
+      cells( headerColumns.indexOf("QUAL") )
+    } else {
+      "0"
+    }
+    lazy val lzy_filter : String = if(headerColumns.contains("FILTER")){
+      cells( headerColumns.indexOf("FILTER") )
+    } else {
+      "0"
+    }
+    lazy val lzy_info : Map[String,Option[String]] = headerColumns.zip(cells.drop(4)).map{ case (colName,colVal) => {
+      if(colVal == ""){
+        (colName,Some("."))
+      } else {
+        (colName,Some(colVal))
+      }
+    }}.toMap
+    
+    def chrom = lzy_chrom;
+    def pos = lzy_pos;
+    def id = lzy_id;
+    def ref = lzy_ref;
+    def alt = lzy_alt;
+    def qual = lzy_qual;
+    def filter = lzy_filter;
+    def info = lzy_info;
+    def format = Array[String]()
+    lazy val lzy_genotypeStrings = Array[String]()
+    lazy val lzy_genotypes = SVcfGenotypeSet.getGenotypeSet(lzy_genotypeStrings, format);
+    def genotypes = lzy_genotypes;
+    
+    private var header : SVcfHeader = null;
+    def setHeader( h : SVcfHeader ){
+      header = h;
+    }
+    def getHeader() : SVcfHeader = {
+      header;
+    }
+    
+  }
+  
   
   case class SVcfInputVariantLine(inputLine : String) extends SVcfVariantLine {
     override def getVcfString :  String = inputLine;
@@ -2329,7 +2458,7 @@ object VcfTool {
   
   def getSVcfIteratorsFromTable(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int], 
       inputFileList : Boolean = false, withProgress : Boolean = true, infixes : Vector[String] = Vector(),
-      extractInterval : Option[String] = None) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      extractInterval : Option[String] = None, hasIDcol : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val indata = if(inputFileList){
         val (infilePeek,infiles) = peekIterator(getLinesSmartUnzip(infileString),1000);
         val denominator = if(infilePeek.length < 1000) infilePeek.length.toString else "???";
@@ -2351,15 +2480,15 @@ object VcfTool {
       }
     
     val (vcfHeader,vcIter) = if(chromList.isEmpty){
-        SVcfLine.readTableToVcf(indata,withProgress = withProgress)
+        SVcfLine.readTableToVcfAdv(indata,withProgress = withProgress,hasIDcol=hasIDcol)
       } else if(chromList.get.length == 1){
         val chrom = chromList.get.head;
-        SVcfLine.readTableToVcf(indata.filter{line => {
+        SVcfLine.readTableToVcfAdv(indata.filter{line => {
           line.startsWith(chrom+"\t") || line.startsWith("#")
-        }},withProgress = withProgress)
+        }},withProgress = withProgress,hasIDcol=hasIDcol)
       } else {
         val chromSet = chromList.get.toSet;
-        val (vh,vi) = SVcfLine.readTableToVcf(indata,withProgress = withProgress)
+        val (vh,vi) = SVcfLine.readTableToVcfAdv(indata,withProgress = withProgress,hasIDcol=hasIDcol)
         (vh,vi.filter(line => { chromSet.contains(line.chrom) }))
       }
       
@@ -2397,7 +2526,6 @@ object VcfTool {
       }
       (vcIter2,vcfHeader);
   }
-  
   
 
   object chainSVcfWalkersDEFAULT extends SVcfWalkerInfo {

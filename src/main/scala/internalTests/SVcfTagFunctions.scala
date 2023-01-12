@@ -949,6 +949,21 @@ object SVcfTagFunctions {
   
   //("FILE","String",num)
 
+  def VcfTagFcn_stripParamType( x : String ) : String = {
+    if( x.startsWith("INFO:") ){
+      x.drop(5)
+    } else if( x.startsWith("CONST:")){
+      x.drop(6)
+    } else if( x.startsWith("GENO:")){
+      x.drop(5)
+    } else if( x.startsWith("FILE:")){
+      x.drop(5)
+    } else if( x.startsWith("FORMAT:")){
+      x.drop(7)
+    } else {
+      x
+    }
+  }
   
   abstract class VcfTagFcnFactory(){
     /*def getTypeInfoOLD(fcParam : Seq[VcfTagFunctionParam], params : Seq[String], h : SVcfHeader) : Vector[(String,String,VcfTagFunctionParam,String)] = {
@@ -1332,7 +1347,60 @@ object SVcfTagFunctions {
 
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "convertBPtoGT",synon = Seq(),
+              shortDesc = "",
+              desc = " "+
+                     "."+
+                     " "+
+                     "",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "GENO:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "delim", ty = "CONST:String",req=false,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true; 
+              val gtTag = paramValues(0);
+              val delim = paramValues.lift(1);
+              override val outType = "String"
+              override val outNum = "1"; 
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
+                if( gtIdx > -1 ){
+                  vout.genotypes.addGenotypeArray( newTag, vout.genotypes.genotypeValues(gtIdx).map{ gg => {
+                    val bp : Seq[String] = delim match {
+                      case Some(d) => {
+                        gg.split(d).toSeq
+                      }
+                      case None => {
+                        gg.toSeq.map{ ggg => ggg.toString() }
+                      }
+                    }
+                    bp.map{ bb => {
+                      if(bb == vc.ref){
+                        "0"
+                      } else if( vc.alt.contains(bb) ){
+                        "" + ( vc.alt.indexOf( bb ) + 1)
+                      } else {
+                        warning("convertBPtoGT: bad genotype has allele that does not match REF or ALT","convertBPtoGT_badGT",10)
+                        "."
+                      }
+                    }}.sorted.mkString("/")
+                    
+                  }})
+                }
+              }
+            }
+
+          }
+        },
+        
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "extractIDX",synon = Seq(),
@@ -2175,9 +2243,9 @@ object SVcfTagFunctions {
               def init : Boolean = true;
               //val typeInfo = getTypeInfo(md.params,pv,h)
               
-              val ostr : String = pv(0);
-              val nstr : String = pv(1);
-              val info : String = pv(2);
+              val ostr : String = VcfTagFcn_stripParamType(pv(0));
+              val nstr : String = VcfTagFcn_stripParamType(pv(1));
+              val info : String = VcfTagFcn_stripParamType(pv(2));
               
               //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
@@ -2217,9 +2285,9 @@ object SVcfTagFunctions {
               def init : Boolean = true;
               //val typeInfo = getTypeInfo(md.params,pv,h)
               
-              val ostr : String = pv(0);
+              val ostr : String = VcfTagFcn_stripParamType(pv(0));
               val nstr : String = ",";
-              val info : String = pv(1);
+              val info : String = VcfTagFcn_stripParamType(pv(1));
               
               //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
@@ -2259,8 +2327,8 @@ object SVcfTagFunctions {
               def init : Boolean = true;
               //val typeInfo = getTypeInfo(md.params,pv,h)
               
-              val info : String = pv(0);
-              val str : String = pv(1);
+              val info : String = VcfTagFcn_stripParamType(pv(0));
+              val str : String = VcfTagFcn_stripParamType(pv(1));
               
               //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
@@ -2302,8 +2370,8 @@ object SVcfTagFunctions {
               def init : Boolean = true;
               //val typeInfo = getTypeInfo(md.params,pv,h)
               
-              val info : String = pv(0);
-              val str : String = pv(1);
+              val info : String = VcfTagFcn_stripParamType(pv(0));
+              val str : String = VcfTagFcn_stripParamType(pv(1));
               
               //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
@@ -2341,7 +2409,7 @@ object SVcfTagFunctions {
               def init : Boolean = true;
               //val typeInfo = getTypeInfo(md.params,pv,h)
               
-              val info : String = pv(0);
+              val info : String = VcfTagFcn_stripParamType(pv(0));
               
               //val ddTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo(2));
               //val ffTag : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionFileReader(typeInfo.head._4,typeInfo.head._1);
@@ -2807,7 +2875,7 @@ object SVcfTagFunctions {
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
               def init : Boolean = true;
               val typeInfo = getTypeInfo(md.params,pv,h).toVector
-              val oldField = pv(0);
+              val oldField = VcfTagFcn_stripParamType(pv(0));
               //val newField = pv(1);
               override val outType = h.infoLines.find{ _.ID == oldField }.map{ _.Type }.getOrElse("???")
               override val outNum = h.infoLines.find{ _.ID == oldField }.map{ _.Number }.getOrElse("???")

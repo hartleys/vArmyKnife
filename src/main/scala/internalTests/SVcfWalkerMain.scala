@@ -163,6 +163,11 @@ object SVcfWalkerMain {
                                          argDesc = "todo write desc"+
                                                    "" // description
                                        ).meta(true,"ZZ ALPHA PARAMS, not for general use", 9000) ::
+                    new UnaryArgument( name = "tableInputNoID",
+                                         arg = List("--tableInputNoID"), // name of value
+                                         argDesc = "todo write desc"+
+                                                   "" // description
+                                       ).meta(true,"ZZ ALPHA PARAMS, not for general use", 9000) ::
                     new UnaryArgument( name = "tableOutput",
                                          arg = List("--tableOutput"), // name of value
                                          argDesc = "todo write desc"+
@@ -324,7 +329,8 @@ object SVcfWalkerMain {
                 splitOutputByChrom = parser.get[Boolean]("splitOutputByChrom"),
                 splitOutputByBed = parser.get[Option[String]]("splitOutputByBed"),
                 //tagVariantsFunction = parser.get[List[String]]("tagVariantsFunction"),
-                tableInput = parser.get[Boolean]("tableInput"),
+                tableInputWithID = parser.get[Boolean]("tableInput"),
+                tableInputNoID = parser.get[Boolean]("tableInputNoID"),
                 tableOutput = parser.get[Boolean]("tableOutput"),
                 //tagVariantsGtCountExpression = parser.get[List[String]]("tagVariantsGtCountExpression"),
                 variantMapFunction = parser.get[List[String]]("FCN") ,
@@ -350,7 +356,8 @@ object SVcfWalkerMain {
                 splitOutputByChrom : Boolean = false,
                 splitOutputByBed : Option[String] = None,
                 //tagVariantsFunction : List[String] = List[String](),
-                tableInput : Boolean = false,
+                tableInputWithID : Boolean = false,
+                tableInputNoID : Boolean = false,
                 tableOutput : Boolean = false,
                 //tagVariantsGtCountExpression : List[String]  = List[String](),
                 variantMapFunction : List[String] = List[String](),
@@ -359,7 +366,6 @@ object SVcfWalkerMain {
                 )  {
 
 
-    
 
     /*
      **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
@@ -379,7 +385,8 @@ object SVcfWalkerMain {
      * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
      * **************************************************************************************************************************************************** **************************************************************************************************************************************************** 
      */
-    
+    val tableInput = tableInputWithID || tableInputNoID
+
             val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String]) = getGroups(groupFile, None, superGroupList);
@@ -582,7 +589,7 @@ object SVcfWalkerMain {
       val decision : String  = params.get("gtDecisionMethod").getOrElse("priority");
       val CC_ignoreSampleIds = params.isSet("ignoreSampleIds")
       val CC_ignoreSampleOrder = params.isSet("ignoreSampleOrder")
-      
+       
       val (ensIter,ensHeader) = ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
                                                         //genomeFA = genomeFA,
                                                         //windowSize = 200, 
@@ -625,7 +632,7 @@ object SVcfWalkerMain {
               getSVcfIterators(infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList);
             } else {
               reportln("PARAM --tableInput set. Reading in TABLE format.","debug")
-              getSVcfIteratorsFromTable(infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList);
+              getSVcfIteratorsFromTable(    infileString=vcffile,chromList=chromList,numLinesRead=numLinesRead,inputFileList = infileList, hasIDcol = ! tableInputNoID);                
             }
             val (newIter,newHeader) = finalWalker.walkVCF(vcIterRaw,vcfHeader);
             if(tableOutput){
