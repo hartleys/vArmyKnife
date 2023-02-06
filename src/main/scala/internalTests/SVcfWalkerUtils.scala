@@ -1927,6 +1927,44 @@ object SVcfWalkerUtils {
     }
   }
   
+  case class reorderGT(gtOrder:Seq[String]) extends SVcfWalker {
+    def walkerName : String = "reorderGT"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("gtOrder",   gtOrder.mkString("/")),
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        
+        val ordGeno = gtOrder.flatMap{ gg => {
+          v.genotypes.getGtTag(gg)
+        }}
+        val extraGeno = v.genotypes.fmt.zipWithIndex.filter{ case (gg,gi) => {
+          ! gtOrder.contains(gg)
+        }}.map{ case (gg,gi) => {
+          v.genotypes.genotypeValues(gi);
+        }}
+        
+        //vc.in_genotypes = ( ++ ).toArray
+        
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      //vc.dropInfo(overwriteInfos);
+    }
+  }
+  
   case class CopyInfoToGeno(info : String, geno : String) extends SVcfWalker {
     def walkerName : String = "CopyInfoToGeno"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -10060,6 +10098,55 @@ ALT VERSION: allows title line!
     }
   }
   
+  case class SSplitMultiNucleotideVariants(splitPrefix : String = "" ,dnpOnly : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "SSplitMultiNucleotideVariants"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)]()
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      outHeader.addWalk(this);
+      
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID=splitPrefix+"multiNucleoSplit",Number="1",Type="Integer",desc="Will be 1 if the variant was originally coded as a multi-nucleotide variant."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID=splitPrefix+"multiNucleoSplitCt",Number="1",Type="Integer",desc="If the variant was originally coded as a multi-nucleotide variant, this will be the number of nucleotides."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID=splitPrefix+"multiNucleoSplitIdx",Number="1",Type="Integer",desc="If the variant was originally coded as a multi-nucleotide variant, this will be the position of this variant in the multinucleotide split."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID=splitPrefix+"multiNucleoSplitPos",Number="1",Type="Integer",desc="If the variant was originally coded as a multi-nucleotide variant, this will be the genomic position of the start of the original multinucleotide variant."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID=splitPrefix+"multiNucleoSplitREF",Number="1",Type="Integer",desc="If the variant was originally coded as a multi-nucleotide variant, this will be the original REF allele."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID=splitPrefix+"multiNucleoSplitALT",Number="1",Type="Integer",desc="If the variant was originally coded as a multi-nucleotide variant, this will be the original ALT allele."));
+
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      //vc.dropInfo(overwriteInfos);
+       outHeader.reportAddedInfos(this)
+      
+      //            new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.txList_TAG, ".", "String", "List of known transcripts found to overlap with the variant."),
+
+      (vcIter.flatMap{v => {
+        
+        if( v.alt.length == 1 & v.ref.length > 1 & v.ref.length == v.alt(0).length ){
+          v.ref.zip(v.alt(0)).zipWithIndex.toSeq.map{ case ((r,a),i) => {
+            val vc = v.getOutputLine()
+            vc.in_pos = v.pos + i;
+            vc.in_ref = r+"";
+            vc.in_alt = Seq(a+"");
+            vc.in_genotypes = v.genotypes.deepCopyGenotypeSet();
+            vc.addInfo(splitPrefix+"multiNucleoSplit","1");
+            vc.addInfo(splitPrefix+"multiNucleoSplitCt",""+v.ref.length);
+            vc.addInfo(splitPrefix+"multiNucleoSplitIdx",""+i);
+            vc.addInfo(splitPrefix+"multiNucleoSplitPos",""+v.pos);
+            vc.addInfo(splitPrefix+"multiNucleoSplitREF",""+v.ref);
+            vc.addInfo(splitPrefix+"multiNucleoSplitALT",""+v.alt(0));
+            vc
+          }}
+        } else {
+          val vc = v.getOutputLine()
+          vc.addInfo(splitPrefix+"multiNucleoSplit","0");
+          Seq(vc);
+        }
+      }},outHeader)
+    }
+  }
   
   case class SFilterChromWalker(chromList : Option[List[String]]) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "SFilterChromWalker"
@@ -15360,8 +15447,6 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
     }
   }
   
-
-
 
   def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
                             headers : Seq[SVcfHeader], 

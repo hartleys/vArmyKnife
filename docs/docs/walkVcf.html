@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.3.39 (Updated Thu Jan 12 12:56:52 EST 2023)</p>
+  <p>Version 3.3.40 (Updated Mon Jan 23 15:47:14 EST 2023)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -388,6 +388,16 @@ expr: The variant expression, which is a true/false expression using the variant
 </blockquote>
 
 <pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>splitMultiNucleotideVariants</h3>
+
+<blockquote>
+  <p>This function splits multinucleotide variants into separate SNVs.This only modifies biallelic variants (or split multiallelics) in which the REF and ALT are the same length and that length is greater than 1.</p>
+</blockquote>
+
+<pre><code>biallelicOnly: If this flag is used, only biallelic variants will be split, not larger 
+    variants.(flag)
 </code></pre>
 
 <h3>markDup</h3>

@@ -170,6 +170,14 @@
 
     (This function takes no parameters)
 
+### splitMultiNucleotideVariants
+
+>  This function splits multinucleotide variants into separate SNVs\.This only modifies biallelic variants \(or split multiallelics\) in which the REF and ALT are the same length and that length is greater than 1\.
+
+
+    biallelicOnly: If this flag is used, only biallelic variants will be split, not larger 
+        variants.(flag)
+
 ### markDup
 
 >  This map function will detect duplicate variant lines and add two new INFO fields: mapID\_CT and mapID\_IDX\. The CT will indicate how many duplicates were found matching the current variant, and the IDX will number each duplicate with a unique identifier, counting from 0\. All nonduplicates will be marked with CT=1 and IDX=0\. VCF FILE MUST BE SORTED\!

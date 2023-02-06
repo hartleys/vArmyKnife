@@ -1,4 +1,4 @@
-> Version 3.3.39 (Updated Thu Jan 12 12:56:52 EST 2023)
+> Version 3.3.40 (Updated Mon Jan 23 15:47:14 EST 2023)
 
 # GENERAL SYNTAX:
 
@@ -282,6 +282,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     (This function takes no parameters)
+
+### splitMultiNucleotideVariants
+
+>  This function splits multinucleotide variants into separate SNVs\.This only modifies biallelic variants \(or split multiallelics\) in which the REF and ALT are the same length and that length is greater than 1\.
+
+
+    biallelicOnly: If this flag is used, only biallelic variants will be split, not larger 
+        variants.(flag)
 
 ### markDup
 

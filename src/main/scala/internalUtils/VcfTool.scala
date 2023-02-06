@@ -2268,6 +2268,12 @@ object VcfTool {
       out.sampGrp = out.sampGrp;
       out;
     }
+    def deepCopyGenotypeSet() : SVcfGenotypeSet = {
+      val out = SVcfGenotypeSet(fmt=fmt,genotypeValues= genotypeValues.toVector.map{ gg => gg.toVector.toArray }.toArray )
+      out.sampList = out.sampList;
+      out.sampGrp = out.sampGrp;
+      out;
+    }
     
     def idxIsGrp(idx : Int, grp : String) : Boolean = {
       if(sampList.length == 0){

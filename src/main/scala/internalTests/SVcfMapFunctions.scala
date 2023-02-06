@@ -580,6 +580,15 @@ object SVcfMapFunctions {
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
          )),category = "General-Purpose Tools"
        ),//dropNullVariants
+       ParamStrSet("splitMultiNucleotideVariants" ,  desc = "This function splits multinucleotide variants into separate SNVs."+
+                                                            "This only modifies biallelic variants (or split multiallelics) in which the REF and ALT "+
+                                                            "are the same length and that length is greater than 1."+
+                                                            ""+
+                                                            "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "biallelicOnly",synon=Seq(),ty="flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
+         )),category = "General-Purpose Tools"
+       ),//dropNullVariants
        ParamStrSet("dropNullVariants" ,  desc = "This drops variants if they appear beyond the endpoint of the genome builds chromosome. Certain tools will "+
                                                 "occasionally create variants like this and they will crash many other functions like left-align-and-trim or GC-content calculations, etc.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
@@ -1419,6 +1428,7 @@ object SVcfMapFunctions {
                                                 groupList = None,
                                                 superGroupList  = params.get("superGroupList")
                 ))
+                
              } else if(mapType == "calcStats"){
                
                (if(params.isSet("noDepthStats")){
@@ -1461,6 +1471,22 @@ object SVcfMapFunctions {
                                                 expr=params.get("expr")
                                                 ))
                }).toSeq
+               
+               /*
+                * 
+                       ParamStrSet("splitMultiNucleotideVariants" ,  desc = "This function splits multinucleotide variants into separate SNVs."+
+                                                            "This only modifies biallelic variants (or split multiallelics) in which the REF and ALT "+
+                                                            "are the same length and that length is greater than 1."+
+                                                            ""+
+                                                            "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "biallelicOnly",synon=Seq(),ty="flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
+         )),category = "General-Purpose Tools"
+                */
+             } else if(mapType == "splitMultiNucleotideVariants"){
+                 //params.isSet("biallelicOnly")
+                 //params("mapID")
+               Some( SSplitMultiNucleotideVariants(splitPrefix = params("mapID"),dnpOnly = params.isSet("biallelicOnly")) )
                
              } else if(mapType == "filterTags"){
                  val keepGeno = params.get("FORMAT.keep").map{ _.split(",").toList }
