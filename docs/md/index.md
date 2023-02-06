@@ -1,4 +1,4 @@
-> Version 3.3.40 (Updated Mon Jan 23 15:47:14 EST 2023)
+> Version 3.3.43 (Updated Tue Jan 24 11:11:49 EST 2023)
 
 # GENERAL SYNTAX:
 
@@ -290,6 +290,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     biallelicOnly: If this flag is used, only biallelic variants will be split, not larger 
         variants.(flag)
+    sortBufferWindowSize: (String, default=5000)
 
 ### markDup
 

@@ -587,6 +587,8 @@ object SVcfMapFunctions {
                                                             "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
                ParamStr(id = "biallelicOnly",synon=Seq(),ty="flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
+               ParamStr(id = "sortBufferWindowSize",synon=Seq(),ty="String",valueString="int",desc="",req=false, defaultValue = Some("5000"))
+               //sortBufferWindowSize
          )),category = "General-Purpose Tools"
        ),//dropNullVariants
        ParamStrSet("dropNullVariants" ,  desc = "This drops variants if they appear beyond the endpoint of the genome builds chromosome. Certain tools will "+
@@ -1486,8 +1488,10 @@ object SVcfMapFunctions {
              } else if(mapType == "splitMultiNucleotideVariants"){
                  //params.isSet("biallelicOnly")
                  //params("mapID")
-               Some( SSplitMultiNucleotideVariants(splitPrefix = params("mapID"),dnpOnly = params.isSet("biallelicOnly")) )
                
+               Seq( SSplitMultiNucleotideVariants(splitPrefix = params("mapID"),dnpOnly = params.isSet("biallelicOnly")), RunningWindowSort(string2int(params("sortBufferWindowSize"))) )
+             } else if(mapType == "windowedSort"){
+               None
              } else if(mapType == "filterTags"){
                  val keepGeno = params.get("FORMAT.keep").map{ _.split(",").toList }
                  val keepInfo = params.get("INFO.keep").map{ _.split(",").toList }

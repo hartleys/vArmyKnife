@@ -10097,7 +10097,83 @@ ALT VERSION: allows title line!
       }},outHeader)
     }
   }
+  //, isPositionWindowSize : Boolean = false
+  case class RunningWindowSort(windowSize : Int = 10000) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "RunningWindowSort"
+    val isPositionWindowSize = false
+    //if( variantWindowSize.isEmpty && positionWindowSize.isEmpty){
+    //  error("Input parameter error: RunningWindowSort: you must specify either variantWindowSize or positionWindowSize.")
+    //}
+    
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+        (if( ! isPositionWindowSize ){
+          ("variantWindowSize",""+windowSize)
+        } else {
+          ("positionWindowSize",""+windowSize)
+        })
+    )
+/*
+         if(buffer.contains(k)){
+          buffer = buffer + ((k,buffer(k) :+ (v)))
+        } else {
+          buffer = buffer + ((k,Vector[A](v)))
+        }
+ */
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      outHeader.addWalk(this);
+      val overwriteInfos : Set[String] = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
+      if( overwriteInfos.nonEmpty ){
+        notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
+      }
+      outHeader.reportAddedInfos(this)
+      
+      //var buffer = new scala.collection.immutable.TreeMap[Int,Vector[A]]();
+      
+      (foldIterator(vcIter)( new scala.collection.immutable.TreeMap[Int,Vector[SVcfVariantLine]]() ){ case ( v : SVcfVariantLine, vmap : scala.collection.immutable.TreeMap[Int,Vector[SVcfVariantLine]] ) => {
+        if( vmap.size > 0 && v.chrom != vmap.head._2.head.chrom ){
+          (vmap.map{ case (p,v) => { v }}.flatten.iterator,
+           new scala.collection.immutable.TreeMap[Int,Vector[SVcfVariantLine]]() + ((v.pos,Vector(v)))  )
+        } else if( vmap.contains( v.pos ) ){
+          ( Seq[SVcfVariantLine]().iterator, vmap + ((v.pos,vmap(v.pos) :+ (v) )) )
+        } else if( vmap.size < windowSize ){
+          ( Seq[SVcfVariantLine]().iterator, vmap + ((v.pos, Vector(v) )) )
+        } else {
+          (vmap.head._2.iterator,vmap.tail + ((v.pos, Vector(v) )) )
+        }
+      }}
+      ,outHeader)
+    }
+  }
   
+  def foldIterator[A,B]( iter : Iterator[A] )( init : B )( fcn : ( (A,B) => ( Iterator[A], B ) ) ) : Iterator[A] = {
+    new Iterator[A]{
+      var buffer : Iterator[A] = Iterator[A]();
+      var runner : B = init;
+      def hasNext : Boolean = buffer.hasNext || {
+        while( (! buffer.hasNext) && iter.hasNext ){
+          val iab = fcn( iter.next, runner );
+          buffer = iab._1;
+          runner = iab._2;
+          //(buffer,runner) = fcn( iter.next, runner );
+        }
+        buffer.hasNext;
+      }
+      def next : A = {
+        if(buffer.hasNext){
+          buffer.next
+        } else {       
+          while( (! buffer.hasNext) && iter.hasNext ){
+            val iab = fcn( iter.next, runner );
+            buffer = iab._1;
+            runner = iab._2;
+          }
+          next;
+        }
+      }
+    }
+  }
+    
   case class SSplitMultiNucleotideVariants(splitPrefix : String = "" ,dnpOnly : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "SSplitMultiNucleotideVariants"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)]()
@@ -10122,6 +10198,11 @@ ALT VERSION: allows title line!
       
       //            new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.txList_TAG, ".", "String", "List of known transcripts found to overlap with the variant."),
 
+      tally("isMNP",0)
+      tally("isDNP",0)
+      tally("isMNPgt2",0)
+
+       
       (vcIter.flatMap{v => {
         
         if( v.alt.length == 1 & v.ref.length > 1 & v.ref.length == v.alt(0).length ){
@@ -10137,6 +10218,14 @@ ALT VERSION: allows title line!
             vc.addInfo(splitPrefix+"multiNucleoSplitPos",""+v.pos);
             vc.addInfo(splitPrefix+"multiNucleoSplitREF",""+v.ref);
             vc.addInfo(splitPrefix+"multiNucleoSplitALT",""+v.alt(0));
+            tally("isMNP",1)
+            if( v.ref.length == 2 ){
+              tally("isDNP",1)
+            } else {
+              tally("isMNPgt2",1)
+            }
+            tally("MNP.len."+v.ref.length,1)
+            
             vc
           }}
         } else {

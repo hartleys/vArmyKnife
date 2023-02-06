@@ -177,6 +177,7 @@
 
     biallelicOnly: If this flag is used, only biallelic variants will be split, not larger 
         variants.(flag)
+    sortBufferWindowSize: (String, default=5000)
 
 ### markDup
 
