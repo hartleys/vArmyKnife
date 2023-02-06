@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.45 (Updated Thu Jan 26 13:25:26 EST 2023)
+> Version 3.3.47 (Updated Wed Feb  1 16:07:19 EST 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -990,7 +990,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 >  This utility adds a new genotype column and FORMAT column, containing a simple GT field that is always 0/1\. Some utilities will refuse to process files without genotype data or will ignore VCF lines with no alt genotypes\.
 
 
-    (This function takes no parameters)
+    sampID: The number of flanking bases to include on each side of the alt sequence.(String)
 
 ### copyColumnToInfo
 

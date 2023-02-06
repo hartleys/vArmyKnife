@@ -851,6 +851,7 @@ object SVcfMapFunctions {
        ParamStrSet("addDummyGenotypeColumn" ,  desc = "This utility adds a new genotype column and FORMAT column, containing a simple GT field that is always 0/1. Some utilities will refuse to process files without genotype data or will ignore VCF lines with no alt genotypes.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "sampID",synon=Seq("sampleID","samp","SAMP","SAMPID"),ty="String",valueString="samp",desc="The number of flanking bases to include on each side of the alt sequence.",req=false),
          )), category = "File Formatting/Conversion"
        ),
        ParamStrSet("dropSymbolicAlleles" ,  desc = "This utility strips all symbolic alleles. See the VCF v4.2 specification for more information on what those are and what they are used for. Many older tools will return errors if fed symbolic alleles.",
@@ -1803,7 +1804,7 @@ object SVcfMapFunctions {
              } else if(mapType == "dropGenotypeData"){
                Some(StripGenotypeData(addDummyGenotypeColumn=false))
              } else if(mapType == "addDummyGenotypeColumn"){
-               Some(StripGenotypeData(addDummyGenotypeColumn=true))
+               Some(StripGenotypeData(addDummyGenotypeColumn=true, columnID = params.getOrElse("sampID","DUMMYVAR")))
              } else if(mapType == "dropSymbolicAlleles"){
                 Some(new FilterSymbolicAlleleLines());
                 

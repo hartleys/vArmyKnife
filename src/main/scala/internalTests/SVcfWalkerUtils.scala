@@ -7565,15 +7565,18 @@ ALT VERSION: allows title line!
     }
     
   }
-  case class StripGenotypeData(addDummyGenotypeColumn : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+  case class StripGenotypeData(addDummyGenotypeColumn : Boolean = false, columnID : String = "DUMMYVAR") extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "StripGenotypeData"
     def walkerParams : Seq[(String,String)] = Seq[(String,String)]()
     def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
       outHeader.addWalk(this);
       
+      outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",ID="GT",Number="1",Type="String",desc="dummy GT column, always equal to het."));
+      //                new  SVcfCompoundHeaderLine("INFO",ID=newid,Number = f.Number, Type = f.Type,desc = f.desc);
+
       outHeader.titleLine = if(addDummyGenotypeColumn){
-        SVcfTitleLine(Seq[String]("DUMMYVAR"))
+        SVcfTitleLine(Seq[String](columnID))
       }else {
         SVcfTitleLine(Seq[String]())
       }

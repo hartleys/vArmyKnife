@@ -840,7 +840,7 @@
 >  This utility adds a new genotype column and FORMAT column, containing a simple GT field that is always 0/1\. Some utilities will refuse to process files without genotype data or will ignore VCF lines with no alt genotypes\.
 
 
-    (This function takes no parameters)
+    sampID: The number of flanking bases to include on each side of the alt sequence.(String)
 
 ### copyColumnToInfo
 
