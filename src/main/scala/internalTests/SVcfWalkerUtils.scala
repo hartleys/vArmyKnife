@@ -15558,7 +15558,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
                  infolinesToCopy.map{fx => {
                    samplist.map{ ss => {
                      vbMAP.get(ss).map{ vv => {
-                       vv.info.getOrElse(fx,None).getOrElse(".")
+                       vv.info.getOrElse(fx,None).getOrElse(".").replaceAll(":","-")
                      }}.getOrElse(".")
                    }}.toArray
                  }}.toArray )
