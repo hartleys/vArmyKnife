@@ -492,9 +492,13 @@ object SVcfWalkerUtils {
         //}
         //val hline = hlineOpt.get;
         val nhline = new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+hline.ID,Number=hline.Number,Type=hline.Type,desc="(Copied from "+annotateVCF+") "+hline.desc);
+        outHeader.addInfoLine(nhline);
         (hline.ID,(copyInfoPrefix+hline.ID,nhline))
       }}.toMap
-  
+      
+      
+      
+      
       //val avmap = 
         //      chrA,chrB,strdir
         // Map[(String,String,String),scala.collection.immutable.TreeMap[Int,TreeMap[Int,Seq[(Int,Int,Boolean,SVcfVariantLine)]]]]
