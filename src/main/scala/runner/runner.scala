@@ -9,9 +9,9 @@ import internalUtils.commandLineUI._;
 
 object runner {
   
-  val UTIL_VERSION = "3.3.57"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_DATE = "Mon Mar 27 11:04:36 EDT 2023"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
-  val UTIL_COMPILE_TIME : Long = 1679929476; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_VERSION = "3.3.63"; // REPLACE_THIS_QORTS_VERSION_VARIABLE_WITH_VERSION_NUMBER          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_DATE = "Mon May  8 12:48:12 EDT 2023"; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_DATE          (note this exact text is used in a search-and-replace. Do not change it.)
+  val UTIL_COMPILE_TIME : Long = 1683564492; // REPLACE_THIS_QORTS_DATE_VARIABLE_WITH_TIME          (note this exact text is used in a search-and-replace. Do not change it.)
 
   val UTIL_MAJOR_VERSION = UTIL_VERSION.split("\\.")(0);
   val UTIL_MINOR_VERSION = UTIL_VERSION.split("\\.")(1);
@@ -49,7 +49,7 @@ object runner {
     new internalTests.SVcfWalkerUtils.GenerateTxAnnotation,
     (new internalUtils.CalcACMGVar.CmdAssessACMG),
     new internalTests.minorUtils.CmdMemMergeVCF,
-
+    new (internalTests.ExtractPotentialSvReads.CmdExtractPotentialSvReads),
     
     
        //FUNCTIONALITY REPLACED:

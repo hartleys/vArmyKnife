@@ -25,8 +25,26 @@ import internalUtils.stdUtils._;
 import htsjdk.samtools._;
 import internalUtils.fileUtils._;
 
+import org.mapdb.DBMaker;
+//import net.openhft.chronicle._;
+
+
 object SamTool {
+   
   
+
+  
+  
+  
+  val cache = DBMaker.fileDB(new File("test.txt")).make();
+  //val SAMSERIALIZER = 
+  
+   
+  //, org.mapdb.serializer.SerializerString(), org.mapdb.serializer.SerializerClass()
+  //val cacheMap = cache.hashMap[String,SAMRecord]("map",org.mapdb.Serializer.STRING, org.mapdb.Serializer.JAVA).make();
+  //val cache: scala.collections.mutable.Map[String, Seq[String]] = DBMaker.newTempHashMap[String, Seq[String]]()
+  //val cache = net.openhft.chronicle.map.ChronicleMap.of( classOf[String], classOf[String] )
+
   final val SAM_PEEK_LINECT = 10000;
   final val SAM_TESTRUN_LINECT = 100000;
   
@@ -35,6 +53,7 @@ object SamTool {
     def close();
     
     def readToFastq(r : SAMRecord, readNameSuffix : String = "") : Seq[String] = {
+      
       val rev = r.getReadNegativeStrandFlag()
       Seq[String](
         r.getReadName()+readNameSuffix,
@@ -83,7 +102,161 @@ object SamTool {
     }
   }
   
-  
+
+  def getSafePairedEndReader(inbam : String, 
+                         isSingleEnd : Boolean,
+                         sortPairsByFirstPosition : Boolean = false,
+                         unsorted : Boolean = true,
+                         maxPhredScore : Int = 41,
+                         stopAfterNReads : Option[Int],
+                         testRunLineCt : Int,
+                         testRun : Boolean,
+                         maxReadLength : Option[Int],
+                         strict : Boolean = true,
+                         maxReadsInMemory : Int = 1000000) : (Iterator[(SAMRecord,SAMRecord)],SAMFileHeader,SamFileAttributes) = {
+    val readerFactory = SamReaderFactory.makeDefault();
+    
+    val reader = if(inbam == "-"){
+      readerFactory.open(SamInputResource.of(System.in));
+    } else {
+      readerFactory.open(new File(inbam));
+    }
+    
+    val peekCt = SAM_PEEK_LINECT;
+    val testRunLineCt = stopAfterNReads.getOrElse(SAM_TESTRUN_LINECT);
+
+    val (samFileAttributes, recordIter, samHeader) = initSamRecordIterator(reader, peekCount = peekCt, maxQual = maxPhredScore);
+    
+    val maxObservedReadLength = samFileAttributes.readLength;
+    val readLength = if(maxReadLength.isEmpty) maxObservedReadLength else maxReadLength.get;
+    val isSortedByNameLexicographically = samFileAttributes.isSortedByNameLexicographically;
+    val isSortedByPosition = samFileAttributes.isSortedByPosition;
+    val isDefinitelyPairedEnd = samFileAttributes.isDefinitelyPairedEnd;
+    val minReadLength = samFileAttributes.minReadLength;
+    
+    //Debugging info:
+    reportln("   Stats on the first "+peekCt+ " reads:","debug");
+    reportln("        Num Reads Primary Map:    " + samFileAttributes.numPeekReadsMapped,"debug");
+    reportln("        Num Reads Paired-ended:   " + samFileAttributes.numPeekReadsPaired,"debug");
+    reportln("        Num Reads mapped pair:    " + samFileAttributes.numPeekReadsPairMapped,"debug");
+    reportln("        Num Pair names found:     " + samFileAttributes.numPeekPairs,"debug");
+    reportln("        Num Pairs matched:        " + samFileAttributes.numPeekPairsMatched,"debug");
+    reportln("        Read Seq length:          " + samFileAttributes.simpleMinReadLength + " to " + samFileAttributes.simpleMaxReadLength,"debug");
+    reportln("        Unclipped Read length:    " + samFileAttributes.minReadLength + " to " + samFileAttributes.readLength,"debug");
+    reportln("        Final maxReadLength:      " + readLength,"debug");
+    reportln("        maxPhredScore:            " + samFileAttributes.maxObservedQual,"debug");
+    reportln("        minPhredScore:            " + samFileAttributes.minObservedQual,"debug");
+    
+
+    if(samFileAttributes.maxObservedQual > maxPhredScore){
+            reportln("WARNING WARNING WARNING: \n"+
+               "   SAM format check:\n"+
+               "      Phred Qual > "+maxPhredScore+"!\n"+
+               "      You will need to set either --adjustPhredScores or --maxPhredScores\n"+
+               "      in order to compute Phred quality metrics! QoRTs WILL throw an error\n"+
+               "      if quality metrics are attempted!","warn");
+    }
+    
+    if(readLength != minReadLength){ reportln("NOTE: Read length is not consistent.\n"+
+                                             "   In the first "+peekCt+" reads, read length varies from "+minReadLength+" to " +maxObservedReadLength+" (param maxReadLength="+readLength+")\n"+
+                                             "Note that using data that is hard-clipped prior to alignment is NOT recommended, because this makes it difficult (or impossible) "+
+                                             "to determine the sequencer read-cycle of each nucleotide base. This may obfuscate cycle-specific artifacts, trends, or errors, the detection of which is one of the primary purposes of QoRTs!"+
+                                             "In addition, hard clipping (whether before or after alignment) removes quality score data, and thus quality score metrics may be misleadingly optimistic. "+
+                                             "A MUCH preferable method of removing undesired sequence is to replace such sequence with N's, which preserves the quality score and the sequencer cycle information.","note")}
+    if((readLength != minReadLength) & (maxReadLength.isEmpty)){
+      reportln("   WARNING WARNING WARNING: Read length is not consistent, AND \"--maxReadLength\" option is not set!\n"+
+               "      QoRTs has ATTEMPTED to determine the maximum read length ("+readLength+").\n"+
+               "      It is STRONGLY recommended that you use the --maxReadLength option \n"+
+               "      to set the maximum possible read length, or else errors may occur if/when \n"+
+               "      reads longer than "+readLength+ " appear.","warn")
+    }
+    
+    val variableReadLen = readLength != minReadLength || (! maxReadLength.isEmpty);
+     
+    if(samFileAttributes.allReadsMarkedPaired & isSingleEnd) reportln("   WARNING WARNING WARNING! Running in single-end mode, but reads appear to be paired-end! Errors may follow.\n"+
+                                                                      "           Strongly recommend removing the '--isSingleEnd' option!","warn");
+    if(samFileAttributes.allReadsMarkedSingle & (! isSingleEnd)) reportln("   WARNING WARNING WARNING! Running in paired-end mode, but reads appear to be single-end! Errors may follow.\n"+
+                                                                          "           Strongly recommend using the '--isSingleEnd' option","warn");
+    if(samFileAttributes.mixedSingleAndPaired) reportln("   WARNING WARNING WARNING! Data appears to be a mixture of single-end and paired-end reads!\n"+
+                                                        "           QoRTs was not designed to function under these conditions. Errors may follow!","warn");
+
+
+    if(! isSingleEnd){ 
+      reportln("   Note: Data appears to be paired-ended.","debug");
+      
+      var sortWarning = false;
+      
+      if( ! (samFileAttributes.perfectPairing || isSortedByPosition) ){
+        reportln("   WARNING: Reads do not appear to be sorted by coordinate or by name. Sorting input data is STRONGLY recommended, but not technically required.","warn");
+        sortWarning = true;
+      }
+      if(samFileAttributes.numPeekPairsMatched == 0){
+        reportln("   Warning: Have not found any matched read-pairs in the first "+peekCt+" reads. Is data paired-end? Is data sorted?","warn"); 
+        if(samFileAttributes.malformedPairNameCt > 0){
+          reportln("   WARNING: No read-pairs found, but there are reads that match exactly\n"+
+                   "            except for the last character, which is \"1\" in one read \n"+
+                   "            and \"2\" in the other. This may indicate a malformed SAM \n"+
+                   "            file in which the read-pairs are named with their readID \n"+
+                   "            rather than read-pair ID. In standard SAM files, paired \n"+
+                   "            reads MUST have the EXACT SAME first column.",
+                   "warn");
+        }
+        sortWarning = true;
+      }
+      if( (! isDefinitelyPairedEnd)){ 
+        reportln("   Warning: Have not found any matched read pairs in the first "+peekCt+" reads. Is data paired-end? Use option --singleEnd for single-end data.","warn");
+        sortWarning = true;
+      }
+      if( isSortedByPosition & (! unsorted )){ 
+        reportln("   Warning: SAM/BAM file appears to be sorted by read position, but you are running in --nameSorted mode.\n"+
+                 "            If this is so, you should probably omit the '--nameSorted' option, as errors may follow.","warn"); 
+        sortWarning = true;
+      }
+      
+      val isOkNote = if(! sortWarning){"(This is OK)."} else {""}
+      if(samFileAttributes.perfectPairing){
+        reportln("   Sorting Note: Reads appear to be grouped by read-pair, probably sorted by name"+isOkNote,"note");
+      } else {
+        reportln("   Sorting Note: Reads are not sorted by name "+isOkNote,"note");
+      }
+      if(isSortedByPosition){
+        reportln("   Sorting Note: Reads are sorted by position "+isOkNote,"note");
+      } else {
+        reportln("   Sorting Note: Reads are not sorted by position "+isOkNote,"note");
+      }
+      
+      //Samtools sorts in an odd way! Delete name sort check:
+      //if( ((! isSortedByNameLexicographically) & (! unsorted ))) reportln("Note: SAM/BAM file does not appear to be sorted lexicographically by name (based on the first "+peekCt+" reads). It is (hopefully) sorted by read name using the samtools method.","debug");
+    }
+    if(internalUtils.Reporter.hasWarningOccurred()){
+      reportln("Done checking first " + SAM_PEEK_LINECT + " reads. WARNINGS FOUND!","note");
+    } else{
+      reportln("Done checking first " + SAM_PEEK_LINECT + " reads. No major problems detected!","note");
+    }
+    
+    val pairedIter : Iterator[(SAMRecord,SAMRecord)] = 
+      if(isSingleEnd){
+        if(testRun) samRecordPairIterator_withMulti_singleEnd(recordIter, true, testRunLineCt,isSingleEnd = isSingleEnd) else samRecordPairIterator_withMulti_singleEnd(recordIter,isSingleEnd = isSingleEnd);
+      } else {
+        if(unsorted){
+          if(sortPairsByFirstPosition){
+             if(testRun) samRecordPairIterator_resorted(recordIter, true, testRunLineCt,isSingleEnd = isSingleEnd,strict=strict) else samRecordPairIterator_resorted(recordIter,isSingleEnd = isSingleEnd,strict=strict)
+          } else {
+             //if(testRun) samRecordPairIterator_unsorted(recordIter, true, testRunLineCt) else samRecordPairIterator_unsorted(recordIter)
+             if(testRun) samRecordPairIterator_resorted(recordIter, true, testRunLineCt,isSingleEnd = isSingleEnd,strict=strict) else samRecordPairIterator_resorted(recordIter,isSingleEnd = isSingleEnd,strict=strict)
+          }
+        // Faster noMultiMapped running is DEPRECIATED!
+        //} else if(noMultiMapped){
+        //  if(testRun) samRecordPairIterator(recordIter, true, 200000) else samRecordPairIterator(recordIter)
+        } else {
+          if(testRun) samRecordPairIterator_withMulti(recordIter, true, testRunLineCt,isSingleEnd = isSingleEnd) else samRecordPairIterator_withMulti(recordIter,isSingleEnd = isSingleEnd)
+        }
+      }
+    
+    reportln("SAMRecord Reader Generated. Read length: "+readLength+".","note");
+    
+    return ((pairedIter,samHeader,samFileAttributes))
+  }
   
   def getPairedEndReader(inbam : String, 
                          isSingleEnd : Boolean,
@@ -590,9 +763,107 @@ object SamTool {
     }
   }
   
+  def serializeSAMRecordPair( s : (SAMRecord,SAMRecord) ) : Array[Byte] = {
+    val baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream();
+    val oos : java.io.ObjectOutputStream = new java.io.ObjectOutputStream(baos)
+    oos.writeObject( s );
+    oos.close();
+    return baos.toByteArray();
+  }
+  def deserializeSAMRecordPair( bb : Array[Byte] ) : (SAMRecord,SAMRecord) = {
+    val ois : java.io.ObjectInputStream = new java.io.ObjectInputStream( new java.io.ByteArrayInputStream( bb ) );
+    val s : (SAMRecord,SAMRecord) = ois.readObject().asInstanceOf[(SAMRecord,SAMRecord)];
+    return s;
+  }
+  
+  class SRPairBuffer( maxReadCache : Int = 1000000, commitCount : Int = 1000, warnMultiplier : Int = 10) extends scala.collection.mutable.Map[String,(SAMRecord,SAMRecord)] {
+    val db = DBMaker.fileDB(new File("test.txt")).fileMmapEnableIfSupported().cleanerHackEnable().allocateStartSize( 1 * 1024*1024*1024).allocateIncrement(512 * 1024*1024).make();
+    val dbmap = db.hashMap("PairedEndSortedReadBuffer").keySerializer(org.mapdb.Serializer.STRING).valueSerializer(org.mapdb.Serializer.BYTE_ARRAY).create();
+    val buffer = scala.collection.mutable.HashMap[String,(SAMRecord,SAMRecord)]();
+    //var remCt : Int = 0;
+    var comCt : Int = 0;
+    var warnLevel : Int = maxReadCache;
+    var maxSize : Int = 0;
+    var elemCt : Int = 0;
+    
+
+    def +=( elem : (String,(SAMRecord,SAMRecord))) : this.type = {
+      if(buffer.size < maxReadCache){
+        buffer.put( elem._1, elem._2 );
+      } else {
+        dbmap.put( elem._1, serializeSAMRecordPair(elem._2) );
+        comCt = comCt + 1;
+        if( comCt > commitCount ){
+          db.commit();
+          comCt = 0;
+        }
+      }
+      this;
+    }
+    
+    def get( key : String ) : Option[(SAMRecord,SAMRecord)] = {
+      if( buffer.contains( key ) ){
+        return buffer.get(key)
+      } else if(dbmap.containsKey( key )){
+        return Some(deserializeSAMRecordPair( dbmap.get(key)) )
+      } else {
+        return None;
+      }
+    }
+    def iterator : Iterator[(String,(SAMRecord,SAMRecord))] = {
+      Iterator[(String,(SAMRecord,SAMRecord))]();
+    }
+    def -=( elem : String ) : this.type = {
+      if( buffer.contains( elem ) ){
+        buffer.remove(elem);
+      } else if(dbmap.containsKey( elem )){
+        dbmap.remove(elem);
+        comCt = comCt + 1;
+        if( comCt > commitCount ){
+          db.commit();
+          comCt = 0;
+        }
+      }
+      this;
+    }
+    override def size : Int = {
+      buffer.size + dbmap.sizeLong().toInt
+    }
+    override def empty : SRPairBuffer = {
+      new SRPairBuffer();
+    }
+    override def contains(key: String) : Boolean = {
+      buffer.contains( key ) || dbmap.containsKey( key )
+    }
+    override def remove(key : String) : Option[(SAMRecord,SAMRecord)] = {
+      if( buffer.contains( key ) ){
+        return buffer.remove(key);
+      } else if(dbmap.containsKey( key )){
+        val out = deserializeSAMRecordPair( dbmap.get(key) );
+        dbmap.remove(key);
+        comCt = comCt + 1;
+        if( comCt > commitCount ){
+          db.commit();
+          comCt = 0;
+        }
+        return Some(out);
+      } else {
+        return None;
+      }
+    }
+    //override def containsKey(key: String) : Boolean = {
+    //  this.contains(key);
+    //}
+  }
+
   
 
-  private def getSRPairIterResorted(iter : Iterator[SAMRecord], strict : Boolean = true) : Iterator[(SAMRecord,SAMRecord)] = {
+  
+  
+  /*
+   * INCOMPLETE!!!!
+   */
+  private def getSRPairIterResortedSafe(iter : Iterator[SAMRecord], strict : Boolean = true) : Iterator[(SAMRecord,SAMRecord)] = {
     reportln("Starting getSRPairIterResorted...","debug");
     
     val initialPairContainerWarningSize = 100000;
@@ -605,7 +876,163 @@ object SamTool {
     } else {
       return new Iterator[(SAMRecord,SAMRecord)] {
         val pairContainer = scala.collection.mutable.HashMap[String,SAMRecord]();
-              reportln("    INIT STATUS:  " +pairContainer.size + ", "+pairContainer.keySet.size + ", "+pairContainer.keySet.toList.size+"\n"+
+              //reportln("    INIT STATUS:  " +pairContainer.size "\n"+
+              //         "       CONTENTS: '"+pairContainer.keySet.toList.take(10).mkString(",")+"'","debug");
+        //NOTE: The above container type should never contain more than 500 million reads. If this is a problem, then something is terribly wrong.
+        var pairContainerWarningSize = initialPairContainerWarningSize;
+        var bufferWarningSize = initialPairContainerWarningSize;
+        
+        var buffer = new SRPairBuffer()
+        var readOrder = Vector[String]();
+        
+        //var pairContainerOpHistory = Vector[String]();
+        //def updateOpHistory(op : String){
+        //  pairContainerOpHistory = pairContainerOpHistory :+ op
+        //  if(pairContainerOpHistory.length > 100){
+         //   pairContainerOpHistory = pairContainerOpHistory.tail;
+        //  }
+        //}
+        
+        def bufferHasNext : Boolean = iter.hasNext;
+        def addNextPairToBuffer {
+          var curr = iter.next;
+          while((! pairContainer.contains(curr.getReadName())) && iter.hasNext) {
+            readOrder = readOrder :+ curr.getReadName();
+            pairContainer(curr.getReadName()) = curr;
+            if(pairContainerWarningSize < pairContainer.size){
+                reportln("NOTE: Unmatched Read Buffer Size > "+pairContainerWarningSize+" [Mem usage:"+MemoryUtil.memInfo+"]","note");
+                if(pairContainerWarningSize == initialPairContainerWarningSize){
+                  reportln("    (This is generally not a problem, but if this increases further then OutOfMemoryExceptions\n"+
+                           "    may occur.\n"+
+                           "    If memory errors do occur, either increase memory allocation or sort the bam-file by name\n"+
+                           "    and rerun with the '--nameSorted' option.\n"+
+                           "    This might also indicate that your dataset contains an unusually large number of\n"+
+                           "    chimeric read-pairs. Or it could occur simply due to the presence of genomic\n"+
+                           "    loci with extremly high coverage. It may also indicate a SAM/BAM file that \n"+
+                           "    does not adhere to the standard SAM specification.)", "note");
+                }
+                pairContainerWarningSize = pairContainerWarningSize * warningSizeMultiplier;
+            }
+            lnct += 1;
+            //if(lnct % 10000 == 0){
+            //  reportln("    STATUS: " +pairContainer.size + ", "+pairContainer.keySet.size + ", "+pairContainer.keySet.toList.size+"\n"+
+            //           "  CONTENTS: '"+pairContainer.keySet.toList.take(10).mkString(",")+"'","debug");
+            //}
+            //updateOpHistory("Add["+curr.getReadName()+"]");
+            //if(pairContainer.size != pairContainer.keySet.toList.size){
+            //  warning("Impossible Paircontainer status! pairContainer.size != pairContainer.keySet.toList.size"+
+            //          "     Just added read: "+curr.getReadName() + " to pairContainer.\n","Impossible_Paircontainer_State",10)
+            //}
+            curr = iter.next;            
+          }
+          
+          if((! pairContainer.contains(curr.getReadName())) ){
+            if(strict){
+              internalUtils.Reporter.error("ERROR ERROR ERROR  (636): Reached end of bam file, there are "+(pairContainer.size+1)+" orphaned reads, "+
+                                           "which are marked as having a mapped pair, but no "+
+                                           "corresponding pair is found in the bam file. \n"+
+                                           "(Example Orphaned Read Name: "+curr.getReadName()+")\n"+
+                                           "(Read line: "+curr.getSAMString()+")"
+                                           );
+            } else {
+              internalUtils.Reporter.warning("ERROR ERROR ERROR  (636): Reached end of bam file, there are "+(pairContainer.size+1)+" orphaned reads, "+
+                                           "which are marked as having a mapped pair, but no "+
+                                           "corresponding pair is found in the bam file. \n"+
+                                           "(Example Orphaned Read Name: "+curr.getReadName()+")\n"+
+                                           "(Read line: "+curr.getSAMString()+")","UNPAIRED_READ",-1
+                                           );
+              }
+          }
+          val rB = pairContainer.remove(curr.getReadName()).get;
+          //updateOpHistory("Del["+curr.getReadName()+"]");
+
+          //if(pairContainer.size != pairContainer.keySet.toList.size){
+         //     warning("Impossible pairContainer status! pairContainer.size != pairContainer.keySet.toList.size"+
+          //            "     Just removed read: "+curr.getReadName() + " from pairContainer.","Impossible_Paircontainer_State",10)
+          //}
+          
+          if(curr.getFirstOfPairFlag()) buffer.put(curr.getReadName(),(curr,rB))
+          else buffer.put(curr.getReadName(),(rB,curr))
+        }
+        
+        
+        
+        //var readHistory = Vector[String]();
+        def hasNext : Boolean = iter.hasNext || buffer.size > 0;
+        def next : (SAMRecord,SAMRecord) = {
+          if(readOrder.isEmpty){
+            addNextPairToBuffer;
+          }
+          //readHistory = readHistory :+ readOrder.head;
+          //if(readHistory.length > 10){
+          //  readHistory = readHistory.tail;
+          //}
+          val nextName = readOrder.head;
+          readOrder = readOrder.tail;
+          if(buffer.contains(nextName)) return buffer.remove(nextName).get;
+          
+          var searchCt = 0;
+          while(iter.hasNext && (! buffer.contains(nextName))){
+            addNextPairToBuffer;
+            if(bufferWarningSize < buffer.size){
+                reportln("NOTE: Read-PAIR-Buffer Size > "+bufferWarningSize+" [Mem usage:"+MemoryUtil.memInfo+"]\n"+
+                         "  Currently searching for read: " + nextName + " for "+searchCt + " iterations."+
+                         "  Current pairContainer status: "+pairContainer.size+", "+pairContainer.keySet.size+", "+pairContainer.keySet.toList.size,"note");
+                if(bufferWarningSize == initialPairContainerWarningSize){
+                  reportln("    (This is generally not a problem, but if this increases further then OutOfMemoryExceptions\n"+
+                           "    may occur.\n"+
+                           "    If memory errors do occur, increase memory allocation.\n"+
+                           "    This might also indicate that your dataset contains an unusually large number of\n"+
+                           "    chimeric read-pairs. Or it could occur simply due to the presence of genomic\n"+
+                           "    loci with extremly high coverage, large and complex splicing/indels, or other oddities.\n"+
+                           "    It may also indicate a SAM/BAM file that \n"+
+                           "    does not adhere to the standard SAM specification.)", "note");
+                }
+                bufferWarningSize = bufferWarningSize * warningSizeMultiplier;
+            }
+            searchCt += 1;
+          }
+          if(!buffer.contains(nextName)){
+            //internalUtils.Reporter.error("ERROR ERROR ERROR (679): Reached end of bam file, there are "+(pairContainer.size+1)+" orphaned reads, which are marked as having a mapped pair, but no corresponding pair is found in the bam file. \n(Example Orphaned Read lines: "+nextName+")");
+              internalUtils.Reporter.error("ERROR ERROR ERROR  (679): Reached end of bam file, there are "+(pairContainer.size+1)+" orphaned reads, "+
+                                           "which are marked as having a mapped pair, but no "+
+                                           "corresponding pair is found in the bam file. \n"+
+                                           "(Example Orphaned Read Name: "+nextName+")\n"+
+                                           //"Recent read-pairs:\n"+
+                                           //"    "+readHistory.mkString("\n    ")+"\n"+
+                                           "pairContainer.keySet.take(100).toString():\n"+
+                                           "    '"+pairContainer.keySet.take(100).mkString(",")+"'\n"+
+                                           "pairContainer.size = "+pairContainer.size+"\n"+
+                                           "pairContainer.toString() = '"+pairContainer.toString()+"'"
+                                           );
+          }
+          
+          return buffer.remove(nextName).get
+        }
+      }
+    }
+  }
+  
+  private def getSRPairIterResorted(iter : Iterator[SAMRecord], strict : Boolean = true) : Iterator[(SAMRecord,SAMRecord)] = {
+    reportln("Starting getSRPairIterResorted...","debug");
+    
+    
+  //val SAMSERIALIZER = 
+  //, org.mapdb.serializer.SerializerString(), org.mapdb.serializer.SerializerClass()
+  //
+    
+    
+    val initialPairContainerWarningSize = 100000;
+    val warningSizeMultiplier = 2;
+    
+    var lnct = 0;
+    
+    if(! iter.hasNext){
+      return(Iterator[(SAMRecord,SAMRecord)]());
+    } else {
+      return new Iterator[(SAMRecord,SAMRecord)] {
+        val pairContainer = scala.collection.mutable.HashMap[String,SAMRecord]();
+             reportln("    INIT STATUS:  " +pairContainer.size + ", "+pairContainer.keySet.size + ", "+pairContainer.keySet.toList.size+"\n"+
                        "       CONTENTS: '"+pairContainer.keySet.toList.take(10).mkString(",")+"'","debug");
         //NOTE: The above container type should never contain more than 500 million reads. If this is a problem, then something is terribly wrong.
         var pairContainerWarningSize = initialPairContainerWarningSize;
@@ -740,6 +1167,8 @@ object SamTool {
       }
     }
   }
+  
+  
   
   def samRecordPairIterator(iter : Iterator[SAMRecord], verbose : Boolean = true, testCutoff : Int = -1, isSingleEnd : Boolean = true) : Iterator[(SAMRecord,SAMRecord)] = {
     presetProgressReporters.wrapIterator_readPairs(getSRPairIter(iter), verbose=verbose, cutoff=testCutoff,isSingleEnd=isSingleEnd);

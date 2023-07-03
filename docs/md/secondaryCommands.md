@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version3.3.57 (Updated Mon Mar 27 11:04:36 EDT 2023)
+> Version3.3.63 (Updated Mon May  8 12:48:12 EDT 2023)
 
 > ([back to help base](docs/secondaryCommands.html))
 
@@ -58,6 +58,10 @@ These commands have not been fully tested and are not for production use. Docume
 >  UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 
 ### [CodingCoverageStats](CodingCoverageStats.html)
+
+> UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
+
+### [extractPotentialSvReads](extractPotentialSvReads.html)
 
 > UNTESTED ALPHA: FOR DEVELOPMENT/TESTING PURPOSES ONLY! DO NOT USE!
 

@@ -245,6 +245,10 @@ object SVcfMapFunctions {
            ParamStr(id = "headerLine",synon=Seq(),ty="String",valueString="##header_line_text",desc="A header line.",req=true,initParam=true)
          )), category = "File Formatting/Conversion"
        ),
+       ParamStrSet("removeUnannotatedFields" ,  desc = "This function removes and INFO or FORMAT fields that appear in the VCF lines but are not in the VCF header.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+         )), category = "File Formatting/Conversion"
+       ),
        /*
         * 
         *     } else if(mapType == "sampleReorder"){
@@ -1529,6 +1533,8 @@ object SVcfMapFunctions {
                 Some(VcfExpressionFilter(filterExpr = params("expr")))
              } else if(mapType == "extractRegion"){
                 Some(VcfExtractRegionFromSorted(region = params("region"), windowSize = params.get("windowSize").map{ string2int(_)}  ))
+             } else if(mapType == "removeUnannotatedFields"){
+                Some( removeUnannotatedFields() )
              } else if(mapType == "snpSiftAnno"){
                 Some(SnpSiftAnnotater(params("mapID"),params("cmd")))
              } else if(mapType == "snpSiftAnnoMulti"){

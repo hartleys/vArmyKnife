@@ -802,6 +802,13 @@
 
     headerLine: A header line.(String, required)
 
+### removeUnannotatedFields
+
+>  This function removes and INFO or FORMAT fields that appear in the VCF lines but are not in the VCF header\.
+
+
+    (This function takes no parameters)
+
 ### filterTags
 
 >  This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples\. This can substantially reduce file sizes\.

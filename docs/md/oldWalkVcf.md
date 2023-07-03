@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.57 (Updated Mon Mar 27 11:04:36 EDT 2023)
+> Version 3.3.63 (Updated Mon May  8 12:48:12 EDT 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -951,6 +951,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     headerLine: A header line.(String, required)
+
+### removeUnannotatedFields
+
+>  This function removes and INFO or FORMAT fields that appear in the VCF lines but are not in the VCF header\.
+
+
+    (This function takes no parameters)
 
 ### filterTags
 

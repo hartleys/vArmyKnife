@@ -32,6 +32,12 @@ object stdUtils {
     val ps = pss.
   }*/
   
+  /*class historyBuffer[T](maxSize : Int) {
+    var idx = 0;
+    val buf = Array.ofDim[T](maxSize);
+    
+  }*/
+  
   abstract class Threither[A,B,C] extends AnyRef {
     def isLeft : Boolean = false;
     def isRight : Boolean = false;

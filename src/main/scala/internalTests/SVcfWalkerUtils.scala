@@ -1958,6 +1958,37 @@ object SVcfWalkerUtils {
       (vcIter,outHeader)
     }
   }
+  case class removeUnannotatedFields() extends SVcfWalker {
+    def walkerName : String = "removeUnannotatedFields"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      val infoset = vcfHeader.infoLines.map{ hh => hh.ID }.toSet
+      val fmtset  = vcfHeader.formatLines.map{ hh => hh.ID }.toSet
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+          
+        vc.in_info = vc.info.filter{ case (xx,yy) => {
+          infoset.contains(xx);
+        }} 
+        val (gt,gtkeepset) = vc.genotypes.fmt.zipWithIndex.filter{ case (gg,ii) => {
+          fmtset.contains(gg)
+        }}.unzip
+        vc.genotypes.fmt = gt;
+        vc.genotypes.genotypeValues = vc.genotypes.genotypeValues.zipWithIndex.filter{ case (gx,ii) => {
+          gtkeepset.contains(ii);
+        }}.map{ _._1 }
+        vc
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+  }
+  
  /* case class rmHeaderLine(headerLineTextPrefix : String) extends SVcfWalker {
     def walkerName : String = "addHeaderLine"
     var headerType : String = "unk"
@@ -15058,6 +15089,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
           None
         } else {
           newHeader.addFormatLine(nl);
+          newHeader.addFormatLine(disLine);
+          newHeader.addFormatLine(supLine);
           reportln("Merging GT-style tag "+t+" from callers: ["+foundTags.unzip._1.mkString(",")+"]","note");
           Some((t,foundTags));
         }
