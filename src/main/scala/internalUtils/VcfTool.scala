@@ -3089,9 +3089,9 @@ object VcfTool {
         UserManualBlock(Seq(""),Some(""))
     ) ++ this.filterFunctionSet.toVector.filter{ x => ! x.isHidden }.sortBy( x => x.funcName ).flatMap( x => {
       Seq(
-        UserManualBlock(title = None,lines = Seq( x.funcName+":"+x.paramNames.mkString(":")), indentBlock = 8,  indentFirst = 4),
+        UserManualBlock(title = None,lines = Seq( x.funcName+"("+x.paramNames.mkString(",")+")"), indentBlock = 8,  indentFirst = 4),
         UserManualBlock(title = None,lines = Seq( x.desc)                                   , indentBlock = 8,  indentFirst = 8),
-        UserManualBlock(title = None,lines = Seq( "(Param Types: "+ x.paramTypes.mkString(":") + ({ if(x.numParam == -1) ":...)" else ")" })),
+        UserManualBlock(title = None,lines = Seq( "(Param Types: "+ x.paramTypes.mkString(",") + ({ if(x.numParam == -1) ",...)" else ")" })),
                                                                                             indentBlock = 12, indentFirst = 12)
       )
     })
@@ -3127,7 +3127,7 @@ object VcfTool {
       }}.mkString("\n")+
       "\nFilter Functions:\n"+
       this.filterFunctionSet.toVector.sortBy( x => x.funcName ).map( x => {
-          "    "+x.funcName  +":"+x.paramNames.mkString(":")+ "\n"+
+          "    "+x.funcName  +"("+x.paramNames.mkString(",")+ ")\n"+
           wrapLineWithIndent(x.desc,internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,8)
       }).mkString("\n") + "\n"
     }
@@ -3151,7 +3151,10 @@ object VcfTool {
       }}.mkString("\n")+
       "### True/False Functions:\n\n"+
       this.filterFunctionSet.toVector.sortBy( x => x.funcName ).map( x => {
-          "#### "+escapeToMarkdown(x.funcName) +":"+x.paramNames.mkString(":")+ "\n\n> "+escapeToMarkdown(x.desc)+"\n"
+          "#### "+escapeToMarkdown(x.funcName) +"("+x.paramNames.mkString(",")+ ")\n\n> "+escapeToMarkdown(x.desc)+"\n\n"+
+          (if(x.paramNames.length == x.paramTypes.length){ x.paramNames.zip(x.paramTypes).map{ case (pn,pt) => {
+            "    "+pn+": "+pt
+          }}.mkString("\n")} else {""})
       }).mkString("\n") + "\n"
     }
     

@@ -3222,7 +3222,8 @@ object SVcfTagFunctions {
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("newTag",newTag),
         ("func",func),
-        ("paramTags",paramTags.mkString("|"))
+        ("paramTags",paramTags.mkString("|")),
+        ("desc",desc.getOrElse("None"))
     );
     
    /* val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
@@ -3332,9 +3333,8 @@ object SVcfTagFunctions {
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
       val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
-                                                   lines = Seq("",
-                                                               mf.metadata.desc), 
-                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=8)
+                                                   subtitle = Some(mf.metadata.desc), lines = Seq(),
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=4, mdCaret=true, mdBold=true)
       Seq(fcnTitleLine) ++
           mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
         internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+
@@ -3386,9 +3386,8 @@ object SVcfTagFunctions {
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfFormatFunMap.flatMap{ case (fcnID,mf) => {
       val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
-                                                   lines = Seq("",
-                                                               mf.metadata.desc), 
-                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=8)
+                                                   subtitle = Some(mf.metadata.desc), lines = Seq(),
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=4, mdCaret=true, mdBold=true)
       Seq(fcnTitleLine) ++
           mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
         internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+
@@ -3438,9 +3437,8 @@ object SVcfTagFunctions {
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFcnMap_sideEffecting.flatMap{ case (fcnID,mf) => {
       val fcnTitleLine =  internalUtils.commandLineUI.UserManualBlock(title=Some( fcnID + "("+mf.metadata.params.filter{ pp => ! pp.hidden }.map{ pp => pp.id + (if(pp.dotdot){"..."}else{""}) }.mkString(",")+")"),
-                                                   lines = Seq("",
-                                                               mf.metadata.desc), 
-                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=8)
+                                                   subtitle = Some(mf.metadata.desc), lines = Seq(),
+                                                   level = 3, indentTitle = 4, indentBlock = 8, indentFirst=4, mdCaret=true, mdBold=true)
       Seq(fcnTitleLine) ++
           mf.metadata.params.filter{ pp => ! pp.hidden }.toSeq.map{ pp => {
         internalUtils.commandLineUI.UserManualBlock(lines = Seq(pp.id+(if(pp.dotdot){"..."}else{""})+" "+

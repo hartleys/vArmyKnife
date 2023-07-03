@@ -189,6 +189,7 @@ for (var i = 0; i < listEB.length; i++) {
   	  }
 	  this.shortDesc.classList.toggle("hiddenEntryContent")
 	  this.titleElem.classList.toggle("inlineTitle")
+      resizeAllCodeblocks();
     })
   } else {
     var ccx = cc.closexbox;
@@ -202,6 +203,7 @@ for (var i = 0; i < listEB.length; i++) {
 	    this.shortDesc.classList.toggle("hiddenEntryContent")
 	    this.titleElem.classList.toggle("inlineTitle")
         this.classList.toggle("closedEntryBox")
+        resizeAllCodeblocks();
       }
       e.stopPropagation()
     })
@@ -214,6 +216,7 @@ for (var i = 0; i < listEB.length; i++) {
 	    this.entryBox.titleElem.classList.toggle("inlineTitle")
         this.entryBox.classList.toggle("closedEntryBox")
         this.entryBox.classList.add("TEST");
+        resizeAllCodeblocks();
         e.stopPropagation()
     })
   }
@@ -245,5 +248,216 @@ for (var i = 0; i < coll.length; i++) {
 }
 
 document.getElementsByClassName("wrapper")[0].prepend(TOC);
+
+
+
+var preblocks = document.getElementsByTagName('pre');
+
+for( var i = 0; i < preblocks.length; i++){
+    var pb = preblocks[i];
+    var codeblocks = pb.getElementsByTagName("code");
+    pb.codeblocks = codeblocks;
+    for( var j = 0; j < codeblocks.length; j ++){
+        var cb = codeblocks[j];
+        cb.rawString = cb.textContent;
+    }
+}
+
+function codeBreakLine(s,w){
+    var spaceCt = s.search(/\S/);
+    var breakIndent = " ".repeat(spaceCt + 8)
+    if(spaceCt = -1){
+       spaceCt = 0;
+    }
+    if(spaceCt + 16 >= w){
+        console.log("Impossible fit: returning \""+s+"\"");
+        return s;
+    }
+    if( s.length < w ){
+        return s;
+    }
+    return codeBreakLineHelper(s,w,spaceCt,breakIndent,0);
+}
+
+var breakLineMaxDepth = 10;
+function codeBreakLineHelper(s, w, spaceCt, breakIndent, depth){
+    console.log("codeBreakLineHelper(\""+s+"\","+w+","+spaceCt+","+breakIndent.length+"s,"+depth+")")
+    if(s.length <= w){
+        return s;
+    }
+    if( breakLineMaxDepth <= depth ){
+        //console.log("FAILED!");
+        return s;
+    }
+    
+    //console.log("attempting code linebreak["+depth+"] to width "+w+" \""+s+"\"")
+    var prevbp = 0;
+    var forceBreak = false;
+    if( s.search(/\|/) < w && s.search(/\|/) != -1){
+      //console.log("found BAR");
+      prevbp = s.search(/\|/);
+      while( prevbp < w){
+         var xx = s.substring(prevbp+1).search(/\|/)
+         var x = xx + prevbp + 1;
+         //console.log("    Before:["+prevbp+"/"+xx+"/"+x+"/w="+w+"]");
+         //prevbp = currbp;
+         //currbp = x;
+         //console.log("    After: ["+prevbp+"/"+currbp+"/"+x+"]");
+         //if( xx == -1) break;
+         if(xx == -1) break;
+         if(x + 4 >= w) break;
+         prevbp = x;
+      }
+      //console.log("BAR at idx: "+prevbp);
+    } else if( s.substring( spaceCt+4 ).search(/ /) + spaceCt + 4 < w && s.substring( spaceCt+4 ).search(/ /) != -1 ) {
+      //console.log("found SPACE");
+      prevbp = s.substring( spaceCt+4 ).search(/ /) + spaceCt + 4
+      while( prevbp < w ){
+         var xx = s.substring(prevbp+1).search(/ /)
+         var x = xx + prevbp + 1;
+         //console.log("    Before:["+prevbp+"/"+xx+"/"+x+"/w="+w+"]");
+         //prevbp = currbp;
+         //currbp = x;
+         //console.log("    After: ["+prevbp+"/"+currbp+"/"+x+"]");
+         //if( xx == -1) break;
+         if(xx == -1) break;
+         if(x + 4 >= w) break;
+         prevbp = x;
+      }
+      //console.log("SPACE at idx: "+prevbp);
+    } else {
+      //console.log("FORCE BREAK");
+        forceBreak = true;
+    }
+    
+    if(forceBreak || prevbp == 0){
+        //console.log("out = \""+s.substring(0,w)+"\" + codeBreakLine(\""+breakIndent+s.substring(w)+"\","+w+")")
+        return s.substring(0,w) + "\\\n" + codeBreakLineHelper(breakIndent + s.substring(w),w,breakIndent.length, breakIndent,depth+1)
+    } else {
+        //console.log("out = \""+s.substring(0,prevbp+1)+"\" + codeBreakLine(\""+breakIndent+s.substring(prevbp+1)+"\","+w+")")
+        return s.substring(0,prevbp+1)+"\\\n"+codeBreakLineHelper(breakIndent+s.substring(prevbp+1),w,breakIndent.length,breakIndent,depth+1);
+    }
+}
+
+var codeBlockResizeAttemptLimit = 10;
+
+function resizeAllCodeblocks(){
+    for( var i = 0; i < preblocks.length; i++){
+        var pb = preblocks[i];
+        var codeblocks = pb.getElementsByTagName("code");
+        var rightSideX = pb.getBoundingClientRect().width + pb.getBoundingClientRect().x;
+        pb.codeblocks = codeblocks;
+        for( var j = 0; j < codeblocks.length; j ++){
+            var cb = codeblocks[j];
+            cb.textContent = cb.rawString;
+            var cbx = cb.getBoundingClientRect().width + cb.getBoundingClientRect().x;
+            var rawstr = cb.rawString;
+            var lines = rawstr.split("\n");
+            var attemptDedent = true;
+            var attemptCt = 0;
+            while(cbx > rightSideX & codeBlockResizeAttemptLimit > attemptCt){
+                if(attemptDedent){
+                    var indentLevels = [];
+                    var lineIndentList = [];
+                    for( k in lines ){
+                        var line = lines[k];
+                        var ind = line.search(/\S/);
+                        lineIndentList.push(ind);
+                        if( ( ind != -1 ) && ( indentLevels.indexOf(ind) == -1 )){
+                            indentLevels.push( ind );
+                        }
+                        //if(cb.id == "initCode"){
+                        //    console.log("line: \""+line+"\"");
+                        //    console.log("     has indent: "+ind);
+                        //}
+                    }
+                    indentLevels = indentLevels.sort( function(a,b){
+                       return a-b;
+                    });
+                    //if(cb.id == "initCode"){
+                    //    console.log("indentlevels = ");
+                    //    console.log(indentLevels);
+                    //}
+                    var newIndent = [];
+                    for( var k = 0; k < indentLevels.length; k++){
+                        newIndent.push( " ".repeat(k*4) )
+                        //if(cb.id == "initCode"){
+                        //    console.log(newIndent);
+                        //}
+                    }
+                    var outline = "";
+                    for( var k = 0; k < lines.length; k++){
+                        if( lineIndentList[k] != -1){
+                            lines[k] = newIndent[ indentLevels.indexOf( lineIndentList[k] ) ] + lines[k].substr( lineIndentList[k] );
+                        }
+                        if( k > 0 ){ 
+                           outline = outline +"\n";
+                        }
+                        outline = outline + lines[k];
+                    }
+                    cb.textContent = outline;
+                    attemptDedent = false;
+                } else {
+                    var maxwidth = 0;
+                    for( k in lines ){
+                        var line = lines[k];
+                        maxwidth = Math.max(maxwidth, line.length );
+                    }
+                    //var oversizeDiff = cbx - rightSideX
+                    //var diffFract = Math.min(0.8,(cb.getBoundingClientRect().width / ( cb.getBoundingClientRect().width + oversizeDiff )) * 0.9)
+                    //var maxLineLen = Math.floor( maxwidth * diffFract );
+                    var tmp = cb.textContent;
+                    var maxLineLen = maxwidth - 4;
+                    cb.textContent = " ".repeat(maxLineLen);
+                    var cbxt = cb.getBoundingClientRect().width + cb.getBoundingClientRect().x;
+                    while( cbxt >= rightSideX ){
+                        cb.textContent = " ".repeat(maxLineLen)
+                        cbxt = cb.getBoundingClientRect().width + cb.getBoundingClientRect().x;
+                        maxLineLen = maxLineLen - 4;
+                    }
+                    cb.textContent = tmp;
+                    //console.log("attempting to fit line len:"+maxwidth+" to max line len: "+maxLineLen);
+                    var out = "";
+                    for( k in lines ){
+                        var line = lines[k];
+                        if(k > 0){ 
+                           out=out+"\n" ;
+                        }
+                        //console.log("----------------------------------------------------------");
+                        out = out + codeBreakLine(line,maxLineLen);
+                    }
+                    //console.log("out = \""+out+"\"")
+                    var newMW = 0;
+                    var newLines = out.split("\n");
+                    for(k in newLines){
+                        newMW = Math.max(newMW,newLines[k].length)
+                    }
+                    if( newMW < maxwidth ){
+                       cb.textContent = out;
+                       lines = out.split("\n");                                      
+                    } else {
+                       console.log("line wrap FAILED. break!");
+                       cb.textContent = cb.rawString;
+                       break;
+                    }
+                    
+                    //console.log("OVERSIZED CODE BLOCK! TOO BIG TO DEDENT!");
+                }
+                //console.log("OVERSIZED CODE BLOCK!");
+                attemptCt = attemptCt + 1;
+                cbx = cb.getBoundingClientRect().width + cb.getBoundingClientRect().x;
+            }
+        }
+    }
+}
+
+
+window.addEventListener('resize',function(){
+   resizeAllCodeblocks()
+});
+
+resizeAllCodeblocks();
+
+
 
 

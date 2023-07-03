@@ -1,4 +1,4 @@
-> Version 3.3.53 (Updated Thu Mar  9 10:04:03 EST 2023)
+> Version 3.3.55 (Updated Thu Mar 16 10:43:28 EDT 2023)
 
 # vArmyKnife: 
 
@@ -1078,268 +1078,230 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### LN\(x\)
 
-    
-    Input should be a numeric INFO field. output will be the natural log of that field.
+>  Input should be a numeric INFO field\. output will be the natural log of that field\.
+
+
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### MULT\(x,y\)
 
-    
-    Input should be a pair of info fields and/or numeric constants (which must be specified as 
-        CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be 
-        treated as ZEROS unless all params are INFO fields and all are missing, in which case the 
-        output will be missing. Output field type will be an integer if all inputs are integers and 
-        otherwise a float.
+>  Input should be a pair of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the product of the two inputs\. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+
+
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### TO\.UPPER\.CASE\(x\)
 
-    
-    Input should be an INFO field. All alphabetic characters in the field will be converted to Upper 
-        case.
+>  Input should be an INFO field\. All alphabetic characters in the field will be converted to Upper case\.
+
+
     x (INFO:String) 
 
 ### DIFF\(x,y\)
 
-    
-    Input should be a pair of info fields and/or numeric constants (which must be specified as 
-        CONST:n). Output field will be the difference of the two inputs (ie x - y). Missing INFO 
-        fields will be treated as ZEROS unless all params are INFO fields and all are missing, in 
-        which case the output will be missing. Output field type will be an integer if all inputs are 
-        integers and otherwise a float.
+>  Input should be a pair of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the difference of the two inputs \(ie x \- y\)\. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+
+
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### SUM\(x\.\.\.\)
 
-    
-    Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). 
-        Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros 
-        unless all params are INFO fields and all are missing, in which case the output will be 
-        missing. Output field type will be an integer if all inputs are integers and otherwise a 
-        float.
+>  Input should be a set of info tags and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the sum of the inputs\. Missing INFO fields will be treated as zeros unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+
+
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### FLAGSET\(x\.\.\.\)
 
-    
-    Input should be a set of infoFields and optionally a name, with the format tagID:name or just 
-        tagID. If names are omitted, then the name will be equal to the tagID. Output field will be 
-        the set of names for which the respective info field is equal to 1. Any value other than 1, 
-        including missing fields, will be treated as 0.
+>  Input should be a set of infoFields and optionally a name, with the format tagID:name or just tagID\. If names are omitted, then the name will be equal to the tagID\. Output field will be the set of names for which the respective info field is equal to 1\. Any value other than 1, including missing fields, will be treated as 0\.
+
+
     x... (INFO:Int) 
 
 ### SORT\.ALPHANUMERIC\(info,delim\)
 
-    
-    Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses 
-        standard java/scala alphanumeric string sorting order.The default delimiter is commas. The 
-        delim field can be used for other delimiters. The string 'BAR' can be used to use the bar 
-        character as the delimiter.
+>  Takes a single INFO field with delimited elements and sorts the elements alphanumerically\. Uses standard java/scala alphanumeric string sorting order\.The default delimiter is commas\. The delim field can be used for other delimiters\. The string 'BAR' can be used to use the bar character as the delimiter\.
+
+
     info (INFO:String) 
     delim (Optional) (INFO:String) 
 
 ### LEN\(x\)
 
-    
-    The new field will be an integer field equal to the length of the input field. Will be missing if 
-        the input field is missing.
+>  The new field will be an integer field equal to the length of the input field\. Will be missing if the input field is missing\.
+
+
     x (INFO:String|INFO:Int|INFO:Float) 
 
 ### STRING\.REPLACE\.COMMAWITH\(new,info\)
 
-    
-    Simple string replacement. First parameter should be the new string, second parameter an INFO 
-        field. Any time a comma appears in the INFO field it will be replaced by the new string. Does 
-        not do pattern matching, simple replacement.
+>  Simple string replacement\. First parameter should be the new string, second parameter an INFO field\. Any time a comma appears in the INFO field it will be replaced by the new string\. Does not do pattern matching, simple replacement\.
+
+
     new (CONST:String) 
     info (INFO:String) 
 
 ### RANDFLAG\(x,seed\)
 
-    
-    
+>  
+
+
     x (FLOAT) 
     seed (INT) 
 
 ### SETS\.KEEP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
 
-    
-    First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
-        field that contain the string will be dropped. Does not do pattern matching, simple 
-        replacement.
+>  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple replacement\.
+
+
     info (INFO:String) 
     str (CONST:String) 
 
 ### TO\.LOWER\.CASE\(x\)
 
-    
-    Input should be an INFO field. All alphabetic characters in the field will be converted to Lower 
-        case.
+>  Input should be an INFO field\. All alphabetic characters in the field will be converted to Lower case\.
+
+
     x (INFO:String) 
 
 ### DIV\(x,y\)
 
-    
-    Input should be a pair of info fields and/or numeric constants (which must be specified as 
-        CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be 
-        treated as ZEROS unless all params are INFO fields and all are missing, in which case the 
-        output will be missing. Output field type will be a float.
+>  Input should be a pair of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the product of the two inputs\. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be a float\.
+
+
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### MIN\(x\.\.\.\)
 
-    
-    
+>  
+
+
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### SETS\.DROP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
 
-    
-    First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
-        field that contain the string will be dropped. Does not do pattern matching, simple 
-        replacement.
+>  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple replacement\.
+
+
     info (INFO:String) 
     str (CONST:String) 
 
 ### CONVERT\.TO\.INT\(x,defaultValue\)
 
-    
-    Input should be an INFO field, usually of type String. Converts field to a Integer. By default 
-        failed conversions will simply be left out. if the defaultValue option is included, then 
-        failed conversions will be set to the defaultValue.
+>  Input should be an INFO field, usually of type String\. Converts field to a Integer\. By default failed conversions will simply be left out\. if the defaultValue option is included, then failed conversions will be set to the defaultValue\.
+
+
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 
-    
-    Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
-        non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
+>  Input should be an INFO field\. Converts to a numeric float\. If no defaultValue is supplied then non\-floats will be dropped\. Note that NaN and Inf will be dropped / replaced with the default\.
+
+
     x (INFO:String) 
     defaultValue (Optional) (CONST:Float) 
 
 ### STRING\.REPLACE\(old,new,info\)
 
-    
-    Simple string replacement. First parameter should be the old string, second parameter the 
-        replacement string, and the third parameter an INFO field. Any time the old string appears in 
-        the INFO field it will be replaced by the new string. Does not do pattern matching, simple 
-        replacement.
+>  Simple string replacement\. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field\. Any time the old string appears in the INFO field it will be replaced by the new string\. Does not do pattern matching, simple replacement\.
+
+
     old (CONST:String) 
     new (CONST:String) 
     info (INFO:String) 
 
 ### EXPR\(expr\)
 
-    
-    The new field will be an integer field which will be equal to 1 if and only if the expression is 
-        TRUE, and 0 otherwise. See the expression format definition for more information on how the 
-        logical expression syntax works.
+>  The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise\. See the expression format definition for more information on how the logical expression syntax works\.
+
+
     expr (STRING) 
 
 ### DECODE\(x,decoder\)
 
-    
-    Decodes an INFO field. Decoder must be a simple 2-column tab-delimited file with the old ID 
-        first. Any time an element in the INFO field x matches an element in the first column of the 
-        text file, it will be swapped with the corresponding entry in the second column of the text 
-        file. Elements that do not match any element in the first column will be unchanged.
+>  Decodes an INFO field\. Decoder must be a simple 2\-column tab\-delimited file with the old ID first\. Any time an element in the INFO field x matches an element in the first column of the text file, it will be swapped with the corresponding entry in the second column of the text file\. Elements that do not match any element in the first column will be unchanged\.
+
+
     x (INFO:String) 
     decoder (FILE:String) 
 
 ### STRING\.REPLACE\.WITHCOMMA\(old,info\)
 
-    
-    Simple string replacement. First parameter should be the old string, second parameter an INFO 
-        field. Any time the old string appears in the INFO field it will be replaced by a comma. Does 
-        not do pattern matching, simple replacement.
+>  Simple string replacement\. First parameter should be the old string, second parameter an INFO field\. Any time the old string appears in the INFO field it will be replaced by a comma\. Does not do pattern matching, simple replacement\.
+
+
     old (CONST:String) 
     info (INFO:String) 
 
 ### CONCAT\(x\.\.\.\)
 
-    
-    This simple function concatenates the values of the input parameters. Input parameters can be any 
-        combination of INFO fields or constant strings.
+>  This simple function concatenates the values of the input parameters\. Input parameters can be any combination of INFO fields or constant strings\.
+
+
     x... (INFO:String|CONST:String) 
 
 ### SUM\.GENO\(x\)
 
-    
-    Input should be a genotype field. Output field will be the sum of the given genotype field or 
-        fields. If the field is missing across all samples, the INFO field will also be missing, 
-        otherwise missing values will be treated as zeros. Output field type will be an integer if 
-        the inputs is an integer field and otherwise a float.
+>  Input should be a genotype field\. Output field will be the sum of the given genotype field or fields\. If the field is missing across all samples, the INFO field will also be missing, otherwise missing values will be treated as zeros\. Output field type will be an integer if the inputs is an integer field and otherwise a float\.
+
+
     x (GENO:Int|GENO:Float) 
 
 ### LOG10\(x\)
 
-    
-    Input should be a numeric INFO field. output will be the log10 of that field.
+>  Input should be a numeric INFO field\. output will be the log10 of that field\.
+
+
     x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### PRODUCT\.ARRAY\(x\.\.\.\)
 
-    
-    Input should be a set of info fields and/or numeric constants (which must be specified as 
-        CONST:n). Output field will be the product of the inputs. Missing INFO fields will be treated 
-        as ones unless all params are INFO fields and all are missing, in which case the output will 
-        be missing. Output field type will be an integer if all inputs are integers and otherwise a 
-        float.
+>  Input should be a set of info fields and/or numeric constants \(which must be specified as CONST:n\)\. Output field will be the product of the inputs\. Missing INFO fields will be treated as ones unless all params are INFO fields and all are missing, in which case the output will be missing\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+
+
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### SETS\.DIFF\(x,y\)
 
-    
-    Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files 
-        specified as FILE:fileName, or a constant set delimited with colons.Output field will be a 
-        comma delimited string containing the elements in the first set with the second set 
-        subtracted out.
+>  Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons\.Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out\.
+
+
     x (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float) 
     y (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float) 
 
 ### blanksToDots\(info\)
 
-    
-    If a field is left blank, this will properly replace the blank with a period, which is the proper 
-        missing value symbol
+>  If a field is left blank, this will properly replace the blank with a period, which is the proper missing value symbol
+
+
     info (INFO:String) 
 
 ### SWITCH\.EXPR\(expr,A,B\)
 
-    
-    Switches between two options depending on a logical expression. The 'expr' expression parameter 
-        must be formatted like standard variant-level expressions. The A and B parameters can each be 
-        either a constant or an INFO field. The output field will be equal to A if the logical 
-        expression is TRUE, and otherwise will be B.
+>  Switches between two options depending on a logical expression\. The 'expr' expression parameter must be formatted like standard variant\-level expressions\. The A and B parameters can each be either a constant or an INFO field\. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B\.
+
+
     expr (STRING) 
     A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
     B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
 
 ### GT\.EXPR\(gtExpr,varExpr\)
 
-    
-    The new field will be an integer field which will be equal to the number of samples that satisfy 
-        a given genotype-level expression. See the expression format definition for more information 
-        on how the logical expression syntax works. You can also specify a variant-level expression 
-        which, if false, will return missing.
+>  The new field will be an integer field which will be equal to the number of samples that satisfy a given genotype\-level expression\. See the expression format definition for more information on how the logical expression syntax works\. You can also specify a variant\-level expression which, if false, will return missing\.
+
+
     gtExpr (Optional) (STRING) 
     varExpr (Optional) (STRING) 
 
 ### COLLATE\(inputDelimName,outputDelimOuter,outputDelimInner,x\.\.\.\)
 
-    
-    This takes multiple ordered info fields and collates them. The new output INFO field will be a 
-        list of lists. The first list in the list of lists will be composed of The first element of 
-        the first field, the first element of the second field, the first element of the third field, 
-        and so on. The second list in the list of lists will be composed of the second element of the 
-        first field, the second element of the second field, and so on. Delimiters in the input lists 
-        as well as the two delimiters used in the output can have the following names: colon, comma, 
-        bar, slash, period, or ampersand. Note that the input delim can be a slash-delimited list of 
-        delimiter names.
+>  This takes multiple ordered info fields and collates them\. The new output INFO field will be a list of lists\. The first list in the list of lists will be composed of The first element of the first field, the first element of the second field, the first element of the third field, and so on\. The second list in the list of lists will be composed of the second element of the first field, the second element of the second field, and so on\. Delimiters in the input lists as well as the two delimiters used in the output can have the following names: colon, comma, bar, slash, period, or ampersand\. Note that the input delim can be a slash\-delimited list of delimiter names\.
+
+
     inputDelimName (CONST:String) 
     outputDelimOuter (CONST:String) 
     outputDelimInner (CONST:String) 
@@ -1347,57 +1309,53 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### MAX\(x\.\.\.\)
 
-    
-    
+>  
+
+
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### PICK\.RANDOM\(seed,x,y\.\.\.\)
 
-    
-    The first parameter must be either '.' or a supplied random seed for the random number generator. 
-        You can then provide either a single additional parameter and the output field will be a 
-        randomly picked element from that parameter. In this case the output will be chosen from this 
-        one input parameter (which is assumed to be a list of some sort), which can be a string 
-        constant list delimited with colons and beginning with CONST:, an INFO field, or a text file 
-        specified as FILE:filename. Alternately: you can provide several additional parameters, in 
-        which case it will select randomly from the set of parameters.
+>  The first parameter must be either '\.' or a supplied random seed for the random number generator\. You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter\. In this case the output will be chosen from this one input parameter \(which is assumed to be a list of some sort\), which can be a string constant list delimited with colons and beginning with CONST:, an INFO field, or a text file specified as FILE:filename\. Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters\.
+
+
     seed (String) 
     x (INFO:String|FILE:String|CONST:String) 
     y... (Optional) (INFO:String|CONST:String) 
 
 ### SETS\.UNION\(x\.\.\.\)
 
-    
-    The new field will be equal to the union of the inputs. Inputs can either be INFO fields 
-        specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be 
-        constants (delimited with colons). The output will be the union of the given parameters, in 
-        alphabetical order.
+>  The new field will be equal to the union of the inputs\. Inputs can either be INFO fields specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be constants \(delimited with colons\)\. The output will be the union of the given parameters, in alphabetical order\. 
+
+
     x... (String|INFO:String|FILE:String) 
 
 ### COPY\(oldField\)
 
-    
-    
+>  
+
+
     oldField (INFO:INT|INFO:Float|INFO:String) 
 
 ### CONVERT\.FLAG\.TO\.BOOLEAN\(x\)
 
-    
-    Input should be a single INFO field of type Flag
+>  Input should be a single INFO field of type Flag
+
+
     x (CONST:String) 
 
 ### SETS\.INTERSECT\(x\.\.\.\)
 
-    
-    Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files 
-        specified as FILE:fileName, or a constant set delimited with colons. Output field will be a 
-        comma delimited string containing the intersect between the supplied sets.
+>  Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons\. Output field will be a comma delimited string containing the intersect between the supplied sets\.
+
+
     x... (INFO:String|FILE:String|CONST:String) 
 
 ### CONST\(x\)
 
-    
-    Input should be a simple string of characters
+>  Input should be a simple string of characters
+
+
     x (CONST:String) 
 
 
@@ -1433,56 +1391,49 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### convertBPtoGT\(x,delim\)
 
-    
-     . 
+>   \. 
+
+
     x (GENO:String) 
     delim (Optional) (CONST:String) 
 
 ### SUM\(x\.\.\.\)
 
-    
-    Input should be a set of format tags and/or numeric constants (which must be specified as 
-        CONST:n) or info tags (which must be specified as INFO:n). Output field will be the sum of 
-        the inputs. Missing fields will be treated as zeros. Output field type will be an integer if 
-        all inputs are integers and otherwise a float.
+>  Input should be a set of format tags and/or numeric constants \(which must be specified as CONST:n\) or info tags \(which must be specified as INFO:n\)\. Output field will be the sum of the inputs\. Missing fields will be treated as zeros\. Output field type will be an integer if all inputs are integers and otherwise a float\.
+
+
     x... (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### DIV\(x,y\)
 
-    
-    Input should be a set of format tags and/or numeric constants (which must be specified as 
-        CONST:n) or info tags (which must be specified as INFO:n). Output field will be the sum of 
-        the inputs. Any missing values result in a missing result.
+>  Input should be a set of format tags and/or numeric constants \(which must be specified as CONST:n\) or info tags \(which must be specified as INFO:n\)\. Output field will be the sum of the inputs\. Any missing values result in a missing result\.
+
+
     x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
     y (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### extractIDX\(x,i,delim\)
 
-    
-    This function takes a genotype field x which must be a list field and an index i. The newly 
-        created FORMAT field will be equal to element i from the field x (counting from 0). If there 
-        is no element i, it will be set to the missing value (.).
+>  This function takes a genotype field x which must be a list field and an index i\. The newly created FORMAT field will be equal to element i from the field x \(counting from 0\)\. If there is no element i, it will be set to the missing value \(\.\)\. 
+
+
     x (GENO:Int|GENO:Float|GENO:String) 
     i (CONST:Int) 
     delim (Optional) (CONST:String) 
 
 ### EXPR\(gtExpr,varExpr\)
 
-    
-    This function takes a genotype-level logical expressiong gtExpr and a variant-level logical 
-        expression varExpr. The new FORMAT field will be equal to 1 if and only if both gtExpr and 
-        varExpr return TRUE. Otherwise the field will equal 0.
+>  This function takes a genotype\-level logical expressiong gtExpr and a variant\-level logical expression varExpr\. The new FORMAT field will be equal to 1 if and only if both gtExpr and varExpr return TRUE\. Otherwise the field will equal 0\.  
+
+
     gtExpr (CONST:String) 
     varExpr (Optional) (CONST:String) 
 
 ### IF\.AB\(gtExpr,A,B\)
 
-    
-    This function takes a genotype-level logical expression gtExpr and two additional variables A and 
-        B. A and B can each be a FORMAT field, a INFO field (specified as INFO:x), or a string 
-        constant (specified as CONST:x). If gtExpr returns TRUE, then the new FORMAT field will equal 
-        the corresponding value of A. If the gtExpr returns FALSE, the new FORMAT field will equal 
-        the corresponding value of B.
+>  This function takes a genotype\-level logical expression gtExpr and two additional variables A and B\. A and B can each be a FORMAT field, a INFO field \(specified as INFO:x\), or a string constant \(specified as CONST:x\)\. If gtExpr returns TRUE, then the new FORMAT field will equal the corresponding value of A\. If the gtExpr returns FALSE, the new FORMAT field will equal the corresponding value of B\.
+
+
     gtExpr (CONST:String) 
     A (GENO:String|INFO:String|CONST:String) 
     B (GENO:String|INFO:String|CONST:String) 
@@ -1504,28 +1455,25 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### TALLY\.SUM\.IF\(expr,x\.\.\.\)
 
-    
-    Takes as input a variant expression expr and a constant or INFO field x. Output will be the sum 
-        of all x where expr is TRUE. Set x to CONST:1 to simply count the number of variants.
+>  Takes as input a variant expression expr and a constant or INFO field x\. Output will be the sum of all x where expr is TRUE\. Set x to CONST:1 to simply count the number of variants\.
+
+
     expr (String) 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### GTCOUNT\.BYSAMPLE\(varExpr,gtExpr\)
 
-    
-    Takes as input a variant expression varExpr and a genotype level expression gtExpr. This function 
-        will report a file-wide count of the number of genotypes where both varExpr is true at the 
-        variant level AND gtExpr is true on the individual level.
+>  Takes as input a variant expression varExpr and a genotype level expression gtExpr\. This function will report a file\-wide count of the number of genotypes where both varExpr is true at the variant level AND gtExpr is true on the individual level\.
+
+
     varExpr (String) 
     gtExpr (String) 
 
 ### TALLY\.SUM\.IF\.byGROUP\(expr,group\.\.\.,x\.\.\.\)
 
-    
-    Takes a variant expression expr, an INFO field "group" and an INFO field x. Will output an entry 
-        for each unique value of the group variable. For each distinct value of the group variable g, 
-        will output the sum of all x in which the group variable equals g AND where expr is TRUE. 
-        This is especially useful for generating counts for each gene.
+>  Takes a variant expression expr, an INFO field "group" and an INFO field x\. Will output an entry for each unique value of the group variable\. For each distinct value of the group variable g, will output the sum of all x in which the group variable equals g AND where expr is TRUE\. This is especially useful for generating counts for each gene\.
+
+
     expr (String) 
     group... (INFO:String) 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
@@ -1553,245 +1501,336 @@ using the NOT operator before the filter \(with whitespace in
 between\)\.
 ### True/False Functions:
 
-#### ALT\.eq:k
+#### ALT\.eq(k)
 
 > TRUE iff the first ALT allele equals k\.
 
-#### ALT\.isOneOf:k1:k2:...
+    k: string
+#### ALT\.isOneOf(k1,k2,...)
 
 > TRUE iff the first ALT allele is one of k1,k2,\.\.\.
 
-#### ALT\.len\.eq:k
+
+#### ALT\.len\.eq(k)
 
 > TRUE iff the first ALT allele is of length k\.
 
-#### ALT\.len\.gt:k
+    k: int
+#### ALT\.len\.gt(k)
 
 > TRUE iff the first ALT allele is of length gt k\.
 
-#### AnyGtNonRef:gtTag
+    k: int
+#### AnyGtNonRef(gtTag)
 
 > TRUE iff gtTag has an alt allele for any sample\. gtTag must be a GT\-formatted genotype field\.
 
-#### AnyGtPass:simpleGtFiltExpression:k1:...
+    gtTag: geno
+#### AnyGtPass(simpleGtFiltExpression,k1,...)
 
 > TRUE iff any one of the samples pass the supplied GT filter\.
 
-#### CHROM\.inAnyOf:chrX:...
+
+#### CHROM\.inAnyOf(chrX,...)
 
 > TRUE iff the variant is one one of the given chromosomes
 
-#### FALSE:
+    chrX: String
+    ...: String
+#### FALSE()
 
 > Never TRUE
 
-#### FILTER\.eq:k
+
+#### FILTER\.eq(k)
 
 > TRUE iff the FILTER column is equal to k\.
 
-#### FILTER\.ne:k
+    k: String
+#### FILTER\.ne(k)
 
 > TRUE iff the FILTER column is not equal to k\.
 
-#### GENO\.MAFgt:t:k
+    k: String
+#### GENO\.MAFgt(t,k)
 
 > TRUE iff the genotype\-field tag t is a genotype\-style\-formatted field and the minor allele frequency is greater than k\.
 
-#### GENO\.MAFlt:t:k
+
+#### GENO\.MAFlt(t,k)
 
 > TRUE iff the genotype\-field tag t is a genotype\-style\-formatted field and the minor allele frequency is less than k\.
 
-#### GENO\.hasTagPairGtStyleMismatch:t1:t2
+    t: geno
+    k: number
+#### GENO\.hasTagPairGtStyleMismatch(t1,t2)
 
 > TRUE iff the genotype\-field t1 and t2 are both found on a given line and have at least 1 sample where both tags are not set to missing but they do not have the same value\.
 
-#### GENO\.hasTagPairMismatch:t1:t2
+    t1: geno
+    t2: geno
+#### GENO\.hasTagPairMismatch(t1,t2)
 
 > TRUE iff the genotype\-field t1 and t2 are both found on a given line but are not always equal for all samples\.
 
-#### GTAG\.any\.gt:gtTag:k
+    t1: geno
+    t2: geno
+#### GTAG\.any\.gt(gtTag,k)
 
 > TRUE iff any one of the samples have a value for their genotype\-tag entry greater than k\.
 
-#### INFO\.any\.gt:t:k
+    gtTag: geno
+    k: number
+#### INFO\.any\.gt(t,k)
 
 > TRUE iff INFO field t is nonmissing and less than or equal to k\.
 
-#### INFO\.any\.lt:t:k
+    t: info
+    k: number
+#### INFO\.any\.lt(t,k)
 
 > TRUE iff INFO field t is nonmissing and less than or equal to k\.
 
-#### INFO\.eq:t:k
+    t: info
+    k: number
+#### INFO\.eq(t,k)
 
 > TRUE iff INFO field t is nonmissing and equal to k\.
 
-#### INFO\.ge:t:k
+    t: info
+    k: string
+#### INFO\.ge(t,k)
 
 > TRUE iff INFO field t is nonmissing and greater than or equal to k\.
 
-#### INFO\.gem:t:k
+    t: info
+    k: number
+#### INFO\.gem(t,k)
 
 > TRUE iff INFO field t is missing or greater than or equal to k\.
 
-#### INFO\.gt:t:k
+    t: info
+    k: number
+#### INFO\.gt(t,k)
 
 > TRUE iff INFO field t is nonmissing and greater than k\.
 
-#### INFO\.gtm:t:k
+    t: info
+    k: number
+#### INFO\.gtm(t,k)
 
 > TRUE iff INFO field t is missing or greater than k\.
 
-#### INFO\.in:t:k
+    t: info
+    k: number
+#### INFO\.in(t,k)
 
 > TRUE iff INFO field t is a comma delimited list that contains string k\.
 
-#### INFO\.inAny:t:k
+    t: info
+    k: string
+#### INFO\.inAny(t,k)
 
 > TRUE if INFO field t is a list delimited with commas and bars, and contains string k\.
 
-#### INFO\.inAnyOf:t:k1:k2:...
+    t: info
+    k: string
+#### INFO\.inAnyOf(t,k1,k2,...)
 
 > TRUE iff INFO field t is a list delimited with commas and bars, and contains any of the parameters k1,k2,\.\.\.
 
-#### INFO\.inAnyOfN:t:k1:k2:...
+
+#### INFO\.inAnyOfN(t,k1,k2,...)
 
 > TRUE iff INFO field t is a list delimited with commas, bars, slashes, OR COLONS, and contains any of the parameters k1,k2,\.\.\.
 
-#### INFO\.inAnyOfND:t:k1:k2:...
+
+#### INFO\.inAnyOfND(t,k1,k2,...)
 
 > TRUE iff INFO field t is a list delimited with commas, bars, slashes, colons, or dashes, and contains any of the parameters k1,k2,\.\.\.
 
-#### INFO\.le:t:k
+
+#### INFO\.le(t,k)
 
 > TRUE iff INFO field t is nonmissing and less than or equal to k\.
 
-#### INFO\.lem:t:k
+    t: info
+    k: number
+#### INFO\.lem(t,k)
 
 > TRUE iff INFO field t is missing or less than or equal to k
 
-#### INFO\.len\.eq:t:k
+    t: info
+    k: number
+#### INFO\.len\.eq(t,k)
 
 > TRUE iff INFO field t is nonmissing and has length equal to k\.
 
-#### INFO\.len\.gt:t:k
+    t: info
+    k: int
+#### INFO\.len\.gt(t,k)
 
 > TRUE iff INFO field t is nonmissing and has length greater than k\.
 
-#### INFO\.len\.lt:t:k
+    t: info
+    k: int
+#### INFO\.len\.lt(t,k)
 
 > TRUE iff INFO field t is nonmissing and has length less than k\.
 
-#### INFO\.lt:t:k
+    t: info
+    k: int
+#### INFO\.lt(t,k)
 
 > TRUE iff INFO field t is nonmissing and less than k\.
 
-#### INFO\.ltm:t:k
+    t: info
+    k: number
+#### INFO\.ltm(t,k)
 
 > TRUE iff INFO field t is missing or less than k\.
 
-#### INFO\.m:t
+    t: info
+    k: number
+#### INFO\.m(t)
 
 > TRUE iff INFO field t is missing\.
 
-#### INFO\.mempty:t
+    t: info
+#### INFO\.mempty(t)
 
 > TRUE iff INFO field t is missing or less than or equal to k
 
-#### INFO\.ne:t:k
+    t: info
+#### INFO\.ne(t,k)
 
 > TRUE iff INFO field t is either missing or not equal to k\.
 
-#### INFO\.nm:t
+    t: info
+    k: string
+#### INFO\.nm(t)
 
 > TRUE iff INFO field t is nonmissing\.
 
-#### INFO\.notIn:t:k
+    t: info
+#### INFO\.notIn(t,k)
 
 > TRUE iff INFO field t is missing or is a comma delimited list that does NOT contain string k\.
 
-#### INFO\.notInAny:t:k
+    t: info
+    k: string
+#### INFO\.notInAny(t,k)
 
 > TRUE if INFO field t is a list delimited with commas and bars, and does not contain string k\.
 
-#### INFO\.subsetOf:t:k1:k2:...
+    t: info
+    k: string
+#### INFO\.subsetOf(t,k1,k2,...)
 
 > TRUE iff INFO field t is a comma delimited list and is a subset of k1,k2,etc
 
-#### INFO\.subsetOfFileList:t:f
+
+#### INFO\.subsetOfFileList(t,f)
 
 > TRUE iff INFO field t is a comma delimited list and is a subset of the list contained in file f
 
-#### INFO\.tagsDiff:t1:t2
+    t: info
+    f: infile
+#### INFO\.tagsDiff(t1,t2)
 
 > TRUE iff the INFO\-field t1 and t2 are different, including when one is missing and the other is not\.
 
-#### INFO\.tagsMismatch:t1:t2
+    t1: info
+    t2: info
+#### INFO\.tagsMismatch(t1,t2)
 
 > TRUE iff the INFO\-field t1 and t2 are both found on a given line but are not equal\.
 
-#### LOCUS\.eq:chrom:pos
+    t1: info
+    t2: info
+#### LOCUS\.eq(chrom,pos)
 
 > TRUE if the variant is at the given chromosome and position
 
-#### LOCUS\.near:k:chrom:pos
+    chrom: String
+    pos: number
+#### LOCUS\.near(k,chrom,pos)
 
 > TRUE if the variant is within k bases from the given chromosome and position
 
-#### LOCUS\.range:chrom:from:to
+    k: number
+    chrom: String
+    pos: number
+#### LOCUS\.range(chrom,from,to)
 
 > TRUE if the variant is at the given chromosome and between the given positions \(0\-based\)
 
-#### POS\.gt:pos
+
+#### POS\.gt(pos)
 
 > TRUE iff the variant is at a position greater than the given position
 
-#### POS\.inAnyOf:pos1:...
+    pos: number
+#### POS\.inAnyOf(pos1,...)
 
 > TRUE iff the variant is at one of the given positions
 
-#### QUAL\.gt:k
+    pos1: String
+    ...: String
+#### QUAL\.gt(k)
 
 > TRUE iff the QUAL column is greater than k\.
 
-#### QUAL\.gtm:k
+    k: String
+#### QUAL\.gtm(k)
 
 > TRUE iff the QUAL column is greater than k, OR qual is missing\.
 
-#### REF\.eq:k
+    k: String
+#### REF\.eq(k)
 
 > TRUE iff the REF allele equals k\.
 
-#### REF\.isOneOf:k1:k2:...
+    k: string
+#### REF\.isOneOf(k1,k2,...)
 
 > TRUE iff the REF allele is one of k1,k2,\.\.\.
 
-#### REF\.len\.eq:k
+
+#### REF\.len\.eq(k)
 
 > TRUE iff the REF allele is of length k\.
 
-#### REF\.len\.gt:k
+    k: int
+#### REF\.len\.gt(k)
 
 > TRUE iff the REF allele is of length gt k\.
 
-#### TRUE:
+    k: int
+#### TRUE()
 
 > Always TRUE
 
-#### allelesHaveNoNs:
+
+#### allelesHaveNoNs()
 
 > FALSE iff the variant has unknown bases, ie N, in the ALT or REF alleles\.
 
-#### isSNV:
+
+#### isSNV()
 
 > TRUE iff the variant is an SNV\.
 
-#### isVariant:
+
+#### isVariant()
 
 > FALSE iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele\.
 
-#### simpleSNV:
+
+#### simpleSNV()
 
 > TRUE iff the variant is a biallelic SNV\.
+
 
 
 
@@ -1820,153 +1859,190 @@ using the NOT operator before the filter \(with whitespace in
 between\)\.
 ### True/False Functions:
 
-#### FALSE:
+#### FALSE()
 
 > Never pass
 
-#### GTAG\.SC\.altDepth\.gt:splitIdxTag:t:v
+
+#### GTAG\.SC\.altDepth\.gt(splitIdxTag,t,v)
 
 > TRUE iff the tag t, which must be a single\-caller\-AD\-style\-formatted field, has an observed alt\-allele\-frequency greater than k\.
 
-#### GTAG\.SC\.altDepth\.lt:splitIdxTag:t:v
+
+#### GTAG\.SC\.altDepth\.lt(splitIdxTag,t,v)
 
 > TRUE iff the tag t, which must be a single\-caller\-AD\-style\-formatted field, has an observed alt\-allele\-frequency greater than k\.
 
-#### GTAG\.SC\.altProportion\.gt:splitIdxTag:t:v
+
+#### GTAG\.SC\.altProportion\.gt(splitIdxTag,t,v)
 
 > TRUE iff the tag t, which must be a single\-caller\-AD\-style\-formatted field, has an observed alt\-allele\-frequency greater than k\.
 
-#### GTAG\.SC\.altProportion\.lt:splitIdxTag:t:v
+
+#### GTAG\.SC\.altProportion\.lt(splitIdxTag,t,v)
 
 > TRUE iff the tag t, which must be a single\-caller\-AD\-style\-formatted field, has an observed alt\-allele\-frequency greater than k\.
 
-#### GTAG\.altDepthForAlle\.gt:gt:ad:v
+
+#### GTAG\.altDepthForAlle\.gt(gt,ad,v)
 
 > TRUE iff for AD\-style tag ad and GT\-style tag gt, the sample is called as having an allele K while having less than v reads covering said allele\.
 
-#### GTAG\.altProportion\.gt:t:k
+
+#### GTAG\.altProportion\.gt(t,k)
 
 > TRUE iff the tag t, which must be a AD\-style\-formatted field, has an observed alt\-allele\-frequency greater than k\.
 
-#### GTAG\.altProportion\.lt:t:k
+
+#### GTAG\.altProportion\.lt(t,k)
 
 > TRUE iff the tag t, which must be a AD\-style\-formatted field, has an observed alt\-allele\-frequency less than k\.
 
-#### GTAG\.eq:t:s
+
+#### GTAG\.eq(t,s)
 
 > TRUE iff GT field t equals the string s\. DROP if tag t is not present or set to missing\.
 
-#### GTAG\.ge:t:k
+
+#### GTAG\.ge(t,k)
 
 > TRUE iff tag t is present and not set to missing, and is a number greater than or equal to k\.
 
-#### GTAG\.gem:t:k
+
+#### GTAG\.gem(t,k)
 
 > TRUE iff tag t is either not present, set to missing, or a number greater than or equal to k\.
 
-#### GTAG\.gt:t:k
+
+#### GTAG\.gt(t,k)
 
 > TRUE iff tag t is present and not set to missing, and is a number greater than k\.
 
-#### GTAG\.gtm:t:k
+
+#### GTAG\.gtm(t,k)
 
 > TRUE iff tag t is either not present, set to missing, or a number greater than k\.
 
-#### GTAG\.inAnyOf:t:k
+
+#### GTAG\.inAnyOf(t,k)
 
 > TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a list containing any of the following parameters, using commas, bars, or slashes as delimiters\.
 
-#### GTAG\.isAnyAlt:t
+
+#### GTAG\.isAnyAlt(t)
 
 > TRUE iff the tag t, which must be a genotype\-style\-formatted field, is present and not set to missing and contains the alt allele\.
 
-#### GTAG\.isCleanHet:t
+
+#### GTAG\.isCleanHet(t)
 
 > TRUE iff the tag t, which must be a genotype\-style\-formatted field, is present and not set to missing and is heterozygous between the alt and reference allele\.
 
-#### GTAG\.isHet:t
+
+#### GTAG\.isHet(t)
 
 > TRUE iff the tag t, which must be a genotype\-style\-formatted field, is present and not set to missing and is heterozygous\.
 
-#### GTAG\.isHomAlt:t
+
+#### GTAG\.isHomAlt(t)
 
 > TRUE iff the tag t, which must be a genotype\-style\-formatted field, is present and not set to missing and is homozygous\-alt\.
 
-#### GTAG\.isHomRef:t
+
+#### GTAG\.isHomRef(t)
 
 > TRUE iff the tag t, which must be a genotype\-style\-formatted field, is present and not set to missing and is homozygous\-reference\.
 
-#### GTAG\.le:t:k
+
+#### GTAG\.le(t,k)
 
 > TRUE iff tag t is present and not set to missing, and is a number less than or equal to k\.
 
-#### GTAG\.lem:t:k
+
+#### GTAG\.lem(t,k)
 
 > TRUE iff tag t is either not present, set to missing, or a number less than or equal to k\.
 
-#### GTAG\.lt:t:k
+
+#### GTAG\.lt(t,k)
 
 > TRUE iff tag t is present and not set to missing, and is a number less than k\.
 
-#### GTAG\.ltm:t:k
+
+#### GTAG\.ltm(t,k)
 
 > TRUE iff tag t is either not present, set to missing, or a number less than k\.
 
-#### GTAG\.m:t:k
+
+#### GTAG\.m(t,k)
 
 > TRUE iff the GT field t is is not present or set to missing\.
 
-#### GTAG\.mg:t
+
+#### GTAG\.mg(t)
 
 > TRUE iff the GT field t is not present or is missing or is set to a missing genotype \(\./\.\)\.
 
-#### GTAG\.ne:t:k
+
+#### GTAG\.ne(t,k)
 
 > TRUE iff GT field t does not equal the string s\. DROP if tag t is not present or set to missing\.
 
-#### GTAG\.nm:t
+
+#### GTAG\.nm(t)
 
 > TRUE iff the GT field t is present and not set to missing\.
 
-#### GTAG\.nmg:t
+
+#### GTAG\.nmg(t)
 
 > TRUE iff the GT field t is present and not set to missing and is not set to a missing genotype \(\./\.\)\.
 
-#### GTAGARRAY\.gt:t:i:k
+
+#### GTAGARRAY\.gt(t,i,k)
 
 > TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i\-th element of which is greater than k\.
 
-#### GTAGARRAY\.lt:t:i:k
+
+#### GTAGARRAY\.lt(t,i,k)
 
 > TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i\-th element of which is less than k\.
 
-#### GTAGARRAYSUM\.gt:t:k
+
+#### GTAGARRAYSUM\.gt(t,k)
 
 > TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k\.
 
-#### GTAGARRAYSUM\.lt:t:k
+
+#### GTAGARRAYSUM\.lt(t,k)
 
 > TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k\.
 
-#### SAMPGRP\.in:g
+
+#### SAMPGRP\.in(g)
 
 > TRUE iff the sample is a member of group g\.
 
-#### TAGPAIR\.match:t1:t2
+
+#### TAGPAIR\.match(t1,t2)
 
 > TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another\.
 
-#### TRUE:
+
+#### TRUE()
 
 > Always pass
 
-#### VAREXPR:fcn:params
+
+#### VAREXPR(fcn,params)
 
 > Variant passes variant\-level logical function\. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant\-level logical function\.
 
-#### VARIANT:fcn:params
+
+#### VARIANT(fcn,params)
 
 > Equivalent to VAREXPR\.
+
 
 
 

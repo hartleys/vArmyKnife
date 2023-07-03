@@ -36,85 +36,94 @@ infile.vcf.gz outfile.vcf.gz
 
 <h3>LN(x)</h3>
 
-<pre><code>Input should be a numeric INFO field. output will be the natural log of that field.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a numeric INFO field. output will be the natural log of that field.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>MULT(x,y)</h3>
 
-<pre><code>Input should be a pair of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be 
-    treated as ZEROS unless all params are INFO fields and all are missing, in which case the 
-    output will be missing. Output field type will be an integer if all inputs are integers and 
-    otherwise a float.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>TO.UPPER.CASE(x)</h3>
 
-<pre><code>Input should be an INFO field. All alphabetic characters in the field will be converted to Upper 
-    case.
-x (INFO:String)
+<blockquote>
+  <p>Input should be an INFO field. All alphabetic characters in the field will be converted to Upper case.</p>
+</blockquote>
+
+<pre><code>x (INFO:String)
 </code></pre>
 
 <h3>DIFF(x,y)</h3>
 
-<pre><code>Input should be a pair of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the difference of the two inputs (ie x - y). Missing INFO 
-    fields will be treated as ZEROS unless all params are INFO fields and all are missing, in 
-    which case the output will be missing. Output field type will be an integer if all inputs are 
-    integers and otherwise a float.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the difference of the two inputs (ie x - y). Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>SUM(x...)</h3>
 
-<pre><code>Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). 
-    Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros 
-    unless all params are INFO fields and all are missing, in which case the output will be 
-    missing. Output field type will be an integer if all inputs are integers and otherwise a 
-    float.
-x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>FLAGSET(x...)</h3>
 
-<pre><code>Input should be a set of infoFields and optionally a name, with the format tagID:name or just 
-    tagID. If names are omitted, then the name will be equal to the tagID. Output field will be 
-    the set of names for which the respective info field is equal to 1. Any value other than 1, 
-    including missing fields, will be treated as 0.
-x... (INFO:Int)
+<blockquote>
+  <p>Input should be a set of infoFields and optionally a name, with the format tagID:name or just tagID. If names are omitted, then the name will be equal to the tagID. Output field will be the set of names for which the respective info field is equal to 1. Any value other than 1, including missing fields, will be treated as 0.</p>
+</blockquote>
+
+<pre><code>x... (INFO:Int)
 </code></pre>
 
 <h3>SORT.ALPHANUMERIC(info,delim)</h3>
 
-<pre><code>Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses 
-    standard java/scala alphanumeric string sorting order.The default delimiter is commas. The 
-    delim field can be used for other delimiters. The string 'BAR' can be used to use the bar 
-    character as the delimiter.
-info (INFO:String) 
+<blockquote>
+  <p>Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses standard java/scala alphanumeric string sorting order.The default delimiter is commas. The delim field can be used for other delimiters. The string 'BAR' can be used to use the bar character as the delimiter.</p>
+</blockquote>
+
+<pre><code>info (INFO:String) 
 delim (Optional) (INFO:String)
 </code></pre>
 
 <h3>LEN(x)</h3>
 
-<pre><code>The new field will be an integer field equal to the length of the input field. Will be missing if 
-    the input field is missing.
-x (INFO:String|INFO:Int|INFO:Float)
+<blockquote>
+  <p>The new field will be an integer field equal to the length of the input field. Will be missing if the input field is missing.</p>
+</blockquote>
+
+<pre><code>x (INFO:String|INFO:Int|INFO:Float)
 </code></pre>
 
 <h3>STRING.REPLACE.COMMAWITH(new,info)</h3>
 
-<pre><code>Simple string replacement. First parameter should be the new string, second parameter an INFO 
-    field. Any time a comma appears in the INFO field it will be replaced by the new string. Does 
-    not do pattern matching, simple replacement.
-new (CONST:String) 
+<blockquote>
+  <p>Simple string replacement. First parameter should be the new string, second parameter an INFO field. Any time a comma appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>new (CONST:String) 
 info (INFO:String)
 </code></pre>
 
 <h3>RANDFLAG(x,seed)</h3>
+
+<blockquote>
+  
+</blockquote>
 
 <pre><code>x (FLOAT) 
 seed (INT)
@@ -122,180 +131,195 @@ seed (INT)
 
 <h3>SETS.KEEP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
 
-<pre><code>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
-    field that contain the string will be dropped. Does not do pattern matching, simple 
-    replacement.
-info (INFO:String) 
+<blockquote>
+  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>info (INFO:String) 
 str (CONST:String)
 </code></pre>
 
 <h3>TO.LOWER.CASE(x)</h3>
 
-<pre><code>Input should be an INFO field. All alphabetic characters in the field will be converted to Lower 
-    case.
-x (INFO:String)
+<blockquote>
+  <p>Input should be an INFO field. All alphabetic characters in the field will be converted to Lower case.</p>
+</blockquote>
+
+<pre><code>x (INFO:String)
 </code></pre>
 
 <h3>DIV(x,y)</h3>
 
-<pre><code>Input should be a pair of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be 
-    treated as ZEROS unless all params are INFO fields and all are missing, in which case the 
-    output will be missing. Output field type will be a float.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be a float.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>MIN(x...)</h3>
+
+<blockquote>
+  
+</blockquote>
 
 <pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>SETS.DROP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
 
-<pre><code>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
-    field that contain the string will be dropped. Does not do pattern matching, simple 
-    replacement.
-info (INFO:String) 
+<blockquote>
+  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>info (INFO:String) 
 str (CONST:String)
 </code></pre>
 
 <h3>CONVERT.TO.INT(x,defaultValue)</h3>
 
-<pre><code>Input should be an INFO field, usually of type String. Converts field to a Integer. By default 
-    failed conversions will simply be left out. if the defaultValue option is included, then 
-    failed conversions will be set to the defaultValue.
-x (INFO:String) 
+<blockquote>
+  <p>Input should be an INFO field, usually of type String. Converts field to a Integer. By default failed conversions will simply be left out. if the defaultValue option is included, then failed conversions will be set to the defaultValue.</p>
+</blockquote>
+
+<pre><code>x (INFO:String) 
 defaultValue (Optional) (CONST:Int)
 </code></pre>
 
 <h3>CONVERT.TO.FLOAT(x,defaultValue)</h3>
 
-<pre><code>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
-    non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
-x (INFO:String) 
+<blockquote>
+  <p>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.</p>
+</blockquote>
+
+<pre><code>x (INFO:String) 
 defaultValue (Optional) (CONST:Float)
 </code></pre>
 
 <h3>STRING.REPLACE(old,new,info)</h3>
 
-<pre><code>Simple string replacement. First parameter should be the old string, second parameter the 
-    replacement string, and the third parameter an INFO field. Any time the old string appears in 
-    the INFO field it will be replaced by the new string. Does not do pattern matching, simple 
-    replacement.
-old (CONST:String) 
+<blockquote>
+  <p>Simple string replacement. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field. Any time the old string appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>old (CONST:String) 
 new (CONST:String) 
 info (INFO:String)
 </code></pre>
 
 <h3>EXPR(expr)</h3>
 
-<pre><code>The new field will be an integer field which will be equal to 1 if and only if the expression is 
-    TRUE, and 0 otherwise. See the expression format definition for more information on how the 
-    logical expression syntax works.
-expr (STRING)
+<blockquote>
+  <p>The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise. See the expression format definition for more information on how the logical expression syntax works.</p>
+</blockquote>
+
+<pre><code>expr (STRING)
 </code></pre>
 
 <h3>DECODE(x,decoder)</h3>
 
-<pre><code>Decodes an INFO field. Decoder must be a simple 2-column tab-delimited file with the old ID 
-    first. Any time an element in the INFO field x matches an element in the first column of the 
-    text file, it will be swapped with the corresponding entry in the second column of the text 
-    file. Elements that do not match any element in the first column will be unchanged.
-x (INFO:String) 
+<blockquote>
+  <p>Decodes an INFO field. Decoder must be a simple 2-column tab-delimited file with the old ID first. Any time an element in the INFO field x matches an element in the first column of the text file, it will be swapped with the corresponding entry in the second column of the text file. Elements that do not match any element in the first column will be unchanged.</p>
+</blockquote>
+
+<pre><code>x (INFO:String) 
 decoder (FILE:String)
 </code></pre>
 
 <h3>STRING.REPLACE.WITHCOMMA(old,info)</h3>
 
-<pre><code>Simple string replacement. First parameter should be the old string, second parameter an INFO 
-    field. Any time the old string appears in the INFO field it will be replaced by a comma. Does 
-    not do pattern matching, simple replacement.
-old (CONST:String) 
+<blockquote>
+  <p>Simple string replacement. First parameter should be the old string, second parameter an INFO field. Any time the old string appears in the INFO field it will be replaced by a comma. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>old (CONST:String) 
 info (INFO:String)
 </code></pre>
 
 <h3>CONCAT(x...)</h3>
 
-<pre><code>This simple function concatenates the values of the input parameters. Input parameters can be any 
-    combination of INFO fields or constant strings.
-x... (INFO:String|CONST:String)
+<blockquote>
+  <p>This simple function concatenates the values of the input parameters. Input parameters can be any combination of INFO fields or constant strings.</p>
+</blockquote>
+
+<pre><code>x... (INFO:String|CONST:String)
 </code></pre>
 
 <h3>SUM.GENO(x)</h3>
 
-<pre><code>Input should be a genotype field. Output field will be the sum of the given genotype field or 
-    fields. If the field is missing across all samples, the INFO field will also be missing, 
-    otherwise missing values will be treated as zeros. Output field type will be an integer if 
-    the inputs is an integer field and otherwise a float.
-x (GENO:Int|GENO:Float)
+<blockquote>
+  <p>Input should be a genotype field. Output field will be the sum of the given genotype field or fields. If the field is missing across all samples, the INFO field will also be missing, otherwise missing values will be treated as zeros. Output field type will be an integer if the inputs is an integer field and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x (GENO:Int|GENO:Float)
 </code></pre>
 
 <h3>LOG10(x)</h3>
 
-<pre><code>Input should be a numeric INFO field. output will be the log10 of that field.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a numeric INFO field. output will be the log10 of that field.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>PRODUCT.ARRAY(x...)</h3>
 
-<pre><code>Input should be a set of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the product of the inputs. Missing INFO fields will be treated 
-    as ones unless all params are INFO fields and all are missing, in which case the output will 
-    be missing. Output field type will be an integer if all inputs are integers and otherwise a 
-    float.
-x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a set of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the inputs. Missing INFO fields will be treated as ones unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>SETS.DIFF(x,y)</h3>
 
-<pre><code>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files 
-    specified as FILE:fileName, or a constant set delimited with colons.Output field will be a 
-    comma delimited string containing the elements in the first set with the second set 
-    subtracted out.
-x (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons.Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out.</p>
+</blockquote>
+
+<pre><code>x (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float) 
 y (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>blanksToDots(info)</h3>
 
-<pre><code>If a field is left blank, this will properly replace the blank with a period, which is the proper 
-    missing value symbol
-info (INFO:String)
+<blockquote>
+  <p>If a field is left blank, this will properly replace the blank with a period, which is the proper missing value symbol</p>
+</blockquote>
+
+<pre><code>info (INFO:String)
 </code></pre>
 
 <h3>SWITCH.EXPR(expr,A,B)</h3>
 
-<pre><code>Switches between two options depending on a logical expression. The 'expr' expression parameter 
-    must be formatted like standard variant-level expressions. The A and B parameters can each be 
-    either a constant or an INFO field. The output field will be equal to A if the logical 
-    expression is TRUE, and otherwise will be B.
-expr (STRING) 
+<blockquote>
+  <p>Switches between two options depending on a logical expression. The 'expr' expression parameter must be formatted like standard variant-level expressions. The A and B parameters can each be either a constant or an INFO field. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B.</p>
+</blockquote>
+
+<pre><code>expr (STRING) 
 A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
 B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String)
 </code></pre>
 
 <h3>GT.EXPR(gtExpr,varExpr)</h3>
 
-<pre><code>The new field will be an integer field which will be equal to the number of samples that satisfy 
-    a given genotype-level expression. See the expression format definition for more information 
-    on how the logical expression syntax works. You can also specify a variant-level expression 
-    which, if false, will return missing.
-gtExpr (Optional) (STRING) 
+<blockquote>
+  <p>The new field will be an integer field which will be equal to the number of samples that satisfy a given genotype-level expression. See the expression format definition for more information on how the logical expression syntax works. You can also specify a variant-level expression which, if false, will return missing.</p>
+</blockquote>
+
+<pre><code>gtExpr (Optional) (STRING) 
 varExpr (Optional) (STRING)
 </code></pre>
 
 <h3>COLLATE(inputDelimName,outputDelimOuter,outputDelimInner,x...)</h3>
 
-<pre><code>This takes multiple ordered info fields and collates them. The new output INFO field will be a 
-    list of lists. The first list in the list of lists will be composed of The first element of 
-    the first field, the first element of the second field, the first element of the third field, 
-    and so on. The second list in the list of lists will be composed of the second element of the 
-    first field, the second element of the second field, and so on. Delimiters in the input lists 
-    as well as the two delimiters used in the output can have the following names: colon, comma, 
-    bar, slash, period, or ampersand. Note that the input delim can be a slash-delimited list of 
-    delimiter names.
-inputDelimName (CONST:String) 
+<blockquote>
+  <p>This takes multiple ordered info fields and collates them. The new output INFO field will be a list of lists. The first list in the list of lists will be composed of The first element of the first field, the first element of the second field, the first element of the third field, and so on. The second list in the list of lists will be composed of the second element of the first field, the second element of the second field, and so on. Delimiters in the input lists as well as the two delimiters used in the output can have the following names: colon, comma, bar, slash, period, or ampersand. Note that the input delim can be a slash-delimited list of delimiter names.</p>
+</blockquote>
+
+<pre><code>inputDelimName (CONST:String) 
 outputDelimOuter (CONST:String) 
 outputDelimInner (CONST:String) 
 x... (INFO:String)
@@ -303,53 +327,65 @@ x... (INFO:String)
 
 <h3>MAX(x...)</h3>
 
+<blockquote>
+  
+</blockquote>
+
 <pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>PICK.RANDOM(seed,x,y...)</h3>
 
-<pre><code>The first parameter must be either '.' or a supplied random seed for the random number generator. 
-    You can then provide either a single additional parameter and the output field will be a 
-    randomly picked element from that parameter. In this case the output will be chosen from this 
-    one input parameter (which is assumed to be a list of some sort), which can be a string 
-    constant list delimited with colons and beginning with CONST:, an INFO field, or a text file 
-    specified as FILE:filename. Alternately: you can provide several additional parameters, in 
-    which case it will select randomly from the set of parameters.
-seed (String) 
+<blockquote>
+  <p>The first parameter must be either '.' or a supplied random seed for the random number generator. You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter. In this case the output will be chosen from this one input parameter (which is assumed to be a list of some sort), which can be a string constant list delimited with colons and beginning with CONST:, an INFO field, or a text file specified as FILE:filename. Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters.</p>
+</blockquote>
+
+<pre><code>seed (String) 
 x (INFO:String|FILE:String|CONST:String) 
 y... (Optional) (INFO:String|CONST:String)
 </code></pre>
 
 <h3>SETS.UNION(x...)</h3>
 
-<pre><code>The new field will be equal to the union of the inputs. Inputs can either be INFO fields 
-    specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be 
-    constants (delimited with colons). The output will be the union of the given parameters, in 
-    alphabetical order.
-x... (String|INFO:String|FILE:String)
+<blockquote>
+  <p>The new field will be equal to the union of the inputs. Inputs can either be INFO fields specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be constants (delimited with colons). The output will be the union of the given parameters, in alphabetical order. </p>
+</blockquote>
+
+<pre><code>x... (String|INFO:String|FILE:String)
 </code></pre>
 
 <h3>COPY(oldField)</h3>
+
+<blockquote>
+  
+</blockquote>
 
 <pre><code>oldField (INFO:INT|INFO:Float|INFO:String)
 </code></pre>
 
 <h3>CONVERT.FLAG.TO.BOOLEAN(x)</h3>
 
-<pre><code>Input should be a single INFO field of type Flag
-x (CONST:String)
+<blockquote>
+  <p>Input should be a single INFO field of type Flag</p>
+</blockquote>
+
+<pre><code>x (CONST:String)
 </code></pre>
 
 <h3>SETS.INTERSECT(x...)</h3>
 
-<pre><code>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files 
-    specified as FILE:fileName, or a constant set delimited with colons. Output field will be a 
-    comma delimited string containing the intersect between the supplied sets.
-x... (INFO:String|FILE:String|CONST:String)
+<blockquote>
+  <p>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons. Output field will be a comma delimited string containing the intersect between the supplied sets.</p>
+</blockquote>
+
+<pre><code>x... (INFO:String|FILE:String|CONST:String)
 </code></pre>
 
 <h3>CONST(x)</h3>
 
-<pre><code>Input should be a simple string of characters
-x (CONST:String)
+<blockquote>
+  <p>Input should be a simple string of characters</p>
+</blockquote>
+
+<pre><code>x (CONST:String)
 </code></pre>

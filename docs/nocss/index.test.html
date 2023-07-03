@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.3.53 (Updated Thu Mar  9 10:04:03 EST 2023)</p>
+  <p>Version 3.3.55 (Updated Thu Mar 16 10:43:28 EDT 2023)</p>
 </blockquote>
 
 </div><h1 class="collapsible">vArmyKnife:</h1><div  class="collapseSection">
@@ -1277,85 +1277,94 @@ infile.vcf.gz outfile.vcf.gz
 
 <h3>LN(x)</h3>
 
-<pre><code>Input should be a numeric INFO field. output will be the natural log of that field.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a numeric INFO field. output will be the natural log of that field.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>MULT(x,y)</h3>
 
-<pre><code>Input should be a pair of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be 
-    treated as ZEROS unless all params are INFO fields and all are missing, in which case the 
-    output will be missing. Output field type will be an integer if all inputs are integers and 
-    otherwise a float.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>TO.UPPER.CASE(x)</h3>
 
-<pre><code>Input should be an INFO field. All alphabetic characters in the field will be converted to Upper 
-    case.
-x (INFO:String)
+<blockquote>
+  <p>Input should be an INFO field. All alphabetic characters in the field will be converted to Upper case.</p>
+</blockquote>
+
+<pre><code>x (INFO:String)
 </code></pre>
 
 <h3>DIFF(x,y)</h3>
 
-<pre><code>Input should be a pair of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the difference of the two inputs (ie x - y). Missing INFO 
-    fields will be treated as ZEROS unless all params are INFO fields and all are missing, in 
-    which case the output will be missing. Output field type will be an integer if all inputs are 
-    integers and otherwise a float.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the difference of the two inputs (ie x - y). Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>SUM(x...)</h3>
 
-<pre><code>Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). 
-    Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros 
-    unless all params are INFO fields and all are missing, in which case the output will be 
-    missing. Output field type will be an integer if all inputs are integers and otherwise a 
-    float.
-x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a set of info tags and/or numeric constants (which must be specified as CONST:n). Output field will be the sum of the inputs. Missing INFO fields will be treated as zeros unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>FLAGSET(x...)</h3>
 
-<pre><code>Input should be a set of infoFields and optionally a name, with the format tagID:name or just 
-    tagID. If names are omitted, then the name will be equal to the tagID. Output field will be 
-    the set of names for which the respective info field is equal to 1. Any value other than 1, 
-    including missing fields, will be treated as 0.
-x... (INFO:Int)
+<blockquote>
+  <p>Input should be a set of infoFields and optionally a name, with the format tagID:name or just tagID. If names are omitted, then the name will be equal to the tagID. Output field will be the set of names for which the respective info field is equal to 1. Any value other than 1, including missing fields, will be treated as 0.</p>
+</blockquote>
+
+<pre><code>x... (INFO:Int)
 </code></pre>
 
 <h3>SORT.ALPHANUMERIC(info,delim)</h3>
 
-<pre><code>Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses 
-    standard java/scala alphanumeric string sorting order.The default delimiter is commas. The 
-    delim field can be used for other delimiters. The string 'BAR' can be used to use the bar 
-    character as the delimiter.
-info (INFO:String) 
+<blockquote>
+  <p>Takes a single INFO field with delimited elements and sorts the elements alphanumerically. Uses standard java/scala alphanumeric string sorting order.The default delimiter is commas. The delim field can be used for other delimiters. The string 'BAR' can be used to use the bar character as the delimiter.</p>
+</blockquote>
+
+<pre><code>info (INFO:String) 
 delim (Optional) (INFO:String)
 </code></pre>
 
 <h3>LEN(x)</h3>
 
-<pre><code>The new field will be an integer field equal to the length of the input field. Will be missing if 
-    the input field is missing.
-x (INFO:String|INFO:Int|INFO:Float)
+<blockquote>
+  <p>The new field will be an integer field equal to the length of the input field. Will be missing if the input field is missing.</p>
+</blockquote>
+
+<pre><code>x (INFO:String|INFO:Int|INFO:Float)
 </code></pre>
 
 <h3>STRING.REPLACE.COMMAWITH(new,info)</h3>
 
-<pre><code>Simple string replacement. First parameter should be the new string, second parameter an INFO 
-    field. Any time a comma appears in the INFO field it will be replaced by the new string. Does 
-    not do pattern matching, simple replacement.
-new (CONST:String) 
+<blockquote>
+  <p>Simple string replacement. First parameter should be the new string, second parameter an INFO field. Any time a comma appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>new (CONST:String) 
 info (INFO:String)
 </code></pre>
 
 <h3>RANDFLAG(x,seed)</h3>
+
+<blockquote>
+  
+</blockquote>
 
 <pre><code>x (FLOAT) 
 seed (INT)
@@ -1363,180 +1372,195 @@ seed (INT)
 
 <h3>SETS.KEEP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
 
-<pre><code>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
-    field that contain the string will be dropped. Does not do pattern matching, simple 
-    replacement.
-info (INFO:String) 
+<blockquote>
+  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>info (INFO:String) 
 str (CONST:String)
 </code></pre>
 
 <h3>TO.LOWER.CASE(x)</h3>
 
-<pre><code>Input should be an INFO field. All alphabetic characters in the field will be converted to Lower 
-    case.
-x (INFO:String)
+<blockquote>
+  <p>Input should be an INFO field. All alphabetic characters in the field will be converted to Lower case.</p>
+</blockquote>
+
+<pre><code>x (INFO:String)
 </code></pre>
 
 <h3>DIV(x,y)</h3>
 
-<pre><code>Input should be a pair of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be 
-    treated as ZEROS unless all params are INFO fields and all are missing, in which case the 
-    output will be missing. Output field type will be a float.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the two inputs. Missing INFO fields will be treated as ZEROS unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be a float.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>MIN(x...)</h3>
+
+<blockquote>
+  
+</blockquote>
 
 <pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>SETS.DROP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
 
-<pre><code>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO 
-    field that contain the string will be dropped. Does not do pattern matching, simple 
-    replacement.
-info (INFO:String) 
+<blockquote>
+  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>info (INFO:String) 
 str (CONST:String)
 </code></pre>
 
 <h3>CONVERT.TO.INT(x,defaultValue)</h3>
 
-<pre><code>Input should be an INFO field, usually of type String. Converts field to a Integer. By default 
-    failed conversions will simply be left out. if the defaultValue option is included, then 
-    failed conversions will be set to the defaultValue.
-x (INFO:String) 
+<blockquote>
+  <p>Input should be an INFO field, usually of type String. Converts field to a Integer. By default failed conversions will simply be left out. if the defaultValue option is included, then failed conversions will be set to the defaultValue.</p>
+</blockquote>
+
+<pre><code>x (INFO:String) 
 defaultValue (Optional) (CONST:Int)
 </code></pre>
 
 <h3>CONVERT.TO.FLOAT(x,defaultValue)</h3>
 
-<pre><code>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then 
-    non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.
-x (INFO:String) 
+<blockquote>
+  <p>Input should be an INFO field. Converts to a numeric float. If no defaultValue is supplied then non-floats will be dropped. Note that NaN and Inf will be dropped / replaced with the default.</p>
+</blockquote>
+
+<pre><code>x (INFO:String) 
 defaultValue (Optional) (CONST:Float)
 </code></pre>
 
 <h3>STRING.REPLACE(old,new,info)</h3>
 
-<pre><code>Simple string replacement. First parameter should be the old string, second parameter the 
-    replacement string, and the third parameter an INFO field. Any time the old string appears in 
-    the INFO field it will be replaced by the new string. Does not do pattern matching, simple 
-    replacement.
-old (CONST:String) 
+<blockquote>
+  <p>Simple string replacement. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field. Any time the old string appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>old (CONST:String) 
 new (CONST:String) 
 info (INFO:String)
 </code></pre>
 
 <h3>EXPR(expr)</h3>
 
-<pre><code>The new field will be an integer field which will be equal to 1 if and only if the expression is 
-    TRUE, and 0 otherwise. See the expression format definition for more information on how the 
-    logical expression syntax works.
-expr (STRING)
+<blockquote>
+  <p>The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise. See the expression format definition for more information on how the logical expression syntax works.</p>
+</blockquote>
+
+<pre><code>expr (STRING)
 </code></pre>
 
 <h3>DECODE(x,decoder)</h3>
 
-<pre><code>Decodes an INFO field. Decoder must be a simple 2-column tab-delimited file with the old ID 
-    first. Any time an element in the INFO field x matches an element in the first column of the 
-    text file, it will be swapped with the corresponding entry in the second column of the text 
-    file. Elements that do not match any element in the first column will be unchanged.
-x (INFO:String) 
+<blockquote>
+  <p>Decodes an INFO field. Decoder must be a simple 2-column tab-delimited file with the old ID first. Any time an element in the INFO field x matches an element in the first column of the text file, it will be swapped with the corresponding entry in the second column of the text file. Elements that do not match any element in the first column will be unchanged.</p>
+</blockquote>
+
+<pre><code>x (INFO:String) 
 decoder (FILE:String)
 </code></pre>
 
 <h3>STRING.REPLACE.WITHCOMMA(old,info)</h3>
 
-<pre><code>Simple string replacement. First parameter should be the old string, second parameter an INFO 
-    field. Any time the old string appears in the INFO field it will be replaced by a comma. Does 
-    not do pattern matching, simple replacement.
-old (CONST:String) 
+<blockquote>
+  <p>Simple string replacement. First parameter should be the old string, second parameter an INFO field. Any time the old string appears in the INFO field it will be replaced by a comma. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>old (CONST:String) 
 info (INFO:String)
 </code></pre>
 
 <h3>CONCAT(x...)</h3>
 
-<pre><code>This simple function concatenates the values of the input parameters. Input parameters can be any 
-    combination of INFO fields or constant strings.
-x... (INFO:String|CONST:String)
+<blockquote>
+  <p>This simple function concatenates the values of the input parameters. Input parameters can be any combination of INFO fields or constant strings.</p>
+</blockquote>
+
+<pre><code>x... (INFO:String|CONST:String)
 </code></pre>
 
 <h3>SUM.GENO(x)</h3>
 
-<pre><code>Input should be a genotype field. Output field will be the sum of the given genotype field or 
-    fields. If the field is missing across all samples, the INFO field will also be missing, 
-    otherwise missing values will be treated as zeros. Output field type will be an integer if 
-    the inputs is an integer field and otherwise a float.
-x (GENO:Int|GENO:Float)
+<blockquote>
+  <p>Input should be a genotype field. Output field will be the sum of the given genotype field or fields. If the field is missing across all samples, the INFO field will also be missing, otherwise missing values will be treated as zeros. Output field type will be an integer if the inputs is an integer field and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x (GENO:Int|GENO:Float)
 </code></pre>
 
 <h3>LOG10(x)</h3>
 
-<pre><code>Input should be a numeric INFO field. output will be the log10 of that field.
-x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a numeric INFO field. output will be the log10 of that field.</p>
+</blockquote>
+
+<pre><code>x (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>PRODUCT.ARRAY(x...)</h3>
 
-<pre><code>Input should be a set of info fields and/or numeric constants (which must be specified as 
-    CONST:n). Output field will be the product of the inputs. Missing INFO fields will be treated 
-    as ones unless all params are INFO fields and all are missing, in which case the output will 
-    be missing. Output field type will be an integer if all inputs are integers and otherwise a 
-    float.
-x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a set of info fields and/or numeric constants (which must be specified as CONST:n). Output field will be the product of the inputs. Missing INFO fields will be treated as ones unless all params are INFO fields and all are missing, in which case the output will be missing. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>SETS.DIFF(x,y)</h3>
 
-<pre><code>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files 
-    specified as FILE:fileName, or a constant set delimited with colons.Output field will be a 
-    comma delimited string containing the elements in the first set with the second set 
-    subtracted out.
-x (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons.Output field will be a comma delimited string containing the elements in the first set with the second set subtracted out.</p>
+</blockquote>
+
+<pre><code>x (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float) 
 y (INFO:String|INFO:Int|INFO:Float|FILE:String|CONST:String|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>blanksToDots(info)</h3>
 
-<pre><code>If a field is left blank, this will properly replace the blank with a period, which is the proper 
-    missing value symbol
-info (INFO:String)
+<blockquote>
+  <p>If a field is left blank, this will properly replace the blank with a period, which is the proper missing value symbol</p>
+</blockquote>
+
+<pre><code>info (INFO:String)
 </code></pre>
 
 <h3>SWITCH.EXPR(expr,A,B)</h3>
 
-<pre><code>Switches between two options depending on a logical expression. The 'expr' expression parameter 
-    must be formatted like standard variant-level expressions. The A and B parameters can each be 
-    either a constant or an INFO field. The output field will be equal to A if the logical 
-    expression is TRUE, and otherwise will be B.
-expr (STRING) 
+<blockquote>
+  <p>Switches between two options depending on a logical expression. The 'expr' expression parameter must be formatted like standard variant-level expressions. The A and B parameters can each be either a constant or an INFO field. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B.</p>
+</blockquote>
+
+<pre><code>expr (STRING) 
 A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
 B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String)
 </code></pre>
 
 <h3>GT.EXPR(gtExpr,varExpr)</h3>
 
-<pre><code>The new field will be an integer field which will be equal to the number of samples that satisfy 
-    a given genotype-level expression. See the expression format definition for more information 
-    on how the logical expression syntax works. You can also specify a variant-level expression 
-    which, if false, will return missing.
-gtExpr (Optional) (STRING) 
+<blockquote>
+  <p>The new field will be an integer field which will be equal to the number of samples that satisfy a given genotype-level expression. See the expression format definition for more information on how the logical expression syntax works. You can also specify a variant-level expression which, if false, will return missing.</p>
+</blockquote>
+
+<pre><code>gtExpr (Optional) (STRING) 
 varExpr (Optional) (STRING)
 </code></pre>
 
 <h3>COLLATE(inputDelimName,outputDelimOuter,outputDelimInner,x...)</h3>
 
-<pre><code>This takes multiple ordered info fields and collates them. The new output INFO field will be a 
-    list of lists. The first list in the list of lists will be composed of The first element of 
-    the first field, the first element of the second field, the first element of the third field, 
-    and so on. The second list in the list of lists will be composed of the second element of the 
-    first field, the second element of the second field, and so on. Delimiters in the input lists 
-    as well as the two delimiters used in the output can have the following names: colon, comma, 
-    bar, slash, period, or ampersand. Note that the input delim can be a slash-delimited list of 
-    delimiter names.
-inputDelimName (CONST:String) 
+<blockquote>
+  <p>This takes multiple ordered info fields and collates them. The new output INFO field will be a list of lists. The first list in the list of lists will be composed of The first element of the first field, the first element of the second field, the first element of the third field, and so on. The second list in the list of lists will be composed of the second element of the first field, the second element of the second field, and so on. Delimiters in the input lists as well as the two delimiters used in the output can have the following names: colon, comma, bar, slash, period, or ampersand. Note that the input delim can be a slash-delimited list of delimiter names.</p>
+</blockquote>
+
+<pre><code>inputDelimName (CONST:String) 
 outputDelimOuter (CONST:String) 
 outputDelimInner (CONST:String) 
 x... (INFO:String)
@@ -1544,55 +1568,67 @@ x... (INFO:String)
 
 <h3>MAX(x...)</h3>
 
+<blockquote>
+  
+</blockquote>
+
 <pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>PICK.RANDOM(seed,x,y...)</h3>
 
-<pre><code>The first parameter must be either '.' or a supplied random seed for the random number generator. 
-    You can then provide either a single additional parameter and the output field will be a 
-    randomly picked element from that parameter. In this case the output will be chosen from this 
-    one input parameter (which is assumed to be a list of some sort), which can be a string 
-    constant list delimited with colons and beginning with CONST:, an INFO field, or a text file 
-    specified as FILE:filename. Alternately: you can provide several additional parameters, in 
-    which case it will select randomly from the set of parameters.
-seed (String) 
+<blockquote>
+  <p>The first parameter must be either '.' or a supplied random seed for the random number generator. You can then provide either a single additional parameter and the output field will be a randomly picked element from that parameter. In this case the output will be chosen from this one input parameter (which is assumed to be a list of some sort), which can be a string constant list delimited with colons and beginning with CONST:, an INFO field, or a text file specified as FILE:filename. Alternately: you can provide several additional parameters, in which case it will select randomly from the set of parameters.</p>
+</blockquote>
+
+<pre><code>seed (String) 
 x (INFO:String|FILE:String|CONST:String) 
 y... (Optional) (INFO:String|CONST:String)
 </code></pre>
 
 <h3>SETS.UNION(x...)</h3>
 
-<pre><code>The new field will be equal to the union of the inputs. Inputs can either be INFO fields 
-    specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be 
-    constants (delimited with colons). The output will be the union of the given parameters, in 
-    alphabetical order.
-x... (String|INFO:String|FILE:String)
+<blockquote>
+  <p>The new field will be equal to the union of the inputs. Inputs can either be INFO fields specified with 'INFO:tagName', can point to a text file with 'FILE:filename', or can be constants (delimited with colons). The output will be the union of the given parameters, in alphabetical order. </p>
+</blockquote>
+
+<pre><code>x... (String|INFO:String|FILE:String)
 </code></pre>
 
 <h3>COPY(oldField)</h3>
+
+<blockquote>
+  
+</blockquote>
 
 <pre><code>oldField (INFO:INT|INFO:Float|INFO:String)
 </code></pre>
 
 <h3>CONVERT.FLAG.TO.BOOLEAN(x)</h3>
 
-<pre><code>Input should be a single INFO field of type Flag
-x (CONST:String)
+<blockquote>
+  <p>Input should be a single INFO field of type Flag</p>
+</blockquote>
+
+<pre><code>x (CONST:String)
 </code></pre>
 
 <h3>SETS.INTERSECT(x...)</h3>
 
-<pre><code>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files 
-    specified as FILE:fileName, or a constant set delimited with colons. Output field will be a 
-    comma delimited string containing the intersect between the supplied sets.
-x... (INFO:String|FILE:String|CONST:String)
+<blockquote>
+  <p>Input should be a pair of sets that are either INFO fields specified as INFO:tagID, text files specified as FILE:fileName, or a constant set delimited with colons. Output field will be a comma delimited string containing the intersect between the supplied sets.</p>
+</blockquote>
+
+<pre><code>x... (INFO:String|FILE:String|CONST:String)
 </code></pre>
 
 <h3>CONST(x)</h3>
 
-<pre><code>Input should be a simple string of characters
-x (CONST:String)
+<blockquote>
+  <p>Input should be a simple string of characters</p>
+</blockquote>
+
+<pre><code>x (CONST:String)
 </code></pre>
 
 </div><h1 class="collapsible">FORMAT TAG FUNCTIONS</h1><div  class="collapseSection">
@@ -1634,56 +1670,61 @@ infile.vcf.gz outfile.vcf.gz
 
 <h3>convertBPtoGT(x,delim)</h3>
 
-<pre><code> . 
-x (GENO:String) 
+<blockquote>
+  <p>. </p>
+</blockquote>
+
+<pre><code>x (GENO:String) 
 delim (Optional) (CONST:String)
 </code></pre>
 
 <h3>SUM(x...)</h3>
 
-<pre><code>Input should be a set of format tags and/or numeric constants (which must be specified as 
-    CONST:n) or info tags (which must be specified as INFO:n). Output field will be the sum of 
-    the inputs. Missing fields will be treated as zeros. Output field type will be an integer if 
-    all inputs are integers and otherwise a float.
-x... (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+<blockquote>
+  <p>Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). Output field will be the sum of the inputs. Missing fields will be treated as zeros. Output field type will be an integer if all inputs are integers and otherwise a float.</p>
+</blockquote>
+
+<pre><code>x... (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>DIV(x,y)</h3>
 
-<pre><code>Input should be a set of format tags and/or numeric constants (which must be specified as 
-    CONST:n) or info tags (which must be specified as INFO:n). Output field will be the sum of 
-    the inputs. Any missing values result in a missing result.
-x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+<blockquote>
+  <p>Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). Output field will be the sum of the inputs. Any missing values result in a missing result.</p>
+</blockquote>
+
+<pre><code>x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 y (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>extractIDX(x,i,delim)</h3>
 
-<pre><code>This function takes a genotype field x which must be a list field and an index i. The newly 
-    created FORMAT field will be equal to element i from the field x (counting from 0). If there 
-    is no element i, it will be set to the missing value (.).
-x (GENO:Int|GENO:Float|GENO:String) 
+<blockquote>
+  <p>This function takes a genotype field x which must be a list field and an index i. The newly created FORMAT field will be equal to element i from the field x (counting from 0). If there is no element i, it will be set to the missing value (.). </p>
+</blockquote>
+
+<pre><code>x (GENO:Int|GENO:Float|GENO:String) 
 i (CONST:Int) 
 delim (Optional) (CONST:String)
 </code></pre>
 
 <h3>EXPR(gtExpr,varExpr)</h3>
 
-<pre><code>This function takes a genotype-level logical expressiong gtExpr and a variant-level logical 
-    expression varExpr. The new FORMAT field will be equal to 1 if and only if both gtExpr and 
-    varExpr return TRUE. Otherwise the field will equal 0.
-gtExpr (CONST:String) 
+<blockquote>
+  <p>This function takes a genotype-level logical expressiong gtExpr and a variant-level logical expression varExpr. The new FORMAT field will be equal to 1 if and only if both gtExpr and varExpr return TRUE. Otherwise the field will equal 0.  </p>
+</blockquote>
+
+<pre><code>gtExpr (CONST:String) 
 varExpr (Optional) (CONST:String)
 </code></pre>
 
 <h3>IF.AB(gtExpr,A,B)</h3>
 
-<pre><code>This function takes a genotype-level logical expression gtExpr and two additional variables A and 
-    B. A and B can each be a FORMAT field, a INFO field (specified as INFO:x), or a string 
-    constant (specified as CONST:x). If gtExpr returns TRUE, then the new FORMAT field will equal 
-    the corresponding value of A. If the gtExpr returns FALSE, the new FORMAT field will equal 
-    the corresponding value of B.
-gtExpr (CONST:String) 
+<blockquote>
+  <p>This function takes a genotype-level logical expression gtExpr and two additional variables A and B. A and B can each be a FORMAT field, a INFO field (specified as INFO:x), or a string constant (specified as CONST:x). If gtExpr returns TRUE, then the new FORMAT field will equal the corresponding value of A. If the gtExpr returns FALSE, the new FORMAT field will equal the corresponding value of B.</p>
+</blockquote>
+
+<pre><code>gtExpr (CONST:String) 
 A (GENO:String|INFO:String|CONST:String) 
 B (GENO:String|INFO:String|CONST:String)
 </code></pre>
@@ -1702,28 +1743,31 @@ Basic Syntax:
 
 <h3>TALLY.SUM.IF(expr,x...)</h3>
 
-<pre><code>Takes as input a variant expression expr and a constant or INFO field x. Output will be the sum 
-    of all x where expr is TRUE. Set x to CONST:1 to simply count the number of variants.
-expr (String) 
+<blockquote>
+  <p>Takes as input a variant expression expr and a constant or INFO field x. Output will be the sum of all x where expr is TRUE. Set x to CONST:1 to simply count the number of variants.</p>
+</blockquote>
+
+<pre><code>expr (String) 
 x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
 <h3>GTCOUNT.BYSAMPLE(varExpr,gtExpr)</h3>
 
-<pre><code>Takes as input a variant expression varExpr and a genotype level expression gtExpr. This function 
-    will report a file-wide count of the number of genotypes where both varExpr is true at the 
-    variant level AND gtExpr is true on the individual level.
-varExpr (String) 
+<blockquote>
+  <p>Takes as input a variant expression varExpr and a genotype level expression gtExpr. This function will report a file-wide count of the number of genotypes where both varExpr is true at the variant level AND gtExpr is true on the individual level.</p>
+</blockquote>
+
+<pre><code>varExpr (String) 
 gtExpr (String)
 </code></pre>
 
 <h3>TALLY.SUM.IF.byGROUP(expr,group...,x...)</h3>
 
-<pre><code>Takes a variant expression expr, an INFO field "group" and an INFO field x. Will output an entry 
-    for each unique value of the group variable. For each distinct value of the group variable g, 
-    will output the sum of all x in which the group variable equals g AND where expr is TRUE. 
-    This is especially useful for generating counts for each gene.
-expr (String) 
+<blockquote>
+  <p>Takes a variant expression expr, an INFO field "group" and an INFO field x. Will output an entry for each unique value of the group variable. For each distinct value of the group variable g, will output the sum of all x in which the group variable equals g AND where expr is TRUE. This is especially useful for generating counts for each gene.</p>
+</blockquote>
+
+<pre><code>expr (String) 
 group... (INFO:String) 
 x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
@@ -1750,361 +1794,527 @@ between).</p>
 
 <h3>True/False Functions:</h3>
 
-<h4>ALT.eq:k</h4>
+<h4>ALT.eq(k)</h4>
 
 <blockquote>
   <p>TRUE iff the first ALT allele equals k.</p>
 </blockquote>
 
-<h4>ALT.isOneOf:k1:k2:...</h4>
+<pre><code>k: string
+</code></pre>
+
+<h4>ALT.isOneOf(k1,k2,...)</h4>
 
 <blockquote>
   <p>TRUE iff the first ALT allele is one of k1,k2,...</p>
 </blockquote>
 
-<h4>ALT.len.eq:k</h4>
+<h4>ALT.len.eq(k)</h4>
 
 <blockquote>
   <p>TRUE iff the first ALT allele is of length k.</p>
 </blockquote>
 
-<h4>ALT.len.gt:k</h4>
+<pre><code>k: int
+</code></pre>
+
+<h4>ALT.len.gt(k)</h4>
 
 <blockquote>
   <p>TRUE iff the first ALT allele is of length gt k.</p>
 </blockquote>
 
-<h4>AnyGtNonRef:gtTag</h4>
+<pre><code>k: int
+</code></pre>
+
+<h4>AnyGtNonRef(gtTag)</h4>
 
 <blockquote>
   <p>TRUE iff gtTag has an alt allele for any sample. gtTag must be a GT-formatted genotype field.</p>
 </blockquote>
 
-<h4>AnyGtPass:simpleGtFiltExpression:k1:...</h4>
+<pre><code>gtTag: geno
+</code></pre>
+
+<h4>AnyGtPass(simpleGtFiltExpression,k1,...)</h4>
 
 <blockquote>
   <p>TRUE iff any one of the samples pass the supplied GT filter.</p>
 </blockquote>
 
-<h4>CHROM.inAnyOf:chrX:...</h4>
+<h4>CHROM.inAnyOf(chrX,...)</h4>
 
 <blockquote>
   <p>TRUE iff the variant is one one of the given chromosomes</p>
 </blockquote>
 
-<h4>FALSE:</h4>
+<pre><code>chrX: String
+...: String
+</code></pre>
+
+<h4>FALSE()</h4>
 
 <blockquote>
   <p>Never TRUE</p>
 </blockquote>
 
-<h4>FILTER.eq:k</h4>
+<h4>FILTER.eq(k)</h4>
 
 <blockquote>
   <p>TRUE iff the FILTER column is equal to k.</p>
 </blockquote>
 
-<h4>FILTER.ne:k</h4>
+<pre><code>k: String
+</code></pre>
+
+<h4>FILTER.ne(k)</h4>
 
 <blockquote>
   <p>TRUE iff the FILTER column is not equal to k.</p>
 </blockquote>
 
-<h4>GENO.MAFgt:t:k</h4>
+<pre><code>k: String
+</code></pre>
+
+<h4>GENO.MAFgt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is greater than k.</p>
 </blockquote>
 
-<h4>GENO.MAFlt:t:k</h4>
+<h4>GENO.MAFlt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the genotype-field tag t is a genotype-style-formatted field and the minor allele frequency is less than k.</p>
 </blockquote>
 
-<h4>GENO.hasTagPairGtStyleMismatch:t1:t2</h4>
+<pre><code>t: geno
+k: number
+</code></pre>
+
+<h4>GENO.hasTagPairGtStyleMismatch(t1,t2)</h4>
 
 <blockquote>
   <p>TRUE iff the genotype-field t1 and t2 are both found on a given line and have at least 1 sample where both tags are not set to missing but they do not have the same value.</p>
 </blockquote>
 
-<h4>GENO.hasTagPairMismatch:t1:t2</h4>
+<pre><code>t1: geno
+t2: geno
+</code></pre>
+
+<h4>GENO.hasTagPairMismatch(t1,t2)</h4>
 
 <blockquote>
   <p>TRUE iff the genotype-field t1 and t2 are both found on a given line but are not always equal for all samples.</p>
 </blockquote>
 
-<h4>GTAG.any.gt:gtTag:k</h4>
+<pre><code>t1: geno
+t2: geno
+</code></pre>
+
+<h4>GTAG.any.gt(gtTag,k)</h4>
 
 <blockquote>
   <p>TRUE iff any one of the samples have a value for their genotype-tag entry greater than k.</p>
 </blockquote>
 
-<h4>INFO.any.gt:t:k</h4>
+<pre><code>gtTag: geno
+k: number
+</code></pre>
+
+<h4>INFO.any.gt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and less than or equal to k.</p>
 </blockquote>
 
-<h4>INFO.any.lt:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.any.lt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and less than or equal to k.</p>
 </blockquote>
 
-<h4>INFO.eq:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.eq(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and equal to k.</p>
 </blockquote>
 
-<h4>INFO.ge:t:k</h4>
+<pre><code>t: info
+k: string
+</code></pre>
+
+<h4>INFO.ge(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and greater than or equal to k.</p>
 </blockquote>
 
-<h4>INFO.gem:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.gem(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing or greater than or equal to k.</p>
 </blockquote>
 
-<h4>INFO.gt:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.gt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and greater than k.</p>
 </blockquote>
 
-<h4>INFO.gtm:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.gtm(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing or greater than k.</p>
 </blockquote>
 
-<h4>INFO.in:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.in(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is a comma delimited list that contains string k.</p>
 </blockquote>
 
-<h4>INFO.inAny:t:k</h4>
+<pre><code>t: info
+k: string
+</code></pre>
+
+<h4>INFO.inAny(t,k)</h4>
 
 <blockquote>
   <p>TRUE if INFO field t is a list delimited with commas and bars, and contains string k.</p>
 </blockquote>
 
-<h4>INFO.inAnyOf:t:k1:k2:...</h4>
+<pre><code>t: info
+k: string
+</code></pre>
+
+<h4>INFO.inAnyOf(t,k1,k2,...)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is a list delimited with commas and bars, and contains any of the parameters k1,k2,...</p>
 </blockquote>
 
-<h4>INFO.inAnyOfN:t:k1:k2:...</h4>
+<h4>INFO.inAnyOfN(t,k1,k2,...)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is a list delimited with commas, bars, slashes, OR COLONS, and contains any of the parameters k1,k2,...</p>
 </blockquote>
 
-<h4>INFO.inAnyOfND:t:k1:k2:...</h4>
+<h4>INFO.inAnyOfND(t,k1,k2,...)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is a list delimited with commas, bars, slashes, colons, or dashes, and contains any of the parameters k1,k2,...</p>
 </blockquote>
 
-<h4>INFO.le:t:k</h4>
+<h4>INFO.le(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and less than or equal to k.</p>
 </blockquote>
 
-<h4>INFO.lem:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.lem(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing or less than or equal to k</p>
 </blockquote>
 
-<h4>INFO.len.eq:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.len.eq(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and has length equal to k.</p>
 </blockquote>
 
-<h4>INFO.len.gt:t:k</h4>
+<pre><code>t: info
+k: int
+</code></pre>
+
+<h4>INFO.len.gt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and has length greater than k.</p>
 </blockquote>
 
-<h4>INFO.len.lt:t:k</h4>
+<pre><code>t: info
+k: int
+</code></pre>
+
+<h4>INFO.len.lt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and has length less than k.</p>
 </blockquote>
 
-<h4>INFO.lt:t:k</h4>
+<pre><code>t: info
+k: int
+</code></pre>
+
+<h4>INFO.lt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing and less than k.</p>
 </blockquote>
 
-<h4>INFO.ltm:t:k</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.ltm(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing or less than k.</p>
 </blockquote>
 
-<h4>INFO.m:t</h4>
+<pre><code>t: info
+k: number
+</code></pre>
+
+<h4>INFO.m(t)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing.</p>
 </blockquote>
 
-<h4>INFO.mempty:t</h4>
+<pre><code>t: info
+</code></pre>
+
+<h4>INFO.mempty(t)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing or less than or equal to k</p>
 </blockquote>
 
-<h4>INFO.ne:t:k</h4>
+<pre><code>t: info
+</code></pre>
+
+<h4>INFO.ne(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is either missing or not equal to k.</p>
 </blockquote>
 
-<h4>INFO.nm:t</h4>
+<pre><code>t: info
+k: string
+</code></pre>
+
+<h4>INFO.nm(t)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is nonmissing.</p>
 </blockquote>
 
-<h4>INFO.notIn:t:k</h4>
+<pre><code>t: info
+</code></pre>
+
+<h4>INFO.notIn(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is missing or is a comma delimited list that does NOT contain string k.</p>
 </blockquote>
 
-<h4>INFO.notInAny:t:k</h4>
+<pre><code>t: info
+k: string
+</code></pre>
+
+<h4>INFO.notInAny(t,k)</h4>
 
 <blockquote>
   <p>TRUE if INFO field t is a list delimited with commas and bars, and does not contain string k.</p>
 </blockquote>
 
-<h4>INFO.subsetOf:t:k1:k2:...</h4>
+<pre><code>t: info
+k: string
+</code></pre>
+
+<h4>INFO.subsetOf(t,k1,k2,...)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is a comma delimited list and is a subset of k1,k2,etc</p>
 </blockquote>
 
-<h4>INFO.subsetOfFileList:t:f</h4>
+<h4>INFO.subsetOfFileList(t,f)</h4>
 
 <blockquote>
   <p>TRUE iff INFO field t is a comma delimited list and is a subset of the list contained in file f</p>
 </blockquote>
 
-<h4>INFO.tagsDiff:t1:t2</h4>
+<pre><code>t: info
+f: infile
+</code></pre>
+
+<h4>INFO.tagsDiff(t1,t2)</h4>
 
 <blockquote>
   <p>TRUE iff the INFO-field t1 and t2 are different, including when one is missing and the other is not.</p>
 </blockquote>
 
-<h4>INFO.tagsMismatch:t1:t2</h4>
+<pre><code>t1: info
+t2: info
+</code></pre>
+
+<h4>INFO.tagsMismatch(t1,t2)</h4>
 
 <blockquote>
   <p>TRUE iff the INFO-field t1 and t2 are both found on a given line but are not equal.</p>
 </blockquote>
 
-<h4>LOCUS.eq:chrom:pos</h4>
+<pre><code>t1: info
+t2: info
+</code></pre>
+
+<h4>LOCUS.eq(chrom,pos)</h4>
 
 <blockquote>
   <p>TRUE if the variant is at the given chromosome and position</p>
 </blockquote>
 
-<h4>LOCUS.near:k:chrom:pos</h4>
+<pre><code>chrom: String
+pos: number
+</code></pre>
+
+<h4>LOCUS.near(k,chrom,pos)</h4>
 
 <blockquote>
   <p>TRUE if the variant is within k bases from the given chromosome and position</p>
 </blockquote>
 
-<h4>LOCUS.range:chrom:from:to</h4>
+<pre><code>k: number
+chrom: String
+pos: number
+</code></pre>
+
+<h4>LOCUS.range(chrom,from,to)</h4>
 
 <blockquote>
   <p>TRUE if the variant is at the given chromosome and between the given positions (0-based)</p>
 </blockquote>
 
-<h4>POS.gt:pos</h4>
+<h4>POS.gt(pos)</h4>
 
 <blockquote>
   <p>TRUE iff the variant is at a position greater than the given position</p>
 </blockquote>
 
-<h4>POS.inAnyOf:pos1:...</h4>
+<pre><code>pos: number
+</code></pre>
+
+<h4>POS.inAnyOf(pos1,...)</h4>
 
 <blockquote>
   <p>TRUE iff the variant is at one of the given positions</p>
 </blockquote>
 
-<h4>QUAL.gt:k</h4>
+<pre><code>pos1: String
+...: String
+</code></pre>
+
+<h4>QUAL.gt(k)</h4>
 
 <blockquote>
   <p>TRUE iff the QUAL column is greater than k.</p>
 </blockquote>
 
-<h4>QUAL.gtm:k</h4>
+<pre><code>k: String
+</code></pre>
+
+<h4>QUAL.gtm(k)</h4>
 
 <blockquote>
   <p>TRUE iff the QUAL column is greater than k, OR qual is missing.</p>
 </blockquote>
 
-<h4>REF.eq:k</h4>
+<pre><code>k: String
+</code></pre>
+
+<h4>REF.eq(k)</h4>
 
 <blockquote>
   <p>TRUE iff the REF allele equals k.</p>
 </blockquote>
 
-<h4>REF.isOneOf:k1:k2:...</h4>
+<pre><code>k: string
+</code></pre>
+
+<h4>REF.isOneOf(k1,k2,...)</h4>
 
 <blockquote>
   <p>TRUE iff the REF allele is one of k1,k2,...</p>
 </blockquote>
 
-<h4>REF.len.eq:k</h4>
+<h4>REF.len.eq(k)</h4>
 
 <blockquote>
   <p>TRUE iff the REF allele is of length k.</p>
 </blockquote>
 
-<h4>REF.len.gt:k</h4>
+<pre><code>k: int
+</code></pre>
+
+<h4>REF.len.gt(k)</h4>
 
 <blockquote>
   <p>TRUE iff the REF allele is of length gt k.</p>
 </blockquote>
 
-<h4>TRUE:</h4>
+<pre><code>k: int
+</code></pre>
+
+<h4>TRUE()</h4>
 
 <blockquote>
   <p>Always TRUE</p>
 </blockquote>
 
-<h4>allelesHaveNoNs:</h4>
+<h4>allelesHaveNoNs()</h4>
 
 <blockquote>
   <p>FALSE iff the variant has unknown bases, ie N, in the ALT or REF alleles.</p>
 </blockquote>
 
-<h4>isSNV:</h4>
+<h4>isSNV()</h4>
 
 <blockquote>
   <p>TRUE iff the variant is an SNV.</p>
 </blockquote>
 
-<h4>isVariant:</h4>
+<h4>isVariant()</h4>
 
 <blockquote>
   <p>FALSE iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele.</p>
 </blockquote>
 
-<h4>simpleSNV:</h4>
+<h4>simpleSNV()</h4>
 
 <blockquote>
   <p>TRUE iff the variant is a biallelic SNV.</p>
@@ -2134,223 +2344,223 @@ between).</p>
 
 <h3>True/False Functions:</h3>
 
-<h4>FALSE:</h4>
+<h4>FALSE()</h4>
 
 <blockquote>
   <p>Never pass</p>
 </blockquote>
 
-<h4>GTAG.SC.altDepth.gt:splitIdxTag:t:v</h4>
+<h4>GTAG.SC.altDepth.gt(splitIdxTag,t,v)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
 </blockquote>
 
-<h4>GTAG.SC.altDepth.lt:splitIdxTag:t:v</h4>
+<h4>GTAG.SC.altDepth.lt(splitIdxTag,t,v)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
 </blockquote>
 
-<h4>GTAG.SC.altProportion.gt:splitIdxTag:t:v</h4>
+<h4>GTAG.SC.altProportion.gt(splitIdxTag,t,v)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
 </blockquote>
 
-<h4>GTAG.SC.altProportion.lt:splitIdxTag:t:v</h4>
+<h4>GTAG.SC.altProportion.lt(splitIdxTag,t,v)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
 </blockquote>
 
-<h4>GTAG.altDepthForAlle.gt:gt:ad:v</h4>
+<h4>GTAG.altDepthForAlle.gt(gt,ad,v)</h4>
 
 <blockquote>
   <p>TRUE iff for AD-style tag ad and GT-style tag gt, the sample is called as having an allele K while having less than v reads covering said allele.</p>
 </blockquote>
 
-<h4>GTAG.altProportion.gt:t:k</h4>
+<h4>GTAG.altProportion.gt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency greater than k.</p>
 </blockquote>
 
-<h4>GTAG.altProportion.lt:t:k</h4>
+<h4>GTAG.altProportion.lt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a AD-style-formatted field, has an observed alt-allele-frequency less than k.</p>
 </blockquote>
 
-<h4>GTAG.eq:t:s</h4>
+<h4>GTAG.eq(t,s)</h4>
 
 <blockquote>
   <p>TRUE iff GT field t equals the string s. DROP if tag t is not present or set to missing.</p>
 </blockquote>
 
-<h4>GTAG.ge:t:k</h4>
+<h4>GTAG.ge(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is present and not set to missing, and is a number greater than or equal to k.</p>
 </blockquote>
 
-<h4>GTAG.gem:t:k</h4>
+<h4>GTAG.gem(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is either not present, set to missing, or a number greater than or equal to k.</p>
 </blockquote>
 
-<h4>GTAG.gt:t:k</h4>
+<h4>GTAG.gt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is present and not set to missing, and is a number greater than k.</p>
 </blockquote>
 
-<h4>GTAG.gtm:t:k</h4>
+<h4>GTAG.gtm(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is either not present, set to missing, or a number greater than k.</p>
 </blockquote>
 
-<h4>GTAG.inAnyOf:t:k</h4>
+<h4>GTAG.inAnyOf(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a list containing any of the following parameters, using commas, bars, or slashes as delimiters.</p>
 </blockquote>
 
-<h4>GTAG.isAnyAlt:t</h4>
+<h4>GTAG.isAnyAlt(t)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and contains the alt allele.</p>
 </blockquote>
 
-<h4>GTAG.isCleanHet:t</h4>
+<h4>GTAG.isCleanHet(t)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous between the alt and reference allele.</p>
 </blockquote>
 
-<h4>GTAG.isHet:t</h4>
+<h4>GTAG.isHet(t)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is heterozygous.</p>
 </blockquote>
 
-<h4>GTAG.isHomAlt:t</h4>
+<h4>GTAG.isHomAlt(t)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-alt.</p>
 </blockquote>
 
-<h4>GTAG.isHomRef:t</h4>
+<h4>GTAG.isHomRef(t)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to missing and is homozygous-reference.</p>
 </blockquote>
 
-<h4>GTAG.le:t:k</h4>
+<h4>GTAG.le(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is present and not set to missing, and is a number less than or equal to k.</p>
 </blockquote>
 
-<h4>GTAG.lem:t:k</h4>
+<h4>GTAG.lem(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is either not present, set to missing, or a number less than or equal to k.</p>
 </blockquote>
 
-<h4>GTAG.lt:t:k</h4>
+<h4>GTAG.lt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is present and not set to missing, and is a number less than k.</p>
 </blockquote>
 
-<h4>GTAG.ltm:t:k</h4>
+<h4>GTAG.ltm(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff tag t is either not present, set to missing, or a number less than k.</p>
 </blockquote>
 
-<h4>GTAG.m:t:k</h4>
+<h4>GTAG.m(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the GT field t is is not present or set to missing.</p>
 </blockquote>
 
-<h4>GTAG.mg:t</h4>
+<h4>GTAG.mg(t)</h4>
 
 <blockquote>
   <p>TRUE iff the GT field t is not present or is missing or is set to a missing genotype (./.).</p>
 </blockquote>
 
-<h4>GTAG.ne:t:k</h4>
+<h4>GTAG.ne(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.</p>
 </blockquote>
 
-<h4>GTAG.nm:t</h4>
+<h4>GTAG.nm(t)</h4>
 
 <blockquote>
   <p>TRUE iff the GT field t is present and not set to missing.</p>
 </blockquote>
 
-<h4>GTAG.nmg:t</h4>
+<h4>GTAG.nmg(t)</h4>
 
 <blockquote>
   <p>TRUE iff the GT field t is present and not set to missing and is not set to a missing genotype (./.).</p>
 </blockquote>
 
-<h4>GTAGARRAY.gt:t:i:k</h4>
+<h4>GTAGARRAY.gt(t,i,k)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is greater than k.</p>
 </blockquote>
 
-<h4>GTAGARRAY.lt:t:i:k</h4>
+<h4>GTAGARRAY.lt(t,i,k)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and the i-th element of which is less than k.</p>
 </blockquote>
 
-<h4>GTAGARRAYSUM.gt:t:k</h4>
+<h4>GTAGARRAYSUM.gt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.</p>
 </blockquote>
 
-<h4>GTAGARRAYSUM.lt:t:k</h4>
+<h4>GTAGARRAYSUM.lt(t,k)</h4>
 
 <blockquote>
   <p>TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which is greater than k.</p>
 </blockquote>
 
-<h4>SAMPGRP.in:g</h4>
+<h4>SAMPGRP.in(g)</h4>
 
 <blockquote>
   <p>TRUE iff the sample is a member of group g.</p>
 </blockquote>
 
-<h4>TAGPAIR.match:t1:t2</h4>
+<h4>TAGPAIR.match(t1,t2)</h4>
 
 <blockquote>
   <p>TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another.</p>
 </blockquote>
 
-<h4>TRUE:</h4>
+<h4>TRUE()</h4>
 
 <blockquote>
   <p>Always pass</p>
 </blockquote>
 
-<h4>VAREXPR:fcn:params</h4>
+<h4>VAREXPR(fcn,params)</h4>
 
 <blockquote>
   <p>Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.</p>
 </blockquote>
 
-<h4>VARIANT:fcn:params</h4>
+<h4>VARIANT(fcn,params)</h4>
 
 <blockquote>
   <p>Equivalent to VAREXPR.</p>

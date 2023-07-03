@@ -15,112 +15,112 @@ Genotype Expression functions are all of the format FILTERNAME:PARAM1:PARAM2:etc
 
 <h1> </h1>
 
-<pre><code>FALSE:
+<pre><code>FALSE()
 Never pass
 (Param Types: )
-GTAG.altDepthForAlle.gt:gt:ad:v
+GTAG.altDepthForAlle.gt(gt,ad,v)
 TRUE iff for AD-style tag ad and GT-style tag gt, the sample is called as having an allele K 
     while having less than v reads covering said allele.
 (Param Types: )
-GTAG.altProportion.lt:t:k
+GTAG.altProportion.lt(t,k)
 TRUE iff the tag t, which must be a AD-style-formatted field, has an observed 
     alt-allele-frequency less than k.
 (Param Types: )
-GTAG.eq:t:s
+GTAG.eq(t,s)
 TRUE iff GT field t equals the string s. DROP if tag t is not present or set to missing.
 (Param Types: )
-GTAG.ge:t:k
+GTAG.ge(t,k)
 TRUE iff tag t is present and not set to missing, and is a number greater than or equal to k.
 (Param Types: )
-GTAG.gem:t:k
+GTAG.gem(t,k)
 TRUE iff tag t is either not present, set to missing, or a number greater than or equal to k.
 (Param Types: )
-GTAG.gt:t:k
+GTAG.gt(t,k)
 TRUE iff tag t is present and not set to missing, and is a number greater than k.
 (Param Types: )
-GTAG.gtm:t:k
+GTAG.gtm(t,k)
 TRUE iff tag t is either not present, set to missing, or a number greater than k.
 (Param Types: )
-GTAG.inAnyOf:t:k
+GTAG.inAnyOf(t,k)
 TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a 
     list containing any of the following parameters, using commas, bars, or slashes as delimiters.
 (Param Types: )
-GTAG.isAnyAlt:t
+GTAG.isAnyAlt(t)
 TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
     missing and contains the alt allele.
 (Param Types: )
-GTAG.isCleanHet:t
+GTAG.isCleanHet(t)
 TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
     missing and is heterozygous between the alt and reference allele.
 (Param Types: )
-GTAG.isHet:t
+GTAG.isHet(t)
 TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
     missing and is heterozygous.
 (Param Types: )
-GTAG.isHomAlt:t
+GTAG.isHomAlt(t)
 TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
     missing and is homozygous-alt.
 (Param Types: )
-GTAG.isHomRef:t
+GTAG.isHomRef(t)
 TRUE iff the tag t, which must be a genotype-style-formatted field, is present and not set to 
     missing and is homozygous-reference.
 (Param Types: )
-GTAG.le:t:k
+GTAG.le(t,k)
 TRUE iff tag t is present and not set to missing, and is a number less than or equal to k.
 (Param Types: )
-GTAG.lem:t:k
+GTAG.lem(t,k)
 TRUE iff tag t is either not present, set to missing, or a number less than or equal to k.
 (Param Types: )
-GTAG.lt:t:k
+GTAG.lt(t,k)
 TRUE iff tag t is present and not set to missing, and is a number less than k.
 (Param Types: )
-GTAG.ltm:t:k
+GTAG.ltm(t,k)
 TRUE iff tag t is either not present, set to missing, or a number less than k.
 (Param Types: )
-GTAG.m:t:k
+GTAG.m(t,k)
 TRUE iff the GT field t is is not present or set to missing.
 (Param Types: )
-GTAG.mg:t
+GTAG.mg(t)
 TRUE iff the GT field t is not present or is missing or is set to a missing genotype (./.).
 (Param Types: )
-GTAG.ne:t:k
+GTAG.ne(t,k)
 TRUE iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.
 (Param Types: )
-GTAG.nm:t
+GTAG.nm(t)
 TRUE iff the GT field t is present and not set to missing.
 (Param Types: )
-GTAG.nmg:t
+GTAG.nmg(t)
 TRUE iff the GT field t is present and not set to missing and is not set to a missing genotype 
     (./.).
 (Param Types: )
-GTAGARRAY.gt:t:i:k
+GTAGARRAY.gt(t,i,k)
 TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and 
     the i-th element of which is greater than k.
 (Param Types: )
-GTAGARRAY.lt:t:i:k
+GTAGARRAY.lt(t,i,k)
 TRUE iff the tag t is present and not set to missing, and is a list with at least i elements, and 
     the i-th element of which is less than k.
 (Param Types: )
-GTAGARRAYSUM.gt:t:k
+GTAGARRAYSUM.gt(t,k)
 TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which 
     is greater than k.
 (Param Types: )
-GTAGARRAYSUM.lt:t:k
+GTAGARRAYSUM.lt(t,k)
 TRUE iff the tag t is present and not set to missing, and is a list of numbers the sum of which 
     is greater than k.
 (Param Types: )
-SAMPGRP.in:g
+SAMPGRP.in(g)
 TRUE iff the sample is a member of group g.
 (Param Types: )
-TAGPAIR.match:t1:t2
+TAGPAIR.match(t1,t2)
 TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one 
     another.
 (Param Types: )
-TRUE:
+TRUE()
 Always pass
 (Param Types: )
-VAREXPR:fcn:params
+VAREXPR(fcn,params)
 Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside 
     this logical function, it must be a single variant-level logical function.
-(Param Types: :...)
+(Param Types: ,...)
 </code></pre>

@@ -1242,7 +1242,7 @@ object SVcfMapFunctions {
                     error("Error: hanging open paren in string: "+params("func"));
                   }
                   //pp.init.split(",").toSeq.map{ _.trim() }
-                  pp.trim().init.split(",(?![^()]*+\\))").toSeq.map{ _.trim() };
+                  pp.trim().init.split("(?<!\\\\),(?![^()]*+\\))").toSeq.map{ _.trim().replaceAll("\\,",",") };
                 }} match {
                   case Some(rp) => {
                     rp;
@@ -1250,7 +1250,7 @@ object SVcfMapFunctions {
                   case None => {
                     params.get("params").map{ pp => {
                       //pp.split(",").toSeq;
-                      pp.trim().split(",(?![^()]*+\\))").toSeq.map{ _.trim() };
+                      pp.trim().init.split("(?<!\\\\),(?![^()]*+\\))").toSeq.map{ _.trim().replaceAll("\\,",",") };
                     }}.getOrElse(Seq[String]())
                   }
                 }
