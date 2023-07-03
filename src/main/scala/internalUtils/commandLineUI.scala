@@ -577,25 +577,25 @@ List(
 
       sb.append("# USAGE AND GENERAL SYNTAX:\n\n");
       
-      sb.append("The primary method is \"walkVcf\". Most runs will look something like this:\n");
+      sb.append("The primary method is \"walkVcf\". Most runs will look something like this:\n\n");
       sb.append("    varmyknife [java_options] walkVcf [options] \\"+"\n");
       sb.append("         --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
       sb.append("         --FCN \"fcnName2|stepName2|param1|param2\"\\"+"\n");
       sb.append("         ...etc...\\"+"\n");
       sb.append("         infile.vcf.gz outfile.vcf.gz"+"\n");
-      sb.append(""+"\n");
+      sb.append(""+"\n\n");
       sb.append("Note: \"fcnName1\" and \"fcnName2\" are varmyknife functions, see the section below. "+"\n");
       sb.append("\"stepName1\" and \"stepName2\" are user-supplied names that are used to identify or describe the step. "+
                 "Some functions use the stepName in some way. For example: function addInfo will create a new INFO field named stepName"+"\n");
       sb.append(""+"\n");
-      sb.append("Either infile or outfile can generally be set to '-' to read from STDIN or STDOUT respectively. (Note: this cannot be combined with options that split the input or output, respectively. eg: --infileListInfix or --splitOutputByChrom)\n");
-      sb.append("   varmyknife [java_options] walkVcf [options] \\"+"\n");
+      sb.append("Either infile or outfile can generally be set to '-' to read from STDIN or STDOUT respectively. (Note: this cannot be combined with options that split the input or output, respectively. eg: --infileListInfix or --splitOutputByChrom)\n\n");
+      sb.append("    varmyknife [java_options] walkVcf [options] \\"+"\n");
       sb.append("         --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
       sb.append("         infile.vcf.gz - | bgzip > outfile.vcf.gz"+"\n");
       sb.append(""+"\n");      
       sb.append("vArmyKnife also comes packaged with a few other tools that don't run on VCF files."+"\n");
-      sb.append("To use these other secondary tools:"+"\n");
-      sb.append("   varmyknife [java_options] "+"otherCommandName"+" [options]"+"\n");
+      sb.append("To use these other secondary tools:"+"\n\n");
+      sb.append("    varmyknife [java_options] "+"otherCommandName"+" [options]"+"\n");
       sb.append(""+"\n");
 
       sb.append(escapeToMarkdown(description)+"\n\n");
