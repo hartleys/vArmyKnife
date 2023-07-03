@@ -2626,10 +2626,14 @@ object SVcfTagFunctions {
               override val outNum = ".";
               val dds : Vector[VcfTagFunctionParamReader[Vector[String]]] = typeInfo.map{ pprm => VcfTagFunctionParamReaderStringSeq(pprm)}
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
-                val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
-                  soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
-                }}.toVector.sorted.mkString(",")
-                writeString(vout,out)
+                //val out = dds.tail.foldLeft(dds.head.get(vc).getOrElse(Vector()).toSet ){ case (soFar,curr) => {
+                //  soFar.intersect( curr.get(vc).getOrElse(Vector()).toSet )
+                //}}.toVector.sorted.mkString(",")
+                val dda = dds.head.get(vc).getOrElse(Vector()).toSet;
+                val ddb = dds.last.get(vc).getOrElse(Vector()).toSet;
+                val out = dda -- dda.intersect(ddb);
+                val outstr = if(out.isEmpty){ "." } else { out.toVector.sorted.mkString(",") }
+                writeString(vout,outstr)
               }
             }
           }

@@ -1,0 +1,16 @@
+
+The easiest way to install the most recent version of vArmyKnife is to clone from github:
+
+    git clone https://github.com/hartleys/vArmyKnife
+
+If you have root access you can then copy the two executable files 'vArmyKnife.jar' and 'varmyknife' to /usr/local/bin:
+
+    cd vArmyKnife
+    cp vArmyKnife.jar /usr/local/bin
+    cp varmyknife /usr/local/bin
+
+OR you can just add the directory to the PATH:
+
+    export PATH="/your/path/to/vArmyKnife:${PATH}"
+
+If don't want to have to execute the above line every time, you can add it to your .bashrc and/or .profile scripts.

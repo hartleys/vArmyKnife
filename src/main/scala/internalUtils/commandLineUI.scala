@@ -559,24 +559,44 @@ List(
       
       sb.append("> Version " + runner.runner.UTIL_VERSION + " (Updated " + runner.runner.UTIL_COMPILE_DATE +")\n\n");
  
-      sb.append("# GENERAL SYNTAX:\n\n");
+      sb.append("# vArmyKnife: \n\n");
+      sb.append("vArmyKnife is A multipurpose software tool for manipulating, processing, filtering, and annotating VCF files and similar variant data formats.\n\n");
+      sb.append("vArmyKnife reads VCF files and passes variants along a chain of sequential functions, each modifying the VCF in turn. "+
+                "It is designed to be fast, efficient, and flexible, and is intended to allow numerous processing steps to be merged into a single step. \n");
       
-      sb.append("    The main method is walkVcf. Most runs will look something like this:\n");
-      sb.append("        varmyknife [java_options] walkVcf [options] \\"+"\n");
-      sb.append("                                  --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
-      sb.append("                                  --FCN \"fcnName2|stepName2|param1|param2\"\\"+"\n");
-      sb.append("                                  ...etc...\\"+"\n");
-      sb.append("                                  infile.vcf.gz outfile.vcf.gz"+"\n");
-      sb.append("    "+"\n");
-      sb.append("    Note that either infile or outfile can be '-' to read from STDIN or STDOUT respectively.");
-      sb.append("        varmyknife [java_options] walkVcf [options] \\"+"\n");
-      sb.append("                                  --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
-      sb.append("                                  infile.vcf.gz - | bgzip > outfile.vcf.gz"+"\n");
-      sb.append("    "+"\n");
-      sb.append("    vArmyKnife also comes packaged with a few other tools that don't run on VCF files."+"\n");
-      sb.append("    To use these other secondary tools:"+"\n");
-      sb.append("        varmyknife [java_options] "+"otherCommandName"+" [options]"+"\n");
-      sb.append("    "+"\n");
+      sb.append("## Installation: \n\n");
+      sb.append("The easiest way to install the most recent version of vArmyKnife is to clone from github: \n\n");
+      sb.append("    git clone https://github.com/hartleys/vArmyKnife\n\n");
+      sb.append("If you have root access you can then copy the two executable files 'vArmyKnife.jar' and 'varmyknife' to /usr/local/bin:\n\n");
+      sb.append("    cd vArmyKnife\n");
+      sb.append("    cp vArmyKnife.jar /usr/local/bin\n");
+      sb.append("    cp varmyknife /usr/local/bin\n\n");
+      sb.append("OR you can just add the directory to the PATH:\n");
+      sb.append("    export PATH=\"/your/path/to/vArmyKnife:${PATH}\"\n\n");
+      sb.append("(If don't want to have to execute the above line every time, you can add it to your .bashrc and/or .bash_profile scripts.)\n");
+
+      sb.append("# USAGE AND GENERAL SYNTAX:\n\n");
+      
+      sb.append("The primary method is \"walkVcf\". Most runs will look something like this:\n");
+      sb.append("    varmyknife [java_options] walkVcf [options] \\"+"\n");
+      sb.append("         --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
+      sb.append("         --FCN \"fcnName2|stepName2|param1|param2\"\\"+"\n");
+      sb.append("         ...etc...\\"+"\n");
+      sb.append("         infile.vcf.gz outfile.vcf.gz"+"\n");
+      sb.append(""+"\n");
+      sb.append("Note: \"fcnName1\" and \"fcnName2\" are varmyknife functions, see the section below. "+"\n");
+      sb.append("\"stepName1\" and \"stepName2\" are user-supplied names that are used to identify or describe the step. "+
+                "Some functions use the stepName in some way. For example: function addInfo will create a new INFO field named stepName"+"\n");
+      sb.append(""+"\n");
+      sb.append("Either infile or outfile can generally be set to '-' to read from STDIN or STDOUT respectively. (Note: this cannot be combined with options that split the input or output, respectively. eg: --infileListInfix or --splitOutputByChrom)\n");
+      sb.append("   varmyknife [java_options] walkVcf [options] \\"+"\n");
+      sb.append("         --FCN \"fcnName1|stepName1|param1|param2\"\\"+"\n");
+      sb.append("         infile.vcf.gz - | bgzip > outfile.vcf.gz"+"\n");
+      sb.append(""+"\n");      
+      sb.append("vArmyKnife also comes packaged with a few other tools that don't run on VCF files."+"\n");
+      sb.append("To use these other secondary tools:"+"\n");
+      sb.append("   varmyknife [java_options] "+"otherCommandName"+" [options]"+"\n");
+      sb.append(""+"\n");
 
       sb.append(escapeToMarkdown(description)+"\n\n");
 

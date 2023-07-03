@@ -1,22 +1,47 @@
-> Version 3.3.49 (Updated Mon Feb 13 13:15:11 EST 2023)
+> Version 3.3.51 (Updated Fri Feb 24 15:48:24 EST 2023)
 
-# GENERAL SYNTAX:
+# vArmyKnife: 
 
-    The main method is walkVcf. Most runs will look something like this:
-        varmyknife [java_options] walkVcf [options] \
-                                  --FCN "fcnName1|stepName1|param1|param2"\
-                                  --FCN "fcnName2|stepName2|param1|param2"\
-                                  ...etc...\
-                                  infile.vcf.gz outfile.vcf.gz
-    
-    Note that either infile or outfile can be '-' to read from STDIN or STDOUT respectively.        varmyknife [java_options] walkVcf [options] \
-                                  --FCN "fcnName1|stepName1|param1|param2"\
-                                  infile.vcf.gz - | bgzip > outfile.vcf.gz
-    
-    vArmyKnife also comes packaged with a few other tools that don't run on VCF files.
-    To use these other secondary tools:
-        varmyknife [java_options] otherCommandName [options]
-    
+vArmyKnife is A multipurpose software tool for manipulating, processing, filtering, and annotating VCF files and similar variant data formats.
+
+vArmyKnife reads VCF files and passes variants along a chain of sequential functions, each modifying the VCF in turn. It is designed to be fast, efficient, and flexible, and is intended to allow numerous processing steps to be merged into a single step. 
+## Installation: 
+
+The easiest way to install the most recent version of vArmyKnife is to clone from github: 
+
+    git clone https://github.com/hartleys/vArmyKnife
+
+If you have root access you can then copy the two executable files 'vArmyKnife.jar' and 'varmyknife' to /usr/local/bin:
+
+    cd vArmyKnife
+    cp vArmyKnife.jar /usr/local/bin
+    cp varmyknife /usr/local/bin
+
+OR you can just add the directory to the PATH:
+    export PATH="/your/path/to/vArmyKnife:${PATH}"
+
+(If don't want to have to execute the above line every time, you can add it to your .bashrc and/or .bash_profile scripts.)
+# USAGE AND GENERAL SYNTAX:
+
+The primary method is "walkVcf". Most runs will look something like this:
+    varmyknife [java_options] walkVcf [options] \
+         --FCN "fcnName1|stepName1|param1|param2"\
+         --FCN "fcnName2|stepName2|param1|param2"\
+         ...etc...\
+         infile.vcf.gz outfile.vcf.gz
+
+Note: "fcnName1" and "fcnName2" are varmyknife functions, see the section below. 
+"stepName1" and "stepName2" are user-supplied names that are used to identify or describe the step. Some functions use the stepName in some way. For example: function addInfo will create a new INFO field named stepName
+
+Either infile or outfile can generally be set to '-' to read from STDIN or STDOUT respectively. (Note: this cannot be combined with options that split the input or output, respectively. eg: --infileListInfix or --splitOutputByChrom)
+   varmyknife [java_options] walkVcf [options] \
+         --FCN "fcnName1|stepName1|param1|param2"\
+         infile.vcf.gz - | bgzip > outfile.vcf.gz
+
+vArmyKnife also comes packaged with a few other tools that don't run on VCF files.
+To use these other secondary tools:
+   varmyknife [java_options] otherCommandName [options]
+
 This utility performs a series of transformations on an input VCF file and adds an array of informative tags\.
 
 ## REQUIRED ARGUMENTS:
