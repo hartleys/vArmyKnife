@@ -2028,6 +2028,23 @@ object VcfTool {
         None
       }
     }
+    def getSVstrdirOrDie() : String = {
+      val svb = getSVbnd().get;
+      val (chrA,chrB) = (this.chrom,svb.bndBreakEnd._1);
+      val (posA,posB) = (this.pos,svb.bndBreakEnd._2);
+      val dir    = if( chrA == chrB ){
+                     if( posA < posB ){
+                       ">"
+                     } else {
+                       "<"
+                     }
+                   } else if( Chrom(chrA).compare(Chrom(chrB)) < 0){
+                     ">"
+                   } else {
+                     "<"
+                   }
+      svb.strands + dir;
+    }
     
     def setHeader( h : SVcfHeader )
     def getHeader() : SVcfHeader

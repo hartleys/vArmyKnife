@@ -584,38 +584,44 @@ object SVcfWalkerMain {
         params;
       }
       
-      val inputNames : List[String]  = params.get("callerNames").map{ x => x.split(",").toList }.getOrElse(headerSeq.indices.toList.map{"C"+_.toString});
-      val inputPriority : List[String]  = params.get("priority").map{ x => x.split(",").toList }.getOrElse(inputNames);
-      val decision : String  = params.get("gtDecisionMethod").getOrElse("priority");
-      val CC_ignoreSampleIds = params.isSet("ignoreSampleIds")
-      val CC_ignoreSampleOrder = params.isSet("ignoreSampleOrder")
-       
-      val (ensIter,ensHeader) = if(params("mapID") == "concordanceCaller"){
-         ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
+
+      
+      
+      if(params("mapID") == "concordanceCaller"){
+        val inputNames : List[String]  = params.get("callerNames").map{ x => x.split(",").toList }.getOrElse(headerSeq.indices.toList.map{"C"+_.toString});
+        val decision : String  = params.get("gtDecisionMethod").getOrElse("priority");
+        val inputPriority : List[String]  = params.get("priority").map{ x => x.split(",").toList }.getOrElse(inputNames);
+        val CC_ignoreSampleIds = params.isSet("ignoreSampleIds")
+        val CC_ignoreSampleOrder = params.isSet("ignoreSampleOrder")
+          
+        val (ensIter,ensHeader) = {
+          ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
                                                         //genomeFA = genomeFA,
                                                         //windowSize = 200, 
                                                         singleCallerPriority = inputPriority,
-                                                        CC_ignoreSampleIds = CC_ignoreSampleIds, CC_ignoreSampleOrder=CC_ignoreSampleOrder);
+                                                        CC_ignoreSampleIds = CC_ignoreSampleIds, CC_ignoreSampleOrder=CC_ignoreSampleOrder)
+        }
+        val finalWalker : SVcfWalker = chainSVcfWalkers(Seq[SVcfWalker](
+            new EnsembleMergeMetaDataWalker(inputVcfTypes = inputPriority,
+                                            decision = decision)
+        ) ++ postWalkers);
+      
+        finalWalker.walkToFileSplit(outfile,ensIter,ensHeader, splitFuncOpt = splitFuncOpt);
       } else {
                          //crossChromWin : Int = 500,
                             //withinChromWin : Int = 500,
-        val crossChromWin = string2int(params("crossChromWin"))
-        val withinChromWin = string2int(params("withinChromWin"))
+        val inputNames : List[String]  = params.get("callerNames").map{ x => x.split(",").toList }.getOrElse(headerSeq.indices.toList.map{"C"+_.toString});
+        val crossChromWin = string2int(params("crossChromWindow"))
+        val withinChromWin = string2int(params("withinChromWindow"))
+        val CC_ignoreSampleIds = params.isSet("ignoreSampleIds")
+
+        val (ensIter,ensHeader) = ensembleMergeSV(iterSeq,crossChromWin=crossChromWin,withinChromWin=withinChromWin,headers=headerSeq,inputVcfTypes=inputNames, CC_ignoreSampleIds = CC_ignoreSampleIds)
         
-        ensembleMergeSV(iterSeq,crossChromWin=crossChromWin,withinChromWin=withinChromWin,headers=headerSeq,inputVcfTypes=inputNames, CC_ignoreSampleIds = CC_ignoreSampleIds)
+        val finalWalker : SVcfWalker = chainSVcfWalkers(postWalkers)
+        finalWalker.walkToFileSplit(outfile,ensIter,ensHeader, splitFuncOpt = splitFuncOpt);
+
       }
-      val finalWalker : SVcfWalker = chainSVcfWalkers(Seq[SVcfWalker](
-          new EnsembleMergeMetaDataWalker(inputVcfTypes = inputPriority,
-                                          decision = decision)
-          /*
-                                    simpleMergeInfoTags : Seq[String] = Seq[String](),
-                                    simpleMergeFmtTags : Seq[String] = Seq[String]("GQ|Final Ensemble genotype quality score"),
-                                    gtStyleFmtTags : Seq[String] = Seq[String]("GT|Final ensemble genotype"),
-                                    adStyleFmtTags : Seq[String] = Seq[String]("AD|Final ensemble allele depths"),
-                                    decision : String = "majority_firstOnTies") */
-      ) ++ postWalkers);
-      
-      finalWalker.walkToFileSplit(outfile,ensIter,ensHeader, splitFuncOpt = splitFuncOpt);
+
       
     } else {
         
