@@ -446,16 +446,15 @@ object SVcfWalkerUtils {
   }
   
   
-  class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
+  class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
+                              crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
     def walkerName : String = "annotateCCsvWithSVset"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("copyOverInfoTags",copyOverInfoTags.mkString("|")),
         ("copyInfoPrefix",copyInfoPrefix),
         ("crossChromWin",crossChromWin.toString),
         ("withinChromWin",withinChromWin.toString)
-    );
-    
-    
+    )
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;

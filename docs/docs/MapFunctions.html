@@ -46,6 +46,35 @@ param1,param2,...: Most functions take one or more parameters. Parameters are sp
 
 </section> <h2>Available Operations</h2> <section>
 
+<h5>Structural Variants</h5>
+
+<h3>annotateSVset</h3>
+
+<blockquote>
+  <p>Requires that the inputs be structural variants annotated as per the VCF 4.2 file specification. Takes a second (small) SV set and add it to this SV file when matches are found. Can be used to test true/false positives, compare methods, etc. See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets, or if both SV sets are large. </p>
+</blockquote>
+
+<pre><code>annofile: The file to annotate with. Must be relatively small, as all the data will be loaded 
+    into memory.(String, required)
+copyOverInfoTags: A list of INFO tags from the annofile that you want copied over.(String)
+copyInfoPrefix: A prefix that will be prepended to every copied INFO tag in 
+    copyOverInfoTags.(String)
+crossChromWin: For cross-chromosome SVs, the window within which to register a match.(Int)
+withinChromWin: For same-chromosome SVs (SVs where both ends of the breakend are on the same 
+    chromosome), the window within which to register a match.(Int)
+</code></pre>
+
+<h6>Example 1:</h6>
+
+<pre><code>This example annotates the current VCF file with the AC and AN fields from another VCF file. Note 
+    that the annotation VCF file must be sorted and indexed using tabix.
+varmyknife walkVcf \
+--fcn "snpSiftAnno|gnomad|cmd=-info AC,AN -name GNOM_ /path/to/anno/file/gnomad.vcf.gz "\
+infile.vcf.gz outfile.vcf.gz
+</code></pre>
+
+<h6>End Example</h6>
+
 <h5>Structural Variant Tools</h5>
 
 <h3>dropInvalidSVBND</h3>

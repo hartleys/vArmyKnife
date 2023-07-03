@@ -392,6 +392,26 @@ object SVcfMapFunctions {
            ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="0",desc="The size of the window around the genomic region to extract.",req=false,initParam = true)
          )), category = "Filtering"
        ),
+       ParamStrSet("annotateSVset" ,  desc = "Requires that the inputs be structural variants annotated as per the VCF 4.2 file specification. Takes a second (small) SV set and add it to this SV file when matches are found. Can be used to test true/false positives, compare methods, etc. "+
+                                             "See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets, or if both SV sets are large. "+
+                                             "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "annofile",synon=Seq(),ty="String",valueString="vcffile.vcf.gz",desc="The file to annotate with. Must be relatively small, as all the data will be loaded into memory.",req=true,initParam = true),
+           ParamStr(id = "copyOverInfoTags",synon=Seq(),ty="String",valueString="tag1,tag2,...",desc="A list of INFO tags from the annofile that you want copied over.",req=false,initParam = false),
+           ParamStr(id = "copyInfoPrefix",synon=Seq(),ty="String",valueString="inPrefix_",desc="A prefix that will be prepended to every copied INFO tag in copyOverInfoTags.",req=false,initParam = false),
+           ParamStr(id = "crossChromWin",synon=Seq(),ty="Int",valueString="500",desc="For cross-chromosome SVs, the window within which to register a match.",req=false,initParam = false),
+           ParamStr(id = "withinChromWin",synon=Seq(),ty="Int",valueString="500",desc="For same-chromosome SVs (SVs where both ends of the breakend are on the same chromosome), the window within which to register a match.",req=false,initParam = false)
+           
+         )), category = "Structural Variants",
+         exampleCode = Seq[Seq[String]](
+           Seq[String](
+             "This example annotates the current VCF file with the AC and AN fields from another VCF file. Note that the annotation VCF file must be sorted and indexed using tabix. "+
+             "\n",
+             "   varmyknife walkVcf \\\n"+
+             "          --fcn \"snpSiftAnno|gnomad|cmd=-info AC,AN -name GNOM_ /path/to/anno/file/gnomad.vcf.gz \"\\\n"+
+             "          infile.vcf.gz outfile.vcf.gz\n"),
+         )
+       ),
        ParamStrSet("snpSiftAnno" ,  desc = "This function runs a SnpSift anno command. SnpSift's java library has been packaged internally within vArmyKnife and is called directly, producing results identical to a separate snpSift command.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command. In general you should specify the -info and -name options followed by a VCF file to annotate with. ",req=false)
@@ -1578,6 +1598,32 @@ object SVcfMapFunctions {
                 Some( removeUnannotatedFields() )
              } else if(mapType == "snpSiftAnno"){
                 Some(SnpSiftAnnotater(params("mapID"),params("cmd")))
+             } else if(mapType == "annotateSVset"){
+               
+               Some( new annotateCCsvWithSVset( annotateVCF = params("annofile"),
+                                      copyOverInfoTags = params.get("copyOverInfoTags").map{ _.split(",").toSeq }.getOrElse( Seq() ),
+                                      copyInfoPrefix = params.get("copyInfoPrefix").getOrElse(""),
+                                      crossChromWin = params.get("crossChromWin").map{ string2int(_) }.getOrElse( 500 ),
+                                      withinChromWin = params.get("withinChromWin").map{ string2int(_) }.getOrElse(500)
+                                      ))
+           
+           /*
+                  ParamStrSet("annotateSVset" ,  desc = "Requires that the inputs be structural variants annotated as per the VCF 4.2 file specification. Takes a second (small) SV set and add it to this SV file when matches are found. Can be used to test true/false positives, compare methods, etc. "+
+                                             "See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets, or if both SV sets are large. "+
+                                             "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "annofile",synon=Seq(),ty="String",valueString="vcffile.vcf.gz",desc="The file to annotate with. Must be relatively small, as all the data will be loaded into memory.",req=true,initParam = true),
+           ParamStr(id = "copyOverInfoTags",synon=Seq(),ty="String",valueString="tag1,tag2,...",desc="A list of INFO tags from the annofile that you want copied over.",req=false,initParam = false),
+           ParamStr(id = "copyInfoPrefix",synon=Seq(),ty="String",valueString="inPrefix_",desc="A prefix that will be prepended to every copied INFO tag in copyOverInfoTags.",req=false,initParam = false),
+           ParamStr(id = "crossChromWin",synon=Seq(),ty="Int",valueString="500",desc="For cross-chromosome SVs, the window within which to register a match.",req=false,initParam = false),
+           ParamStr(id = "withinChromWin",synon=Seq(),ty="Int",valueString="500",desc="For same-chromosome SVs (SVs where both ends of the breakend are on the same chromosome), the window within which to register a match.",req=false,initParam = false)
+           
+            annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
+                                  crossChromWin : Int = 500,withinChromWin : Int = 500)
+            */
+           
+
+                
              } else if(mapType == "snpSiftAnnoMulti"){
                 Some(SnpSiftAnnotaterMulti( params("cmds").split(";").zipWithIndex.map{ case (cmd,ii) => ("multiSift."+ii,cmd.trim()) } ))
                 //SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)])

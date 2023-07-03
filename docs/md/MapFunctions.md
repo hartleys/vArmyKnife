@@ -20,6 +20,31 @@
 
     
 
+##### Structural Variants
+
+
+
+### annotateSVset
+
+>  Requires that the inputs be structural variants annotated as per the VCF 4\.2 file specification\. Takes a second \(small\) SV set and add it to this SV file when matches are found\. Can be used to test true/false positives, compare methods, etc\. See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets, or if both SV sets are large\. 
+
+
+    annofile: The file to annotate with. Must be relatively small, as all the data will be loaded 
+        into memory.(String, required)
+    copyOverInfoTags: A list of INFO tags from the annofile that you want copied over.(String)
+    copyInfoPrefix: A prefix that will be prepended to every copied INFO tag in 
+        copyOverInfoTags.(String)
+    crossChromWin: For cross-chromosome SVs, the window within which to register a match.(Int)
+    withinChromWin: For same-chromosome SVs (SVs where both ends of the breakend are on the same 
+        chromosome), the window within which to register a match.(Int)
+###### Example 1:
+    This example annotates the current VCF file with the AC and AN fields from another VCF file. Note 
+        that the annotation VCF file must be sorted and indexed using tabix.
+    varmyknife walkVcf \
+    --fcn "snpSiftAnno|gnomad|cmd=-info AC,AN -name GNOM_ /path/to/anno/file/gnomad.vcf.gz "\
+    infile.vcf.gz outfile.vcf.gz
+###### End Example
+
 ##### Structural Variant Tools
 
 
