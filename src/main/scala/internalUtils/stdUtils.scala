@@ -93,6 +93,7 @@ object stdUtils {
   case class ParsedParamStrSet( sc : Seq[String], pss : ParamStrSet, delim : String = "[|]", innerDelim : String = "[=]", parenDelim : String = "()"){
     val paramMap = pss.paramMap;
     //val sc = ss.split(delim).toSeq;
+    var rawInputString : String = "";
     val allInitParams = pss.pp.filter{ pp => pp.initParam };
     var initParamsLeft = allInitParams;
     var rawParams = sc.zipWithIndex.map{ case (cell,cix) => {

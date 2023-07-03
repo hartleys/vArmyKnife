@@ -3151,7 +3151,7 @@ object VcfTool {
       }}.mkString("\n")+
       "### True/False Functions:\n\n"+
       this.filterFunctionSet.toVector.sortBy( x => x.funcName ).map( x => {
-          "#### "+escapeToMarkdown(x.funcName) +"("+x.paramNames.mkString(",")+ ")\n\n> "+escapeToMarkdown(x.desc)+"\n\n"+
+          "#### "+escapeToMarkdown(x.funcName) +(if(x.paramNames.length == 0){""}else{"("+x.paramNames.mkString(",")+ ")"})+"\n\n> "+escapeToMarkdown(x.desc)+"\n\n"+
           (if(x.paramNames.length == x.paramTypes.length){ x.paramNames.zip(x.paramTypes).map{ case (pn,pt) => {
             "    "+pn+": "+pt
           }}.mkString("\n")} else {""})

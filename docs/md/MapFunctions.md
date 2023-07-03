@@ -795,6 +795,13 @@
         match the order found in the file.(String)
     alphabetical: If this flag is set, then the samples will be reordered alphabetically.(Flag)
 
+### addHeaderLine
+
+>  This function allows you to add any header line, changing nothing else\.
+
+
+    headerLine: A header line.(String, required)
+
 ### filterTags
 
 >  This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples\. This can substantially reduce file sizes\.

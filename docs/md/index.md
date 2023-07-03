@@ -1,4 +1,4 @@
-> Version 3.3.55 (Updated Thu Mar 16 10:43:28 EDT 2023)
+> Version 3.3.57 (Updated Mon Mar 27 11:04:36 EDT 2023)
 
 # vArmyKnife: 
 
@@ -937,6 +937,13 @@ This utility performs a series of transformations on an input VCF file and adds 
         match the order found in the file.(String)
     alphabetical: If this flag is set, then the samples will be reordered alphabetically.(Flag)
 
+### addHeaderLine
+
+>  This function allows you to add any header line, changing nothing else\.
+
+
+    headerLine: A header line.(String, required)
+
 ### filterTags
 
 >  This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples\. This can substantially reduce file sizes\.
@@ -1391,7 +1398,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### convertBPtoGT\(x,delim\)
 
->   \. 
+>  Converts a genotype call that is formatted as a base\-pair \(ie AT or GG, etc\) into the standard allele\-index\-based VCF genotype format \(ie 0/0, 0/2, etc\)\. The genotype can also be a single base \(ie A or T\) in which case it will convert to a simple 0/1/2/etc indicating the allele index\. The genotype can also be formatted with a delimiter \(ie A/T or G/G\), in which case the delim parameter must be used to specify the delimiter\. Note that commas can be used as the delimiter by using backslashes to prevent them from being parsed by the function parser\.
 
 
     x (GENO:String) 
@@ -1537,7 +1544,7 @@ between\)\.
 
     chrX: String
     ...: String
-#### FALSE()
+#### FALSE
 
 > Never TRUE
 
@@ -1807,27 +1814,27 @@ between\)\.
 > TRUE iff the REF allele is of length gt k\.
 
     k: int
-#### TRUE()
+#### TRUE
 
 > Always TRUE
 
 
-#### allelesHaveNoNs()
+#### allelesHaveNoNs
 
 > FALSE iff the variant has unknown bases, ie N, in the ALT or REF alleles\.
 
 
-#### isSNV()
+#### isSNV
 
 > TRUE iff the variant is an SNV\.
 
 
-#### isVariant()
+#### isVariant
 
 > FALSE iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele\.
 
 
-#### simpleSNV()
+#### simpleSNV
 
 > TRUE iff the variant is a biallelic SNV\.
 
@@ -1859,7 +1866,7 @@ using the NOT operator before the filter \(with whitespace in
 between\)\.
 ### True/False Functions:
 
-#### FALSE()
+#### FALSE
 
 > Never pass
 
@@ -2029,7 +2036,7 @@ between\)\.
 > TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another\.
 
 
-#### TRUE()
+#### TRUE
 
 > Always pass
 

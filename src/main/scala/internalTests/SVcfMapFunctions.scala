@@ -240,6 +240,11 @@ object SVcfMapFunctions {
            ParamStr(id = "alphabetical",synon=Seq(),ty="Flag",valueString="",desc="If this flag is set, then the samples will be reordered alphabetically.",req=false)
          )), category = "File Formatting/Conversion"
        ),
+       ParamStrSet("addHeaderLine" ,  desc = "This function allows you to add any header line, changing nothing else.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "headerLine",synon=Seq(),ty="String",valueString="##header_line_text",desc="A header line.",req=true,initParam=true)
+         )), category = "File Formatting/Conversion"
+       ),
        /*
         * 
         *     } else if(mapType == "sampleReorder"){
@@ -1217,6 +1222,7 @@ object SVcfMapFunctions {
                 ppss.set("mapID",mapID);
                 ppss.set("mapType",mapType);
                 ppss.set("tagPrefix",tagPrefix);
+                ppss.rawInputString = vmfString;
                 
                 ppss.setDefaults(defaultFcnParams)
                 (mapType, ppss)
@@ -1235,6 +1241,9 @@ object SVcfMapFunctions {
                 
                 Some(new AddFuncTag(func=params("func"),newTag=params("mapID"),paramTags=paramTags,digits=params.get("digits").map{d => string2int(d)},desc=Some(params("desc"))));
 
+                
+             } else if(mapType == "addHeaderLine"){
+                Some(new addHeaderLine( params.rawInputString.split("[|]",3).lift(2).getOrElse("headerLine=##").split("=",2).lift(1).getOrElse("##") ))
              } else if(mapType == "addInfo"){
                 val rawFunc = params("func").split("[(]").head;
                 val paramTags = params("func").split("[(]",2).lift(1).map{ pp => {

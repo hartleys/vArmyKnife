@@ -435,6 +435,7 @@ object SVcfWalkerUtils {
     }
 
   }
+
   
 
   case class ConvertToGtWalker(sampleNames : Option[List[String]] = None,gtTagPrefix : String = "MATRIX_") extends SVcfWalker {
@@ -1926,6 +1927,68 @@ object SVcfWalkerUtils {
       //vc.dropInfo(overwriteInfos);
     }
   }
+  case class addHeaderLine(headerLineText : String) extends SVcfWalker {
+    def walkerName : String = "addHeaderLine"
+    var headerType : String = "unk"
+    var headerID : String = "unk"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+         ("headerLineType",headerType),
+         ("headerLineID",headerID)        
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+        val line = headerLineText;
+        if(line.startsWith("##INFO=")){
+          headerType = "INFO"
+          val ln = internalUtils.VcfTool.SVcfLine.makeCompoundLineFromString(line);
+          headerID = ln.ID;
+          outHeader.addInfoLine(ln);
+        } else if(line.startsWith("##FORMAT=")){
+          headerType = "FORMAT"
+          val ln = internalUtils.VcfTool.SVcfLine.makeCompoundLineFromString(line);
+          headerID = ln.ID;
+          outHeader.addFormatLine(ln);
+        } else {
+          headerType = "GENERIC"
+          val ln = internalUtils.VcfTool.SVcfLine.makeSimpleHeaderLineFromString(line);
+          outHeader.otherHeaderLines = outHeader.otherHeaderLines :+ ln;
+        }
+      outHeader.addWalk(this);
+      (vcIter,outHeader)
+    }
+  }
+ /* case class rmHeaderLine(headerLineTextPrefix : String) extends SVcfWalker {
+    def walkerName : String = "addHeaderLine"
+    var headerType : String = "unk"
+    var headerID : String = "unk"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+         ("headerLineType",headerType),
+         ("headerLineID",headerID)        
+    );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+        val line = headerLineText;
+        if(line.startsWith("##INFO=")){
+          headerType = "INFO"
+          val ln = internalUtils.VcfTool.SVcfLine.makeCompoundLineFromString(line);
+          headerID = ln.ID;
+          outHeader.addInfoLine(ln);
+        } else if(line.startsWith("##FORMAT=")){
+          headerType = "FORMAT"
+          val ln = internalUtils.VcfTool.SVcfLine.makeCompoundLineFromString(line);
+          headerID = ln.ID;
+          outHeader.addFormatLine(ln);
+        } else {
+          headerType = "GENERIC"
+          val ln = internalUtils.VcfTool.SVcfLine.makeSimpleHeaderLineFromString(line);
+          outHeader.otherHeaderLines = outHeader.otherHeaderLines :+ ln;
+        }
+      outHeader.addWalk(this);
+      (vcIter,outHeader)
+    }
+  }*/
   
   case class reorderGT(gtOrder:Seq[String]) extends SVcfWalker {
     def walkerName : String = "reorderGT"

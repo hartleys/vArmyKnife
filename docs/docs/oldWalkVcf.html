@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.3.55 (Updated Thu Mar 16 10:43:28 EDT 2023)</p>
+  <p>Version 3.3.57 (Updated Mon Mar 27 11:04:36 EDT 2023)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -1162,6 +1162,15 @@ sampleOrderingFile: A file containing one sampleID per line. The samples will be
 alphabetical: If this flag is set, then the samples will be reordered alphabetically.(Flag)
 </code></pre>
 
+<h3>addHeaderLine</h3>
+
+<blockquote>
+  <p>This function allows you to add any header line, changing nothing else.</p>
+</blockquote>
+
+<pre><code>headerLine: A header line.(String, required)
+</code></pre>
+
 <h3>filterTags</h3>
 
 <blockquote>
@@ -1763,7 +1772,7 @@ between).</p>
 ...: String
 </code></pre>
 
-<h4>FALSE()</h4>
+<h4>FALSE</h4>
 
 <blockquote>
   <p>Never TRUE</p>
@@ -2201,31 +2210,31 @@ pos: number
 <pre><code>k: int
 </code></pre>
 
-<h4>TRUE()</h4>
+<h4>TRUE</h4>
 
 <blockquote>
   <p>Always TRUE</p>
 </blockquote>
 
-<h4>allelesHaveNoNs()</h4>
+<h4>allelesHaveNoNs</h4>
 
 <blockquote>
   <p>FALSE iff the variant has unknown bases, ie N, in the ALT or REF alleles.</p>
 </blockquote>
 
-<h4>isSNV()</h4>
+<h4>isSNV</h4>
 
 <blockquote>
   <p>TRUE iff the variant is an SNV.</p>
 </blockquote>
 
-<h4>isVariant()</h4>
+<h4>isVariant</h4>
 
 <blockquote>
   <p>FALSE iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele.</p>
 </blockquote>
 
-<h4>simpleSNV()</h4>
+<h4>simpleSNV</h4>
 
 <blockquote>
   <p>TRUE iff the variant is a biallelic SNV.</p>
@@ -2255,7 +2264,7 @@ between).</p>
 
 <h3>True/False Functions:</h3>
 
-<h4>FALSE()</h4>
+<h4>FALSE</h4>
 
 <blockquote>
   <p>Never pass</p>
@@ -2459,7 +2468,7 @@ between).</p>
   <p>TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another.</p>
 </blockquote>
 
-<h4>TRUE()</h4>
+<h4>TRUE</h4>
 
 <blockquote>
   <p>Always pass</p>

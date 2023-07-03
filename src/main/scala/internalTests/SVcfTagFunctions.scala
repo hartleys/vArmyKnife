@@ -1351,10 +1351,10 @@ object SVcfTagFunctions {
           val mmd =  new VcfTagFcnMetadata(
               id = "convertBPtoGT",synon = Seq(),
               shortDesc = "",
-              desc = " "+
-                     "."+
-                     " "+
-                     "",
+              desc = "Converts a genotype call that is formatted as a base-pair (ie AT or GG, etc) into the standard allele-index-based VCF genotype format (ie 0/0, 0/2, etc). "+
+                     "The genotype can also be a single base (ie A or T) in which case it will convert to a simple 0/1/2/etc indicating the allele index. "+
+                     "The genotype can also be formatted with a delimiter (ie A/T or G/G), in which case the delim parameter must be used to specify the delimiter. "+
+                     "Note that commas can be used as the delimiter by using backslashes to prevent them from being parsed by the function parser.",
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "x", ty = "GENO:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "delim", ty = "CONST:String",req=false,dotdot=false )

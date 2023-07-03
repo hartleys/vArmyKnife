@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.55 (Updated Thu Mar 16 10:43:28 EDT 2023)
+> Version 3.3.57 (Updated Mon Mar 27 11:04:36 EDT 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -945,6 +945,13 @@ This utility performs a series of transformations on an input VCF file and adds 
         match the order found in the file.(String)
     alphabetical: If this flag is set, then the samples will be reordered alphabetically.(Flag)
 
+### addHeaderLine
+
+>  This function allows you to add any header line, changing nothing else\.
+
+
+    headerLine: A header line.(String, required)
+
 ### filterTags
 
 >  This function can be used to remove unwanted INFO or FORMAT fields, or remove unwanted samples\. This can substantially reduce file sizes\.
@@ -1421,7 +1428,7 @@ between\)\.
 
     chrX: String
     ...: String
-#### FALSE()
+#### FALSE
 
 > Never TRUE
 
@@ -1691,27 +1698,27 @@ between\)\.
 > TRUE iff the REF allele is of length gt k\.
 
     k: int
-#### TRUE()
+#### TRUE
 
 > Always TRUE
 
 
-#### allelesHaveNoNs()
+#### allelesHaveNoNs
 
 > FALSE iff the variant has unknown bases, ie N, in the ALT or REF alleles\.
 
 
-#### isSNV()
+#### isSNV
 
 > TRUE iff the variant is an SNV\.
 
 
-#### isVariant()
+#### isVariant
 
 > FALSE iff the variant has no alt alleles, or if the only alt allele is exactly equal to the ref allele\.
 
 
-#### simpleSNV()
+#### simpleSNV
 
 > TRUE iff the variant is a biallelic SNV\.
 
@@ -1741,7 +1748,7 @@ using the NOT operator before the filter \(with whitespace in
 between\)\.
 ### True/False Functions:
 
-#### FALSE()
+#### FALSE
 
 > Never pass
 
@@ -1911,7 +1918,7 @@ between\)\.
 > TRUE iff the two tags t1 and t2 are both present and not set to missing, and are equal to one another\.
 
 
-#### TRUE()
+#### TRUE
 
 > Always pass
 
