@@ -729,6 +729,40 @@ object SVcfMapFunctions {
                                                     
          )),category = "Concordance Caller"
        ),
+       ParamStrSet("concordanceCallerSV" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "callerNames",synon=Seq(),ty="String",valueString="k",
+                                               desc="Comma delimited list of caller IDs, used in the callerSet INFO fields and the names of the output GT fields. "+
+                                                    "By default, callers will simply be named C1,C2,..."+
+                                                    "",req=false),
+                                                    //gtDecisionMethod
+              ParamStr(id = "ignoreSampleIds",synon=Seq(),ty="flag",valueString="k",desc="If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the "+
+                                                                                         "exact same samples in the exact same order, regardless of how they are labelled. The sample labels from the first caller will be used for the output.",req=false),
+              ParamStr(id = "withinChromWindow",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the window around each SV endpoint within which near-similar SVs will be merged. This window only applies to SVs where both endpoints are on the same chromosome.",req=false,defaultValue = Some("500")),
+              ParamStr(id = "crossChromWindow",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the window around each SV endpoint within which near-similar SVs will be merged. This window only applies to SVs where the endpoints are on DIFFERENT chromosomes.",req=false,defaultValue = Some("500"))
+              
+         )),category = "Concordance Caller"
+       ),
+       ParamStrSet("dropInvalidSVBND" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+       ParamStrSet("dropReverseSVbreakends" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+       ParamStrSet("addReverseSVbreakends" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+       ParamStrSet("convertSVtoBND" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
        /*
         * UNTESTED:
         */
@@ -1752,6 +1786,36 @@ object SVcfMapFunctions {
                // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
                Some(internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = params("genomeFA"),windowSize = string2int( params.getOrElse("windowSize","200"))));
                
+               /*
+                       ParamStrSet("dropInvalidSVBND" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+       ParamStrSet("dropReverseSVbreakends" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+       ParamStrSet("addReverseSVbreakends" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+       ParamStrSet("convertSVtoBND" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              
+         )),category = "Structural Variant Tools"
+       ),
+                */
+             } else if(mapType == "dropInvalidSVBND"){
+               Some(new dropInvalidBNDSV() )
+             } else if(mapType == "dropReverseSVbreakends"){
+               Some(new dropBackwardsSvLine())
+             } else if(mapType == "addReverseSVbreakends"){
+               Some(new addBackwardsSvLine())
+             } else if(mapType == "convertSVtoBND"){
+               Some(new convertSVtoBND())
              } else if(mapType == "leftAlignAndTrim"){
                Some( internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = params("genomeFA"),windowSize =  string2int( params.getOrElse("windowSize","200")) , useGatkLibCall = false) )
              } else if(mapType == "fixSwappedRefAlt"){

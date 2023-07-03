@@ -419,7 +419,7 @@ object SVcfWalkerMain {
       val fullcells = vmfString.split("(?<!\\\\)[|]",-1).map{ xx => xx.replaceAll("\\\\[|]","|") }.map{ s => s.trim() }
       val rawMapType = fullcells.head;
       val mapType = internalTests.SVcfMapFunctions.MAP_ID_MAP(rawMapType);
-      mapType == "concordanceCaller"
+      mapType == "concordanceCaller" || mapType == "concordanceCallerSV"
     }}
 
     
@@ -573,7 +573,7 @@ object SVcfWalkerMain {
           error("variantMapFunction must be composed of at least 2 |-delimited elements: the mapFunctionType and the walker ID. In most cases it will also require additional parameters. Found: [\""+fullcells.mkString("\"|\"")+"\"]");
         }
         val rawMapType = fullcells.head;
-        val mapType = "concordanceCaller";
+        val mapType = internalTests.SVcfMapFunctions.MAP_ID_MAP(rawMapType);
         val mapID = fullcells.lift(1).getOrElse("");
         val tagPrefix = if(mapID == "") "" else mapID + "_";
         val sc = fullcells.drop(2);
@@ -590,11 +590,20 @@ object SVcfWalkerMain {
       val CC_ignoreSampleIds = params.isSet("ignoreSampleIds")
       val CC_ignoreSampleOrder = params.isSet("ignoreSampleOrder")
        
-      val (ensIter,ensHeader) = ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
+      val (ensIter,ensHeader) = if(params("mapID") == "concordanceCaller"){
+         ensembleMergeVariants(iterSeq,headerSeq,inputVcfTypes = inputNames,
                                                         //genomeFA = genomeFA,
                                                         //windowSize = 200, 
                                                         singleCallerPriority = inputPriority,
                                                         CC_ignoreSampleIds = CC_ignoreSampleIds, CC_ignoreSampleOrder=CC_ignoreSampleOrder);
+      } else {
+                         //crossChromWin : Int = 500,
+                            //withinChromWin : Int = 500,
+        val crossChromWin = string2int(params("crossChromWin"))
+        val withinChromWin = string2int(params("withinChromWin"))
+        
+        ensembleMergeSV(iterSeq,crossChromWin=crossChromWin,withinChromWin=withinChromWin,headers=headerSeq,inputVcfTypes=inputNames, CC_ignoreSampleIds = CC_ignoreSampleIds)
+      }
       val finalWalker : SVcfWalker = chainSVcfWalkers(Seq[SVcfWalker](
           new EnsembleMergeMetaDataWalker(inputVcfTypes = inputPriority,
                                           decision = decision)

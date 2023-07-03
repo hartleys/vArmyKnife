@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.63 (Updated Mon May  8 12:48:12 EDT 2023)
+> Version 3.3.71 (Updated Thu May 25 16:48:00 EDT 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -169,6 +169,38 @@ This utility performs a series of transformations on an input VCF file and adds 
 ## Available Operations
 
     
+
+##### Structural Variant Tools
+
+
+
+### dropInvalidSVBND
+
+>  \.\.\.\.
+
+
+    (This function takes no parameters)
+
+### dropReverseSVbreakends
+
+>  \.\.\.\.
+
+
+    (This function takes no parameters)
+
+### addReverseSVbreakends
+
+>  \.\.\.\.
+
+
+    (This function takes no parameters)
+
+### convertSVtoBND
+
+>  \.\.\.\.
+
+
+    (This function takes no parameters)
 
 ##### General\-Purpose Tools
 
@@ -669,6 +701,23 @@ This utility performs a series of transformations on an input VCF file and adds 
         assumed to have the exact same samples in the exact same order. Use at your own risk.(flag)
     ignoreSampleOrder: If this flag is set, then the sample IDs will be used to match up the 
         different VCFs, and the samples may be in different orders in the different files.(flag)
+
+### concordanceCallerSV
+
+>  \.\.\.\.
+
+
+    callerNames: Comma delimited list of caller IDs, used in the callerSet INFO fields and the names 
+        of the output GT fields. By default, callers will simply be named C1,C2,...(String)
+    ignoreSampleIds: If this flag is set, then sample IDs will be ignored and each VCF will be 
+        assumed to have the exact same samples in the exact same order, regardless of how they are 
+        labelled. The sample labels from the first caller will be used for the output.(flag)
+    withinChromWindow: Sets the size of the window around each SV endpoint within which near-similar 
+        SVs will be merged. This window only applies to SVs where both endpoints are on the same 
+        chromosome.(Int, default=500)
+    crossChromWindow: Sets the size of the window around each SV endpoint within which near-similar 
+        SVs will be merged. This window only applies to SVs where the endpoints are on DIFFERENT 
+        chromosomes.(Int, default=500)
 
 ##### Filtering
 

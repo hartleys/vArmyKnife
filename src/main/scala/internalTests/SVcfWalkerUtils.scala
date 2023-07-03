@@ -177,7 +177,787 @@ object SVcfWalkerUtils {
       
     }
   }*/
+    
+    
+  /*case class SV_MergeBreakendMetadata( tmpfile : String ) extends SVcfWalker {
+    def walkerName : String = "SV_MergeBreakendMetadata";
+    def walkerparams : Seq[(String,String)] = Seq[(String,String)](
+           ("tmpfile",tmpfile)
+        )
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
 
+      
+    }
+  }*/
+  class dropBackwardsSvLine() extends SVcfWalker {
+    def walkerName : String = "dropBackwardsSvLine"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      //add tags!
+      
+      outHeader.addWalk(this);
+      var dropct = 0;
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        
+        if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
+          v.getSVbnd() match {
+            case Some(sv) => {
+              val chromDiff = Chrom( v.chrom ).compare( Chrom( sv.bndBreakEnd._1 ))
+              val posDiff   = v.pos.compare( sv.bndBreakEnd._2 )
+              if( chromDiff == 0 ){
+                if( posDiff <= 0 ){
+                  Some(vc)
+                } else {
+                  None
+                }
+              } else if(chromDiff < 0){
+                Some(vc);
+              } else {
+                None
+              }
+            }
+            case None => {
+              warning("WARNING: invalid SV! \n\""+v.getVcfStringNoGenotypes+"\"","dropBackwardSVline.invalidSV",10);
+              Some(vc);
+            }
+          }
+        } else {
+          Some(vc);
+        }
+      }}, closeAction = (() => {
+        reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+      })),outHeader)
+    }
+  }
+  class addBackwardsSvLine() extends SVcfWalker {
+    def walkerName : String = "addBackwardsSvLine"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      //add tags!
+      
+      outHeader.addWalk(this);
+      var dropct = 0;
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        
+        if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
+          v.getSVbnd() match {
+            case Some(sv) => {
+              val (chr2,pos2) = sv.bndBreakEnd
+              val ss = sv.strands;
+              val vc2 = vc.getOutputLineCopy();
+              vc2.in_chrom = chr2
+              vc2.in_pos   = pos2
+              //vc2.in_alt = Seq(  )
+              val str2 = sv.strandswap;
+              vc2.in_alt = Seq( SVbnd.makeSVbnd( v.chrom,v.pos,v.ref,str2 ).svalt )
+              Seq(vc,vc2);
+            }
+            case None => {
+              warning("WARNING: invalid SV! \n\""+v.getVcfStringNoGenotypes+"\"","dropBackwardSVline.invalidSV",10);
+              Some(vc);
+            }
+          }
+        } else {
+          Some(vc);
+        }
+      }}, closeAction = (() => {
+        reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+      })),outHeader)
+    }
+  }
+  
+  class dropInvalidBNDSV() extends SVcfWalker {
+    def walkerName : String = "dropInvalidBNDSV"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      //add tags!
+      
+      outHeader.addWalk(this);
+      var dropct = 0;
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
+          v.getSVbnd() match {
+            case Some(svbnd) => Some(v);
+            case None => None
+          }
+        } else {
+          None
+        }
+      }}, closeAction = (() => {
+        reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+      })),outHeader)
+    }
+  }
+    
+  class convertSVtoBND() extends SVcfWalker {
+    def walkerName : String = "convertSVtoBND"
+    
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    def isAltSV(a : String) : Boolean = a.startsWith("<INS") || a.startsWith("<DEL") || a.startsWith("<DUP") || a.startsWith("<INV") || a.startsWith("<CNV");
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      //add tags!
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="RAWSVTYPE",Number="1",Type="String",desc="Original source SV type, before INS/DEL/etc were converted into BND type SVs."),Some(this));
+      //new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = t + "_" + fhl.ID, Number = ct, Type = fhl.Type, desc = "
+      outHeader.addWalk(this);
+      var dropct = 0;
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        v.info.getOrElse("SVTYPE",None).foreach{ bb => {
+          vc.addInfo("RAWSVTYPE",bb)
+        }}
+        if(v.alt.exists{ a => a.startsWith("<")}){
+          if(v.alt.length > 1){
+            if( v.alt.exists{ a => { isAltSV(a) }} ){
+              warning("WARNING: multiallelic symbolic allele found! Cannot deal with multiallelic SVs: \n\""+v.getVcfStringNoGenotypes+"\"","multiAlleSV",10);
+            }
+            Some(vc)
+          } else {
+            val a = v.alt.head;
+            if( isAltSV(a) ) {
+              if( a.startsWith("<DEL") ){
+                val end : Int = v.info.getOrElse("END",None).map{ string2intOpt(_) }.getOrElse(None) match {
+                  case Some(e) => {
+                    e
+                  }
+                  case None => {
+                    v.info.getOrElse("SVLEN",None).map{ string2intOpt(_) }.getOrElse(None) match {
+                      case Some(svlen) => {
+                        v.pos - svlen
+                      }
+                      case None => {
+                        warning("WARNING: DELETION WITH NO VALID END or SVLEN tags!\n\""+v.getVcfStringNoGenotypes+"\"","delWithNoEnd",10);
+                        -1;
+                      }
+                    }
+                  }
+                }
+                if(end == -1){
+                  Some(vc);
+                } else {
+                  vc.in_alt = Seq( vc.ref + "[" v.chrom+":"+ end +"[" )
+                  vc.addInfo("SVTYPE","BND");
+                  val vc2 = vc.getOutputLineCopy();
+                  vc2.addInfo("SVTYPE","BND");
+                  vc2.in_pos = end;
+                  vc2.in_alt = Seq( "]"+v.chrom+":"+v.pos+"]"+v.ref );
+                  Seq(vc,vc2);
+                }
+              } else if( a.startsWith("<INV")){
+                val end : Int = v.info.getOrElse("END",None).map{ string2intOpt(_) }.getOrElse(None) match {
+                  case Some(e) => {
+                    e
+                  }
+                  case None => {
+                    v.info.getOrElse("SVLEN",None).map{ string2intOpt(_) }.getOrElse(None) match {
+                      case Some(svlen) => {
+                        v.pos + math.abs(svlen)
+                      }
+                      case None => {
+                        warning("WARNING: DELETION WITH NO VALID END or SVLEN tags!\n\""+v.getVcfStringNoGenotypes+"\"","delWithNoEnd",10);
+                        -1;
+                      }
+                    }
+                  }
+                }
+                if(end == -1){
+                  Some(vc);
+                } else {
+                  vc.in_alt = Seq( vc.ref + "]"+ v.chrom+":"+ end +"]" )
+                  vc.addInfo("SVTYPE","BND");
+                  val vc2 = vc.getOutputLineCopy();
+                  vc2.in_pos = end;
+                  vc2.in_alt = Seq( v.ref+"]"+v.chrom+":"+v.pos+"]" );
+                  val vc3 = vc.getOutputLineCopy();
+                  vc3.in_pos = v.pos+1;
+                  vc3.in_alt = Seq( "["+v.chrom+":"+(end+1)+"["+v.ref );
+                  val vc4 = vc.getOutputLineCopy();
+                  vc4.in_pos = end+1;
+                  vc4.in_alt = Seq( "["+v.chrom+":"+(v.pos+1)+"["+v.ref );
+                  Seq(vc,vc2,vc3,vc4);
+                }
+              } else if( a.startsWith("<DUP")){
+                val end : Int = v.info.getOrElse("END",None).map{ string2intOpt(_) }.getOrElse(None) match {
+                  case Some(e) => {
+                    e
+                  }
+                  case None => {
+                    v.info.getOrElse("SVLEN",None).map{ string2intOpt(_) }.getOrElse(None) match {
+                      case Some(svlen) => {
+                        v.pos - svlen
+                      }
+                      case None => {
+                        warning("WARNING: DELETION WITH NO VALID END or SVLEN tags!\n\""+v.getVcfStringNoGenotypes+"\"","delWithNoEnd",10);
+                        -1;
+                      }
+                    }
+                  }
+                }
+                if(end == -1){
+                  Some(vc);
+                } else {
+                  vc.in_alt = Seq( vc.ref + "[" +v.chrom+":"+ end +"[" )
+                  vc.addInfo("SVTYPE","BND");
+                  val vc2 = vc.getOutputLineCopy();
+                  vc2.addInfo("SVTYPE","BND");
+                  vc2.in_pos = end;
+                  vc2.in_alt = Seq( "]"+v.chrom+":"+v.pos+"]"+v.ref );
+                  Seq(vc,vc2);
+                }
+              //} else if( a.startsWith("<DUP:TANDEM")){
+              //  //ADD SUPPORT FOR TANDEMDUP?"
+              //  Some(vc)
+              } else if( a.startsWith("<INS") || a.startsWith("<CNV")){
+                Some(vc);
+              } else {
+                Some(vc)
+              }
+            } else {
+              Some(vc)
+            }
+          }
+        } else {
+          Some(vc);
+        }
+      }}, closeAction = (() => {
+        reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+      })),outHeader)
+    }
+  }
+  
+  
+
+  def ensembleMergeSV(vcIters : Seq[Iterator[SVcfVariantLine]], 
+                            crossChromWin : Int = 500,
+                            withinChromWin : Int = 500,
+                            headers : Seq[SVcfHeader], 
+                            inputVcfTypes : Seq[String], 
+                            nonStrictChecking : Boolean = false,
+                            CC_ignoreSampleIds : Boolean = false //, 
+                            //CC_ignoreSampleOrder : Boolean = false //NOT IMPLEMENTED
+                            ) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
+    val vcfCodes = VCFAnnoCodes();
+    val CC_ignoreSampleOrder : Boolean = false;
+    val genotypeOrdering = new Ordering[String]{
+                        def compare(x : String, y : String) : Int = {
+                          if(x == y) 0;
+                          else if(x == ".") -1;
+                          else if(y == ".") 1;
+                          else {
+                            val xi = string2int(x);
+                            val yi = string2int(y);
+                            if(xi < yi) -1;
+                            else 1;
+                          }
+                        }
+                      }
+    
+    val callerFmtTags: Map[String,Map[String,(String,SVcfCompoundHeaderLine)]] = headers.zip(inputVcfTypes).map{ case (h,t) => {
+      ((t, h.formatLines.map{ fhl => {
+           val ct = if(fhl.ID == "AD"){
+             "R"
+           } else {
+             fhl.Number
+           }
+           val subType = if(fhl.subType == None){
+             fhl.subType;
+           } else if(fhl.ID == "AD"){
+             Some(VcfTool.subtype_AlleleCounts)
+           } else if(fhl.ID == "GT"){
+             Some(VcfTool.subtype_GtStyle)
+           } else {
+             None
+           }
+           (fhl.ID, (t + "_" + fhl.ID,new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = t + "_" + fhl.ID, Number = ct, Type = fhl.Type, desc = "For the caller "+t+", " + cleanQuotes(fhl.desc),subType=subType)))
+      }}.toMap))
+    }}.toMap
+    
+    val callerInfoTags : Map[String,Map[String,(String,SVcfCompoundHeaderLine)]] = inputVcfTypes.map{ mc => {
+          val masterIdx = inputVcfTypes.indexOf(mc)
+          val masterHeader = headers(masterIdx);
+          (mc,masterHeader.infoLines.map{ infoLine => {
+            //val num = if(infoLine.Number == "R" || infoLine.Number == "G" || infoLine.Number == "A") "." else infoLine.Number;
+            val num = if(infoLine.Number == "G") "." else infoLine.Number;
+            (infoLine.ID,(mc + "_" + infoLine.ID,new SVcfCompoundHeaderLine(in_tag = "INFO",ID = ""+ mc + "_" + infoLine.ID, Number = num, Type = infoLine.Type, desc = "For the caller "+mc+", " + cleanQuotes(infoLine.desc), subType = infoLine.subType)))
+          }}.toMap)
+    }}.toMap
+    
+    val customInfo = Seq[SVcfCompoundHeaderLine](
+      new SVcfCompoundHeaderLine("INFO",  OPTION_TAGPREFIX+"CCsv_callerSet",   "1", "String", "The list of callers (from the set: \""+inputVcfTypes.mkString(",")+"\") that supports this SV. Generated by ConcordanceCallerSV."),
+      new SVcfCompoundHeaderLine("INFO",  OPTION_TAGPREFIX+"CCsv_duplicateCt",   ".", "Integer", "For each of the "+inputVcfTypes.length+" callers ("+inputVcfTypes.mkString(",")+"), the number of duplicate SVs. Generated by ConcordanceCallerSV."),
+      new SVcfCompoundHeaderLine("INFO",  OPTION_TAGPREFIX+"CCsv_hasDupSV",   ".", "Integer", "Equal to 1 if there are any duplicate SVs within any single caller. 0 otherwise. Generated by ConcordanceCallerSV.")
+    );
+    val customFmt = Seq[SVcfCompoundHeaderLine](
+      new SVcfCompoundHeaderLine("FORMAT",  "GT",   "1", "String", "Final Genotype Call.")
+    )
+    
+    val vcfHeader = headers.head.copyHeader;
+    vcfHeader.infoLines = Seq[SVcfCompoundHeaderLine]();
+    vcfHeader.formatLines = Seq[SVcfCompoundHeaderLine]();
+    vcfHeader.addWalkerLikeCommand("concordanceCallerSV",Seq[(String,String)](
+        ("inputVcfTypes",inputVcfTypes.mkString("|")),
+        ("crossChromWin",crossChromWin.toString()),
+        ("withinChromWin",withinChromWin.toString())
+      ))
+    
+    customInfo.foreach{ infoLine => {
+      vcfHeader.addInfoLine(infoLine);
+    }}
+    customFmt.foreach{ infoLine => {
+      vcfHeader.addFormatLine(infoLine);
+    }}
+    callerInfoTags.foreach{ case (c,tagMap) => {
+      tagMap.foreach{ case (oldTag,(newTag,headerLine)) => {
+        vcfHeader.addInfoLine(headerLine);
+      }}
+    }}
+    callerFmtTags.foreach{ case (c,tagMap) => {
+      tagMap.foreach{ case (oldTag,(newTag,headerLine)) => {
+        vcfHeader.addFormatLine(headerLine);
+      }}
+    }}
+    val callerHeaders = headers.zipWithIndex
+    val callersWithSamps = callerHeaders.filter{ case (f,pi) => { f.titleLine.sampleList.length > 0 }}
+    if( callersWithSamps.length != 0 && callersWithSamps.length != inputVcfTypes.length){
+      error("ERROR: Some input VCFs have samples, some do not! ConcordanceCallerSV requires all or none.")
+    }
+      //headers.zipWithIndex.filter{ case (f,x) => { f.titleLine.sampleList.length > 0 }}
+    val sampNames = if(callersWithSamps.length > 0){
+      callersWithSamps.head._1.titleLine.sampleList;
+    } else {
+      Seq[String]()
+    }
+    val sampCt = sampNames.length;
+    val sampSet = sampNames.toSet;
+    
+    callersWithSamps.foreach{ case (f,pi) => {
+      if( f.titleLine.sampleList.length != sampCt) {
+          error("Different number of samples found in the VCFs! ConcordanceCaller requires that the sample set be the same between the different VCFs. IF they are different and you still want to "+
+                "merge, you can specify the overlapping sample set using the --inputKeepSamples parameter. Note that you may have to also add the --ccAllowSampleOrderDiff flag, if the samples are not "+
+                "in the same order across all VCFs.")
+      }
+    }}
+    val ignoreSampleIds = sampCt == 1 || CC_ignoreSampleIds;
+        
+    if(sampCt > 0){
+
+      
+      // CC_ignoreSampleIds,   CC_ignoreSampleOrder
+      if( ! ((ignoreSampleIds) | (CC_ignoreSampleOrder))) {
+        callersWithSamps.foreach{ case (f,pi) => {
+          f.titleLine.sampleList.zip(sampNames).foreach{ case (s1,s2) => {
+            if(s1 != s2){
+              error("Sample IDs DO NOT MATCH! By default, ConcordanceCaller requires that the sample IDs be exactly the same and in the same order in each callers VCF file. "+
+                    "If the samples have the same IDs but are in a different order, then use the ignoreSampleOrder flag. If instead the samples are in the same order but just have "+
+                    "different sample IDs, then use ignoreSampleIds to ignore the sample IDs. The output ordering and/or names will come from the first VCF.")
+            }
+          }}
+        }}
+      }
+
+      headers.zipWithIndex.foreach{ case (h,i) => {
+        if(h.titleLine.sampleList.length != sampNames.length){
+          error("Header for VCF "+inputVcfTypes(i)+" has "+h.titleLine.sampleList.length+" samples instead of "+sampNames.length);
+        }
+      }}
+      
+    }
+    
+
+    val bufIters : Seq[BufferedIterator[SVcfVariantLine]] = vcIters.map{ viter => {
+      viter.filter{ v => {
+         val svt = v.info.getOrElse("SVTYPE",None).getOrElse(".");
+         val bnd = v.getSVbnd()
+         if(svt != "BND" || bnd.isEmpty){
+           warning("WARNING: invalid SV: \""+v.getVcfStringNoGenotypes+"\"","SV_INVALID",10)
+           if( ! nonStrictChecking){
+             error("INVALID SV")
+           }
+         }
+         svt == "BND" && bnd.nonEmpty;
+      }}.buffered
+    }};
+    
+    val sortedGroupIters : BufferedIterator[Seq[Seq[SVcfVariantLine]]] = groupBySpanMulti(bufIters)(v => v.chrom)(v => v.pos).buffered;
+    
+    case class ChrPos( chr : Chrom, pos : Int )
+    case class ChrSpan(chr : Chrom, fr : Int, to : Int)
+    case class ChrSpanPair( a : ChrSpan, b : ChrSpan ){
+      def expandTo( a2 : ChrPos, b2 : ChrPos ) : ChrSpanPair = {
+        val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
+        ChrSpanPair(
+            ChrSpan( a.chr, math.min(a.fr,a2.pos-currwin), math.max(a.to,a2.pos+currwin) ),
+            ChrSpan( b.chr, math.min(b.fr,b2.pos-currwin), math.max(b.to,b2.pos+currwin) )
+        )
+      }
+      def merge( cc : ChrSpanPair ) : ChrSpanPair = {
+        ChrSpanPair(
+            ChrSpan( a.chr, math.min(a.fr,cc.a.fr), math.max(a.to,cc.a.to) ),
+            ChrSpan( b.chr, math.min(b.fr,cc.b.fr), math.max(b.to,cc.b.to) )
+        )
+      }
+      def pairOverlaps( a2 : ChrPos, b2 : ChrPos ) : Boolean = {
+        //val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
+        a.chr == a2.chr && 
+        b.chr == b2.chr && 
+        a.fr  <= a2.pos && a2.pos <= a.to &&
+        b.fr  <= b2.pos && b2.pos <= b.to
+      }
+    }
+    
+    val safetyBuffer = 10;
+    val callerCt = vcIters.length;
+    
+    val strandOptions = Seq("++","+-","-+","--");
+    
+    val grpIter : Iterator[Seq[Seq[SVcfVariantLine]]] = ( new Iterator[Seq[Seq[SVcfVariantLine]]]{
+      
+      // [distinct SV][N callers][ variant line(s) for given callers ]
+      var buffer : Vector[Vector[Vector[SVcfVariantLine]]] = Vector()
+      var spanWindowSet : Map[String,Vector[(ChrSpanPair,Vector[Vector[SVcfVariantLine]])]] = strandOptions.map{ str => (str,Vector()) }.toMap
+      //var currline : SVcfVariantLine = null;
+      //var spanWindowSet : Vector[((String,Int,Int),(String,Int,Int),Vector[SVcfVariantLine])]
+      
+      def shiftRemainderToBuffer( x : ChrPos ){
+        strandOptions.foreach{ str => {
+          val (swsBuf, swsKeep) = spanWindowSet(str).partition{ case (cc,lines) => {
+            cc.a.chr != x.chr || cc.a.to + safetyBuffer < x.pos;
+          }}
+          spanWindowSet = spanWindowSet.updated(str,swsKeep);
+          //spanWindowSet = swsKeep;
+          buffer = buffer ++ swsBuf.map{ case (cc,lines) => lines }
+        }}
+      }
+      
+      def addLineToSet( v : SVcfVariantLine, callerIdx : Int ){
+        val xa = ChrPos( Chrom(v.chrom), v.pos );
+        val xsv = v.getSVbnd().get
+        val str = xsv.strands;
+        val (xbChr,xbPos) = xsv.bndBreakEnd
+        val xb = ChrPos( Chrom(xbChr),xbPos );
+        val (matchSet,nonMatchSet) = spanWindowSet(str).partition{ case (cc,lines) => {
+          cc.pairOverlaps(xa,xb)
+        }}
+        if( matchSet.length == 0 ){
+          val xwin = if(xa.chr == xb.chr){ withinChromWin } else { crossChromWin };
+          val newspan = ChrSpanPair( ChrSpan(xa.chr,xa.pos-xwin,xa.pos+xwin), ChrSpan(xb.chr, xb.pos-xwin,xb.pos+xwin) );
+          val lines = Vector.fill[Vector[SVcfVariantLine]]( callerCt )( Vector() ).updated( callerIdx, Vector( v ) )
+          spanWindowSet = spanWindowSet.updated(str, spanWindowSet(str) :+ (newspan, lines));
+        } else if( matchSet.length == 1){
+          val (cc,lines) = matchSet.head;
+          val newcc = cc.expandTo(xa,xb);
+          val newln = lines.updated(callerIdx,lines(callerIdx) :+ v)
+          spanWindowSet = spanWindowSet.updated(str, nonMatchSet :+ (newcc,newln))
+        } else if( matchSet.length >= 2){
+          warning("WARNING: Merging formerly-separate SVs due to an intermediate SV that is close to both on both ends! \n\""+v.getVcfStringNoGenotypes+"\"","SV_MERGE_SV_SET_DUE_TO_MID_SV",100);
+          val newcc = matchSet.tail.foldLeft(matchSet.head._1){ case (soFar,( cc, lines )) => {
+            soFar.merge(cc)
+          }}.expandTo(xa,xb)
+          var newln = matchSet.tail.foldLeft(matchSet.head._2){ case (soFar,( cc, lines )) => {
+            soFar.zip(lines).map{ case (z1,z2) => {
+              z1 ++ z2
+            }}
+          }}
+          newln = newln.updated(callerIdx,newln(callerIdx) :+ v)
+          spanWindowSet = spanWindowSet.updated(str, nonMatchSet :+ (newcc,newln))
+        }
+      }
+      
+      def hasNext : Boolean = sortedGroupIters.hasNext || buffer.nonEmpty || spanWindowSet.nonEmpty ;
+      def next : Seq[Seq[SVcfVariantLine]] = {
+        if(buffer.nonEmpty){
+          val nx = buffer.head;
+          buffer = buffer.tail;
+          nx;
+        } else if( sortedGroupIters.hasNext ){
+          val nextPosVariants = sortedGroupIters.next();
+          nextPosVariants.zipWithIndex.foreach{ case (vvs,idx) => {
+            vvs.foreach{ v => {
+              addLineToSet(v,idx)
+            }}
+          }}
+          val vex = nextPosVariants.flatten.head
+          shiftRemainderToBuffer( ChrPos( Chrom(vex.chrom), vex.pos ) );
+          next;
+        } else if( spanWindowSet.nonEmpty ) {
+          // if we've finished reading from file, dump the remainder into the buffer, empty spanWindowSet
+          strandOptions.foreach{ str => {
+            val swsBuf = spanWindowSet(str)
+            //spanWindowSet = swsKeep;
+            buffer = buffer ++ swsBuf.map{ case (cc,lines) => lines }
+          }}
+          spanWindowSet = Map();
+          next;
+        } else {
+          error("ILLEGAL OPERATION: NEXT ON AN EMPTY ITERATOR, ChrSpanIterator in ConcordanceCallerSV")
+          null;
+        }
+      }
+    })
+    val blankGeno = Array.fill[String](sampCt)(".")
+    
+    val finIter = grpIter.zipWithIndex.map{ case (vcSeqSeq,iix) => {
+      val exvc = vcSeqSeq.flatten.head;
+      val vb = SVcfOutputVariantLine(
+           in_chrom = exvc.chrom,
+           in_pos = exvc.pos,
+           in_id = iix.toString(),
+           in_ref = exvc.ref,
+           in_alt = exvc.alt,
+           in_qual = ".",
+           in_filter = ".",
+           in_info = Map[String,Option[String]](),
+           in_format = Seq[String](),
+           in_genotypes = SVcfGenotypeSet(Seq[String]("GT"), Array.fill(1,sampCt)("."))
+      )
+      val callerSupport = vcSeqSeq.zip(inputVcfTypes).filter{ case ( vss, callerID ) => {
+         vss.nonEmpty
+      }}.map{ case (vss, callerID) => callerID }
+      val callerIx = vcSeqSeq.zipWithIndex.zip(inputVcfTypes).filter{ case (( vss, callerIDX ),callerID) => {
+         vss.nonEmpty
+      }}.map{ case (( vss, callerIDX ),callerID) => (callerIDX,callerID) }
+      val callerVarCt = vcSeqSeq.zip(inputVcfTypes).map{ case ( vss, callerID ) => {
+         vss.length
+      }}
+      vb.addInfo("CCsv_callerSet",callerSupport.mkString(","));
+      vb.addInfo("CCsv_duplicateCt",callerSupport.mkString(","));
+      vb.addInfo("CCsv_hasDupSV",if(callerVarCt.max > 1){ "1" } else { "0" });
+      
+      vb.addInfo("CCsv_chr_A", vb.chrom);
+      vb.addInfo("CCsv_chr_B", vcSeqSeq.flatten.head.getSVbnd().get.bndBreakEnd._1 );
+      vb.addInfo("CCsv_strands", vcSeqSeq.flatten.head.getSVbnd().get.strands );
+      
+      callerIx.foreach{ case (cix,cid) => {
+        vb.addInfo("CCsv_"+cid+"_pos_A",vcSeqSeq(cix).map{ v => v.pos }.mkString(","));
+        vb.addInfo("CCsv_"+cid+"_ALT",vcSeqSeq(cix).map{   v => v.alt }.mkString(","));
+        vb.addInfo("CCsv_"+cid+"_pos_B",vcSeqSeq(cix).map{ v => v.getSVbnd().get.bndBreakEnd._2 }.mkString(","));
+        vb.addInfo("CCsv_"+cid+"_strands",vcSeqSeq(cix).map{ v => v.getSVbnd().get.strands }.mkString(","));
+      }}
+      val posA = vcSeqSeq.flatten.map{ v => {
+        v.pos
+      }}
+      val posB = vcSeqSeq.flatten.map{ v => {
+        v.getSVbnd().get.bndBreakEnd._2
+      }}
+      vb.addInfo("CCsv_posRange_A", posA.min+"-"+posA.max );
+      vb.addInfo("CCsv_posRange_B", posB.min+"-"+posB.max );
+      vb.addInfo("CCsv_posSpan_A", (posA.max-posA.max)+"" );
+      vb.addInfo("CCsv_posSpan_B", (posB.max-posB.min)+"" );
+      
+      callerIx.foreach{ case (cix, cid) => {
+         callerInfoTags(cid).map{ case (fmtID,(newFmtID,newFmtHeaderLine)) => {
+           (newFmtID,vcSeqSeq(cix).map{ v => {
+             v.info.getOrElse( fmtID, None )
+           }})
+         }}.filter{  case (newFmtID,xx) => {
+           xx.exists( k => k.nonEmpty )
+         }}.foreach{ case (newFmtID,xx) => {
+           vb.addInfo(newFmtID,xx.map{ k => k.getOrElse(".") }.mkString(","));
+         }}
+      }}
+      callerIx.foreach{ case (cix,cid) => {
+        callerFmtTags(cid).map{ case (fmtID,(newFmtID,newFmtHeaderLine)) => {
+          (newFmtID,vcSeqSeq(cix).map{ v => {
+             (v,v.genotypes.fmt.indexOf(fmtID))
+          }})
+        }}.filter{ case (newFmtID,fidxSeq) => {
+          fidxSeq.exists{ case (v,gii) => gii != -1 }
+        }}.foreach{ case (newFmtID,fidxSeq) => {
+          val g = fidxSeq.map{ case (v,gii) => {
+             if(gii != -1){
+               v.genotypes.genotypeValues(gii)
+             } else {
+               blankGeno
+             }
+          }}
+          vb.genotypes.addGenotypeArray(newFmtID, 
+              g.tail.foldLeft( g.head ){ case (soFar, curr) => {
+                soFar.zip(curr).map{ case (a,b) => { a+";"+b }}
+              }})
+          //
+        }}
+      }}
+      
+      
+    }}
+    
+    (null, vcfHeader)
+
+}
+      /*
+     callerFmtTags:  Map[callerID, Map[ originalFmtID,  (newFmtID,  newFmtHeaderLine  )]]
+     callerInfoTags: Map[callerID, Map[ originalInfoID, (newInfoID, newInfoHeaderLine )]]
+     sampMatchIdx: Map[callerID, Idx Seq]
+     
+     */
+    
+  
+  /*
+         new SVcfCompoundHeaderLine("INFO",  OPTION_TAGPREFIX+"CCsv_callerSets",   "1", "String", "The list of callers (from the set: \""+inputVcfTypes.mkString(",")+"\") that supports this SV. Generated by ConcordanceCallerSV."),
+      new SVcfCompoundHeaderLine("INFO",  OPTION_TAGPREFIX+"CCsv_duplicateCt",   ".", "Integer", "For each of the "+inputVcfTypes.length+" callers ("+inputVcfTypes.mkString(",")+"), the number of duplicate SVs. Generated by ConcordanceCallerSV."),
+      new SVcfCompoundHeaderLine("INFO",  OPTION_TAGPREFIX+"CCsv_hasDupSV",   ".", "Integer", "Equal to 1 if there are any duplicate SVs within any single caller. 0 otherwise. Generated by ConcordanceCallerSV.")
+   
+   */
+  
+        /*
+        sortedGroupIters.flatMap{ posSeqSeq : Seq[Seq[SVcfVariantLine]] => {
+      val swaps = posSeqSeq.flatMap{ vcSeq => vcSeq.map{ vc => (vc.ref, vc.alt.head)}}.distinct.sorted;
+      
+      swaps.flatMap{ case (currRef,currAlt) => {
+        val vcSeqSeq : Seq[Seq[SVcfVariantLine]] = posSeqSeq.map{ posSeq => posSeq.filter{vc => vc.ref == currRef && vc.alt.head == currAlt}};
+        
+        val finalGt = Array.fill[String](sampCt)("./.");
+        var callerList = Set[String]();
+        var sampleCallerList = Array.fill[Set[String]](sampCt)(Set[String]());
+        
+        val exVc = vcSeqSeq.find(vcSeq => ! vcSeq.isEmpty).get.head
+        val chrom = exVc.chrom;
+        val pos = exVc.pos;
+        val id = exVc.id;
+        val ref = currRef;
+        val alt = if(vcSeqSeq.exists{ vcSeq => vcSeq.exists{ vc => vc.alt.length > 1 }}){
+          Seq[String](exVc.alt.head,"*");
+        } else {
+          Seq[String](currAlt)
+        }
+        val numAlle = alt.length;
+        val filt = exVc.filter;
+        val qual = exVc.qual;
+        
+        val vb = SVcfOutputVariantLine(
+           in_chrom = chrom,
+           in_pos = pos,
+           in_id = id,
+           in_ref = ref,
+           in_alt = alt,
+           in_qual = qual,
+           in_filter = filt,
+           in_info = Map[String,Option[String]](),
+           in_format = Seq[String](),
+           in_genotypes = SVcfGenotypeSet(Seq[String]("GT"), Array.fill(1,sampCt)("."))
+        )
+        var callerSupport = Set[String]();
+        
+        vcSeqSeq.zip(inputVcfTypes).filter{ case (vcSeq,callerName) => vcSeq.length > 0 }.map{ case (vcSeq,callerName) => {
+          val currInfoLines = masterCallerInfoTags(callerName);
+          val currFmtLines = fmtTags(callerName);
+          vcSeq.headOption.foreach{ vc => {
+            callerSupport = callerSupport + callerName;
+            vc.info.map{ case (oldTag,fieldVal) => {
+              if(! currInfoLines.contains(oldTag)){
+                report("ERROR INCOMING: Cannot find tag \""+oldTag+"\" in callerName=\""+callerName+"\"\n"+
+                    "    available tags are: ["+currInfoLines.map{_._1}.mkString(",")+"]",
+                    "note")
+              }
+              
+              val (newTag,infoLine) = currInfoLines(oldTag);
+              vb.addInfoOpt(newTag,fieldVal);
+            }}
+            if( vc.genotypes.genotypeValues.nonEmpty && vc.genotypes.fmt.nonEmpty ){
+              val sampidx = sampMatchIdx.get(callerName);
+              if(sampidx.isEmpty){
+                error("IMPOSSIBLE STATE: sampidx.isEmpty! This should never happen. If you see this error, than you have somehow exposed a bug. Please submit a bug report to the issues page: \"https://github.com/hartleys/vArmyKnife/issues\"")
+              }
+              vc.genotypes.fmt.zipWithIndex.foreach{ case (oldTag,idx) => {
+                if(! currFmtLines.contains(oldTag)){
+                  warning("Fatal error: Tag: "+oldTag+" not found in given header!\n Found header tags: "+currFmtLines.keys.toSeq.sorted.mkString(","),"PREERROR_WARNING",-1)
+                }
+                val (newTag,fmtLine) = currFmtLines(oldTag);
+                sampidx.get match {
+                  case Some(sindices) => {
+                    vb.genotypes.addGenotypeArray(newTag,sindices.toArray.map{ si => {
+                      vc.genotypes.genotypeValues(idx)(si);
+                    }})
+                  }
+                  case None => {
+                    vb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(idx));
+                  }
+                }
+                
+              }}
+            }
+            
+          }}
+
+        }}
+        vb.addInfo(vcfCodes.ec_alle_callerSets,callerSupport.toVector.sorted.mkString(","));
+        
+        val vbSeq = Seq(vb) ++ vcSeqSeq.zip(inputVcfTypes).withFilter{case (vcSeq,callerName) => vcSeq.length > 1}.flatMap{ case (vcSeq,callerName) => {
+          val currInfoLines = masterCallerInfoTags(callerName);
+          val currFmtLines = fmtTags(callerName);
+          val newInfoFieldSet = currInfoLines.map{ case (t,(v,x)) => v }.toSet;
+          val newFmtFieldSet = currInfoLines.map{ case (t,(v,x)) => v }.toSet;
+          warning("Warning: duplicate lines found for caller: "+callerName,"DUPLICATE_VCF_LINES_"+callerName,10)
+          
+          vcSeq.tail.map{ vc => {
+            
+            val vbb = SVcfOutputVariantLine(
+             in_chrom = vb.chrom,
+             in_pos = vb.pos,
+             in_id = vb.id,
+             in_ref = vb.ref,
+             in_alt = vb.alt,
+             in_qual = vb.qual,
+             in_filter = vb.filter,
+             in_info = vb.info,
+             in_format = vb.genotypes.fmt,
+             in_genotypes = SVcfGenotypeSet(vb.genotypes.fmt,vb.genotypes.genotypeValues.map{_.clone()})
+            )
+            vbb.in_info = vbb.info.filter{ case (newTag,fieldValue) => ! newInfoFieldSet.contains(newTag) }
+            
+            //if( vcSeq.head.genotypes.genotypeValues.nonEmpty && vcSeq.head.genotypes.fmt.nonEmpty ){
+              vbb.genotypes.genotypeValues = vbb.genotypes.genotypeValues.zip(vbb.genotypes.fmt).withFilter{ case (garray,fmt) => {
+                ! newFmtFieldSet.contains(fmt);
+              }}.map{ case (garray,fmt) => garray }
+              vbb.genotypes.fmt = vbb.genotypes.fmt.filter{ fmt => {
+                ! newFmtFieldSet.contains(fmt);
+              }}
+              vc.genotypes.fmt.zipWithIndex.foreach{ case (oldTag,idx) => {
+                val (newTag,fmtLine) = currFmtLines(oldTag);
+                vbb.genotypes.addGenotypeArray(newTag,vc.genotypes.genotypeValues(idx));
+              }}
+            //}
+            vc.info.map{ case (oldTag,fieldVal) => {
+              val (newTag,infoLine) = currInfoLines(oldTag);
+              vbb.addInfoOpt(newTag,fieldVal);
+            }}
+
+            vbb
+          }}
+        }}
+        vbSeq.zipWithIndex.map{ case (vbb,vbbIdx) => {
+          vbb.addInfo(OPTION_TAGPREFIX+"EC_duplicateCt",vbSeq.length.toString);
+          vbb.addInfo(OPTION_TAGPREFIX+"EC_duplicateIdx",vbbIdx.toString);
+        }}
+        vbSeq;
+      }}
+      
+    }
+    
+    })*/
+    
+  //}
+  
   case class CountMatchMatrix(matchFile : String, gtTag : String = "GT", matchPctCutoff : Double = 0.5 ) extends SVcfWalker {
     
     def walkerName : String = "CountMatchMatrix"
@@ -2836,6 +3616,8 @@ object SVcfWalkerUtils {
       })),outHeader)
     }
   }
+
+  
   class FilterInvalidAlleleLines() extends SVcfWalker {
     def walkerName : String = "FilterInvalidAlleleLines"
     

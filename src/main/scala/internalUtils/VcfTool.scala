@@ -1359,6 +1359,8 @@ object VcfTool {
                         var metadataLines : Seq[SVcfCompoundHeaderLine] = Seq()){
     def getVcfLines : Seq[String] = (otherHeaderLines ++ sStatLine ++ walkLines ++ infoLines ++ formatLines :+ titleLine).map(_.getVcfString);
     
+    def getVcfHeaderLines : Seq[SVcfHeaderLine] = otherHeaderLines ++ sStatLine ++ walkLines ++ infoLines ++ formatLines;
+    
     def reportAddedInfos(walker : SVcfWalker){
       reportln("    "+walker.walkerName+" adds INFO lines:   "+addedInfos.toVector.sorted.padTo(1,"(NONE)").mkString(","),"debug")
       reportln("    "+walker.walkerName+" adds FORMAT lines: "+addedFmts.toVector.sorted.padTo(1,"(NONE)").mkString(","),"debug")
@@ -1851,6 +1853,148 @@ object VcfTool {
     }
   }
   
+  val PATTERN_BASES_ONLY = java.util.regex.Pattern.compile("^[ATCGNatcgn]*$")
+  
+  val hardCodedChromMap : Map[String,Int] = Map[String,Int](
+         ("X",1e8.toInt),
+         ("Y",2e8.toInt),
+         ("XY",3e8.toInt),
+         ("M",4e8.toInt),
+         ("MT",5e8.toInt)
+      )
+
+  case class Chrom( s : String ) extends Ordered[Chrom] {
+    def nochrID : String = s.replaceAll("^[Cc][Hh][Rr]","");
+    def chrNum : Option[Int] = string2intOpt(nochrID) match {
+      case Some(x) => Some(x);
+      case None => {
+        hardCodedChromMap.get(nochrID)
+      }
+    }
+    def isNum : Boolean = chrNum.isDefined;
+    
+    def compare( that : Chrom ): Int = {
+      chrNum match {
+        case Some(thisn) => {
+          that.chrNum match {
+            case Some(thatn) => {
+              thisn.compare(thatn)
+            }
+            case None => {
+              -1
+            }
+          }
+        }
+        case None => {
+          that.chrNum match {
+            case Some(thatn) => {
+              1
+            }
+            case None => {
+              nochrID.compare(that.nochrID);
+            }
+          }
+        }
+      }
+    }
+  }
+  case class ChromPos( chr : Chrom, pos : Int ){
+
+  }
+    
+  object SVbnd {
+    
+    def makeSVbnd( chr : String, pos : Int, ref : String, strand : String ) : SVbnd = {
+      val chrpos = chr+":"+pos;
+      if(strand == "++"){
+        SVbnd( ref+"["+chrpos+"[" )
+      } else if(strand == "+-"){
+        SVbnd( ref+"]"+chrpos+"]" )
+      } else if(strand == "-+"){
+        SVbnd( "["+chrpos+"["+ref )
+      } else if(strand == "--"){
+        SVbnd( "]"+chrpos+"]"+ref )
+      } else {
+        error("ERROR: ILLEGAL SV: "+chr+"/"+pos+"/"+strand);
+        null;
+      }
+    }
+    
+  }
+  
+  case class SVbnd( in_alt : String ) {
+    def svalt : String = in_alt;
+    def isValid : Boolean = {
+      val cca = alt.split("\\[",-1)
+      val ccb = alt.split("\\]",-1);
+      if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) return false;
+      val cxx = alt.split("[\\[\\]]",-1)
+      val cmx = cxx(1)
+      val cx  = cmx.split(":",-1);
+      if( cx.length != 2 ) return false;
+      if( string2intOpt(cx(1)).isEmpty ) return false;
+      if( ! (( cxx(0) == "" && cxx(2) != "" ) || ( cxx(0) != "" && cxx(2) == "" )) ) return false
+      val cbp = if(cxx(0) == ""){ cxx(2) } else { cxx(0) }
+      if( ! PATTERN_BASES_ONLY.matcher(cbp).matches() ) return false;
+      return true;
+    }
+    def invalidIssue : Seq[String] = {
+      var xx : Seq[String] = Seq();
+      val cca = alt.split("\\[",-1)
+      val ccb = alt.split("\\]",-1);
+      if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) xx = xx :+ "Bracket Count";
+      val cxx = alt.split("[\\[\\]]",-1)
+      val cmx = cxx(1)
+      val cx  = cmx.split(":",-1);
+      if( cx.length != 2 ) xx = xx :+ "position isn't two elements" ;
+      if( string2intOpt(cx(1)).isEmpty ) xx = xx :+ "position POS isn't an integer" ;
+      if( ! (( cxx(0) == "" && cxx(2) != "" ) || ( cxx(0) != "" && cxx(2) == "" )) ) xx = xx :+ "bases not only on one side"
+      val cbp = if(cxx(0) == ""){ cxx(2) } else { cxx(0) }
+      if( ! PATTERN_BASES_ONLY.matcher(cbp).matches() ) xx = xx :+ "Bases arent ACTGN"
+      return xx;
+    }
+    def validate : Option[SVbnd] = if(isValid){ Some(this) } else { None }
+    
+    lazy val alt : String = in_alt;
+    lazy val bracket : Char = alt.replaceAll("[^\\[\\]]","").head;
+    lazy val bases : String = {
+      val x = alt.split("[\\[\\]]",-1)
+      if( x.head == "" ){
+        x.last
+      } else {
+        x.head
+      }
+    }
+    lazy val bndBreakEndString : String = {
+      alt.split("[\\[\\]]",-1)(1)
+    }
+    def bndBreakEnd : (String,Int) = {
+      val cells = bndBreakEndString.split(":")
+      (cells(0),string2int(cells(1)));
+    }
+    def basesBefore : Boolean = {
+      val x = alt.split("[\\[\\]]",-1)
+      x.head != "";
+    }
+    def basesAfter : Boolean = ! basesBefore;
+    def bracketOpensRight : Boolean = bracket == '['
+    def strands : String = {
+      ( if( basesBefore ){ "+" } else { "-" } ) + ( if( bracket == '[' ){ "+" } else { "-" } )
+    }
+    def strandswap : String = {
+      val ss = strands;
+      if( ss == "++"){
+        "--" 
+      } else if(ss == "+-"){
+        "+-" 
+      } else if(ss == "-+"){
+        "-+" 
+      } else {
+        "++"
+      }
+    }
+  }
+  
   abstract class SVcfVariantLine extends SVcfLine {
     def chrom : String
     def pos : Int
@@ -1864,6 +2008,27 @@ object VcfTool {
     def genotypes : SVcfGenotypeSet;
     lazy val variantIV = internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length)); 
     
+    def getSVbnd() : Option[SVbnd] = {
+      if( info.getOrElse("SVTYPE",None).getOrElse("") == "BND" ){
+        if( alt.length == 1 ){
+          SVbnd( alt.head ).validate match {
+            case Some(s) => {
+              Some(s)
+            }
+            case None => {
+              warning("Warning: SV-BND is INVALID: \n\""+this.getVcfStringNoGenotypes+"\"\n    ","SV_INVALID",10)
+              None;
+            }
+          }
+        } else {
+          warning("Warning: SV-BND is MULTIALLELIC: \n\""+this.getVcfStringNoGenotypes+"\"","SV_MULTIALLELIC",10)
+          None;
+        }
+      } else {
+        None
+      }
+    }
+    
     def setHeader( h : SVcfHeader )
     def getHeader() : SVcfHeader
     
@@ -1875,6 +2040,16 @@ object VcfTool {
     //Note: zero based!
     def start : Int = pos;
     def end : Int = pos + ref.length;
+    
+    def is_BND : Boolean = info.getOrElse("SVTYPE",None).map{ x => x == "BND" }.getOrElse(false)
+    
+    //def sv_bpIsBefore : Seq[Boolean] = 
+    
+    /*def sv_breakEndPoint : Seq[(String,Int)] = if(is_BND){
+      alt.map{ aa => {
+        
+      }}
+    } else { Seq() }*/
     
     def getVcfString : String = chrom + "\t"+pos+"\t"+id+"\t"+ref+"\t"+alt.mkString(",")+"\t"+
                                 qual+"\t"+filter+"\t"+info.keySet.toSeq.sorted.map{ case t => {
@@ -1901,7 +2076,8 @@ object VcfTool {
                                     case None => t
                                   }
                                 }}.mkString(";");
-                                
+    def getVcfStringGenoOpt( withGenotypes : Boolean = true ) = if(withGenotypes) getVcfString else getVcfStringNoGenotypes
+    
     def getTableString( vcfHeader : SVcfHeader ) : String = {
       chrom + "\t"+pos+"\t"+id+"\t"+ref+"\t"+alt.mkString(",")+"\t"+vcfHeader.infoLines.map{ infoLine => {
         info.get(infoLine.ID).getOrElse(None).getOrElse(".")
@@ -1921,6 +2097,20 @@ object VcfTool {
        in_format = format,
        in_genotypes = genotypes//,
        //in_header = header
+      )
+    }
+    def getOutputLineCopy() : SVcfOutputVariantLine = {
+      SVcfOutputVariantLine(
+       in_chrom = chrom,
+       in_pos = pos,
+       in_id = id,
+       in_ref = ref,
+       in_alt = alt,
+       in_qual = qual,
+       in_filter = filter, 
+       in_info = info,
+       in_format = format ,
+       in_genotypes = genotypes.copyGenotypeSet()
       )
     }
     def getLazyOutputLine() : SVcfOutputVariantLine = getOutputLine()
@@ -2767,6 +2957,8 @@ object VcfTool {
       }
       writer.close();
     }
+
+    
     def writeToFileSplit(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false, splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       splitFuncOpt match {
         case None => {
@@ -2842,6 +3034,34 @@ object VcfTool {
       }
       
 
+    }
+    
+
+    def writeVariantsToFileWithIndex(outfile : String, vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, dropGenotypes : Boolean =false){
+      val writer = new htsjdk.samtools.util.BlockCompressedOutputStream(outfile);
+      vcfHeader.getVcfLines.foreach{line => {
+        writer.write((line+"\n").getBytes());
+      }}
+        val htseqHeader = if(dropGenotypes){
+          new htsjdk.variant.vcf.VCFHeader( vcfHeader.getVcfHeaderLines.map{ v => new htsjdk.variant.vcf.VCFHeaderLine( v.tag, v.value ) }.toSet.asJava )
+        } else {
+          new htsjdk.variant.vcf.VCFHeader( vcfHeader.getVcfHeaderLines.map{ v => new htsjdk.variant.vcf.VCFHeaderLine( v.tag, v.value ) }.toSet.asJava, vcfHeader.titleLine.sampleList.toSet.asJava)
+        }
+        val vcfcodec = new htsjdk.variant.vcf.VCFCodec()
+        vcfcodec.setVCFHeader(htseqHeader,htsjdk.variant.vcf.VCFHeaderVersion.VCF4_2);
+        val idx = new htsjdk.tribble.index.tabix.TabixIndexCreator(htsjdk.tribble.index.tabix.TabixFormat.VCF)
+        
+        vcIter.foreach{ line => {
+          val pos = writer.getFilePointer();
+          val lnstr = line.getVcfStringGenoOpt( ! dropGenotypes )
+          val htsln = vcfcodec.decode(lnstr);
+          writer.write((lnstr+"\n").getBytes());
+          idx.addFeature(htsln,pos);
+        }}
+      writer.flush();
+      writer.close();
+      val index = idx.finalizeIndex(writer.getFilePointer());
+      index.writeBasedOnFeatureFile( new File(outfile ) )
     }
     
     

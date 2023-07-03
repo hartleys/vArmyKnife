@@ -86,7 +86,13 @@ class CmdExtractPotentialSvReads extends CommandLineRunUtil {
     }
     val header = reader.getFileHeader();
     val outHeader = header.clone();
-    val writer = (new SAMFileWriterFactory()).makeBAMWriter( outHeader, false, new java.io.File( outfile ))
+    val writer = if(outfile == "-"){
+      (new SAMFileWriterFactory()).makeSAMWriter(outHeader, false, System.out );
+    } else {
+      (new SAMFileWriterFactory()).makeBAMWriter( outHeader, false, new java.io.File( outfile ))
+    }
+      
+      //(new SAMFileWriterFactory()).makeBAMWriter( outHeader, false, new java.io.File( outfile ))
     
     /*
      internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
@@ -125,7 +131,7 @@ class CmdExtractPotentialSvReads extends CommandLineRunUtil {
               }},
             internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SAMRecord](
                 elementTitle = "lines", lineSec = 60,
-                reportFunction  = ((rr : SAMRecord, i : Int) => " " + rr.getReferenceName()+":"+rr.getAlignmentStart() +": [PF="+passFiltCt+", diffChrom="+diffChromCt+", distPos="+distPosCt+", total="+i+"] "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                reportFunction  = ((rr : SAMRecord, i : Int) => " " + rr.getReferenceName()+":"+rr.getAlignmentStart() +": [PF="+passFiltCt+", diffChrom="+diffChromCt+", distPos="+distPosCt+", keep="+keepCt+", total="+i+"] "+ internalUtils.stdUtils.MemoryUtil.memInfo )
              )
         )
     

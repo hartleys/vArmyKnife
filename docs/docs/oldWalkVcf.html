@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.3.63 (Updated Mon May  8 12:48:12 EDT 2023)</p>
+  <p>Version 3.3.71 (Updated Thu May 25 16:48:00 EDT 2023)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -266,6 +266,44 @@ param1,param2,...: Most functions take one or more parameters. Parameters are sp
 </code></pre>
 
 </section> <h2>Available Operations</h2> <section>
+
+<h5>Structural Variant Tools</h5>
+
+<h3>dropInvalidSVBND</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>dropReverseSVbreakends</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>addReverseSVbreakends</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>convertSVtoBND</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>(This function takes no parameters)
+</code></pre>
 
 <h5>General-Purpose Tools</h5>
 
@@ -847,6 +885,25 @@ ignoreSampleIds: If this flag is set, then sample IDs will be ignored and each V
     assumed to have the exact same samples in the exact same order. Use at your own risk.(flag)
 ignoreSampleOrder: If this flag is set, then the sample IDs will be used to match up the 
     different VCFs, and the samples may be in different orders in the different files.(flag)
+</code></pre>
+
+<h3>concordanceCallerSV</h3>
+
+<blockquote>
+  <p>....</p>
+</blockquote>
+
+<pre><code>callerNames: Comma delimited list of caller IDs, used in the callerSet INFO fields and the names 
+    of the output GT fields. By default, callers will simply be named C1,C2,...(String)
+ignoreSampleIds: If this flag is set, then sample IDs will be ignored and each VCF will be 
+    assumed to have the exact same samples in the exact same order, regardless of how they are 
+    labelled. The sample labels from the first caller will be used for the output.(flag)
+withinChromWindow: Sets the size of the window around each SV endpoint within which near-similar 
+    SVs will be merged. This window only applies to SVs where both endpoints are on the same 
+    chromosome.(Int, default=500)
+crossChromWindow: Sets the size of the window around each SV endpoint within which near-similar 
+    SVs will be merged. This window only applies to SVs where the endpoints are on DIFFERENT 
+    chromosomes.(Int, default=500)
 </code></pre>
 
 <h5>Filtering</h5>
