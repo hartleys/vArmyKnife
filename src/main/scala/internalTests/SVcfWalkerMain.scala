@@ -550,7 +550,7 @@ object SVcfWalkerMain {
       val preWalker : SVcfWalker = chainSVcfWalkers(initWalkers);
       
       if( ! vcffile.contains(';') ) error("Error: runEnsembleMerger is set, the infile parameter must contain semicolons (\";\")");
-      val vcfList = vcffile.split(";");
+      val vcfList = vcffile.split(";").map{ fxx => { fxx.trim() }}
       val (iterSeq,headerSeq) = vcfList.toSeq.zipWithIndex.map{ case (vf,idx) => {
           val (infiles,infixes) : (String,Vector[String]) = if(infixesList.length > 0){
             val (infilePrefix,infileSuffix) = (vf.split("\\|").head,vf.split("\\|")(1));
