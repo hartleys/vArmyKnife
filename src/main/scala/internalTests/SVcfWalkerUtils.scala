@@ -446,6 +446,147 @@ object SVcfWalkerUtils {
   }
   
   
+  class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
+    def walkerName : String = "annotateCCsvWithSVset"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("copyOverInfoTags",copyOverInfoTags.mkString("|")),
+        ("copyInfoPrefix",copyInfoPrefix),
+        ("crossChromWin",crossChromWin.toString),
+        ("withinChromWin",withinChromWin.toString)
+    );
+    
+    
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      //  var spanWindowSet : Map[String,Vector[(ChrSpanPair,Vector[Vector[SVcfVariantLine]])]] = strdirOptions.map{ str => (str,Vector()) }.toMap
+      
+      val infoFieldDelimiter = ","
+      
+      val (avHeader,avIter) = SVcfLine.readVcf(getLinesSmartUnzip(annotateVCF),withProgress = false);
+      
+      def strandSwapSVstrand( ss : String ) : String = {
+          if( ss == "++"){
+            "--" 
+          } else if(ss == "+-"){
+            "+-" 
+          } else if(ss == "-+"){
+            "-+" 
+          } else {
+            "++"
+          }
+      }
+      def strdirSwapSVstrand( ss : String ) : String = {
+        val d = ss.last;
+        val ds = if(d == '>') '<' else '>';
+        strandSwapSVstrand(ss.take(2)) + ds;
+      }
+
+      val copyInfo : Map[String,(String,SVcfCompoundHeaderLine)] = copyOverInfoTags.map{ itag => {
+        val hline = avHeader.infoLines.find{ pp => { pp.ID == itag }}.orElse{
+          error("annotateCCsvWithSVset ERROR (annotate SVs with an external SV vcf): file \""+annotateVCF+"\" does not contain INFO field: \""+itag+"\"");
+          None;
+        }.get
+        //if(hlineOpt.isEmpty){
+        //  error("annotateCCsvWithSVset ERROR (annotate SVs with an external SV vcf): file \""+annotateVCF+"\" does not contain INFO field: \""+itag+"\"");
+        //}
+        //val hline = hlineOpt.get;
+        val nhline = new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+hline.ID,Number=hline.Number,Type=hline.Type,desc="(Copied from "+annotateVCF+") "+hline.desc);
+        (hline.ID,(copyInfoPrefix+hline.ID,nhline))
+      }}.toMap
+  
+      //val avmap = 
+        //      chrA,chrB,strdir
+        // Map[(String,String,String),scala.collection.immutable.TreeMap[Int,TreeMap[Int,Seq[(Int,Int,Boolean,SVcfVariantLine)]]]]
+      var avmap = Map[(String,String,String),scala.collection.immutable.TreeMap[Int,scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]]]();
+      
+      //def addBlankToAvMap( chrA:String,chrB:String,strdir:String){
+        
+      //}
+      
+      def addToTreeMap( v : SVcfVariantLine ){
+        val (chrA,posA) = (v.chrom,v.pos);
+        val (chrB,posB) = v.getSVbnd().get.bndBreakEnd;
+        val strdir = v.getSVstrdirOrDie();
+        val swapstrdir = v.getSVstrdirSwapOrDie();
+        
+        if( ! avmap.contains( (chrA,chrB,strdir) )){
+          val xxmap = scala.collection.immutable.TreeMap[Int,scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]](
+              (posA,
+                scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]](
+                  (posB,Seq(v))
+                )
+              )
+          )
+          //new scala.collection.immutable.TreeMap[Int,scala.collection.immutable.TreeMap[Int,Seq[(Int,Int,Boolean,SVcfVariantLine)]]]()
+          avmap = avmap.updated((chrA,chrB,strdir),xxmap)
+        } else {
+          val xxmap = avmap((chrA,chrB,strdir));
+          val xx = xxmap.getOrElse( posA, scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]() ).getOrElse( posB, Seq() ) :+ v
+          avmap = avmap.updated( (chrA,chrB,strdir), 
+               xxmap.updated(posA,
+                 xxmap.getOrElse( posA, scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]() ).updated(
+                     posB,xx
+                 )
+               )
+          )
+        }
+      }
+      
+      avIter.foreach{ v => {
+        addToTreeMap(v);
+      }}
+      
+      def getMatches(chrA : String, chrB:String, strdir:String, posA: Int, posB:Int, bothDirections: Boolean = true) : Seq[SVcfVariantLine] = {
+        val currwin = if(chrA==chrB){ withinChromWin } else { crossChromWin };
+        val swapstrdir = strdirSwapSVstrand(strdir);
+        val fwdMatches = avmap.get((chrA,chrB,strdir)).map{ xxmap => xxmap.range(posA-currwin,posA+currwin).flatMap{ case (posXA,xmap) => {
+          xmap.range(posB-currwin,posB+currwin).flatMap{ case (posXB,vvseq) => {
+            vvseq
+          }}.toSeq
+        }}.toSeq }.getOrElse(Seq())
+        val revMatches = avmap.get((chrB,chrA,swapstrdir)).map{ xxmap => xxmap.range(posB-currwin,posB+currwin).flatMap{ case (posXB,xmap) => {
+          xmap.range(posA-currwin,posA+currwin).flatMap{ case (posXA,vvseq) => {
+            vvseq
+          }}.toSeq
+        }}.toSeq}.getOrElse(Seq())
+        
+        fwdMatches ++ revMatches;
+      }
+      
+      //val (vcfHeader,vcIter) = if(chromList.isEmpty){
+      //  SVcfLine.readVcf(getLinesSmartUnzip(infile),withProgress = true)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+         val vc = v.getOutputLine();
+         val sv = v.getSVbnd().get;
+         val vvm = getMatches(v.chrom,sv.bndBreakEnd._1,v.getSVstrdirOrDie(),v.pos,sv.bndBreakEnd._2)
+         copyInfo.foreach{ case (oldID,(newID,headerLine)) => {
+           val ival = vvm.map{ vvx => {
+             vvx.info.getOrElse(oldID,None)
+           }}
+           if( ival.exists( _.isDefined )){
+             vc.addInfo( newID, ival.map{ _.getOrElse(".") }.mkString(infoFieldDelimiter) );
+           }
+           
+         }}
+         
+         vc.addInfo(copyInfoPrefix+"CHROM",vvm.map{ vvx => {
+           vvx.chrom
+         }}.mkString(","))
+         vc.addInfo(copyInfoPrefix+"POS",vvm.map{ vvx => {
+           vvx.pos
+         }}.mkString(","))
+         vc.addInfo(copyInfoPrefix+"ALT",vvm.map{ vvx => {
+           vvx.alt.head
+         }}.mkString(","))
+         
+         vc;
+      }}, closeAction = (() => {
+        reportln("","note");
+      })),outHeader)
+    }
+  }
 
   def ensembleMergeSV(vcIters : Seq[Iterator[SVcfVariantLine]], 
                             crossChromWin : Int = 500,
@@ -456,6 +597,34 @@ object SVcfWalkerUtils {
                             CC_ignoreSampleIds : Boolean = false //, 
                             //CC_ignoreSampleOrder : Boolean = false //NOT IMPLEMENTED
                             ) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
+    
+
+    case class ChrPos( chr : Chrom, pos : Int )
+    case class ChrSpan(chr : Chrom, fr : Int, to : Int)
+    case class ChrSpanPair( a : ChrSpan, b : ChrSpan ){
+      def expandTo( a2 : ChrPos, b2 : ChrPos ) : ChrSpanPair = {
+        val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
+        ChrSpanPair(
+            ChrSpan( a.chr, math.min(a.fr,a2.pos-currwin), math.max(a.to,a2.pos+currwin) ),
+            ChrSpan( b.chr, math.min(b.fr,b2.pos-currwin), math.max(b.to,b2.pos+currwin) )
+        )
+      }
+      def merge( cc : ChrSpanPair ) : ChrSpanPair = {
+        ChrSpanPair(
+            ChrSpan( a.chr, math.min(a.fr,cc.a.fr), math.max(a.to,cc.a.to) ),
+            ChrSpan( b.chr, math.min(b.fr,cc.b.fr), math.max(b.to,cc.b.to) )
+        )
+      }
+      def pairOverlaps( a2 : ChrPos, b2 : ChrPos ) : Boolean = {
+        //val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
+        a.chr == a2.chr && 
+        b.chr == b2.chr && 
+        a.fr  <= a2.pos && a2.pos <= a.to &&
+        b.fr  <= b2.pos && b2.pos <= b.to
+      }
+    }
+    val strdirOptions = Seq("++>","+->","-+>","-->","++<","+-<","-+<","--<");
+    
     val vcfCodes = VCFAnnoCodes();
     val CC_ignoreSampleOrder : Boolean = false;
     val genotypeOrdering = new Ordering[String]{
@@ -616,36 +785,12 @@ object SVcfWalkerUtils {
     
     val sortedGroupIters : BufferedIterator[Seq[Seq[SVcfVariantLine]]] = groupBySpanMulti(bufIters)(v => v.chrom)(v => v.pos).buffered;
     
-    case class ChrPos( chr : Chrom, pos : Int )
-    case class ChrSpan(chr : Chrom, fr : Int, to : Int)
-    case class ChrSpanPair( a : ChrSpan, b : ChrSpan ){
-      def expandTo( a2 : ChrPos, b2 : ChrPos ) : ChrSpanPair = {
-        val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
-        ChrSpanPair(
-            ChrSpan( a.chr, math.min(a.fr,a2.pos-currwin), math.max(a.to,a2.pos+currwin) ),
-            ChrSpan( b.chr, math.min(b.fr,b2.pos-currwin), math.max(b.to,b2.pos+currwin) )
-        )
-      }
-      def merge( cc : ChrSpanPair ) : ChrSpanPair = {
-        ChrSpanPair(
-            ChrSpan( a.chr, math.min(a.fr,cc.a.fr), math.max(a.to,cc.a.to) ),
-            ChrSpan( b.chr, math.min(b.fr,cc.b.fr), math.max(b.to,cc.b.to) )
-        )
-      }
-      def pairOverlaps( a2 : ChrPos, b2 : ChrPos ) : Boolean = {
-        //val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
-        a.chr == a2.chr && 
-        b.chr == b2.chr && 
-        a.fr  <= a2.pos && a2.pos <= a.to &&
-        b.fr  <= b2.pos && b2.pos <= b.to
-      }
-    }
-    
+
+
     val safetyBuffer = 10;
     val callerCt = vcIters.length;
     
     //val strandOptions = Seq("++","+-","-+","--");
-    val strdirOptions = Seq("++>","+->","-+>","-->","++<","+-<","-+<","--<");
 
     
     val grpIter : Iterator[Seq[Seq[SVcfVariantLine]]] = ( new Iterator[Seq[Seq[SVcfVariantLine]]]{

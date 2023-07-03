@@ -1,4 +1,4 @@
-> Version 3.3.83 (Updated Tue May 30 13:53:56 EDT 2023)
+> Version 3.3.84 (Updated Thu Jun  1 14:37:41 EDT 2023)
 
 # vArmyKnife: 
 
@@ -387,6 +387,16 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     windowSize: Sets the size of the sliding window used. Problems may occur if you have variants 
         longer than this window size. Default is 200bp.(Int)
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
+
+### addFirstBaseWhenMissing
+
+>  Intended for converting other formats into VCFs\. 
+
+
     genomeFA: The genome fasta file containing the reference genome. This will be used by various 
         functions that require genomic information. Note that some functions that call the GATK 
         library will also require that the fasta be indexed. Note: Chromosome names must 

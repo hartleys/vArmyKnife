@@ -1994,6 +1994,17 @@ object VcfTool {
       }
     }
   }
+  def strandSwapSVstrand( ss : String ) : String = {
+      if( ss == "++"){
+        "--" 
+      } else if(ss == "+-"){
+        "+-" 
+      } else if(ss == "-+"){
+        "-+" 
+      } else {
+        "++"
+      }
+  }
   
   abstract class SVcfVariantLine extends SVcfLine {
     def chrom : String
@@ -2028,7 +2039,8 @@ object VcfTool {
         None
       }
     }
-    def getSVstrdirOrDie() : String = {
+
+    def getSVdirOrDie() : String = {
       val svb = getSVbnd().get;
       val (chrA,chrB) = (this.chrom,svb.bndBreakEnd._1);
       val (posA,posB) = (this.pos,svb.bndBreakEnd._2);
@@ -2043,7 +2055,15 @@ object VcfTool {
                    } else {
                      "<"
                    }
-      svb.strands + dir;
+      dir
+    }
+    def getSVstrdirOrDie() : String = {
+      val svb = getSVbnd().get;
+      svb.strands + getSVdirOrDie();
+    }
+    def getSVstrdirSwapOrDie() : String = {
+      val svb = getSVbnd().get;
+      svb.strandswap + getSVdirOrDie();
     }
     
     def setHeader( h : SVcfHeader )

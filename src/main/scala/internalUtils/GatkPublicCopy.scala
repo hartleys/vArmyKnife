@@ -919,7 +919,45 @@ object GatkPublicCopy {
       
     }
   }
-  
+
+  case class AddFirstBase(genomeFa : String, windowSize : Int = 200) extends SVcfWalker {
+    def walkerName : String = "FixFirstBaseMismatch"
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](("genomeFa",genomeFa));
+    
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      //  def bufferedResorting[A](iter : Iterator[A], bufferSize : Int)(f : (A => Int)) : Iterator[A] = {
+      val newHeader = vcfHeader.copyHeader;
+      
+      newHeader.addWalk(this);
+      newHeader.reportAddedInfos(this)
+      var noticeShownA = true;
+      (vcMap(vcIter){ vc => {
+        val vb = vc.getOutputLine();
+        if( Set(".","-","").contains( vc.ref ) ){
+          val refBase = getBaseAtPos(vc.chrom,vc.pos);
+          vb.in_ref = refBase;
+          if( vb.alt.length == 1 && Seq(".","-","").contains(vb.alt.head)){
+            vb.in_alt = Seq(refBase);
+          }
+        }
+        vb;
+      }},newHeader);
+    }
+  }
 
   def rightAlignIndel(ref : String, alt : String, pos : Int, flankingSeq : String) : (Int,String,String) = {
     if(ref == alt){

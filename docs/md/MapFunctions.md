@@ -250,6 +250,16 @@
         library will also require that the fasta be indexed. Note: Chromosome names must 
         match.(String, required)
 
+### addFirstBaseWhenMissing
+
+>  Intended for converting other formats into VCFs\. 
+
+
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
+
 ### leftAlignAndTrim
 
 >  This utility performs the exact same operations as GATK leftAlignAndTrim\. It trims excess bases and shifts ambiguously\-positioned indels to their leftmost possible position\. This can assist in ensuring that variants are consistantly represented which is critical in matching indels between files\. IMPORTANT: if there are multiallelic variants then they MUST be split apart before this step\. You can use the splitMultiAllelics function to do this\.

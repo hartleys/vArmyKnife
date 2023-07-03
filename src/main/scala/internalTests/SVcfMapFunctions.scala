@@ -777,6 +777,13 @@ object SVcfMapFunctions {
               COMMON_PARAMS("genomeFA")
          )), category = "Variant Formatting/Conversion"
        ),
+       ParamStrSet("addFirstBaseWhenMissing" ,  desc = "Intended for converting other formats into VCFs. "+
+                                                    ""+
+                                                    "", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              COMMON_PARAMS("genomeFA")
+         )), category = "Variant Formatting/Conversion"
+       ),
       ParamStrSet("leftAlignAndTrim" ,  desc =      "This utility performs the exact same operations as GATK leftAlignAndTrim. It trims excess bases and shifts ambiguously-positioned indels to their leftmost possible position. "+
                                                     "This can assist in ensuring that variants are consistantly represented which is critical in matching indels between files. "+
                                                     "IMPORTANT: if there are multiallelic variants then they MUST be split apart before this step. You can use the splitMultiAllelics function to do this."+
@@ -1785,6 +1792,11 @@ object SVcfMapFunctions {
              } else if(mapType == "fixFirstBaseMismatch"){
                // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
                Some(internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = params("genomeFA"),windowSize = string2int( params.getOrElse("windowSize","200"))));
+               
+             } else if(mapType == "addFirstBaseWhenMissing"){
+               // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
+               Some(internalUtils.GatkPublicCopy.AddFirstBase(genomeFa = params("genomeFA"),windowSize = 200));
+               
                
                /*
                        ParamStrSet("dropInvalidSVBND" ,  desc = "....", 
