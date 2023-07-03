@@ -355,7 +355,7 @@ object SVcfWalkerUtils {
                 if(end == -1){
                   Some(vc);
                 } else {
-                  vc.in_alt = Seq( vc.ref + "[" v.chrom+":"+ end +"[" )
+                  vc.in_alt = Seq( vc.ref + "[" +v.chrom+":"+ end +"[" )
                   vc.addInfo("SVTYPE","BND");
                   val vc2 = vc.getOutputLineCopy();
                   vc2.addInfo("SVTYPE","BND");
@@ -3060,12 +3060,12 @@ object SVcfWalkerUtils {
         }}.toMap;
         prx = samps.map{ ss => {
           if( ! prxdec.contains(ss) ){
-            error("MergeSamplesIntoSingleColumn attempting to assign prefixes but some names not found in the file: "+ss+" (samps in file are: "+samps.mkString(",")+")");
+            error("MergeSamplesIntoSingleColumn attempting to assign prefixes but some names not found in the decoder: \""+ss+"\" (samps in file are: \""+samps.mkString("\",\"")+"\""+") (samps in decoder are: \""+prxdec.keySet.toSeq.mkString("\",\"")+"\")");
           }
           prxdec(ss);
         }}
       }
-      val prz = prefixes.zip(samps);
+      val prz = prx.zip(samps);
       
       outHeader.titleLine = SVcfTitleLine( Seq(sampID) );
       outHeader.formatLines = Seq[SVcfCompoundHeaderLine]()
