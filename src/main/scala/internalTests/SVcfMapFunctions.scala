@@ -1910,7 +1910,7 @@ object SVcfMapFunctions {
                
              } else if(mapType == "SVBreaksToEventSet"){
                //SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String])
-               Some( new SVBreaksToEventSet( eventWindow = string2int(params.getOrElse("windowSize","1000000")), eventOutputTable = Some(params("mapID")), infoFields = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()), infoFieldsForVcfTable = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()) ) )
+               Some( new SVBreaksToEventSet( eventWindow = string2int(params.getOrElse("windowSize","1000000")), eventOutputTable = Some(params("mapID")), infoFields = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()), infoFieldsForVcfTable = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()) , dsbWindow=string2int(params.getOrElse("windowSize","1000000"))  ) )
              } else if(mapType == "addFirstBaseWhenMissing"){
                // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
                Some(internalUtils.GatkPublicCopy.AddFirstBase(genomeFa = params("genomeFA"),windowSize = 200));

@@ -287,6 +287,9 @@ object SVcfWalkerUtils {
         }
         out;
       }
+      if(debug){
+        reportln("SVBreaksToEventSet running in DEBUG mode","note");
+      }
       
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //do stuff!
@@ -332,6 +335,9 @@ object SVcfWalkerUtils {
       }}, closeAction = (() => {
         //reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
         //do stuff!
+      if(debug){
+        reportln("SVBreaksToEventSet closing in DEBUG mode","note");
+      }        
         reportln("","debug");
         reportln("Starting table write...","debug")
         tableWriter.foreach{ out => {
@@ -340,7 +346,7 @@ object SVcfWalkerUtils {
           
           
           //out.write("eventID\tsvCount\tchromList\tsvList\n");
-          if(debug){
+          if(! debug){
                       out.write(Seq("eventID","lineCt","chroms","numSV",
                                     "isSimpleUnbal","isMultibreakComplex","isOther","isSimpleBal",
                                     "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons",
@@ -380,7 +386,7 @@ object SVcfWalkerUtils {
               binf = binf + (("strands.A",stra))
               binf = binf + (("strands.B",strb))
               binf = binf + (("pos.A1", sa.chrom+":"+sa.pos ))
-              binf = binf + (("pos.B1", sa.chrom+":"+sa.pos ))
+              binf = binf + (("pos.B1", sb.chrom+":"+sb.pos ))
               binf = binf + (("pos.A2", sva.bndBreakEnd._1+":"+sva.bndBreakEnd._2 ))
               binf = binf + (("pos.B2", svb.bndBreakEnd._1+":"+svb.bndBreakEnd._2 ))
               
@@ -434,7 +440,7 @@ object SVcfWalkerUtils {
                       balInfo.getOrElse("warnings",".")+"\t"+
                       balInfo.getOrElse("other.reasons",".")+"\t"+
                       ( if(debug){
-                        balInfo.getOrElse("debug.posPM",".")
+                        balInfo.getOrElse("debug.posPM",".")+"\t"
                       }else{""} )+
                       svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }.map{ xx => {
                         xx.chrom+":"+xx.pos+";"+xx.getSVbnd().get.bndBreakEnd._1+":"+xx.getSVbnd().get.bndBreakEnd._2+";"+infoFields.map{ ff => { xx.info.getOrElse(ff,None).getOrElse(".") }}.mkString(";")
