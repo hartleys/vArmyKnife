@@ -18925,6 +18925,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         ("filterID","\""+filterID.getOrElse("None")+"\""),
         ("explainFile","\""+explainFile.getOrElse("None")+"\"")
     )
+    val filterTitle : String = filterID.map{ x => "_"+x }.getOrElse("");
     val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser; 
     val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(filterExpr);
     //val parser = internalUtils.VcfTool.SVcfFilterLogicParser();
@@ -18939,10 +18940,10 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
        (vcFlatMap(vcIter){ vc => {
          val k = filter.keep(vc);
          if(!k){
-           notice("DROP variant due to VCF filter:\n    "+vc.getSimpleVcfString(),"DROP_VARIANT_FOR_FILTER",5);
+           notice("DROP variant due to VCF filter:\n    "+vc.getSimpleVcfString(),"DROP_VARIANT_FOR_FILTER"+filterTitle,5);
            None
          } else {
-           notice("KEEP variant due to VCF filter:\n    "+vc.getSimpleVcfString(),"KEEP_VARIANT_FOR_FILTER",5);
+           notice("KEEP variant due to VCF filter:\n    "+vc.getSimpleVcfString(),"KEEP_VARIANT_FOR_FILTER"+filterTitle,5);
            Some(vc);
          }
        }}, outHeader)
