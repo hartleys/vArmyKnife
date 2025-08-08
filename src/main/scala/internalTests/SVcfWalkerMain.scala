@@ -587,7 +587,7 @@ object SVcfWalkerMain {
 
       
       
-      if(params("mapID") == "concordanceCaller"){
+      if(params("mapType") == "concordanceCaller"){
         val inputNames : List[String]  = params.get("callerNames").map{ x => x.split(",").toList }.getOrElse(headerSeq.indices.toList.map{"C"+_.toString});
         val decision : String  = params.get("gtDecisionMethod").getOrElse("priority");
         val inputPriority : List[String]  = params.get("priority").map{ x => x.split(",").toList }.getOrElse(inputNames);
