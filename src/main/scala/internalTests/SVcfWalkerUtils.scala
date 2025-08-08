@@ -1,39 +1,27 @@
 package internalTests
 
-import htsjdk.variant._;
-import htsjdk.variant.variantcontext._;
-import htsjdk.variant.vcf._;
+import htsjdk.variant.variantcontext._
+import htsjdk.variant.vcf._
+
 import java.io.File;
 //import scala.collection.JavaConversions._
+import internalUtils.Reporter._
+import internalUtils.commandLineUI._
+
 import java.io._;
-import internalUtils.commandLineUI._;
-import internalUtils.Reporter._;
 
 //import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
+import internalUtils.GtfTool._
+import internalUtils.TXUtil._
+import internalUtils.{TXUtil, VcfTool}
+import internalUtils.VcfTool._
+import internalUtils.commonSeqUtils._
+import internalUtils.fileUtils._
+import internalUtils.genomicAnnoUtils._
+import internalUtils.optionHolder._
+import internalUtils.stdUtils._
 
-import internalUtils.optionHolder._;
-import internalUtils.Reporter._;
-import internalUtils.stdUtils._;
-import internalUtils.genomicAnnoUtils._;
-import internalUtils.GtfTool._;
-import internalUtils.commandLineUI._;
-import internalUtils.fileUtils._;
-import internalUtils.TXUtil._;
-import internalUtils.TXUtil
-
-import internalUtils.VcfTool._;
-
-import internalUtils.VcfTool;
-
-import htsjdk.variant._;
-import htsjdk.variant.variantcontext._;
-import htsjdk.variant.vcf._;
-
-import internalUtils.genomicUtils._;
-import internalUtils.commonSeqUtils._;
-
-import jigwig.BigWigFile;
+import scala.collection.JavaConverters._;
 
 //import com.timgroup.iterata.ParIterator.Implicits._;
 
@@ -7065,7 +7053,7 @@ object SVcfWalkerUtils {
             }}.toSet
             vc.addInfo(newTag, (paramVals).toVector.sorted.padTo(1,".").mkString(","));
         } else if(f == "SWITCH.AB"){
-            val switchParam = v.info.get(paramTags(0))
+            val switchParam = v.info.getOrElse(paramTags(0),None)
             val A = v.info.getOrElse(paramTags(1),None);
             val B = v.info.getOrElse(paramTags(2),None);
             

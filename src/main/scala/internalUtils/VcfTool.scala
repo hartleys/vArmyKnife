@@ -4864,7 +4864,7 @@ object VcfTool {
                           (a : (SVcfVariantLine,Int)) => {
                             val alleIdxRaw = getTag(splitIdxTag,a);
                             val value = getTag(adTag,a);
-                            if(alleIdxRaw.isEmpty || alleIdxRaw == "." || value.isEmpty){
+                            if(alleIdxRaw.isEmpty || alleIdxRaw.get == "." || value.isEmpty){
                               false;
                             } else {
                               val alleIdx = string2int(alleIdxRaw.get);
@@ -4887,7 +4887,7 @@ object VcfTool {
                           (a : (SVcfVariantLine,Int)) => {
                             val alleIdxRaw = getTag(splitIdxTag,a);
                             val value = getTag(adTag,a);
-                            if(alleIdxRaw.isEmpty || alleIdxRaw == "." || value.isEmpty){
+                            if(alleIdxRaw.isEmpty || alleIdxRaw.get == "." || value.isEmpty){
                               false;
                             } else {
                               val alleIdx = string2int(alleIdxRaw.get);
@@ -4942,7 +4942,7 @@ object VcfTool {
                           (a : (SVcfVariantLine,Int)) => {
                             val alleIdxRaw = getTag(splitIdxTag,a);
                             val value = getTag(adTag,a);
-                            if(alleIdxRaw.isEmpty || alleIdxRaw == "." || value.isEmpty){
+                            if(alleIdxRaw.isEmpty || alleIdxRaw.get == "." || value.isEmpty){
                               false;
                             } else {
                               val alleIdx = string2int(alleIdxRaw.get);
@@ -4961,7 +4961,7 @@ object VcfTool {
                           (a : (SVcfVariantLine,Int)) => {
                             val alleIdxRaw = getTag(splitIdxTag,a);
                             val value = getTag(adTag,a);
-                            if(alleIdxRaw.isEmpty || alleIdxRaw == "." || value.isEmpty){
+                            if(alleIdxRaw.isEmpty || alleIdxRaw.get == "." || value.isEmpty){
                               false;
                             } else {
                               val alleIdx = string2int(alleIdxRaw.get);

@@ -50,7 +50,8 @@ object helpDocs {
   //val DESCRIPTION = List[String](
   //    "<TODO>: Write description!"
   //);
-  
+  //test
+
   case class HelpTopic( topicName : String, desc : String = "", 
                         topicManual : Seq[internalUtils.commandLineUI.UserManualBlock]){
    def blockManual : String = topicManual.map{ umb => {

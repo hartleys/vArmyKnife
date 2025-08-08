@@ -1,39 +1,13 @@
 package internalTests
 
-import htsjdk.variant._;
-import htsjdk.variant.variantcontext._;
-import htsjdk.variant.vcf._;
 import java.io.File;
 //import scala.collection.JavaConversions._
-import java.io._;
-import internalUtils.commandLineUI._;
 import internalUtils.Reporter._;
 
 //import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
-
-import internalUtils.optionHolder._;
-import internalUtils.Reporter._;
+import internalUtils.VcfTool._
+import internalUtils.fileUtils._
 import internalUtils.stdUtils._;
-import internalUtils.genomicAnnoUtils._;
-import internalUtils.GtfTool._;
-import internalUtils.commandLineUI._;
-import internalUtils.fileUtils._;
-import internalUtils.TXUtil._;
-import internalUtils.TXUtil
-
-import internalUtils.VcfTool._;
-
-import internalUtils.VcfTool;
-
-import htsjdk.variant._;
-import htsjdk.variant.variantcontext._;
-import htsjdk.variant.vcf._;
-
-import internalUtils.genomicUtils._;
-import internalUtils.commonSeqUtils._;
-
-import jigwig.BigWigFile;
 
 //import com.timgroup.iterata.ParIterator.Implicits._;
 
@@ -2001,7 +1975,49 @@ object SVcfTagFunctions {
 
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+
+    new VcfTagFcnFactory(){
+      val mmd =  new VcfTagFcnMetadata(
+        id = "extractIDX",synon = Seq(),
+        shortDesc = "",
+        desc = "This function takes a genotype field x which must be a list field and an index i. The newly created FORMAT field will be "+
+          "equal to element i from the field x (counting from 0). If there is no element i, it will be set to the missing value (.)."+
+          " "+
+          "",
+        params = Seq[VcfTagFunctionParam](
+          VcfTagFunctionParam( id = "x", ty = "INFO:Int|INFO:Float|INFO:String",req=true,dotdot=false ),
+          VcfTagFunctionParam( id = "i", ty = "CONST:Int",req=true,dotdot=false ),
+          VcfTagFunctionParam( id = "delim", ty = "CONST:String",req=false,dotdot=false )
+        )
+      );
+      def metadata = mmd;
+      def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+        new VcfTagFcn(){
+          def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+          def init : Boolean = true;
+          val infoTag = paramValues(0);
+          val extractIDX = string2int( paramValues(1) )
+          val delim = paramValues.lift(2).getOrElse(",");
+          override val outType = outHeader.infoLines.find( ff => ff.ID == infoTag ).get.Type
+          override val outNum = "1";
+
+          def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+            vc.info.getOrElse(infoTag,None).foreach{ x => {
+              writeString(vout, x.split(delim).lift(extractIDX).getOrElse("."))
+            }}
+            /*val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
+            if( gtIdx > -1 ){
+              vout.genotypes.addGenotypeArray( newTag, vout.genotypes.genotypeValues(gtIdx).map{ gg => {
+                gg.split(delim).lift(extractIDX).getOrElse(".");
+              }})
+            }*/
+          }
+        }
+
+      }
+    },
+    ///////////////////////////////////////////////////////////////////////
+
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "LOG10",synon = Seq(),
