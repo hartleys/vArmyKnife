@@ -788,9 +788,206 @@ object SVcfWalkerUtils {
     }
   }
 
-  
+  /*
+     class IndexedSVcfFileIterator( vcffile : String, verbose : Boolean = false){
+    
+    /*
+      reportln("     readVcf() init: buffering lines ... ("+getDateAndTimeString+")","debug")
+      val bufLines = lines.buffered;
+      reportln("     readVcf() init: lines buffered, extracting header lines... ("+getDateAndTimeString+")","debug")
+      val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      reportln("     readVcf() init: headerlines extracted, processing header... ("+getDateAndTimeString+")","debug")
+      val header = readVcfHeader(allRawHeaderLines); 
+     */
+    val header : SVcfHeader = {
+      reportln("Loading Indexed Reference VCF file: "+vcffile,"note")
+      val bufLines = getLinesSmartUnzip(vcffile).buffered;
+      val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      reportln("      Loading ("+vcffile+"): Header loaded." ,"note")
+      SVcfLine.readVcfHeader(allRawHeaderLines); 
+    }
+    //REQUIRES index!
+    val htsReader = new htsjdk.variant.vcf.VCFFileReader( new java.io.File( vcffile ), true );
+    
+    reportln("      Loading ("+vcffile+"): htsReader Generated." ,"note")
+    
+    def query( chrom : String, start: Int, end : Int ) : Iterator[SVcfVariantLine] = {
+      val vcxIter = htsReader.query(chrom,start,end);
+      vcxIter.asScala.map{ vcx => {
+        SVcfInputVariantLine( vcx.toString() )
+      }}
+      
+    }
+  }
+   */
 
+  
   class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
+                              crossChromWin : Int = 500,withinChromWin : Int = 500, jobID : String = "annoVCF") extends SVcfWalker {
+    def walkerName : String = "annotateCCsvWithSVset"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("annoVcf",annotateVCF),
+        ("copyOverInfoTags",copyOverInfoTags.mkString("|")),
+        ("copyInfoPrefix",copyInfoPrefix),
+        ("crossChromWin",crossChromWin.toString),
+        ("withinChromWin",withinChromWin.toString)
+    )
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      //  var spanWindowSet : Map[String,Vector[(ChrSpanPair,Vector[Vector[SVcfVariantLine]])]] = strdirOptions.map{ str => (str,Vector()) }.toMap
+      
+      val infoFieldDelimiter = ","
+      
+      val (avHeader,avIter) = SVcfLine.readVcf(getLinesSmartUnzip(annotateVCF),withProgress = false);
+      
+      def strandSwapSVstrand( ss : String ) : String = {
+          if( ss == "++"){
+            "--" 
+          } else if(ss == "+-"){
+            "+-" 
+          } else if(ss == "-+"){
+            "-+" 
+          } else {
+            "++"
+          }
+      }
+      def strdirSwapSVstrand( ss : String ) : String = {
+        val d = ss.last;
+        val ds = if(d == '>') '<' else '>';
+        strandSwapSVstrand(ss.take(2)) + ds;
+      }
+      outHeader.addWalk(this)
+
+      val copyInfo : Map[String,(String,SVcfCompoundHeaderLine)] = copyOverInfoTags.map{ itag => {
+        val hline = avHeader.infoLines.find{ pp => { pp.ID == itag }}.orElse{
+          error("annotateCCsvWithSVset ERROR (annotate SVs with an external SV vcf): file \""+annotateVCF+"\" does not contain INFO field: \""+itag+"\"");
+          None;
+        }.get
+        //if(hlineOpt.isEmpty){
+        //  error("annotateCCsvWithSVset ERROR (annotate SVs with an external SV vcf): file \""+annotateVCF+"\" does not contain INFO field: \""+itag+"\"");
+        //}
+        //val hline = hlineOpt.get;
+        val nhline = new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+hline.ID,Number=hline.Number,Type=hline.Type,desc="(Copied from "+annotateVCF+") "+hline.desc);
+        outHeader.addInfoLine(nhline);
+        (hline.ID,(copyInfoPrefix+hline.ID,nhline))
+      }}.toMap
+      val copyInfoSeq = copyInfo.keys.toSeq;
+      
+      val avReader = new IndexedSVcfFileIterator(annotateVCF);
+      
+     outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+"CHROM",Number=".",Type="String",desc="."));
+     outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+"POS",Number=".",Type="String",desc="."));
+     outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+"STRAND",Number=".",Type="String",desc="."));
+     outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+"ALT",Number=".",Type="String",desc="."));
+     outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+"CHROM.B",Number=".",Type="String",desc="."));
+     outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",ID=copyInfoPrefix+"POS.B",Number=".",Type="String",desc="."));
+      /*
+      outHeader.addWalk(this);
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_BEFORE",Number="1",Type="String",desc="The "+len+" ref bases before the variant"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_AFTER",Number="1",Type="String",desc="The "+len+" ref bases after the variant"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len,Number="1",Type="String",desc="The context around the variant in a window of size "+len+". Note that this uses the ref allele from the VCF. If the REF allele from the VCF is incorrect then this will also be incorrect." ));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_REF",Number="1",Type="String",desc="The sequence of the REF allele with the nearby sequence context of window "+len+". Note that the allele itself will be capitalized. Note that this uses the reference sequence from the genome itself. If the VCF is incorrect then the ref allele will not match the VCF."));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_ALT",Number="1",Type="String",desc="The sequence of the ALT allele with the nearby sequence context of window "+len+". Note that the allele itself will be capitalized."));
+      outHeader.reportAddedInfos(this) 
+       */
+      
+      def getMatches(chrA : String, chrB:String, strdir:String, posA: Int, posB:Int, bothDirections: Boolean = true) : Seq[SVcfVariantLine] = {
+        val currwin = if(chrA==chrB){ withinChromWin } else { crossChromWin };
+        val swapstrdir = strdirSwapSVstrand(strdir);
+        
+        val fwdMatches = avReader.query(chrA,posA-currwin,posA+currwin).filter{ vx => {
+           val (chrVX,posVX) = vx.getSVbnd().get.bndBreakEnd;
+           val strdirVX = vx.getSVstrdirOrDie();
+           chrVX == chrB && posVX - currwin < posB && posVX + currwin > posB && strdirVX == strdir;
+        }}
+        val revMatches = avReader.query(chrB,posB-currwin,posB+currwin).filter{ vx => {
+           val (chrVX,posVX) = vx.getSVbnd().get.bndBreakEnd;
+           val strdirVX = vx.getSVstrdirSwapOrDie();
+           chrVX == chrA && posVX - currwin < posA && posVX + currwin > posA && strdirVX == swapstrdir;
+        }}
+        
+        (fwdMatches ++ revMatches).toSeq
+      }
+      /*
+         def notice(str : String, warnType : String = "default", limit : Int = -1){
+    val warnCt = noticeCount(warnType)
+    if(limit < 0 || warnCt <= limit){
+      PROGRESS_NEEDS_NEWLINE = true;
+      reportln("  #### NOTE ("+warnType+" "+(warnCt+1)+"):","warn");
+      reportln("    >> "+str.split("\n").mkString("\n    >> "),"warn");
+      if(limit > 0 && warnCt == limit) reportln("       (("+limit+"+ notices of type "+warnType+". Further warnings of this type will be silent.))","warn");
+    }
+    noticeCount(warnType) += 1;
+  }
+  def initNotice(warnType : String){
+    noticeCount(warnType) = 0
+  }
+       */
+      initNotice("ANNOVCF_matchesFound_"+jobID)
+      initNotice("ANNOVCF_noMatchFound_"+jobID)
+      
+      //val (vcfHeader,vcIter) = if(chromList.isEmpty){
+      //  SVcfLine.readVcf(getLinesSmartUnzip(infile),withProgress = true)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+         val vc = v.getOutputLine();
+         val sv = v.getSVbnd().get;
+         val vvm = getMatches(v.chrom,sv.bndBreakEnd._1,v.getSVstrdirOrDie(),v.pos,sv.bndBreakEnd._2)
+         /*copyInfo.foreach{ case (oldID,(newID,headerLine)) => {
+           val ival = vvm.map{ vvx => {
+             vvx.info.getOrElse(oldID,None)
+           }}
+           if( ival.exists( _.isDefined )){
+             vc.addInfo( newID, ival.map{ _.getOrElse(".") }.mkString(infoFieldDelimiter) );
+           }
+           
+         }}*/
+         
+         if(vvm.nonEmpty){
+           
+           notice("Matches ("+vvm.length+") found for: ("+v.chrom+":"+v.pos+":"+v.getSVstrdirOrDie()+")=>("+v.getSVbnd().get.bndBreakEnd._1+":"+v.getSVbnd().get.bndBreakEnd._2+"):\n"+
+               vvm.map{ vx => {
+                 "    ("+vx.chrom+":"+vx.pos+":"+vx.getSVstrdirOrDie()+")=>("+vx.getSVbnd().get.bndBreakEnd._1+":"+vx.getSVbnd().get.bndBreakEnd._2+")"
+               }}.mkString("\n"),"ANNOVCF_matchesFound_"+jobID,10)
+           
+           copyInfoSeq.foreach{ oldID => {
+             vc.addInfo(copyInfo(oldID)._1,
+               vvm.map{ vvx => {
+                 vvx.info.getOrElse(oldID,None).getOrElse(".")
+               }}.mkString(infoFieldDelimiter)
+             )
+           }}
+           
+           vc.addInfo(copyInfoPrefix+"CHROM",vvm.map{ vvx => {
+             vvx.chrom
+           }}.mkString(","))
+           vc.addInfo(copyInfoPrefix+"POS",vvm.map{ vvx => {
+             vvx.pos
+           }}.mkString(","))
+           vc.addInfo(copyInfoPrefix+"ALT",vvm.map{ vvx => {
+             vvx.alt.head
+           }}.mkString(","))
+           vc.addInfo(copyInfoPrefix+"CHROM.B",vvm.map{ vvx => {
+             vvx.getSVbnd().get.bndBreakEnd._1
+           }}.mkString(","))
+           vc.addInfo(copyInfoPrefix+"POS.B",vvm.map{ vvx => {
+             vvx.getSVbnd().get.bndBreakEnd._2
+           }}.mkString(","))
+           vc.addInfo(copyInfoPrefix+"STRAND",vvm.map{ vvx => {
+             vvx.getSVstrdirOrDie()
+           }}.mkString(","))
+         } else {
+           notice("No match found for: ("+v.chrom+":"+v.pos+":"+v.getSVstrdirOrDie()+")=>("+v.getSVbnd().get.bndBreakEnd._1+":"+v.getSVbnd().get.bndBreakEnd._2+")","ANNOVCF_noMatchFound_"+jobID,10)
+         }
+         vc;
+      }}, closeAction = (() => {
+        reportln("","note");
+      })),outHeader)
+    }
+  }
+  
+  class OLD2annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
                               crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
     def walkerName : String = "annotateCCsvWithSVset"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](

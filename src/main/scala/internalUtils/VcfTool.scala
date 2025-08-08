@@ -357,6 +357,40 @@ object VcfTool {
     }
   }
   
+  
+  class IndexedSVcfFileIterator( vcffile : String, verbose : Boolean = false){
+    
+    /*
+      reportln("     readVcf() init: buffering lines ... ("+getDateAndTimeString+")","debug")
+      val bufLines = lines.buffered;
+      reportln("     readVcf() init: lines buffered, extracting header lines... ("+getDateAndTimeString+")","debug")
+      val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      reportln("     readVcf() init: headerlines extracted, processing header... ("+getDateAndTimeString+")","debug")
+      val header = readVcfHeader(allRawHeaderLines); 
+     */
+    val header : SVcfHeader = {
+      reportln("Loading Indexed Reference VCF file: "+vcffile,"note")
+      val bufLines = getLinesSmartUnzip(vcffile).buffered;
+      val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
+      reportln("      Loading ("+vcffile+"): Header loaded." ,"note")
+      SVcfLine.readVcfHeader(allRawHeaderLines); 
+    }
+    //REQUIRES index!
+    val htsReader = new htsjdk.variant.vcf.VCFFileReader( new java.io.File( vcffile ), true );
+    
+    reportln("      Loading ("+vcffile+"): htsReader Generated." ,"note")
+    
+    def query( chrom : String, start: Int, end : Int ) : Iterator[SVcfVariantLine] = {
+      val vcxIter = htsReader.query(chrom,start,end);
+      vcxIter.asScala.map{ vcx => {
+        SVcfInputVariantLine( vcx.toString() )
+      }}
+      
+    }
+  }
+  
+  
+  
   trait VCFWalker{
     def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader);
     

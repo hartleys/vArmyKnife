@@ -1628,7 +1628,8 @@ object SVcfMapFunctions {
                                       copyOverInfoTags = params.get("copyOverInfoTags").map{ _.split(",").toSeq }.getOrElse( Seq() ),
                                       copyInfoPrefix = params.get("copyInfoPrefix").getOrElse(""),
                                       crossChromWin = params.get("crossChromWin").map{ string2int(_) }.getOrElse( 500 ),
-                                      withinChromWin = params.get("withinChromWin").map{ string2int(_) }.getOrElse(500)
+                                      withinChromWin = params.get("withinChromWin").map{ string2int(_) }.getOrElse(500),
+                                      jobID =  params("mapID")
                                       ))
            
            /*
