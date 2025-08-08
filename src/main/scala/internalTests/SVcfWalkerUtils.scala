@@ -2424,7 +2424,7 @@ object SVcfWalkerUtils {
       //vb.addInfo("CCsv_duplicateCt",callerSupport.zip(callerVarCt).map{ case (s,ct) => {
       //  s+":"+ct;
       //} }.mkString(","));
-      val dupCountMap = callerSupport.zip(callerVarCt).toMap.withDefaultValue( 0 )
+      val dupCountMap = inputVcfTypes.zip(callerVarCt).toMap.withDefaultValue( 0 )
       vb.addInfo("CCsv_duplicateCt",inputVcfTypes.map{ s => {
         ""+dupCountMap(s)
       } }.mkString(","));
