@@ -41,29 +41,29 @@ object LegacyVcfWalkers {
   
   class addTXAnno extends CommandLineRunUtil {
      override def priority = 10;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "addTxInfoToVCF", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "addTxInfoToVCF",
+          quickSynopsis = "",
+          synopsis = "",
           description = "This utility adds an array of new VCF tags with information about the transcriptional changes caused by each variant. "+BETA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[String](
-                                         name = "inputSavedTxFile", 
-                                         arg = List("--inputSavedTxFile"), 
-                                         valueName = "txdata.data.txt.gz",  
+                                         name = "inputSavedTxFile",
+                                         arg = List("--inputSavedTxFile"),
+                                         valueName = "txdata.data.txt.gz",
                                          argDesc =  "Loads a saved TXdata file. Either this parameter OR the --genomeFA parameter must be set. Using this file will be much faster than regenerating the tx data from the gtf/fasta."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "genomeFA", 
-                                         arg = List("--genomeFA"), 
-                                         valueName = "genome.fa.gz",  
+                                         name = "genomeFA",
+                                         arg = List("--genomeFA"),
+                                         valueName = "genome.fa.gz",
                                          argDesc =  "The genome fasta file. Can be gzipped or in plaintext. Either this parameter OR the --inputSavedTxFile parameter must be set!"
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "summaryFile", 
-                                         arg = List("--summaryFile"), 
-                                         valueName = "filename.txt",  
+                                         name = "summaryFile",
+                                         arg = List("--summaryFile"),
+                                         valueName = "filename.txt",
                                          argDesc =  "An optional extra output file that contains debugging information."
                                         ) ::
                     new UnaryArgument( name = "cdsRegionContainsStop",
@@ -98,46 +98,45 @@ object LegacyVcfWalkers {
                                                    "" // description
                                        ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "addBedTags", 
-                                         arg = List("--addBedTags"), 
-                                         valueName = "TAGTITLE:filedesc:bedfile.bed,TAGTITLE2:filedesc2:bedfile2.bed",  
+                                         name = "addBedTags",
+                                         arg = List("--addBedTags"),
+                                         valueName = "TAGTITLE:filedesc:bedfile.bed,TAGTITLE2:filedesc2:bedfile2.bed",
                                          argDesc =  "List of tags and bed files that define said tags. For each tag, the variant will have a tag value of 1 iff the variant appears on the bed file region, and 0 otherwise."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "txInfoFile", 
-                                         arg = List("--txInfoFile"), 
-                                         valueName = "txInfoFile.txt",  
+                                         name = "txInfoFile",
+                                         arg = List("--txInfoFile"),
+                                         valueName = "txInfoFile.txt",
                                          argDesc =  "Outputs an optional debugging file."
                                         ) ::
-
                     new BinaryOptionArgument[String](
-                                         name = "outputSavedTxFile", 
-                                         arg = List("--outputSavedTxFile"), 
-                                         valueName = "txdata.data.txt.gz",  
+                                         name = "outputSavedTxFile",
+                                         arg = List("--outputSavedTxFile"),
+                                         valueName = "txdata.data.txt.gz",
                                          argDesc =  "Creates a saved TXdata file, for faster loading in future runs. This contains metadata about each transcript in a machine-readable format."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "txToGeneFile", 
-                                         arg = List("--txToGeneFile"), 
-                                         valueName = "txToGene.txt",  
+                                         name = "txToGeneFile",
+                                         arg = List("--txToGeneFile"),
+                                         valueName = "txToGene.txt",
                                          argDesc =  "File containing the mapping of transcript names to gene symbols. This file must have 2 columns: the txID and the geneID. No header line."
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[String](
-                                         name = "groupFile", 
-                                         arg = List("--groupFile"), 
-                                         valueName = "groups.txt",  
+                                         name = "groupFile",
+                                         arg = List("--groupFile"),
+                                         valueName = "groups.txt",
                                          argDesc =  "File containing a group decoder. This is a simple 2-column file (no header line). The first column is the sample ID, the 2nd column is the group ID."
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[String](
-                                         name = "superGroupList", 
-                                         arg = List("--superGroupList"), 
-                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
+                                         name = "superGroupList",
+                                         arg = List("--superGroupList"),
+                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",
                                          argDesc =  "A list of top-level supergroups. Requires the --groupFile parameter to be set."
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "infileList",
@@ -162,9 +161,9 @@ object LegacyVcfWalkers {
                                         ) ::
                     internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS );
 
-     def run(args : Array[String]) {
+     def run(args : Array[String]) = {
        val out = parser.parseArguments(args.toList.tail);
-       if(out){ 
+       if(out){
          /*if(parser.get[Boolean]("newParser")){
           runSAddTXAnno( parser.get[String]("infile"),
                        parser.get[String]("outfile"),
@@ -230,8 +229,8 @@ object LegacyVcfWalkers {
      }
   }
 
-  def runAddTXAnno(vcffile : String, outfile : String, 
-                gtffile : String, 
+  def runAddTXAnno(vcffile : String, outfile : String,
+                gtffile : String,
                 genomeFA : Option[String],
                 summaryFile : Option[String],
                 txInfoFile : Option[String],
@@ -249,11 +248,11 @@ object LegacyVcfWalkers {
                 nonNullVariantsOnly : Boolean,
                 addBedTags : Option[List[String]],
                 infileList : Boolean = false,
-                bufferSize : Int = 32, 
+                bufferSize : Int = 32,
                 vcfCodes : VCFAnnoCodes = VCFAnnoCodes()
-                ){
+                )={
     
-    val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfFilesIter(infile = vcffile, 
+    val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfFilesIter(infile = vcffile,
                                        chromList = chromList,infileList = infileList,
                                        vcfCodes = vcfCodes);
     
@@ -261,8 +260,8 @@ object LegacyVcfWalkers {
     
     val walkers = Seq[VCFWalker](
           AddTxAnnoWalker(
-                gtffile =gtffile, 
-                genomeFA =genomeFA, 
+                gtffile =gtffile,
+                genomeFA =genomeFA,
                 summaryWriter =summaryWriter,
                 txInfoFile = txInfoFile,
                 addStopCodon =addStopCodon,
@@ -355,13 +354,13 @@ object LegacyVcfWalkers {
   
   class CmdAddCanonicalInfo extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "AddCanonicalInfo", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = " " + ALPHA_WARNING,   
-          argList = 
+          command = "AddCanonicalInfo",
+          quickSynopsis = "",
+          synopsis = "",
+          description = " " + ALPHA_WARNING,
+          argList =
             
             /*
                      vMutC_TAG : String = TOP_LEVEL_VCF_TAG+"varC",
@@ -369,22 +368,22 @@ object LegacyVcfWalkers {
              */
             
                     new BinaryArgument[String](name = "tagList",
-                                           arg = List("--tagList"),  
-                                           valueName = "tag1,tag2,tag3,...", 
-                                           argDesc = "", 
+                                           arg = List("--tagList"),
+                                           valueName = "tag1,tag2,tag3,...",
+                                           argDesc = "",
                                            defaultValue = Some(
                                                DEFAULT_CMDADDCANONICALINFO_TAGLIST
                                            )) ::
                     new BinaryOptionArgument[String](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chromList.txt",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chromList.txt",
                                          argDesc =  ""
-                                        ) ::   
+                                        ) ::
                     new BinaryArgument[String](name = "txListTag",
-                                           arg = List("--txListTag"),  
-                                           valueName = OPTION_TAGPREFIX+"TXLIST", 
-                                           argDesc = "", 
+                                           arg = List("--txListTag"),
+                                           valueName = OPTION_TAGPREFIX+"TXLIST",
+                                           argDesc = "",
                                            defaultValue = Some(
                                                DEFAULT_CMDADDCANONICALINFO_TXTAG
                                            )) ::
@@ -405,7 +404,7 @@ object LegacyVcfWalkers {
                                         ) ::
                     internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS );
           
-    def run(args : Array[String]) {
+    def run(args : Array[String]) ={
      val out = parser.parseArguments(args.toList.tail);
      if(out){
        
@@ -418,7 +417,7 @@ object LegacyVcfWalkers {
                    outfile   = parser.get[String]("outvcf"),
                    chromList = parser.get[Option[List[String]]]("chromList")
                    )
-     }   
+     }
     }
   }
   
@@ -508,7 +507,7 @@ object LegacyVcfWalkers {
     def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader) = {
       
       val newHeaderLines = List(
-            new VCFInfoHeaderLine(vcfCodes.CLNVAR_SUMSIG,     1, VCFHeaderLineType.Integer, "Summary clinical significance level, from CLNSIG tag. Collapsed multiple reports into a single reported significance level.")      
+            new VCFInfoHeaderLine(vcfCodes.CLNVAR_SUMSIG,     1, VCFHeaderLineType.Integer, "Summary clinical significance level, from CLNSIG tag. Collapsed multiple reports into a single reported significance level.")
       );
       
       val newHeader = internalUtils.VcfTool.addHeaderLines(vcfHeader,newHeaderLines);
@@ -530,17 +529,17 @@ object LegacyVcfWalkers {
 
   class CmdSplitMultiAllelics extends CommandLineRunUtil {
      override def priority = 15;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "splitMultiAllelics", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = " " + ALPHA_WARNING,   
-          argList = 
+          command = "splitMultiAllelics",
+          quickSynopsis = "",
+          synopsis = "",
+          description = " " + ALPHA_WARNING,
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "..."
                                         ) ::
                     new UnaryArgument( name = "clinVarVariants",
@@ -567,15 +566,15 @@ object LegacyVcfWalkers {
                                         ) ::
                     internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS );
           
-    def run(args : Array[String]) {
+    def run(args : Array[String])= {
      val out = parser.parseArguments(args.toList.tail);
-     if(out){ 
-       SplitMultiAllelics(clinVarVariants = parser.get[Boolean]("clinVarVariants"), 
+     if(out){
+       SplitMultiAllelics(clinVarVariants = parser.get[Boolean]("clinVarVariants"),
                           splitSimple = parser.get[Boolean]("clinVarVariants")
                         ).walkVCFFiles(
                               infile = parser.get[String]("invcf"),
-                              outfile = parser.get[String]("outvcf"), 
-                              chromList = parser.get[Option[List[String]]]("chromList"), 
+                              outfile = parser.get[String]("outvcf"),
+                              chromList = parser.get[Option[List[String]]]("chromList"),
                               infileList = parser.get[Boolean]("infileList")
                         )
      }
@@ -583,7 +582,7 @@ object LegacyVcfWalkers {
   }
   
   /*def runSplitMultiAllelics(infile : String, outfile : String, chromList : Option[List[String]], clinVarVariants : Boolean, infileList : Boolean, vcfCodes : VCFAnnoCodes = VCFAnnoCodes()){
-    val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfIterator(infile, 
+    val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfIterator(infile,
                                        chromList = chromList,
                                        vcfCodes = vcfCodes);
         
@@ -599,11 +598,11 @@ object LegacyVcfWalkers {
   
   val multiAllelicIndexStream = Iterator.from(0).toStream.map(i => {
     Range(0,i).flatMap(k => Range(k,i).map(z => (k,z)))
-  }) 
+  })
   
   
   val NUMREPORTBADLEN=5;
-  case class SplitMultiAllelics(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(), 
+  case class SplitMultiAllelics(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
                                 clinVarVariants : Boolean, splitSimple : Boolean = false) extends internalUtils.VcfTool.VCFWalker {
       val infoCLN = if(clinVarVariants){
         Set[String]("CLNHGVS","CLNSRC","CLNORIGIN","CLNSRCID","CLNSIG","CLNDSDB","CLNDSDBID","CLNREVSTAT","CLNACC","CLNDBN");
@@ -697,7 +696,7 @@ object LegacyVcfWalkers {
                     (if(internalUtils.optionHolder.OPTION_DEBUGMODE) "\n   "+vc.toStringWithoutGenotypes() else ""),
                     "INFO_LENGTH_WRONG_"+key,NUMREPORTBADLEN);
                 warningSet = warningSet + ("INFO_LENGTH_WRONG_A."+key)
-                tagWarningMap(key) += 1; 
+                tagWarningMap(key) += 1;
                 repToSeq(atr.mkString(","),numAlle - 1);
               } else {
                 atr.toSeq;
@@ -778,7 +777,7 @@ object LegacyVcfWalkers {
                   if(gt.hasPL()){
                     val genoPL  = gt.getLikelihoods().getAsPLs();
                     val genoL   = genoPL.map(x => math.pow(10,- x.toDouble / 10.toDouble));
-                    gb.PL(Array[Int]( 
+                    gb.PL(Array[Int](
                         genoPL(0),
                         genoPL(GenotypeLikelihoods.calculatePLindex(0,altAlleIdx)),
                         genoPL(GenotypeLikelihoods.calculatePLindex(altAlleIdx,altAlleIdx)),
@@ -794,7 +793,7 @@ object LegacyVcfWalkers {
                     if(a.isNoCall()) a;
                     else if(refAlle == a || alt == a) a;
                     else Allele.SPAN_DEL
-                  }).asJava); 
+                  }).asJava);
                   for((key,attr) <- gt.getExtendedAttributes().asScala){
                     gb.attribute(key,attr);
                   }
@@ -899,9 +898,9 @@ object LegacyVcfWalkers {
     }
   }
 
-  case class AddTxAnnoWalker(gtffile : String, 
-                genomeFA : Option[String], 
-                //outfile : String, 
+  case class AddTxAnnoWalker(gtffile : String,
+                genomeFA : Option[String],
+                //outfile : String,
                 //summaryFile : Option[String],
                 summaryWriter : Option[WriterUtil],
                 txInfoFile : Option[String],
@@ -911,7 +910,7 @@ object LegacyVcfWalkers {
                 geneVariantsOnly : Boolean,
                 chromList : Option[List[String]],
                 txToGeneFile : Option[String],
-                bufferSize : Int = 32, 
+                bufferSize : Int = 32,
                 addBedTags : Option[List[String]],
                 vcfCodes : VCFAnnoCodes = VCFAnnoCodes()
                 ) extends internalUtils.VcfTool.VCFWalker {
@@ -948,7 +947,7 @@ object LegacyVcfWalkers {
       }
       
       /*
-       * 
+       *
     val conservedArray = conservedElementFile match {
       case Some(f) => {
         reportln("reading conserved locus file ["+stdUtils.getDateAndTimeString+"]","debug");
@@ -982,7 +981,7 @@ object LegacyVcfWalkers {
         }
       }
     }
-       * 
+       *
        */
       
       
@@ -1076,7 +1075,7 @@ object LegacyVcfWalkers {
             new VCFInfoHeaderLine(vcfCodes.vTypeShort_TAG, VCFHeaderLineCount.A, VCFHeaderLineType.String, "For each allele, the worst amino acid change type found over all transcripts."),
             new VCFInfoHeaderLine(vcfCodes.vMutPShort_TAG, VCFHeaderLineCount.A, VCFHeaderLineType.String, "For each allele, one of the protein changes for the worst variant type found over all transcripts"),
             new VCFInfoHeaderLine(vcfCodes.vMutINFO_TAG, VCFHeaderLineCount.A, VCFHeaderLineType.String, "Raw variant info for each allele."),
-            new VCFInfoHeaderLine(vcfCodes.vMutLVL_TAG, VCFHeaderLineCount.A, VCFHeaderLineType.String, 
+            new VCFInfoHeaderLine(vcfCodes.vMutLVL_TAG, VCFHeaderLineCount.A, VCFHeaderLineType.String,
                                        "For each allele, the rough deliteriousness level of the variant, over all transcripts. Possible values, in order of deliteriousness "+
                                        "SYNON (synonymous mutation), "+
                                        "PSYNON (Probably-synonymous, indicates that the variant is within a transcript's introns or near a genes endpoints), "+
@@ -1086,7 +1085,7 @@ object LegacyVcfWalkers {
                                        "LLOF (likely loss of function, includes frameshift indels and variants that add early stop codons")
       ) ++ ( if(txToGeneFile.isEmpty) List() else {
         List(
-          new VCFInfoHeaderLine(vcfCodes.geneIDs, VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "Gene Symbol for each tx.")    
+          new VCFInfoHeaderLine(vcfCodes.geneIDs, VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "Gene Symbol for each tx.")
         )
       }) ++ bedTags.map{ case (tagString,descString,bedFunction) => {
           new VCFInfoHeaderLine(tagString, 1, VCFHeaderLineType.Integer, "Variant is found on bed file "+descString)
@@ -1103,7 +1102,7 @@ object LegacyVcfWalkers {
             (cells(0),cells(1));
           }).toMap
           Some(((s : String) => txToGeneMap.getOrElse(s,s)));
-        } 
+        }
         case None => {
           None;
         }
@@ -1346,9 +1345,9 @@ object LegacyVcfWalkers {
   }
   
 
-  case class AddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]], 
-             addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true, 
-             addAlle : Boolean= true, addHetHom : Boolean = true, 
+  case class AddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]],
+             addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true,
+             addAlle : Boolean= true, addHetHom : Boolean = true,
              sepRef : Boolean = true, countMissing : Boolean = true,
              noMultiAllelics : Boolean = false,
              vcfCodes : VCFAnnoCodes = VCFAnnoCodes()) extends internalUtils.VcfTool.VCFWalker {
@@ -1577,36 +1576,36 @@ object LegacyVcfWalkers {
   
   class AddVariantDomainUtil extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "AddVariantDomains", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = " " + ALPHA_WARNING,   
-          argList = 
+          command = "AddVariantDomains",
+          quickSynopsis = "",
+          synopsis = "",
+          description = " " + ALPHA_WARNING,
+          argList =
                     new UnaryArgument( name = "countClinVar",
                                          arg = List("--countClinVar"), // name of value
                                          argDesc = "If this flag is used..."+
                                                    "" // description
-                                       ) ::       
+                                       ) ::
                     new BinaryOptionArgument[String](
-                                         name = "txToGeneFile", 
-                                         arg = List("--txToGeneFile"), 
-                                         valueName = "txToGene.txt",  
+                                         name = "txToGeneFile",
+                                         arg = List("--txToGeneFile"),
+                                         valueName = "txToGene.txt",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "gtfFile", 
-                                         arg = List("--gtfFile"), 
-                                         valueName = "anno.gtf.gz",  
+                                         name = "gtfFile",
+                                         arg = List("--gtfFile"),
+                                         valueName = "anno.gtf.gz",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chromList.txt",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chromList.txt",
                                          argDesc =  ""
-                                        ) ::   
+                                        ) ::
                     new FinalArgument[String](
                                          name = "invcf",
                                          valueName = "variants.vcf",
@@ -1629,7 +1628,7 @@ object LegacyVcfWalkers {
                                         ) ::
                     internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS );
           
-    def run(args : Array[String]) {
+    def run(args : Array[String])= {
      val out = parser.parseArguments(args.toList.tail);
      if(out){
        
@@ -1644,7 +1643,7 @@ object LegacyVcfWalkers {
                    outfile   = parser.get[String]("outvcf"),
                    chromList = parser.get[Option[List[String]]]("chromList")
                    )
-     }   
+     }
     }
   }
 
@@ -1689,7 +1688,7 @@ object LegacyVcfWalkers {
       }
       case None => GenomicArrayOfSets[String](false).finalizeStepVectors;
     }
-    reportln("Reading txdata... ["+internalUtils.stdUtils.getDateAndTimeString+"]","debug"); 
+    reportln("Reading txdata... ["+internalUtils.stdUtils.getDateAndTimeString+"]","debug");
     
     val domainClinCount = scala.collection.mutable.AnyRefMap[String,Array[Int]]();
     val domainClinCountBySev = scala.collection.mutable.AnyRefMap[String,Array[Array[Int]]]();
@@ -1744,7 +1743,7 @@ object LegacyVcfWalkers {
     def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader) = {
       
       val newHeaderLines = List(
-            new VCFInfoHeaderLine(vcfCodes.domainIds,      VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "List of domains that the variant intersects with.")      
+            new VCFInfoHeaderLine(vcfCodes.domainIds,      VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "List of domains that the variant intersects with.")
       );
       
       val newHeader = internalUtils.VcfTool.addHeaderLines(vcfHeader,newHeaderLines);
@@ -1792,7 +1791,7 @@ object LegacyVcfWalkers {
         domainClinCount.keys.toVector.sorted.foreach(d => {
           val txList = domainTx(d).toVector.sorted;
           val geneList = domainTx(d).map(tx => txToGene(tx)).toSet.toVector.sorted;
-            writer.write(d + "\t"+ 
+            writer.write(d + "\t"+
                        domainLoci(d)._1 + "\t" +
                        domainLoci(d)._3.map(_._1).min + "\t"+
                        domainLoci(d)._3.map(_._2).max + "\t"+
@@ -1800,7 +1799,7 @@ object LegacyVcfWalkers {
                        domainLoci(d)._2 + "\t"+
                        domainLoci(d)._4._1+"\t"+
                        domainLoci(d)._4._2+"\t"+
-                       txList.mkString(",") + "\t" + 
+                       txList.mkString(",") + "\t" +
                        geneList.mkString(",") + "\t"+
                        domainClinCount(d).mkString("\t")+"\t"+
                        domainClinCountBySev(d)(0).mkString("\t")+"\t"+
@@ -1827,7 +1826,7 @@ object LegacyVcfWalkers {
                        domainLoci(d)._2 + "\t"+
                        domainLoci(d)._4._1+"\t"+
                        domainLoci(d)._4._2+"\t"+
-                       txList.mkString(",") + "\t" + 
+                       txList.mkString(",") + "\t" +
                        geneList.mkString(",") + "\t"+
                        domainClinCount(d).mkString("\t")+"\t"+
                        domainClinCountBySev(d)(0).mkString("\t")+"\t"+
@@ -1840,7 +1839,7 @@ object LegacyVcfWalkers {
   }
   
 
-  case class RedoDBNSFPannotation( dbnsfpfile : String, chromStyle : String, chromList : Option[List[String]], 
+  case class RedoDBNSFPannotation( dbnsfpfile : String, chromStyle : String, chromList : Option[List[String]],
                                    posFieldTitle : String,chromFieldTitle : String, altFieldTitle : String,
                                    singleDbFile : Boolean,
                                    dbFileDelim : String,
@@ -1890,7 +1889,7 @@ object LegacyVcfWalkers {
     var currPos = -1;
     var lastRequestedPos = -1;
     
-    def setPos(){
+    def setPos()={
       if(currIterator.hasNext){
         val (chr, pos, alle, cells) = currIterator.head;
         val currPosVector = extractWhile(currIterator){ case (ch,p,a,c) => { ch == chr && p == pos } }
@@ -1927,7 +1926,7 @@ object LegacyVcfWalkers {
           return pos == currPos && chrom == currChrom;
         }
       } else {
-        reportln("Switching to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");          
+        reportln("Switching to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");
         if(singleDbFile){
           skipWhile(currIterator){ case (chr,p,alle,cells) => chr != chrom }
           if(! currIterator.hasNext){
@@ -1955,7 +1954,7 @@ object LegacyVcfWalkers {
         currPos = -1;
         currChrom = chrom;
         lastRequestedPos = -1;
-        reportln("Switched to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");          
+        reportln("Switched to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");
         return shiftToPosition(chrom,pos);
       }
     }
@@ -1976,7 +1975,7 @@ object LegacyVcfWalkers {
       }
     })
     
-    def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader) = { 
+    def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader) = {
       
       val newHeaderLines = List(
         new VCFInfoHeaderLine(tagPrefix+"FoundAtPos", 1, VCFHeaderLineType.Integer, "Equal to 1 if and only if any dbNSFP line was found at the given position."),
@@ -2037,9 +2036,9 @@ object LegacyVcfWalkers {
     
     //def cleanInfoField(s : String) : String = {
     //  var out = s;
-    //  
+    //
     //  out = out.replaceAll("\\||\\.|;",",").replaceAll("/| |-|:","_").replaceAll("[\\(\\)\\[\\]]","").replaceAll("[_]+","_").replaceAll("[,]+",",").replaceAll("_$|,$","");
-    //  
+    //
     //  return out;
     //}
     def cleanInfoField(s : String) : String = {
@@ -2058,76 +2057,76 @@ object LegacyVcfWalkers {
   
   class redoDBNSFP extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "redoDBNSFP", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "redoDBNSFP",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new UnaryArgument( name = "singleDbFile",
                                          arg = List("--singleDbFile"), // name of value
                                          argDesc = "NOT CURRENTLY SUPPORTED"+
                                                    "" // description
                                        ) ::
                     new BinaryArgument[String](
-                                         name = "dbFileDelim", 
-                                         arg = List("--dbFileDelim"), 
-                                         valueName = "delim",  
+                                         name = "dbFileDelim",
+                                         arg = List("--dbFileDelim"),
+                                         valueName = "delim",
                                          argDesc =  ".",
                                          defaultValue = Some("\t")
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "chromStyle", 
-                                         arg = List("--chromStyle"), 
-                                         valueName = "hg19",  
+                                         name = "chromStyle",
+                                         arg = List("--chromStyle"),
+                                         valueName = "hg19",
                                          argDesc =  ".",
                                          defaultValue = Some("hg19")
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "posFieldTitle", 
-                                         arg = List("--posFieldTitle"), 
-                                         valueName = "pos",  
+                                         name = "posFieldTitle",
+                                         arg = List("--posFieldTitle"),
+                                         valueName = "pos",
                                          argDesc =  ".",
                                          defaultValue = Some("pos(1-coor)")
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "chromFieldTitle", 
-                                         arg = List("--chromFieldTitle"), 
-                                         valueName = "chr",  
+                                         name = "chromFieldTitle",
+                                         arg = List("--chromFieldTitle"),
+                                         valueName = "chr",
                                          argDesc =  ".",
                                          defaultValue = Some("chr")
-                                        ) ::     
+                                        ) ::
                     new BinaryArgument[String](
-                                         name = "altFieldTitle", 
-                                         arg = List("--altFieldTitle"), 
-                                         valueName = "alt",  
+                                         name = "altFieldTitle",
+                                         arg = List("--altFieldTitle"),
+                                         valueName = "alt",
                                          argDesc =  ".",
                                          defaultValue = Some("alt")
-                                        ) ::     
+                                        ) ::
                     new BinaryArgument[String](
-                                         name = "tagPrefix", 
-                                         arg = List("--tagPrefix"), 
-                                         valueName = "prefix",  
+                                         name = "tagPrefix",
+                                         arg = List("--tagPrefix"),
+                                         valueName = "prefix",
                                          argDesc =  ".",
                                          defaultValue = Some(OPTION_TAGPREFIX+"dbNSFP_")
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "keepTags", 
-                                         arg = List("--keepTags"), 
-                                         valueName = "tag1,tag2,...",  
+                                         name = "keepTags",
+                                         arg = List("--keepTags"),
+                                         valueName = "tag1,tag2,...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "dropTags", 
-                                         arg = List("--dropTags"), 
-                                         valueName = "tag1,tag2,...",  
+                                         name = "dropTags",
+                                         arg = List("--dropTags"),
+                                         valueName = "tag1,tag2,...",
                                          argDesc =  ""
                                         ) ::
                     new FinalArgument[String](
@@ -2147,12 +2146,12 @@ object LegacyVcfWalkers {
                                         ) ::
                     internalUtils.commandLineUI.CLUI_UNIVERSAL_ARGS );
 
-     def run(args : Array[String]) {
+     def run(args : Array[String]) ={
        val out = parser.parseArguments(args.toList.tail);
        if(out){
          RedoDBNSFPannotation(
              dbnsfpfile = parser.get[String]("dbnsfpfile"),
-             chromStyle = parser.get[String]("chromStyle"), 
+             chromStyle = parser.get[String]("chromStyle"),
              chromList = parser.get[Option[List[String]]]("chromList"),
             // filesByChrom = ! parser.get[Boolean]("singleDbFile"),
              posFieldTitle = parser.get[String]("posFieldTitle"),
@@ -2175,7 +2174,7 @@ object LegacyVcfWalkers {
   
   
 
-  case class DEPRECATED_FixEnsemblMerge2(inputVCFs : Seq[String], inputVcfTypes : Seq[String], 
+  case class DEPRECATED_FixEnsemblMerge2(inputVCFs : Seq[String], inputVcfTypes : Seq[String],
                               masterCaller : Option[String], summaryFile : Option[String]) extends SVcfWalker {
     def walkerName : String = "FixEnsemblMerge2"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -2203,7 +2202,7 @@ object LegacyVcfWalkers {
       } else {
         SVcfLine.readVcf(getLinesSmartUnzip(infile), withProgress = false)
       }
-    }}; 
+    }};
     val headers = readers.map(_._1);
     val iteratorArray : Array[BufferedIterator[SVcfVariantLine]] = readers.map(_._2.buffered).toArray;
     
@@ -2310,10 +2309,10 @@ object LegacyVcfWalkers {
         newHeader.addFormatLine(hl, walker = Some(this));
       }}
       
-      //val newHeader = SVcfHeader(infoLines = vcfHeader.infoLines ++ customInfoLines.flatten ++ extraInfoLines, 
+      //val newHeader = SVcfHeader(infoLines = vcfHeader.infoLines ++ customInfoLines.flatten ++ extraInfoLines,
       //                          formatLines = newFmtLines,
       //                          otherHeaderLines = vcfHeader.otherHeaderLines,
-      //                           walkLines = vcfHeader.walkLines, 
+      //                           walkLines = vcfHeader.walkLines,
       //                          titleLine = vcfHeader.titleLine);
       newHeader.addWalk(this);
       val sampNames = vcfHeader.titleLine.sampleList;
@@ -2362,7 +2361,7 @@ object LegacyVcfWalkers {
           }
           
           var callerSets = Array.fill[Set[String]](altAlles.length)(Set[String]());
-          var sampleWarn = Array.fill[Set[String]](sampCt)(Set[String]()); 
+          var sampleWarn = Array.fill[Set[String]](sampCt)(Set[String]());
           
           try{
           otherVcAtPos.zip(fmtTags).zipWithIndex.foreach{ case ((otherLines,otherFmtTags),otherFileIdx) => {
@@ -2556,8 +2555,8 @@ object LegacyVcfWalkers {
               //vb.genotypes.fmt = vb.genotypes.fmt ++ fmtA.map{_._3} ++ fmtR.map{_._3} ++ fmtOther.map{_._3} ++ customFmtLines(otherFileIdx)
               vb.genotypes.fmt = vb.genotypes.fmt ++ fmtA.map{_._3.ID} ++ fmtR.map{_._3.ID} ++ fmtOther.map{_._3.ID} ++ customFmtLines(otherFileIdx).map(_.ID);
               //vb.in_format = vb.in_format ++ fmtA.map{_._3.ID} ++ fmtR.map{_._3.ID} ++ fmtOther.map{_._3.ID} ++ customFmtLines(otherFileIdx).map(_.ID);
-              vb.genotypes.genotypeValues = ( vb.genotypes.genotypeValues ++ fmtA.map{_._1.map(_.mkString(","))} ++ 
-                                              fmtR.map{_._1.map(_.mkString(","))} ++ 
+              vb.genotypes.genotypeValues = ( vb.genotypes.genotypeValues ++ fmtA.map{_._1.map(_.mkString(","))} ++
+                                              fmtR.map{_._1.map(_.mkString(","))} ++
                                               fmtOther.map{_._1.map(_.mkString("|"))} ) ++
                                              Array(
                                                  altGtArray.map(_.mkString("|")),
@@ -2576,7 +2575,7 @@ object LegacyVcfWalkers {
                    (OPTION_TAGPREFIX+""+ masterCaller.get + "_" + infoTag , infoValue)
                  }}
               }
-            }  
+            }
           }}
           
           
@@ -2636,7 +2635,7 @@ object LegacyVcfWalkers {
           val numUnsupportedGT = gtIsSupported.count(! _);
           if(numUnsupportedGT > 0){
             val warnMsg = "UNSUPPORTED_GT"
-            warningLazy(() => 
+            warningLazy(() =>
                     "Found "+numUnsupportedGT+ " unsupported genotypes!\n"+
                     "    "+vc.getSimpleVcfString()+"\n"+
                     "    Other VC at pos:\n"+
@@ -2649,7 +2648,7 @@ object LegacyVcfWalkers {
           //vb.genotypes.fmt = vb.genotypes.fmt ++ extraFmtLines
           vb.genotypes.fmt = vb.genotypes.fmt ++ extraFmtLines.map{efl => efl.ID}
           //vb.in_format = vb.in_format ++ extraFmtLines.map{efl => efl.ID}
-          vb.genotypes.genotypeValues = vb.genotypes.genotypeValues ++ 
+          vb.genotypes.genotypeValues = vb.genotypes.genotypeValues ++
                                                Array(mm.map(if(_) "1" else "0"),
                                                      mmStrict.map(if(_) "1" else "0"),
                                                      gtCallerSupport,
@@ -2840,10 +2839,10 @@ object LegacyVcfWalkers {
         }}
       }}
       
-      //val newHeader = SVcfHeader(infoLines = vcfHeader.infoLines ++ customInfoLines.flatten ++ extraInfoLines, 
+      //val newHeader = SVcfHeader(infoLines = vcfHeader.infoLines ++ customInfoLines.flatten ++ extraInfoLines,
       //                          formatLines = newFmtLines,
       //                          otherHeaderLines = vcfHeader.otherHeaderLines,
-      //                           walkLines = vcfHeader.walkLines, 
+      //                           walkLines = vcfHeader.walkLines,
       //                          titleLine = vcfHeader.titleLine);
 
       newHeader.addWalk(this);
@@ -2895,7 +2894,7 @@ object LegacyVcfWalkers {
           }
           
           var callerSets = Array.fill[Set[String]](altAlles.length)(Set[String]());
-          var sampleWarn = Array.fill[Set[String]](sampCt)(Set[String]()); 
+          var sampleWarn = Array.fill[Set[String]](sampCt)(Set[String]());
           
           otherVcAtPos.zip(fmtTags).zipWithIndex.foreach{ case ((otherLines,otherFmtTags),otherFileIdx) => {
             val otherFileType = inputVcfTypes(otherFileIdx);
