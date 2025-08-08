@@ -106,7 +106,7 @@
 
 ### SETS\.KEEP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
 
->  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple replacement\.
+>  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that do not contain the string will be dropped\.  Does not do pattern matching, simple text search\.
 
 
     info (INFO:String) 
@@ -134,9 +134,16 @@
 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
+### expr\(expr\)
+
+>  The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise\. See the expression format definition for more information on how the logical expression syntax works\.
+
+
+    expr (STRING) 
+
 ### SETS\.DROP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
 
->  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple replacement\.
+>  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple text search\.
 
 
     info (INFO:String) 
@@ -149,6 +156,15 @@
 
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
+
+### STRING\_REPLACE\(old,new,info\)
+
+>  Simple string replacement\. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field\. Any time the old string appears in the INFO field it will be replaced by the new string\. Does not do pattern matching, simple replacement\.
+
+
+    old (CONST:String) 
+    new (CONST:String) 
+    info (INFO:String) 
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 
@@ -257,6 +273,15 @@
 
     gtExpr (Optional) (STRING) 
     varExpr (Optional) (STRING) 
+
+### IF\.AB\(expr,A,B\)
+
+>  Switches between two options depending on a logical expression\. The 'expr' expression parameter must be formatted like standard variant\-level expressions\. The A and B parameters can each be either a constant or an INFO field\. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B\.
+
+
+    expr (STRING) 
+    A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
+    B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
 
 ### COLLATE\(inputDelimName,outputDelimOuter,outputDelimInner,x\.\.\.\)
 

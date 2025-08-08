@@ -1,4 +1,4 @@
-> Version 3.4.15 (Updated Thu May 15 11:37:07 EDT 2025)
+> Version 3.4.21 (Updated Tue Jun 10 10:26:03 EDT 2025)
 
 # vArmyKnife: 
 
@@ -1349,7 +1349,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### SETS\.KEEP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
 
->  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple replacement\.
+>  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that do not contain the string will be dropped\.  Does not do pattern matching, simple text search\.
 
 
     info (INFO:String) 
@@ -1377,9 +1377,16 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
+### expr\(expr\)
+
+>  The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise\. See the expression format definition for more information on how the logical expression syntax works\.
+
+
+    expr (STRING) 
+
 ### SETS\.DROP\.ELEMENTS\.THAT\.CONTAIN\(info,str\)
 
->  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple replacement\.
+>  First parameter should be an INFO field, second parameter is a string\. Any elements in the INFO field that contain the string will be dropped\.  Does not do pattern matching, simple text search\.
 
 
     info (INFO:String) 
@@ -1392,6 +1399,15 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     x (INFO:String) 
     defaultValue (Optional) (CONST:Int) 
+
+### STRING\_REPLACE\(old,new,info\)
+
+>  Simple string replacement\. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field\. Any time the old string appears in the INFO field it will be replaced by the new string\. Does not do pattern matching, simple replacement\.
+
+
+    old (CONST:String) 
+    new (CONST:String) 
+    info (INFO:String) 
 
 ### CONVERT\.TO\.FLOAT\(x,defaultValue\)
 
@@ -1500,6 +1516,15 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     gtExpr (Optional) (STRING) 
     varExpr (Optional) (STRING) 
+
+### IF\.AB\(expr,A,B\)
+
+>  Switches between two options depending on a logical expression\. The 'expr' expression parameter must be formatted like standard variant\-level expressions\. The A and B parameters can each be either a constant or an INFO field\. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B\.
+
+
+    expr (STRING) 
+    A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
+    B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
 
 ### COLLATE\(inputDelimName,outputDelimOuter,outputDelimInner,x\.\.\.\)
 
@@ -1624,6 +1649,13 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     x... (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
+### FLAGSET\(x\.\.\.\)
+
+>  Input should be a set of gtFields and optionally a name, with the format tagID:name or just tagID\. If names are omitted, then the name will be equal to the tagID\. Output field will be the set of names for which the respective info field is equal to 1\. Any value other than 1, including missing fields, will be treated as 0\.
+
+
+    x... (GENO:Int|GENO:String) 
+
 ### DIV\(x,y\)
 
 >  Input should be a set of format tags and/or numeric constants \(which must be specified as CONST:n\) or info tags \(which must be specified as INFO:n\)\. Output field will be the sum of the inputs\. Any missing values result in a missing result\.
@@ -1649,6 +1681,15 @@ This utility performs a series of transformations on an input VCF file and adds 
     gtExpr (CONST:String) 
     varExpr (Optional) (CONST:String) 
 
+### SWITCH\.EXPR\(gtExpr,A,B\)
+
+>  This function takes a genotype\-level logical expression gtExpr and two additional variables A and B\. A and B can each be a FORMAT field, a INFO field \(specified as INFO:x\), or a string constant \(specified as CONST:x\)\. If gtExpr returns TRUE, then the new FORMAT field will equal the corresponding value of A\. If the gtExpr returns FALSE, the new FORMAT field will equal the corresponding value of B\.
+
+
+    gtExpr (CONST:String) 
+    A (GENO:String|INFO:String|CONST:String) 
+    B (GENO:String|INFO:String|CONST:String) 
+
 ### IF\.AB\(gtExpr,A,B\)
 
 >  This function takes a genotype\-level logical expression gtExpr and two additional variables A and B\. A and B can each be a FORMAT field, a INFO field \(specified as INFO:x\), or a string constant \(specified as CONST:x\)\. If gtExpr returns TRUE, then the new FORMAT field will equal the corresponding value of A\. If the gtExpr returns FALSE, the new FORMAT field will equal the corresponding value of B\.
@@ -1673,6 +1714,15 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     
 
+### TALLY\.SUM\.IF\.byGROUP\(expr,group\.\.\.,x\.\.\.\)
+
+>  Takes a variant expression expr, an INFO field "group" and an INFO field x\. Will output an entry for each unique value of the group variable\. For each distinct value of the group variable g, will output the sum of all x in which the group variable equals g AND where expr is TRUE\. This is especially useful for generating counts for each gene\.
+
+
+    expr (String) 
+    group... (INFO:String) 
+    x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+
 ### TALLY\.SUM\.IF\(expr,x\.\.\.\)
 
 >  Takes as input a variant expression expr and a constant or INFO field x\. Output will be the sum of all x where expr is TRUE\. Set x to CONST:1 to simply count the number of variants\.
@@ -1680,6 +1730,15 @@ This utility performs a series of transformations on an input VCF file and adds 
 
     expr (String) 
     x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+
+### gtCountTabulate\(gtTag,varExpr,gtExpr\)
+
+>  Takes as input a String GENO field gtTag, a variant expression varExpr and a genotype level expression gtExpr\. This function will tabulate observed values of gtTag for all cases where both gtExpr and varExpr are TRUE\. x should be a categorical or integer variable of some sort with a limited number of possible values\. Put another way, this function will count the number of occurrances of each observed value of x for which gtExpr and varExpr are true\.
+
+
+    gtTag (GENO:String|INFO:String) 
+    varExpr (String) 
+    gtExpr (String) 
 
 ### GTCOUNT\.BYSAMPLE\(varExpr,gtExpr\)
 
@@ -1689,7 +1748,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     varExpr (String) 
     gtExpr (String) 
 
-### TALLY\.SUM\.IF\.byGROUP\(expr,group\.\.\.,x\.\.\.\)
+### TALLY\.SUM\.IF\.GROUP\(expr,group\.\.\.,x\.\.\.\)
 
 >  Takes a variant expression expr, an INFO field "group" and an INFO field x\. Will output an entry for each unique value of the group variable\. For each distinct value of the group variable g, will output the sum of all x in which the group variable equals g AND where expr is TRUE\. This is especially useful for generating counts for each gene\.
 

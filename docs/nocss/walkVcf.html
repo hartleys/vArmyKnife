@@ -1,7 +1,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 3.4.15 (Updated Thu May 15 11:37:07 EDT 2025)</p>
+  <p>Version 3.4.21 (Updated Tue Jun 10 10:26:03 EDT 2025)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -1569,7 +1569,7 @@ seed (INT)
 <h3>SETS.KEEP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
 
 <blockquote>
-  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple replacement.</p>
+  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that do not contain the string will be dropped.  Does not do pattern matching, simple text search.</p>
 </blockquote>
 
 <pre><code>info (INFO:String) 
@@ -1604,10 +1604,19 @@ y (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 <pre><code>x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
+<h3>expr(expr)</h3>
+
+<blockquote>
+  <p>The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise. See the expression format definition for more information on how the logical expression syntax works.</p>
+</blockquote>
+
+<pre><code>expr (STRING)
+</code></pre>
+
 <h3>SETS.DROP.ELEMENTS.THAT.CONTAIN(info,str)</h3>
 
 <blockquote>
-  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple replacement.</p>
+  <p>First parameter should be an INFO field, second parameter is a string. Any elements in the INFO field that contain the string will be dropped.  Does not do pattern matching, simple text search.</p>
 </blockquote>
 
 <pre><code>info (INFO:String) 
@@ -1622,6 +1631,17 @@ str (CONST:String)
 
 <pre><code>x (INFO:String) 
 defaultValue (Optional) (CONST:Int)
+</code></pre>
+
+<h3>STRING_REPLACE(old,new,info)</h3>
+
+<blockquote>
+  <p>Simple string replacement. First parameter should be the old string, second parameter the replacement string, and the third parameter an INFO field. Any time the old string appears in the INFO field it will be replaced by the new string. Does not do pattern matching, simple replacement.</p>
+</blockquote>
+
+<pre><code>old (CONST:String) 
+new (CONST:String) 
+info (INFO:String)
 </code></pre>
 
 <h3>CONVERT.TO.FLOAT(x,defaultValue)</h3>
@@ -1758,6 +1778,17 @@ B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String
 
 <pre><code>gtExpr (Optional) (STRING) 
 varExpr (Optional) (STRING)
+</code></pre>
+
+<h3>IF.AB(expr,A,B)</h3>
+
+<blockquote>
+  <p>Switches between two options depending on a logical expression. The 'expr' expression parameter must be formatted like standard variant-level expressions. The A and B parameters can each be either a constant or an INFO field. The output field will be equal to A if the logical expression is TRUE, and otherwise will be B.</p>
+</blockquote>
+
+<pre><code>expr (STRING) 
+A (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String) 
+B (Optional) (INFO:Int|INFO:Float|INFO:String|CONST:Int|CONST:Float|CONST:String)
 </code></pre>
 
 <h3>COLLATE(inputDelimName,outputDelimOuter,outputDelimInner,x...)</h3>
@@ -1913,6 +1944,15 @@ delim (Optional) (CONST:String)
 <pre><code>x... (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 </code></pre>
 
+<h3>FLAGSET(x...)</h3>
+
+<blockquote>
+  <p>Input should be a set of gtFields and optionally a name, with the format tagID:name or just tagID. If names are omitted, then the name will be equal to the tagID. Output field will be the set of names for which the respective info field is equal to 1. Any value other than 1, including missing fields, will be treated as 0.</p>
+</blockquote>
+
+<pre><code>x... (GENO:Int|GENO:String)
+</code></pre>
+
 <h3>DIV(x,y)</h3>
 
 <blockquote>
@@ -1944,6 +1984,17 @@ delim (Optional) (CONST:String)
 varExpr (Optional) (CONST:String)
 </code></pre>
 
+<h3>SWITCH.EXPR(gtExpr,A,B)</h3>
+
+<blockquote>
+  <p>This function takes a genotype-level logical expression gtExpr and two additional variables A and B. A and B can each be a FORMAT field, a INFO field (specified as INFO:x), or a string constant (specified as CONST:x). If gtExpr returns TRUE, then the new FORMAT field will equal the corresponding value of A. If the gtExpr returns FALSE, the new FORMAT field will equal the corresponding value of B.</p>
+</blockquote>
+
+<pre><code>gtExpr (CONST:String) 
+A (GENO:String|INFO:String|CONST:String) 
+B (GENO:String|INFO:String|CONST:String)
+</code></pre>
+
 <h3>IF.AB(gtExpr,A,B)</h3>
 
 <blockquote>
@@ -1967,6 +2018,17 @@ Basic Syntax:
 
 <h2>Available Functions:</h2>
 
+<h3>TALLY.SUM.IF.byGROUP(expr,group...,x...)</h3>
+
+<blockquote>
+  <p>Takes a variant expression expr, an INFO field "group" and an INFO field x. Will output an entry for each unique value of the group variable. For each distinct value of the group variable g, will output the sum of all x in which the group variable equals g AND where expr is TRUE. This is especially useful for generating counts for each gene.</p>
+</blockquote>
+
+<pre><code>expr (String) 
+group... (INFO:String) 
+x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+</code></pre>
+
 <h3>TALLY.SUM.IF(expr,x...)</h3>
 
 <blockquote>
@@ -1975,6 +2037,17 @@ Basic Syntax:
 
 <pre><code>expr (String) 
 x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+</code></pre>
+
+<h3>gtCountTabulate(gtTag,varExpr,gtExpr)</h3>
+
+<blockquote>
+  <p>Takes as input a String GENO field gtTag, a variant expression varExpr and a genotype level expression gtExpr. This function will tabulate observed values of gtTag for all cases where both gtExpr and varExpr are TRUE. x should be a categorical or integer variable of some sort with a limited number of possible values. Put another way, this function will count the number of occurrances of each observed value of x for which gtExpr and varExpr are true.</p>
+</blockquote>
+
+<pre><code>gtTag (GENO:String|INFO:String) 
+varExpr (String) 
+gtExpr (String)
 </code></pre>
 
 <h3>GTCOUNT.BYSAMPLE(varExpr,gtExpr)</h3>
@@ -1987,7 +2060,7 @@ x... (INFO:Int|INFO:Float|CONST:Int|CONST:Float)
 gtExpr (String)
 </code></pre>
 
-<h3>TALLY.SUM.IF.byGROUP(expr,group...,x...)</h3>
+<h3>TALLY.SUM.IF.GROUP(expr,group...,x...)</h3>
 
 <blockquote>
   <p>Takes a variant expression expr, an INFO field "group" and an INFO field x. Will output an entry for each unique value of the group variable. For each distinct value of the group variable g, will output the sum of all x in which the group variable equals g AND where expr is TRUE. This is especially useful for generating counts for each gene.</p>
