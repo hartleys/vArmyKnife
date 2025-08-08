@@ -698,6 +698,7 @@ object SVcfMapFunctions {
               ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="k",desc="",req=false),
               ParamStr(id = "geneListFile",synon=Seq(),ty="String",valueString="k",desc="",req=false),
               ParamStr(id = "printFullGeneList",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
+              ParamStr(id = "countHomsTwice",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
 
               ParamStr(id = "pathwayList",synon=Seq(),ty="String",valueString="A:a,b,c,d;B:c,d,e,f;...",desc="",req=false),
               
@@ -1764,7 +1765,8 @@ object SVcfMapFunctions {
                    sampleToGroupMap=a,groupToSampleMap=b,groups=c,
                   geneList = geneList,
                   pathwayList = params.get("pathwayList").map{ g => g.split("[;]").toSeq }.getOrElse(Seq()),
-                  printFullGeneList = params.isSet("printFullGeneList")
+                  printFullGeneList = params.isSet("printFullGeneList"),
+                  countHomsTwice = params.isSet("countHomsTwice")
               ) )
                
                

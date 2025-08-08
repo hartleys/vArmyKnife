@@ -4163,7 +4163,8 @@ object SVcfWalkerUtils {
                                    groups : Vector[String],
                                    geneList : Option[Seq[String]], 
                                    pathwayList : Seq[String],
-                                   printFullGeneList : Boolean
+                                   printFullGeneList : Boolean,
+                                   countHomsTwice : Boolean = false
      ) extends internalUtils.VcfTool.SVcfWalker {
 
     def walkerName : String = "GenerateBurdenMatrix."+tagID;
@@ -4222,21 +4223,46 @@ object SVcfWalkerUtils {
             notice("genelist found: \""+geneList.mkString("/")+"\"","GENELIST_FOUND",25);
             var numAlt = 0;
             v.genotypes.getGtTag(gtTag).map{ gta => {
-              sampIdxList.foreach{ sampIdx => {
-                val gt = gta(sampIdx);
-                //notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
-                if( gt.split("[|/]").contains("1")){
-                  //notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
-                  numAlt = numAlt + 1;
-                  cts.map{ ctsCurr => {
-                    ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
-                  }}
-                  geneList.foreach{g => {
-                    val altCt =  altCounts.getOrElse(g,0);
-                    altCounts.update(g,altCt + 1);
-                  }}
-                }
-              }}
+              if( countHomsTwice ){
+                sampIdxList.foreach{ sampIdx => {
+                  val gt = gta(sampIdx);
+                  //notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
+                  val aact = gt.split("[|/]").count( gg => gg == "1" )
+                  if( aact > 0 ){
+                    //notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
+                    if(aact > 1){
+                      notice("burdenMatrix found Homozygous Alt. Counting it TWICE ("+gt+")","HOMALT_COUNTED_TWICE",10)
+                    }
+                    numAlt = numAlt + aact;
+                    cts.map{ ctsCurr => {
+                      ctsCurr(sampIdx) = ctsCurr(sampIdx) + aact;
+                    }}
+                    geneList.foreach{g => {
+                      val altCt =  altCounts.getOrElse(g,0);
+                      altCounts.update(g,altCt + aact);
+                    }}
+                  }
+                }}
+              } else {
+                sampIdxList.foreach{ sampIdx => {
+                  val gt = gta(sampIdx);
+                  //notice("ALT GT: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"GT_FOUND",5000);
+                  if( gt.split("[|/]").contains("1") ){
+                    //notice("ALT GT FOUND: samp="+sampIdx+", gt=\""+gt+"\", geneList="+geneList.mkString("/"),"ALT_GT_FOUND",10);
+ 
+                    numAlt = numAlt + 1;
+                    cts.map{ ctsCurr => {
+                      ctsCurr(sampIdx) = ctsCurr(sampIdx) + 1;
+                    }}
+                    geneList.foreach{g => {
+                      val altCt =  altCounts.getOrElse(g,0);
+                      altCounts.update(g,altCt + 1);
+                    }}
+                  }
+                }}
+              }
+              
+
               
             }}
             if(numAlt > 0){

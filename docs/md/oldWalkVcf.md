@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.93 (Updated Fri Aug 18 16:39:59 EDT 2023)
+> Version 3.3.95 (Updated Thu Sep 28 12:58:04 EDT 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -978,6 +978,7 @@ This utility performs a series of transformations on an input VCF file and adds 
     geneList: (String)
     geneListFile: (String)
     printFullGeneList: (flag)
+    countHomsTwice: (flag)
     pathwayList: (String)
     groupFile: A tab-delimited file containing sample ID's and a list of group IDs for each sample. 
         See the --groupFile parameter of walkVcf.(String)

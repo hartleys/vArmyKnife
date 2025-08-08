@@ -828,6 +828,7 @@
     geneList: (String)
     geneListFile: (String)
     printFullGeneList: (flag)
+    countHomsTwice: (flag)
     pathwayList: (String)
     groupFile: A tab-delimited file containing sample ID's and a list of group IDs for each sample. 
         See the --groupFile parameter of walkVcf.(String)
