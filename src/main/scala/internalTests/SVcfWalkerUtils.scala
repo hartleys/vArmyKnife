@@ -258,7 +258,10 @@ object SVcfWalkerUtils {
     
     
     
-  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String], dsbWindow : Int = 200 ) extends SVcfWalker {
+  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], 
+                           infoFields : Seq[String], infoFieldsForVcfTable : Seq[String], dsbWindow : Int = 200,
+                           debug : Boolean = true
+                           ) extends SVcfWalker {
     def walkerName : String = "SVBreaksToEventSet"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
 
@@ -337,10 +340,17 @@ object SVcfWalkerUtils {
           
           
           //out.write("eventID\tsvCount\tchromList\tsvList\n");
+          if(debug){
                       out.write(Seq("eventID","lineCt","chroms","numSV",
                                     "isSimpleUnbal","isMultibreakComplex","isOther","isSimpleBal",
                                     "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons",
                                     "info").mkString("\t")+"\n");
+          } else {
+                      out.write(Seq("eventID","lineCt","chroms","numSV",
+                                    "isSimpleUnbal","isMultibreakComplex","isOther","isSimpleBal",
+                                    "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons","debug.posPM",
+                                    "info").mkString("\t")+"\n");
+          }
           
           eventSV.foreach{ case (eventID,svlist) => {
             
@@ -397,6 +407,9 @@ object SVcfWalkerUtils {
                 }
                 binf = binf + (("diff1",""+diff1))
                 binf = binf + (("diff2",""+diff2))
+                
+                binf = binf + (("debug.posPM","posp1:"+posp1+",posp2:"+posp2+",posm1:"+posm1+",posm2:"+posm2))
+                
               }
               binf;
             } else {
@@ -420,6 +433,9 @@ object SVcfWalkerUtils {
                       balInfo.getOrElse("diff2",".")+"\t"+
                       balInfo.getOrElse("warnings",".")+"\t"+
                       balInfo.getOrElse("other.reasons",".")+"\t"+
+                      ( if(debug){
+                        balInfo.getOrElse("debug.posPM",".")
+                      }else{""} )+
                       svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }.map{ xx => {
                         xx.chrom+":"+xx.pos+";"+xx.getSVbnd().get.bndBreakEnd._1+":"+xx.getSVbnd().get.bndBreakEnd._2+";"+infoFields.map{ ff => { xx.info.getOrElse(ff,None).getOrElse(".") }}.mkString(";")
                       }}.mkString("|")+
