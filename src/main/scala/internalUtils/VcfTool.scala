@@ -47,7 +47,7 @@ object VcfTool {
       return( lst.map(_.toString()) );
     }
   }
-  //abstract class SVcfHeaderCode[A](tag : String, Number : String, Type: String, desc : 
+  //abstract class SVcfHeaderCode[A](tag : String, Number : String, Type: String, desc :
   
   //object SVcfHeaderCodes{
     
@@ -78,7 +78,7 @@ object VcfTool {
           new SVcfCompoundHeaderLine("INFO" ,vcfCodes.grpMisFrq_TAG + g, anum, "Integer", "The frequency of calls that are missing"+groupDesc  +adesc+ "."),
           new SVcfCompoundHeaderLine("INFO" ,vcfCodes.grpOthFrq_TAG + g, anum, "Integer", "The frequency of calls include a different allele"+groupDesc  +adesc+ ".")
           )
-        } else { List() }) ++ 
+        } else { List() }) ++
         (if(addCounts){
           List(
           new SVcfCompoundHeaderLine("INFO" ,vcfCodes.grpHomCt_TAG + g, anum, "Integer", "The number of homalt calls"+groupDesc +adesc+ "."),
@@ -87,7 +87,7 @@ object VcfTool {
           new SVcfCompoundHeaderLine("INFO" ,vcfCodes.grpMisCt_TAG + g, anum, "Integer", "The number of calls that are missing"+groupDesc  +adesc+ "."),
           new SVcfCompoundHeaderLine("INFO" ,vcfCodes.grpOthCt_TAG + g, anum,  "Integer", "The number of calls include a different allele"+groupDesc  +adesc+ "."),
         )
-         * 
+         *
          */
 
         //OLD ones:
@@ -128,7 +128,7 @@ object VcfTool {
         assess_IsHotspot : String = TOP_LEVEL_VCF_TAG+"locusIsHotspot",
         assess_domain : String = TOP_LEVEL_VCF_TAG+"locusDomain",
         assess_IsMappable : String = TOP_LEVEL_VCF_TAG+"locusIsMappable",
-        assess_pseudogene : String = TOP_LEVEL_VCF_TAG+"locusIsPseudogene", 
+        assess_pseudogene : String = TOP_LEVEL_VCF_TAG+"locusIsPseudogene",
 
         assess_criteria : String = TOP_LEVEL_VCF_TAG+"ACMG_criteria",
         
@@ -185,9 +185,9 @@ object VcfTool {
         assess_PS1_CANON : String = TOP_LEVEL_VCF_TAG+"ACMG_PS1_CANON",
         assess_PM5_CANON : String = TOP_LEVEL_VCF_TAG+"ACMG_PM5_CANON",
         assess_BP7_CANON : String = TOP_LEVEL_VCF_TAG+"ACMG_BP7_CANON",
-        assess_RATING_CANON : String = TOP_LEVEL_VCF_TAG+"ACMG_RATING_CANON", 
+        assess_RATING_CANON : String = TOP_LEVEL_VCF_TAG+"ACMG_RATING_CANON",
         
-        //NEW: 
+        //NEW:
         assess_ACMG_numGenes : String = TOP_LEVEL_VCF_TAG+"ACMG_NUM_GENES",
         assess_ACMG_numGenes_CANON : String = TOP_LEVEL_VCF_TAG+"ACMG_NUM_GENES_CANON",
         
@@ -366,14 +366,14 @@ object VcfTool {
       reportln("     readVcf() init: lines buffered, extracting header lines... ("+getDateAndTimeString+")","debug")
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
       reportln("     readVcf() init: headerlines extracted, processing header... ("+getDateAndTimeString+")","debug")
-      val header = readVcfHeader(allRawHeaderLines); 
+      val header = readVcfHeader(allRawHeaderLines);
      */
     val header : SVcfHeader = {
       reportln("Loading Indexed Reference VCF file: "+vcffile,"note")
       val bufLines = getLinesSmartUnzip(vcffile).buffered;
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
       reportln("      Loading ("+vcffile+"): Header loaded." ,"note")
-      SVcfLine.readVcfHeader(allRawHeaderLines); 
+      SVcfLine.readVcfHeader(allRawHeaderLines);
     }
     //REQUIRES index!
     val htsReader = new htsjdk.variant.vcf.VCFFileReader( new java.io.File( vcffile ), true );
@@ -412,8 +412,8 @@ object VcfTool {
        in_ref = vc.getReference().getBaseString(),
        in_alt = alt,
        in_qual = vc.getPhredScaledQual().toString() ,
-       in_filter = vc.getFilters().asScala.toSeq.mkString(";"), 
-       in_info = vc.getAttributes().asScala.toSeq.map{ case (k,v) => { ( k, Some(v.toString().filterNot( cc => cc.isWhitespace || cc == ';' || cc == '=' ) ) ) }}.toMap, 
+       in_filter = vc.getFilters().asScala.toSeq.mkString(";"),
+       in_info = vc.getAttributes().asScala.toSeq.map{ case (k,v) => { ( k, Some(v.toString().filterNot( cc => cc.isWhitespace || cc == ';' || cc == '=' ) ) ) }}.toMap,
        in_format = Seq[String](),
        in_genotypes = SVcfGenotypeSet( Seq(), Array() )
       )
@@ -423,7 +423,7 @@ object VcfTool {
        * in_format : Seq[String]
        SVcfGenotypeSet(var fmt : Seq[String],
                              var genotypeValues : Array[Array[String]])
-       * 
+       *
        */
   }
   
@@ -431,7 +431,7 @@ object VcfTool {
     def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader);
     
     def walkVCFFile(infile : String, outfile : String, chromList : Option[List[String]], vcfCodes : VCFAnnoCodes = VCFAnnoCodes(), verbose : Boolean = true){
-      val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfIterator(infile, 
+      val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfIterator(infile,
                                        chromList = chromList,
                                        vcfCodes = vcfCodes);
       val (vcIter2, newHeader) = this.walkVCF(vcIter = vcIter, vcfHeader = vcfHeader)
@@ -547,7 +547,7 @@ object VcfTool {
     return vcfWriter;
   }
   
-  def getVcfIterator(   infile : String, 
+  def getVcfIterator(   infile : String,
                         chromList : Option[List[String]],
                         vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
                         progressVerbosity : (Int,Int,Int) = (10000,50000,100000)
@@ -600,7 +600,7 @@ object VcfTool {
             }}
           } else {
             internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[VariantContext](vcfIterator.filter((p : VariantContext) => cs.contains(p.getContig())),
-                internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[VariantContext](elementTitle = "lines",lineSec = 60, reportFunction = ((a : VariantContext,i : Int) => a.getContig()))).filter(v =>  cs.contains(v.getContig())); 
+                internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[VariantContext](elementTitle = "lines",lineSec = 60, reportFunction = ((a : VariantContext,i : Int) => a.getContig()))).filter(v =>  cs.contains(v.getContig()));
           }
 
         }
@@ -627,7 +627,7 @@ object VcfTool {
    }
    case class VcfInfoLine(ID : String, Number : String, Type : String, Description : String, Source:Option[String] = None, Version:Option[String] = None) extends VcfMetaLine {
      def key : String = "INFO";
-     def value : String = "<" + 
+     def value : String = "<" +
                           "ID="+ ID+""+
                           ",Number="+Number+""+
                           ",Type="+Type+""+
@@ -645,7 +645,7 @@ object VcfTool {
    }
    case class VcfFormatLine(ID : String, Number : String, Type : String, Description : String) extends VcfMetaLine {
      def key : String = "FORMAT";
-     def value : String = "<" + 
+     def value : String = "<" +
                           "ID="+ ID+""+
                           ",Number="+Number+""+
                           ",Type="+Type+""+
@@ -676,7 +676,7 @@ object VcfTool {
            case x : VcfFormatLine => (soFar._1 , soFar._2, soFar._3 :+ x, soFar._4);
            case x : VcfAnnoLine => (soFar._1, soFar._2, soFar._3, soFar._4 :+ x);
          }
-       }) 
+       })
      }
      val sampleCells = sampleLine.split("\t");
      if(sampleCells.length < 9) error("FATAL ERROR: Malformed Vcf Header line. Less than 9 columns! (errCode VcfTool:readVcfMetadata:72)\n offending line:\""+sampleLine+"\"");
@@ -790,7 +790,7 @@ object VcfTool {
      def FORMAT : String = cells(8);
      def GENOTYPES : Seq[String] = cells.slice(9,cells.length);
      
-     //def passFilter : Boolean = 
+     //def passFilter : Boolean =
      
      lazy val FMT : Seq[String] = FORMAT.split(":");
      def fmt : Seq[String] = FMT;
@@ -896,7 +896,7 @@ object VcfTool {
        error("FATAL ERROR: Malformed VCF. Unrecognized format: \""+fmt+"\"");
        return null;
      }
-   } 
+   }
    
    
    def getVcfReader(lines : Iterator[String]) : (VcfMetadata, Iterator[InputVcfLine]) = {
@@ -924,7 +924,7 @@ object VcfTool {
   object SVcfLine {
     
 
-    def memMergeVcfFiles(infiles : List[String], sampids : List[String],  
+    def memMergeVcfFiles(infiles : List[String], sampids : List[String],
                          sumInfoFields : Seq[String] = Seq[String](),     //implemented
                          splitInfoFields : Seq[String] = Seq[String](),   //not implemented
                          firstInfoFields : Seq[String] = Seq[String](),   //implemented
@@ -964,14 +964,14 @@ object VcfTool {
       
       (outHeader,{
         
-        val lineMap : scala.collection.mutable.Map[(String,Int,String,String),Vector[(String,SVcfVariantLine,Int)]] = 
+        val lineMap : scala.collection.mutable.Map[(String,Int,String,String),Vector[(String,SVcfVariantLine,Int)]] =
                 ( new scala.collection.mutable.AnyRefMap[(String,Int,String,String),Vector[(String,SVcfVariantLine,Int)]]).withDefault( x => Vector() )
                 
         /*
                val variantLines = if(withProgress){
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputVariantLine(line)), 
+                           bufLines.map(line => SVcfInputVariantLine(line)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -994,7 +994,7 @@ object VcfTool {
           ))
           val iter = getLinesSmartUnzip(ff).buffered
           skipWhile(iter)(line => line.startsWith("#"));
-          val lines =  prewalker.walkVCF( iter.map(line => SVcfInputVariantLine(line)),rawHeader)._1; 
+          val lines =  prewalker.walkVCF( iter.map(line => SVcfInputVariantLine(line)),rawHeader)._1;
           //val (lines,h) = prewalker.walkVCF(getSVcfIterator(infiles.head,chromList =None, numLinesRead=None)._1, header)
           
           /*
@@ -1004,7 +1004,7 @@ object VcfTool {
       val variantLines = if(withProgress){
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputVariantLine(line)), 
+                           bufLines.map(line => SVcfInputVariantLine(line)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1012,7 +1012,7 @@ object VcfTool {
                          )
            */
           
-          //val (vheader,lines) = prewalker.walkVCF( iter.map(line => SVcfInputVariantLine(line)),header)._1; 
+          //val (vheader,lines) = prewalker.walkVCF( iter.map(line => SVcfInputVariantLine(line)),header)._1;
           lines.foreach{ v => {
             val ix = (v.chrom,v.pos,v.ref,v.alt.head);
             //val sofar = lineMap(ix);
@@ -1085,7 +1085,7 @@ object VcfTool {
           
           sumInfoFields.foreach{ infotag => {
             if( vlines.exists{ case (ss,vv,sidx) => vv.info.contains( infotag) } ){
-              val isum = 
+              val isum =
                 if( header.infoLines.find( ffl => ffl.ID == infotag).get.Type == "Integer") {
                   vlines.map{ case (ss,vv,sidx) => {
                     vv.info.get(infotag).getOrElse(None).map{ string2int(_) }.getOrElse(0);
@@ -1104,7 +1104,7 @@ object VcfTool {
           vb;
           //SVcfGenotypeSet(var fmt : Seq[String],
                     //         var genotypeValues : Array[Array[String]])
-          //vb.in_genotypes.genotypeValues = 
+          //vb.in_genotypes.genotypeValues =
         }}
       });
     }
@@ -1144,7 +1144,7 @@ object VcfTool {
       val variantLines = if(withProgress){
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           rawVariantLines.map(line => SVcfInputVariantLine(line)), 
+                           rawVariantLines.map(line => SVcfInputVariantLine(line)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1177,7 +1177,7 @@ object VcfTool {
       val variantLines = if(withProgress){
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns)), 
+                           bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1201,7 +1201,7 @@ object VcfTool {
       val variantLines = if(withProgress){
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputTableVariantLineNoID(line,headerColumns)), 
+                           bufLines.map(line => SVcfInputTableVariantLineNoID(line,headerColumns)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1217,7 +1217,7 @@ object VcfTool {
     }
     /*
     def readTableToVcfAdv(lines : Iterator[String], withProgress : Boolean = true,
-                   skipLines : Int = 0, 
+                   skipLines : Int = 0,
                    columnNameCHROM : String = "CHROM",columnNamePOS : String  = "POS", columnNameREF : String = "REF",columnNameALT : String = "ALT"
     ) : (SVcfHeader,Iterator[SVcfVariantLine]) = {
       val bufLines = lines.drop(skipLines).buffered;
@@ -1231,14 +1231,14 @@ object VcfTool {
       val headerIdxList = headerElemList.map{ h => {
         headerColumnsRaw.
       }}
-      val tableLines = bufLines.map{ 
+      val tableLines = bufLines.map{
         
       }
       
       val variantLines = if(withProgress){
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns)), 
+                           bufLines.map(line => SVcfInputTableVariantLine(line,headerColumns)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1267,7 +1267,7 @@ object VcfTool {
         reportln("     readVcf() adding progress reporting... ("+getDateAndTimeString+")","debug")
                          internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[SVcfInputVariantLine](
                            //rawVariantLines.map(line => SVcfInputVariantLine(line,header)),
-                           bufLines.map(line => SVcfInputVariantLine(line).headerInput(header)), 
+                           bufLines.map(line => SVcfInputVariantLine(line).headerInput(header)),
                            internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[SVcfInputVariantLine](
                                 elementTitle = "lines", lineSec = 60,
                                 reportFunction  = ((vc : SVcfInputVariantLine, i : Int) => " " + vc.chrom +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
@@ -1284,7 +1284,7 @@ object VcfTool {
     
     
     /*
-    SVcfCompoundHeaderLine(val in_tag : String, val ID : String, val Number : String, val Type : String, val desc : String, 
+    SVcfCompoundHeaderLine(val in_tag : String, val ID : String, val Number : String, val Type : String, val desc : String,
                                val vakUtil : Option[String] = None, val vakStepNum : Option[String] = None, val vakVer : Option[String] = None,val subType : Option[String] = None,
                                val extraFields : Map[String,String] = Map[String,String]())
      */
@@ -1381,7 +1381,7 @@ object VcfTool {
       new SVcfCompoundHeaderLine(in_tag = tag, ID = tagmap("ID"), Number = tagmap("Number") ,  Type = tagmap("Type") , desc = tagmap.getOrElse("Description","."),
           subType = tagmap.get("subType"),vakUtil=tagmap.get("walkerName"),vakStepNum=tagmap.get("walkerNum"),vakVer=tagmap.get("walkerVer"),
           extraFields=extraTagMap
-      ); 
+      );
     }
     
     /////////// Read Variant Lines:
@@ -1393,7 +1393,7 @@ object VcfTool {
     val header = SVcfLine.readVcfHeader(extractWhile(indataRawHeaderReader)( line => line.startsWith("#")))
     
     if(indexFile.isDefined){
-      htsjdk.tribble.readers.TabixReader.TabixReader(infile, indexFile.get) 
+      htsjdk.tribble.readers.TabixReader.TabixReader(infile, indexFile.get)
       indataRawHeaderReader.close();
     }
     
@@ -1403,7 +1403,7 @@ object VcfTool {
   
   /*
    * ,//##SVCFSTATS='
-   * 
+   *
     def getBool(s : String) : Option[Boolean] = {
       stats.get(s).map{b => b == "TRUE"}
     }
@@ -1414,12 +1414,12 @@ object VcfTool {
     def add(a : String, b : String) : SVcfSStatLine = {
       SVcfSStatLine(stats = stats.updated(a,b))
     }
-   * 
+   *
                         var svcfStatLine :
    */
   
-  case class SVcfHeader(var infoLines : Seq[SVcfCompoundHeaderLine], 
-                        var formatLines : Seq[SVcfCompoundHeaderLine], 
+  case class SVcfHeader(var infoLines : Seq[SVcfCompoundHeaderLine],
+                        var formatLines : Seq[SVcfCompoundHeaderLine],
                         var otherHeaderLines : Seq[SVcfHeaderLine],
                         var walkLines : Seq[SVcfWalkHeaderLine],
                         var titleLine : SVcfTitleLine,
@@ -1607,7 +1607,7 @@ object VcfTool {
   
   val safeReplacementsForCompoundHeaderLine : Map[String,String] = Map[String,String]( ("=","&#61"),("<","&#60"),(">","&#62"),(",","&#44") )
   
-  case class SVcfSStatLine(stats : Map[String,String] = Map[String,String]()) extends SVcfHeaderLine("SVCFSTATS", 
+  case class SVcfSStatLine(stats : Map[String,String] = Map[String,String]()) extends SVcfHeaderLine("SVCFSTATS",
                                                                                         Seq("<",
                                                                                             (stats.map{ case (a,b) => a +"="+b }).mkString(","),
                                                                                         ">").mkString("")){
@@ -1646,9 +1646,9 @@ object VcfTool {
   // addQuoteIfNeededAndMakeSafe( s : String, replacements : Map[String,String])
   
   
-  class SVcfCompoundHeaderLine(val in_tag : String, val ID : String, val Number : String, val Type : String, val desc : String, 
+  class SVcfCompoundHeaderLine(val in_tag : String, val ID : String, val Number : String, val Type : String, val desc : String,
                                val vakUtil : Option[String] = None, val vakStepNum : Option[String] = None, val vakVer : Option[String] = None,val subType : Option[String] = None,
-                               val extraFields : Map[String,String] = Map[String,String]()) extends 
+                               val extraFields : Map[String,String] = Map[String,String]()) extends
               SVcfHeaderLine(in_tag,"<ID="+ID+",Number="+Number+",Type="+Type+","+
                   (Seq(Some(addQuotesIfNeeded(desc)),subType,vakUtil,vakStepNum,vakVer).zip(Seq("Description","subType","vakUtil","vakStepNum","vakVer")).flatMap{ case (v,t) => {
                     v match {
@@ -1657,7 +1657,7 @@ object VcfTool {
                       }
                       case None => None;
                     }
-                  }} ++ 
+                  }} ++
                   extraFields.toVector.sorted.map{case (t,v) => { t+"="+addQuotesIfNeeded(v) }}).mkString(",")+">") {
     
     def addWalker(w : SVcfWalker) : SVcfCompoundHeaderLine = {
@@ -1729,29 +1729,29 @@ object VcfTool {
      */
     
     /*def addWalker(walker : SVcfWalker) : SVcfCompoundHeaderLine = {
-       return new SVcfCompoundHeaderLine(in_tag = in_tag, ID = ID, Number = Number, Type = Type, desc = desc, 
+       return new SVcfCompoundHeaderLine(in_tag = in_tag, ID = ID, Number = Number, Type = Type, desc = desc,
                                vakUtil = , val vakStepNum : Option[String] = None, val vakVer : Option[String] = None,val subType : Option[String] = None,
-                               val extraFields : scala.collection.mutable.Map[String,String] = new AnyRefMap[String,String]()) 
+                               val extraFields : scala.collection.mutable.Map[String,String] = new AnyRefMap[String,String]())
     }*/
     
     //var tag : String = in_tag;
     //var value : String = "<ID="+ID+",Number="+Number+",Type="+Type+",Description=\""+desc+"\">";
   }
 
-  class SVcfFormatHeaderLine(ID : String, Number : String, Type : String, desc : String, 
+  class SVcfFormatHeaderLine(ID : String, Number : String, Type : String, desc : String,
                            vakUtil : Option[String] = None, vakStepNum : Option[String] = None, vakVer : Option[String] = None,
                            subType : Option[String] = None,
-                           extraFields : Map[String,String] = Map[String,String]()) extends 
+                           extraFields : Map[String,String] = Map[String,String]()) extends
                            SVcfCompoundHeaderLine(in_tag="FORMAT",ID=ID,Number=Number,Type=Type,desc=desc,
                                vakUtil =vakUtil,vakStepNum=vakStepNum,vakVer=vakVer,subType=subType,
                                extraFields=extraFields){
     
   }
   
-  class SVcfInfoHeaderLine(ID : String, Number : String, Type : String, desc : String, 
+  class SVcfInfoHeaderLine(ID : String, Number : String, Type : String, desc : String,
                            vakUtil : Option[String] = None, vakStepNum : Option[String] = None, vakVer : Option[String] = None,
                            subType : Option[String] = None,
-                           extraFields : Map[String,String] = Map[String,String]()) extends 
+                           extraFields : Map[String,String] = Map[String,String]()) extends
                            SVcfCompoundHeaderLine(in_tag="INFO",ID=ID,Number=Number,Type=Type,desc=desc,
                                vakUtil =vakUtil,vakStepNum=vakStepNum,vakVer=vakVer,subType=subType,
                                extraFields=extraFields){
@@ -1911,7 +1911,7 @@ object VcfTool {
     def setRef : Unit;
     def getAlt : String;
     def setAlt : Unit;
-    def 
+    def
   }*/
   
   object SVcfVariantLine {
@@ -2046,9 +2046,9 @@ object VcfTool {
       if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) xx = xx :+ "Bracket Count";
       val cxx = alt.split("[\\[\\]]",-1)
       val cmx = cxx(1)
-      val cx  = cmx.split(":",-1);      
+      val cx  = cmx.split(":",-1);
       cx(0)
-    } 
+    }
     lazy val getPos : Int = {
       if( ! isValid){
         error("attempted to get SV chrom from invalid BND alt allele");
@@ -2059,7 +2059,7 @@ object VcfTool {
       if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) xx = xx :+ "Bracket Count";
       val cxx = alt.split("[\\[\\]]",-1)
       val cmx = cxx(1)
-      val cx  = cmx.split(":",-1);      
+      val cx  = cmx.split(":",-1);
       string2int( cx(1) )
     }
     
@@ -2093,11 +2093,11 @@ object VcfTool {
     lazy val strandswap : String = {
       val ss = strands;
       if( ss == "++"){
-        "--" 
+        "--"
       } else if(ss == "+-"){
-        "+-" 
+        "+-"
       } else if(ss == "-+"){
-        "-+" 
+        "-+"
       } else {
         "++"
       }
@@ -2105,11 +2105,11 @@ object VcfTool {
   }
   def strandSwapSVstrand( ss : String ) : String = {
       if( ss == "++"){
-        "--" 
+        "--"
       } else if(ss == "+-"){
-        "+-" 
+        "+-"
       } else if(ss == "-+"){
-        "-+" 
+        "-+"
       } else {
         "++"
       }
@@ -2126,7 +2126,7 @@ object VcfTool {
     def info : Map[String,Option[String]];
     def format : Seq[String]
     def genotypes : SVcfGenotypeSet;
-    lazy val variantIV = internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length)); 
+    lazy val variantIV = internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length));
     
     def getSVbnd() : Option[SVbnd] = {
       if( info.getOrElse("SVTYPE",None).getOrElse("") == "BND" ){
@@ -2189,7 +2189,7 @@ object VcfTool {
     
     def is_BND : Boolean = info.getOrElse("SVTYPE",None).map{ x => x == "BND" }.getOrElse(false)
     
-    //def sv_bpIsBefore : Seq[Boolean] = 
+    //def sv_bpIsBefore : Seq[Boolean] =
     
     /*def sv_breakEndPoint : Seq[(String,Int)] = if(is_BND){
       alt.map{ aa => {
@@ -2238,7 +2238,7 @@ object VcfTool {
        in_ref = ref,
        in_alt = alt,
        in_qual = qual,
-       in_filter = filter, 
+       in_filter = filter,
        in_info = info,
        in_format = format,
        in_genotypes = genotypes//,
@@ -2253,7 +2253,7 @@ object VcfTool {
        in_ref = ref,
        in_alt = alt,
        in_qual = qual,
-       in_filter = filter, 
+       in_filter = filter,
        in_info = info,
        in_format = format ,
        in_genotypes = genotypes.copyGenotypeSet()
@@ -2437,7 +2437,7 @@ object VcfTool {
     lazy val lzy_alt : Array[String] = cells(4).split(",");
     lazy val lzy_qual : String  = cells(5);
     lazy val lzy_filter : String = cells(6);
-    lazy val lzy_info : Map[String,Option[String]] = if(cells.isDefinedAt(7)){ 
+    lazy val lzy_info : Map[String,Option[String]] = if(cells.isDefinedAt(7)){
       if(cells(7) == "" || cells(7) == "." || cells(7) == ".;" || cells(7) == ";"){
         scala.collection.immutable.Map[String,Option[String]]()
       } else {
@@ -2458,7 +2458,7 @@ object VcfTool {
       if(cells(8) == "." || cells(8) == ""){
         Array[String]();
       } else {
-        cells(8).split(":") 
+        cells(8).split(":")
       }
     } else Array[String]();
     lazy val lzy_genotypeStrings = if(cells.isDefinedAt(9)) cells.drop(9) else Array[String]();
@@ -2577,7 +2577,7 @@ object VcfTool {
         })
       } catch {
         case e : Exception => {
-          warning("Error attempting to decode genotypes:\n" + 
+          warning("Error attempting to decode genotypes:\n" +
                 "   FMT: "+fmt.mkString(",") + "\n"+
                 "   GENOS: "+genotypeStrings.mkString("\t")+"\n",
                 "GENOTYPE_DECODER_ERROR",100
@@ -2613,7 +2613,7 @@ object VcfTool {
     
     def idxIsGrp(idx : Int, grp : String) : Boolean = {
       if(sampList.length == 0){
-        false 
+        false
       } else {
         sampGrp.map{ grpMap => {
           grpMap(sampList(idx)).contains(grp);
@@ -2728,7 +2728,7 @@ object VcfTool {
       (vcIter2,vcfHeader);
   }
   def getSVcfIterators(infileString : String, chromList : Option[List[String]],
-      numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true, 
+      numLinesRead : Option[Int], inputFileList : Boolean = false, withProgress : Boolean = true,
       infixes : Vector[String] = Vector(),
       extractInterval : Option[String] = None) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       reportln("     getSVcfIterators() init... ("+getDateAndTimeString+")","debug")
@@ -2808,7 +2808,7 @@ object VcfTool {
   }
   
   
-  def getSVcfIteratorsFromTable(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int], 
+  def getSVcfIteratorsFromTable(infileString : String, chromList : Option[List[String]],numLinesRead : Option[Int],
       inputFileList : Boolean = false, withProgress : Boolean = true, infixes : Vector[String] = Vector(),
       extractInterval : Option[String] = None, hasIDcol : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val indata = if(inputFileList){
@@ -3040,7 +3040,7 @@ object VcfTool {
     
     //
     
-    def walkVCFFiles(infiles : String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int], inputFileList : Boolean, 
+    def walkVCFFiles(infiles : String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int], inputFileList : Boolean,
                     dropGenotypes : Boolean = false, infixes : Vector[String] = Vector(),
                     splitFuncOpt : Option[(String,Int) => Option[String]] = None){
       val (vcIterRaw, vcfHeader) = getSVcfIterators(infiles,chromList=chromList,numLinesRead=numLinesRead,inputFileList = inputFileList, infixes = infixes);
@@ -3408,9 +3408,9 @@ object VcfTool {
     )*/
   //}
   
-    case class FilterFunction[A](funcName : String, 
-                              numParam : Int, 
-                              desc : String, 
+    case class FilterFunction[A](funcName : String,
+                              numParam : Int,
+                              desc : String,
                               paramNames : Seq[String], paramTypes : Seq[String],
                               metaFunc : ((Seq[String]) => ((A) => Boolean)),
                               isHidden : Boolean = false){
@@ -3428,8 +3428,8 @@ object VcfTool {
     def filterManualDesc() : String
     
     def logicManualTitle : String = "BASIC SYNTAX:";
-    def logicManualRaw : Seq[(Option[String],String)] = 
-      Seq[(Option[String],String)]( 
+    def logicManualRaw : Seq[(Option[String],String)] =
+      Seq[(Option[String],String)](
                                   (None,
                                         "Variant expressions are logical expressions that are performed at the "+
                                         "variant level. They are used by several parts of vArmyKnife, usually when "+
@@ -3464,24 +3464,24 @@ object VcfTool {
       
       /*
          case class UserManualBlock( lines : Seq[String],
-                              title : Option[String] = None, 
+                              title : Option[String] = None,
                               level : Int = 1, isCodeBlock : Boolean = true,
                               indentTitle : Int = 4, indentBlock : Int = 8,
-                              indentFirst:Int= 8, 
+                              indentFirst:Int= 8,
                               titleIndentChar : String = " ", firstLineIndentChar : String = " ", indentChar : String = " ")
        UserManualBlock( lines : Seq[String],
-                              title : Option[String] = None, 
+                              title : Option[String] = None,
                               level : Int = 1, isCodeBlock : Boolean = true)
        */
     
     def getManualString(title : Option[String] = None,dsc : Option[String] = None) : String = {
       val t = title match {
         case Some(x) => x;
-        case None => filterManualTitle() 
+        case None => filterManualTitle()
       }
       val d = dsc match {
         case Some(dx) => dx;
-        case None => filterManualDesc() 
+        case None => filterManualDesc()
       }
       t+"\n" +
       wrapLineWithIndent(d,internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,4)+"\n\n"+
@@ -3501,11 +3501,11 @@ object VcfTool {
     def getMarkdownManualString(title : Option[String] = None,dsc : Option[String] = None) : String = {
       val t = title match {
         case Some(x) => x;
-        case None => filterManualTitle() 
+        case None => filterManualTitle()
       }
       val d = dsc match {
         case Some(dx) => dx;
-        case None => filterManualDesc() 
+        case None => filterManualDesc()
       }
       "# "+escapeToMarkdown(t)+"\n\n" +
       wrapLineWithIndent(escapeToMarkdown(d),internalUtils.commandLineUI.CLUI_CONSOLE_LINE_WIDTH,0)+"\n\n"+
@@ -3570,7 +3570,7 @@ object VcfTool {
         if( remainder.startsWith("AND")){
           AndToken(buildToken(parenStr), buildToken(remainder));
         } else if( remainder.startsWith("OR")){
-          OrToken(buildToken(parenStr), buildToken(remainder));          
+          OrToken(buildToken(parenStr), buildToken(remainder));
         } else {
           error("Bad logical expression: new phrase does not start with AND, OR, or NOT");
           return null;
@@ -3703,9 +3703,9 @@ object VcfTool {
     
 
     
-    /*case class FilterFunction(funcName : String, 
-                              numParam : Int, 
-                              desc : String, 
+    /*case class FilterFunction(funcName : String,
+                              numParam : Int,
+                              desc : String,
                               paramNames : Seq[String], paramTypes : Seq[String],
                               metaFunc : ((Seq[String]) => ((A) => Boolean))){
       def getFunctionInfo() : String = {
@@ -3774,7 +3774,7 @@ object VcfTool {
           if(!  vcfHeader.infoLines.exists( f => { f.ID == p } ) ){
             if(string2doubleOpt(p).isEmpty){
               error("ERROR: INFO field \""+p+"\" DOES NOT EXIST / numeric misformatted! logical expression function \""+ff.funcName+"\" requires an INFO field OR a numeric value in parameter "+i)
-            }            
+            }
           }
         } else if( t.toUpperCase() == "GENO"){
           if(!  vcfHeader.formatLines.exists( f => { f.ID == p } ) ){
@@ -3813,12 +3813,12 @@ object VcfTool {
     }
     def tagMissing(tag : String, a : SVcfVariantLine) : Boolean = {
       (! a.info.contains(tag)) || a.info(tag).get == "."
-    } 
+    }
     def testFilterFunction(str : String, h : SVcfHeader){
-      //parseStringArray(strs : Seq[String]) 
+      //parseStringArray(strs : Seq[String])
       val strs = str.trim().replaceAll("\\("," \\( ").replaceAll("\\)"," \\) ").trim().split("\\s+").toSeq;
       val funcs = strs.filter( ss => ! Set("AND","OR","NOT",")","(").contains(ss) )
-      funcs.foreach{ ff => { 
+      funcs.foreach{ ff => {
         val cells = ff.split(":")
         if(cells.length < 1){
           error("Filter Logic Parse Error! Filter must have at least 1 element!");
@@ -3849,7 +3849,7 @@ object VcfTool {
 
     
     //Map(funcID) = (numParam,desc,metaFunction(params) => function(vc))
-    val filterFunctionSetVal : Set[FilterFunction[SVcfVariantLine]] = Set[FilterFunction[SVcfVariantLine]]( 
+    val filterFunctionSetVal : Set[FilterFunction[SVcfVariantLine]] = Set[FilterFunction[SVcfVariantLine]](
         FilterFunction(funcName="INFO.eq",numParam=2,desc="TRUE iff INFO field t is nonmissing and equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -3858,7 +3858,7 @@ object VcfTool {
                             tagNonMissing(tag,a) && a.info(tag).get == v;
                           }
                         }
-                      ), 
+                      ),
         FilterFunction(funcName="INFO.ne",numParam=2,desc="TRUE iff INFO field t is either missing or not equal to k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4030,7 +4030,7 @@ object VcfTool {
                             tagMissing(tag,a) || a.info(tag).get.split(",").contains(v) ;
                           }
                         }
-                      ), 
+                      ),
         FilterFunction(funcName="INFO.inAny", numParam = 2,desc="TRUE if INFO field t is a list delimited with commas and bars, and contains string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4041,7 +4041,7 @@ object VcfTool {
                         }
                       ),
         FilterFunction(funcName="INFO.notInAny", numParam = 2,desc="TRUE if INFO field t is a list delimited with commas and bars, and does not contain string k.",paramNames=Seq("t","k"),paramTypes=Seq("info","string"),
-                        (params : Seq[String]) => { 
+                        (params : Seq[String]) => {
                           val tag = params(0);
                           val v = params(1);
                           (a : SVcfVariantLine) => {
@@ -4445,7 +4445,7 @@ object VcfTool {
                           }
                         }
                       ),*/
-    ); 
+    );
     
     val filterFunctionMapVal : Map[String,FilterFunction[SVcfVariantLine]] = {
       filterFunctionSet.map{ ff => {
@@ -4459,8 +4459,8 @@ object VcfTool {
   //case class SGenotypeFilterLogicParser() extends SFilterLogicParser[(SVcfVariantLine,Int)]{
   val sGenotypeFilterLogicParser : SFilterLogicParser[(SVcfVariantLine,Int)] = new SFilterLogicParser[(SVcfVariantLine,Int)]{
 
-    override def logicManualRaw : Seq[(Option[String],String)] = 
-      Seq[(Option[String],String)]( 
+    override def logicManualRaw : Seq[(Option[String],String)] =
+      Seq[(Option[String],String)](
                                   (None,
                                         "Genotype-level expressions are logical expressions that are performed at the "+
                                         "GENOTYPE level. In other words, for each sample in each variant line. "+
@@ -4507,7 +4507,7 @@ object VcfTool {
     }
     
     //Map(funcID) = (numParam,desc,metaFunction(params) => function(vc))
-    val filterFunctionSetVal : Set[FilterFunction[(SVcfVariantLine,Int)]] = Set[FilterFunction[(SVcfVariantLine,Int)]]( 
+    val filterFunctionSetVal : Set[FilterFunction[(SVcfVariantLine,Int)]] = Set[FilterFunction[(SVcfVariantLine,Int)]](
         FilterFunction(funcName="GTAG.eq",numParam=2,desc="TRUE iff GT field t equals the string s. DROP if tag t is not present or set to missing.",paramNames=Seq("t","s"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4517,7 +4517,7 @@ object VcfTool {
                             value.isDefined && value.get == v;
                           }
                         }
-                      ), 
+                      ),
         FilterFunction(funcName="GTAG.ne",numParam=2,desc="TRUE iff GT field t does not equal the string s. DROP if tag t is not present or set to missing.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val tag = params(0);
@@ -4663,7 +4663,7 @@ object VcfTool {
                           }
                         }
                       ),
- * 
+ *
  */
         FilterFunction(funcName="GTAG.inAnyOf",numParam=2,desc="TRUE iff the first parameter, a FORMAT field, is equal to any of the following parameters or is a list containing any of the following parameters, using commas, bars, or slashes as delimiters.",paramNames=Seq("t","k"),paramTypes=Seq(),
                         (params : Seq[String]) => {
@@ -4878,7 +4878,7 @@ object VcfTool {
                             }
                           }
                         }
-                      ),   
+                      ),
         FilterFunction(funcName="GTAG.SC.altProportion.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden = true,
                         metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
@@ -4933,7 +4933,7 @@ object VcfTool {
                             }
                           }
                         }
-                      ), 
+                      ),
         FilterFunction(funcName="GTAG.SC.altDepth.lt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden=true,
                         metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
@@ -4952,7 +4952,7 @@ object VcfTool {
                             }
                           }
                         }
-                      ),   
+                      ),
         FilterFunction(funcName="GTAG.SC.altDepth.gt",numParam=3,desc="TRUE iff the tag t, which must be a single-caller-AD-style-formatted field, has an observed alt-allele-frequency greater than k.",paramNames=Seq("splitIdxTag","t","v"),paramTypes=Seq(),isHidden = true,
                         metaFunc=(params : Seq[String]) => {
                           val splitIdxTag = params(0);
@@ -4989,7 +4989,7 @@ object VcfTool {
         FilterFunction(funcName="VAREXPR",numParam = -1,desc="Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.",paramNames=Seq("fcn","params"), paramTypes=Seq(),
                         (params : Seq[String]) => {
                           val gtFiltName = params.head;
-                          val gtParams = params.tail;                          
+                          val gtParams = params.tail;
                           val (ff,vff) = sVcfFilterLogicParser.getFilterFunction(gtFiltName, gtParams)
                           (a : (SVcfVariantLine,Int)) => {
                             ff(a._1);
@@ -5006,13 +5006,13 @@ object VcfTool {
                         }
                       )
                       
-    ); 
+    );
     /*
                    val expr = paramValues.head;
               val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
               val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(expr);
              FilterFunction(funcName="VARIANT",numParam=-1, desc = "Variant passes variant-level logical function. Note that you cannot include AND/OR/NOT inside this logical function, it must be a single variant-level logical function.",paramNames=Seq("fcn","params"), paramTypes=Seq(),
-                        metaFunc=(params : Seq[String]) => { 
+                        metaFunc=(params : Seq[String]) => {
                           (a : (SVcfVariantLine,Int)) => {
                             false
                           }
@@ -5056,7 +5056,7 @@ object VcfTool {
                   (cells.zipWithIndex.map{case (aa,i) => if(i == alleIdx + 1) 0 else aa}.sum,cells(alleIdx + 1))
                 }
               }
-            }} 
+            }}
    
    */
   

@@ -953,6 +953,13 @@
         file. This is useful if you are specifying the columns using column numbers but the file also 
         has a title line.(Flag)
 
+### sortGTfield
+
+>  This function moves the GT FORMAT field, if any, to the first FORMAT field position\. This is required in the VCF format specification\.
+
+
+    (This function takes no parameters)
+
 ### sampleReorder
 
 >  This function allows you to reorder the sample columns in your VCF\. Set ONE of the parameters below to specify the desired ordering\.

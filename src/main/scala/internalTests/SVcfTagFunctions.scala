@@ -111,10 +111,10 @@ object SVcfTagFunctions {
       val dot,A,R,G = Value;
     }
     
-    case class VcfFcnParsedParam(SRC : ParamSrc.ParamSrc, 
-                                 TYPE : ParamType.ParamType, 
-                                 NUM : String, 
-                                 PARAM : VcfTagFunctionParam, 
+    case class VcfFcnParsedParam(SRC : ParamSrc.ParamSrc,
+                                 TYPE : ParamType.ParamType,
+                                 NUM : String,
+                                 PARAM : VcfTagFunctionParam,
                                  VAL : String){
       
       
@@ -122,10 +122,10 @@ object SVcfTagFunctions {
   }
     
     
-  case class VcfTagFunctionParam( id : String, 
-                                  ty : String, 
-                                  req: Boolean = true, 
-                                  defval : String = "", 
+  case class VcfTagFunctionParam( id : String,
+                                  ty : String,
+                                  req: Boolean = true,
+                                  defval : String = "",
                                   dotdot : Boolean = false ,
                                   desc : String = "",
                                   num : String = ".", hidden : Boolean = false){
@@ -389,7 +389,7 @@ object SVcfTagFunctions {
           if(ln.Type == "String"){
             //if(TYS.contains("FILE_STRING")){
             //  ("FILE","String",num)
-            //} else 
+            //} else
             if(TYS.contains(SRC+"_STRING")){
               (SRC,"String",num)
             } else if(TYS.contains(SRC+"_FLOAT")){
@@ -425,7 +425,7 @@ object SVcfTagFunctions {
             ("?","?",num)
           }
         }}.getOrElse( ("ERROR","String",".") )
-        //if( TYS.contains("INFO_FLOAT") && 
+        //if( TYS.contains("INFO_FLOAT") &&
       } else if(checkIsInt(param)){
         val num = param.split(":").length.toString;
         ("CONST","Int",num)
@@ -463,11 +463,11 @@ object SVcfTagFunctions {
   }
   
 /*
- * 
-     case class VcfFcnParsedParam(SRC : ParamSrc.ParamSrc, 
-                                 TYPE : ParamType.ParamType, 
-                                 NUM : String, 
-                                 PARAM : VcfTagFunctionParam, 
+ *
+     case class VcfFcnParsedParam(SRC : ParamSrc.ParamSrc,
+                                 TYPE : ParamType.ParamType,
+                                 NUM : String,
+                                 PARAM : VcfTagFunctionParam,
                                  VAL : String){
       
       
@@ -852,7 +852,7 @@ object SVcfTagFunctions {
     
     
     
-  } 
+  }
   
   abstract class VcfTagFcn() {
     def md : VcfTagFcnMetadata;
@@ -1050,7 +1050,7 @@ object SVcfTagFunctions {
                 } else {
                   dd(1).get(vc).getOrElse(".")
                 }
-   * 
+   *
    */
   
   val vcfTagFcnMap_sideEffecting : Map[String,VcfTagFcnFactorySideEffecting] = Seq[VcfTagFcnFactorySideEffecting](
@@ -1414,7 +1414,7 @@ object SVcfTagFunctions {
                     val v = ddf.map{ d => d.get(vc) }.filter{ d => d.isDefined }.map{ d => d.get }
                     if(v.length > 0){
                       val arr = Array.ofDim[Double](vc.genotypes.genotypeValues.head.length);
-                      v.foreach{ d => { 
+                      v.foreach{ d => {
                         d.zipWithIndex.foreach{ case (dd,i) => {
                           arr(i) = arr(i) + dd.map{ ddx => ddx.getOrElse(0.toFloat) }.sum;
                         }}
@@ -1520,7 +1520,7 @@ object SVcfTagFunctions {
             }
 
           }
-        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "DIV",synon = Seq(),
@@ -1580,11 +1580,11 @@ object SVcfTagFunctions {
           def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
-              def init : Boolean = true; 
+              def init : Boolean = true;
               val gtTag = paramValues(0);
               val delim = paramValues.lift(1);
               override val outType = "String"
-              override val outNum = "1"; 
+              override val outNum = "1";
               
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
@@ -1635,12 +1635,12 @@ object SVcfTagFunctions {
           def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
-              def init : Boolean = true; 
+              def init : Boolean = true;
               val gtTag = paramValues(0);
               val extractIDX = string2int( paramValues(1) )
               val delim = paramValues.lift(2).getOrElse(",");
               override val outType = outHeader.formatLines.find( ff => ff.ID == gtTag ).get.Type
-              override val outNum = "1"; 
+              override val outNum = "1";
               
               def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
                 val gtIdx = vc.genotypes.fmt.indexOf(gtTag)
@@ -1671,9 +1671,9 @@ object SVcfTagFunctions {
           def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
-              def init : Boolean = true; 
+              def init : Boolean = true;
               override val outType = "Integer";
-              override val outNum = "1"; 
+              override val outNum = "1";
               val gtexpr = paramValues.head;
               val gtparser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
               val varparser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
@@ -1794,17 +1794,17 @@ object SVcfTagFunctions {
               params = Seq[VcfTagFunctionParam](
                   VcfTagFunctionParam( id = "gtExpr", ty = "CONST:String",req=true,dotdot=false ),
                   VcfTagFunctionParam( id = "A", ty = "GENO:String|INFO:String|CONST:String",req=true,dotdot=false ),
-                  VcfTagFunctionParam( id = "B", ty = "GENO:String|INFO:String|CONST:String",req=true,dotdot=false )                  
+                  VcfTagFunctionParam( id = "B", ty = "GENO:String|INFO:String|CONST:String",req=true,dotdot=false )
               )
           );
           def metadata = mmd;
           def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
             new VcfTagFcn(){
               def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
-              def init : Boolean = true; 
+              def init : Boolean = true;
               val typeInfo = getTypeInfo(md.params.tail,pv.tail,h)
               override val outType = "Integer";
-              override val outNum = "1"; 
+              override val outNum = "1";
               val gtexpr = paramValues.head;
               val gtparser : SFilterLogicParser[(SVcfVariantLine,Int)] = internalUtils.VcfTool.sGenotypeFilterLogicParser;
               //val varparser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
@@ -3401,7 +3401,7 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        new VcfTagFcnFactory(){ 
+        new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "EXPR",synon = Seq("expr"),
               shortDesc = "Creates a true/false field based on an expression",
@@ -3434,7 +3434,7 @@ object SVcfTagFunctions {
 
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        new VcfTagFcnFactory(){ 
+        new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "GT.EXPR",synon = Seq(),
               shortDesc = "Creates a count field, counting the number of samples that satisfy a genotype-level expression",
@@ -3488,7 +3488,7 @@ object SVcfTagFunctions {
       }}.toMap
   
 
-  class RunTally(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None , sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]] ) extends internalUtils.VcfTool.SVcfWalker { 
+  class RunTally(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None , sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]] ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "RunFunction."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
     val f : String = func.toUpperCase;
@@ -3681,7 +3681,7 @@ object SVcfTagFunctions {
    val infoFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "addInfo" )
    val tallyFunctionParamBlock = SVcfMapFunctions.MAP_FUNCTIONS( "tally" )
       
-   val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = 
+   val TAGFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] =
      Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("INFO TAG FUNCTIONS"),
                                                    lines = Seq("","Info Tag Functions are simple modular functions that take  "+
@@ -3689,7 +3689,7 @@ object SVcfTagFunctions {
                                                                "",
                                                                "Basic Syntax:",
                                                                "    --FCN addInfoTag|newTagID|FCN( param1, param2, etc. )"), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2)
-      ) ++                                                               
+      ) ++
       infoFunctionParamBlock.exampleCode.zipWithIndex.flatMap{ case (exampleCodeSeq,idx) => {
         Seq[internalUtils.commandLineUI.UserManualBlock](
             internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### Example "+(idx+1)+":"),
@@ -3707,7 +3707,7 @@ object SVcfTagFunctions {
                 hiddenInPlain = true)
         )
       }} ++
-   Seq[internalUtils.commandLineUI.UserManualBlock](                                                 
+   Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFunMap.flatMap{ case (fcnID,mf) => {
@@ -3736,13 +3736,13 @@ object SVcfTagFunctions {
    .exampleCode.flatten
  */
    
-   val FMTFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = 
+   val FMTFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] =
     Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("FORMAT TAG FUNCTIONS"),
                                                    lines = Seq(formatFunctionParamBlock.desc,
                                                                "Basic Syntax:",
                                                                "    --FCN addFormat|newTagID|FCN( param1, param2, etc. )"), level = 1, indentTitle = 0, indentBlock = 2, indentFirst = 2)
-      ) ++                                                               
+      ) ++
       formatFunctionParamBlock.exampleCode.zipWithIndex.flatMap{ case (exampleCodeSeq,idx) => {
         Seq[internalUtils.commandLineUI.UserManualBlock](
             internalUtils.commandLineUI.UserManualBlock(lines = Seq("###### Example "+(idx+1)+":"),
@@ -3760,7 +3760,7 @@ object SVcfTagFunctions {
                 hiddenInPlain = true)
         )
       }} ++
-   Seq[internalUtils.commandLineUI.UserManualBlock](                                                 
+   Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfFormatFunMap.flatMap{ case (fcnID,mf) => {
@@ -3786,7 +3786,7 @@ object SVcfTagFunctions {
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   val TALLYFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] = 
+   val TALLYFUNCTIONS_USERMANUALBLOCKS : Seq[internalUtils.commandLineUI.UserManualBlock] =
      Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("TALLY FUNCTIONS"),
                                                    lines = Seq(""+tallyFunctionParamBlock.desc,
@@ -3811,7 +3811,7 @@ object SVcfTagFunctions {
                 hiddenInPlain = true)
         )
       }} ++
-   Seq[internalUtils.commandLineUI.UserManualBlock](                                                 
+   Seq[internalUtils.commandLineUI.UserManualBlock](
        internalUtils.commandLineUI.UserManualBlock(title=Some("Available Functions:"),
                                                    lines = Seq(""), level = 2,indentTitle = 2, indentBlock = 2, indentFirst = 2)
    ) ++ vcfTagFcnMap_sideEffecting.flatMap{ case (fcnID,mf) => {

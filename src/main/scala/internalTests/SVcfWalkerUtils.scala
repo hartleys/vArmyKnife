@@ -69,9 +69,9 @@ object SVcfWalkerUtils {
   /*
    * runEnsembleMerger
    *     def walkVCFFiles(infiles : String, outfile : String, chromList : Option[List[String]], numLinesRead : Option[Int], inputFileList : Boolean, dropGenotypes : Boolean = false){
-   * 
-     def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
-                            headers : Seq[SVcfHeader], 
+   *
+     def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]],
+                            headers : Seq[SVcfHeader],
                             inputVcfTypes : Seq[String], genomeFA : Option[String],
                             windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
    */
@@ -80,17 +80,17 @@ object SVcfWalkerUtils {
 /*
   class CmdAddVcfInfo extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "AddVcfInfo", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "AddVcfInfo",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "inputFileList",
@@ -99,9 +99,9 @@ object SVcfWalkerUtils {
                                                    "" // description
                                        ) ::
                     new BinaryArgument[String](
-                                         name = "infoPrefix", 
-                                         arg = List("--infoPrefix"), 
-                                         valueName = "prefix",  
+                                         name = "infoPrefix",
+                                         arg = List("--infoPrefix"),
+                                         valueName = "prefix",
                                          argDesc =  "",
                                          defaultValue = Some("")
                                         ) ::
@@ -138,7 +138,7 @@ object SVcfWalkerUtils {
        }
      }
   }
-  * 
+  *
   */
 /*
   case class AddVcfInfo(infile2 : String) extends SVcfWalker {
@@ -258,7 +258,7 @@ object SVcfWalkerUtils {
     
     
     
-  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], 
+  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String],
                            infoFields : Seq[String], infoFieldsForVcfTable : Seq[String], dsbWindow : Int = 200,
                            genomeFaOpt : Option[String] = None,
                            debug : Boolean = true
@@ -267,7 +267,7 @@ object SVcfWalkerUtils {
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
 
     val refFile = genomeFaOpt.map{ genomeFa => new File(genomeFa) }
-    val refSeqFile : Option[htsjdk.samtools.reference.ReferenceSequenceFile] = 
+    val refSeqFile : Option[htsjdk.samtools.reference.ReferenceSequenceFile] =
                      refFile.map{ rf => {
                         htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(rf);
                      }}
@@ -287,7 +287,7 @@ object SVcfWalkerUtils {
             return "N";
           } else {
             rsf.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
-          }          
+          }
         }
         case None => {
           error("INTERNAL ERROR: Attempting to get genome fasta bases but no genome fasta is specified!");
@@ -309,7 +309,7 @@ object SVcfWalkerUtils {
               return getBasesForIv(chrom=chrom,start=start,end=e) + ("N" * (end - e))
             } else {
               rsf.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
-            }      
+            }
         }
         case None => {
           error("INTERNAL ERROR: Attempting to get genome fasta bases but no genome fasta is specified!");
@@ -390,7 +390,7 @@ object SVcfWalkerUtils {
         //do stuff!
       if(debug){
         reportln("SVBreaksToEventSet closing in DEBUG mode","note");
-      }        
+      }
         reportln("","debug");
         reportln("Starting table write...","debug")
         tableWriter.foreach{ out => {
@@ -429,8 +429,8 @@ object SVcfWalkerUtils {
               if( fwdSV.length != revSV.length ){
                 binf = binf + (("warnings",(binf.get("warnings").toSeq ++ Seq("fwdrev.lenMismatch")).mkString(",")  ))
               }
-              if( sa.chrom != sb.chrom ||  scala.math.min(sa.pos,sb.pos) + dsbWindow < scala.math.max(sa.pos,sb.pos) || 
-                  sva.bndBreakEnd._1 != svb.bndBreakEnd._1 || 
+              if( sa.chrom != sb.chrom ||  scala.math.min(sa.pos,sb.pos) + dsbWindow < scala.math.max(sa.pos,sb.pos) ||
+                  sva.bndBreakEnd._1 != svb.bndBreakEnd._1 ||
                   scala.math.min(sva.bndBreakEnd._2,svb.bndBreakEnd._2) + dsbWindow < scala.math.max(sva.bndBreakEnd._2,svb.bndBreakEnd._2) ){
                 binf = binf + (("svtype","other"))
                 binf = binf + (("other.reasons",(binf.get("other.reasons").toSeq ++ Seq("breakEndPos.mismatch")).mkString(",")  ))
@@ -444,8 +444,8 @@ object SVcfWalkerUtils {
               binf = binf + (("pos.B2", svb.bndBreakEnd._1+":"+svb.bndBreakEnd._2 ))
               
               if( ! (
-                      ( stra == "++" && strb == "--" ) || 
-                      ( stra == "+-" && strb == "-+" ) || 
+                      ( stra == "++" && strb == "--" ) ||
+                      ( stra == "+-" && strb == "-+" ) ||
                       ( stra == "-+" && strb == "+-" ) ||
                       ( stra == "--" && strb == "++" )
                     )){
@@ -476,13 +476,13 @@ object SVcfWalkerUtils {
                 
               }
               binf;
-            } else { 
+            } else {
               Map[String,String]()
             }
             
             val sortedSvList = svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }
             
-            out.write(eventID + "\t" + svlist.length + "\t" + 
+            out.write(eventID + "\t" + svlist.length + "\t" +
                       svlist.toSet.flatMap( (xx : SVcfVariantLine) => Set(xx.chrom,xx.getSVbnd().get.bndBreakEnd._1) ).toSeq.sorted.mkString(",")+"\t"+
                       numSV+"\t"+
                       (if(isSimpleUnbal){"1"}else{"0"})+"\t"+
@@ -634,6 +634,36 @@ object SVcfWalkerUtils {
       })),outHeader)
     }
   }
+   
+  class SortGTField(mapID : String = "") extends SVcfWalker {
+    def walkerName : String = "dropBackwardsSvLine"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](("mapID",mapID));
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      //add tags!
+      outHeader.addWalk(this);
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        //vc.genotypes.fmt
+        if(  vc.genotypes.fmt.length > 1 && vc.genotypes.fmt.head != "GT" && vc.genotypes.fmt.contains("GT")){
+            val gtidx = vc.genotypes.fmt.indexOf("GT");
+            val buffer = vc.genotypes.genotypeValues(0);
+            vc.genotypes.genotypeValues(0) = vc.genotypes.genotypeValues(gtidx);
+            vc.genotypes.genotypeValues(gtidx) = buffer;
+            vc.genotypes.fmt = Seq("GT") ++ vc.genotypes.fmt.patch(gtidx,Nil,1);
+            vc
+        } else {
+            vc
+        }
+      }}, closeAction = (() => {
+        //reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+      })),outHeader)
+    }
+  }
+
+  
   
   class calcSVflankingHomology( genomeFa : String , windowSize : Option[Int] = Some(100) , insertionField : Option[String] = None, debug : Boolean = true) extends SVcfWalker {
     val window : Int = windowSize.getOrElse(100);
@@ -642,7 +672,7 @@ object SVcfWalkerUtils {
     
 
     val refFile = new File(genomeFa)
-    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile =
                      htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
     val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
     val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
@@ -721,7 +751,7 @@ object SVcfWalkerUtils {
        val (a1,a2) = if(strands.head == '+'){
          (pos1 - matchSeq_back.length(),pos1 + matchSeq_start.length()-1)
        } else {
-         (pos1 - matchSeq_start.length()+1,pos1 + matchSeq_back.length())         
+         (pos1 - matchSeq_start.length()+1,pos1 + matchSeq_back.length())
        }
        val (b1,b2) = if(strands.last == '+'){
          (pos2 - matchSeq_back.length()+1,pos2 + matchSeq_start.length())
@@ -748,11 +778,11 @@ object SVcfWalkerUtils {
               seq_back_2  = rc(p2--,p2)
              */
               reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase   + "-"+
-              reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
-              seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+              reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" +
+              seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)
             // reverseComplement( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase   + "-"+
-            // reverseComplement(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
-            // seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+            // reverseComplement(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" +
+            // seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)
           } else if( strands == "+-" ){
             /*
               seq_start_1 = fw(p1,p1++)
@@ -761,8 +791,8 @@ object SVcfWalkerUtils {
               seq_back_2  = fw(p2,p2++)
              */
             reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase  + "-"+
-            reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
-            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+            reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" +
+            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)
           } else if(strands == "-+" ){
             /*
               seq_start_1 = rc(p1--,p1)
@@ -783,7 +813,7 @@ object SVcfWalkerUtils {
             
             reverseComplementString(seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange)) + "-" +
             reverseComplementString(matchSeq_start).toLowerCase +"|"+matchSeq_back.toLowerCase+"-"+
-            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange).toLowerCase            
+            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange).toLowerCase
           } else {
             null;
           }
@@ -797,8 +827,8 @@ object SVcfWalkerUtils {
               seq_back_2  = rc(p2--,p2)
              */
               reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) )   + "-"+
-              reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
-              seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange).toLowerCase  
+              reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" +
+              seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange).toLowerCase
           } else if( strands == "+-" ){
             /*
               seq_start_1 = fw(p1,p1++)
@@ -807,8 +837,8 @@ object SVcfWalkerUtils {
               seq_back_2  = fw(p2,p2++)
              */
             reverseComplementString( seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange) ).toLowerCase  + "-"+
-            reverseComplementString( matchSeq_start ).toLowerCase + "|" + matchSeq_back.toLowerCase + "-" + 
-            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange)  
+            reverseComplementString( matchSeq_start ).toLowerCase + "|" + matchSeq_back.toLowerCase + "-" +
+            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange)
           } else if(strands == "-+" ){
             /*
               seq_start_1 = rc(p1--,p1)
@@ -818,7 +848,7 @@ object SVcfWalkerUtils {
              */
             reverseComplementString(seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange)) + "-" +
             reverseComplementString(matchSeq_back).toLowerCase +"|"+matchSeq_start.toLowerCase+"-"+
-            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange).toLowerCase 
+            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange).toLowerCase
           } else if(strands == "--"){
             /*
               seq_start_1 = rc(p1--,p1)
@@ -827,8 +857,8 @@ object SVcfWalkerUtils {
               seq_back_2  = fw(p2,p2++)
              */
             reverseComplementString( seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange) ).toLowerCase  + "-"+
-            reverseComplementString( matchSeq_start ).toLowerCase + "|" + matchSeq_back.toLowerCase + "-" + 
-            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange)             
+            reverseComplementString( matchSeq_start ).toLowerCase + "|" + matchSeq_back.toLowerCase + "-" +
+            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange)
           } else {
             null;
           }
@@ -868,7 +898,7 @@ object SVcfWalkerUtils {
               ("flankHom_debug_S2iv",seq_start_2_desc),
               ("flankHom_debug_B1iv",seq_back_1_desc),
               ("flankHom_debug_B2iv",seq_back_2_desc),
-            )   
+            )
           return out ++ debugOut;
        } else {
          return out;
@@ -918,11 +948,11 @@ object SVcfWalkerUtils {
               seq_back_2  = rc(p2--,p2)
              */
               reverseComplementString( seq_back_1.slice(0, debugRange) ).toLowerCase   + ">"+
-              insertionSeq+ "<" + 
-              seq_start_2.slice(0, debugRange)  
+              insertionSeq+ "<" +
+              seq_start_2.slice(0, debugRange)
             // reverseComplement( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase   + "-"+
-            // reverseComplement(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
-            // seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+            // reverseComplement(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" +
+            // seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)
           } else if( strands == "+-" ){
             /*
               seq_start_1 = fw(p1,p1++)
@@ -931,8 +961,8 @@ object SVcfWalkerUtils {
               seq_back_2  = fw(p2,p2++)
              */
             reverseComplementString( seq_back_1.slice(0, debugRange) ).toLowerCase  + ">"+
-            insertionSeq+ "<" + 
-            seq_start_2.slice(0, debugRange)  
+            insertionSeq+ "<" +
+            seq_start_2.slice(0, debugRange)
           } else if(strands == "-+" ){
             /*
               seq_start_1 = rc(p1--,p1)
@@ -941,7 +971,7 @@ object SVcfWalkerUtils {
               seq_back_2  = rc(p2--,p2)
              */
             reverseComplementString(seq_start_2.slice(0,debugRange)) + ">" +
-            insertionSeq+ "<" + 
+            insertionSeq+ "<" +
             seq_back_1.slice(0,debugRange).toLowerCase
           } else if(strands == "--"){
             /*
@@ -952,8 +982,8 @@ object SVcfWalkerUtils {
              */
             
             reverseComplementString(seq_start_2.slice(0,debugRange)) + ">" +
-            insertionSeq+ "<" + 
-            seq_back_1.slice(0,debugRange).toLowerCase            
+            insertionSeq+ "<" +
+            seq_back_1.slice(0,debugRange).toLowerCase
           } else {
             null;
           }
@@ -967,8 +997,8 @@ object SVcfWalkerUtils {
               seq_back_2  = rc(p2--,p2)
              */
               reverseComplementString(seq_back_1.slice(0,debugRange)) + ">" +
-             insertionSeq+ "<" + 
-              seq_start_2.slice(0,debugRange).toLowerCase  
+             insertionSeq+ "<" +
+              seq_start_2.slice(0,debugRange).toLowerCase
           } else if( strands == "+-" ){
             /*
               seq_start_1 = fw(p1,p1++)
@@ -977,8 +1007,8 @@ object SVcfWalkerUtils {
               seq_back_2  = fw(p2,p2++)
              */
             reverseComplementString( seq_start_2.slice(0,debugRange) ).toLowerCase  + ">"+
-            insertionSeq+ "<" + 
-            seq_back_1.slice(0,debugRange)  
+            insertionSeq+ "<" +
+            seq_back_1.slice(0,debugRange)
           } else if(strands == "-+" ){
             /*
               seq_start_1 = rc(p1--,p1)
@@ -987,8 +1017,8 @@ object SVcfWalkerUtils {
               seq_back_2  = rc(p2--,p2)
              */
             reverseComplementString(seq_back_1.slice(0,debugRange)) + ">" +
-            insertionSeq+ "<" + 
-            seq_start_2.slice(0,debugRange).toLowerCase 
+            insertionSeq+ "<" +
+            seq_start_2.slice(0,debugRange).toLowerCase
           } else if(strands == "--"){
             /*
               seq_start_1 = rc(p1--,p1)
@@ -997,8 +1027,8 @@ object SVcfWalkerUtils {
               seq_back_2  = fw(p2,p2++)
              */
             reverseComplementString( seq_start_2.slice(0,debugRange) ).toLowerCase  + ">"+
-            insertionSeq+ "<" +  
-            seq_back_1.slice(0,debugRange)             
+            insertionSeq+ "<" +
+            seq_back_1.slice(0,debugRange)
           } else {
             null;
           }
@@ -1038,7 +1068,7 @@ object SVcfWalkerUtils {
               ("flankHom_debug_S2iv",seq_start_2_desc),
               ("flankHom_debug_B1iv",seq_back_1_desc),
               ("flankHom_debug_B2iv",seq_back_2_desc),
-            )   
+            )
           return out ++ debugOut;
        } else {
          return out;
@@ -1054,7 +1084,7 @@ object SVcfWalkerUtils {
           //    seq_back_1  = rc(p1--,p1)
           //    seq_back_2  = rc(p2--,p2)
       
-      if(debug){ 
+      if(debug){
         outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_debug_A",Number="1",Type="String",desc="..."),Some(this));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_debug_B",Number="1",Type="String",desc="..."),Some(this));
         outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_debug_strand",Number="1",Type="String",desc="..."),Some(this));
@@ -1117,7 +1147,7 @@ object SVcfWalkerUtils {
   
        /*
           val p1_debug = if( strands == "++" ) {
-             val sa1 = getBasesForIv(chr1,a1 - debugRange,a1-1).toLowerCase() 
+             val sa1 = getBasesForIv(chr1,a1 - debugRange,a1-1).toLowerCase()
              val sa2 = if( a1 == a2 ){ "" } else {
                getBasesForIv(chr1,a1,a2).toLowerCase();
              }
@@ -1204,7 +1234,7 @@ object SVcfWalkerUtils {
             } else if( v.alt.length > 1 ){
               dropct = dropct + 1;
               tally("dropInvalidBNDSV."+walkID+".DROP:2+ ALT alleles",1);
-              None        
+              None
             } else if( bndStatus.isEmpty ){
               dropct = dropct + 1;
               tally("dropInvalidBNDSV."+walkID+".DROP:No TYPE field",1);
@@ -1254,7 +1284,7 @@ object SVcfWalkerUtils {
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
     
     val refFile = new File(genomeFa)
-    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile =
                      htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
     val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
     val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
@@ -1397,14 +1427,14 @@ object SVcfWalkerUtils {
                 if(end == -1){
                   Some(vc);
                 } else {
-                  // vc.in_alt = Seq( "]" +v.chrom+":"+ end +"]" + vc.ref )                  
+                  // vc.in_alt = Seq( "]" +v.chrom+":"+ end +"]" + vc.ref )
                   val vc2 = vc.getOutputLineCopy();
                   vc.addInfo("SVTYPE","BND");
                   vc2.addInfo("SVTYPE","BND");
                   vc2.in_pos = end;
                   vc2.in_ref = getBaseAtPos(vc2.in_chrom,vc2.in_pos);
                   
-                  if(dellyFormat){                  
+                  if(dellyFormat){
                     vc2.in_alt = Seq( vc2.in_ref+"["+v.chrom+":"+(v.pos)+"[" );
                   } else {
                     vc.in_pos = vc.in_pos + 1; //added line UPDATE: corrected off-by-one in manta SV calls. Specification is unclear!
@@ -1462,7 +1492,7 @@ object SVcfWalkerUtils {
 
       
       //      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("STAT"),Number="1",Type="String",desc="Homopolymer run warning status (homopolymer runs defined as length >="+lenThreshold+")"));
-      outHeader.reportAddedInfos(this)      
+      outHeader.reportAddedInfos(this)
       /*
          
        */
@@ -1477,7 +1507,7 @@ object SVcfWalkerUtils {
                newPos match {
                  case Some(np) => {
                    notice("POSlift.OK ["+vc.in_chrom+":"+vc.in_pos+"] => ["+np.getContig()+":"+np.getStart()+"]","POSlift.OK",10);
-                   if( np.getContig() == vc.chrom ){  
+                   if( np.getContig() == vc.chrom ){
                      vc.addInfo(infoPrefix+"POSlift_chromChange","0")
                      vc.addInfo(infoPrefix+"POSlift_dist",( vc.in_pos  - np.getStart() ).toString())
                    } else {
@@ -1504,7 +1534,7 @@ object SVcfWalkerUtils {
                  vc.addInfo(infoPrefix+"sv_oldALT",v.alt.head )
                  val svivOpt = Option( lifter.liftOver( svInterval ) );
                  
-                 svivOpt match { 
+                 svivOpt match {
                    case Some(sviv) => {
                      if(newPos.isDefined){
                        notice("BOTHlift.OK","BOTHlift.OK",10);
@@ -1547,7 +1577,7 @@ object SVcfWalkerUtils {
   
   
 
-  case class ChromosomeConverterSV(chromDecoder : String, 
+  case class ChromosomeConverterSV(chromDecoder : String,
                  fromToColumnNames : Option[(String,String)] = None,
                  fromToIdx : Option[(String,String)] = None,
                  skipFirstRow : Boolean = true,
@@ -1643,7 +1673,7 @@ object SVcfWalkerUtils {
     }
   }
   
-  class OLDannotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
+  class OLDannotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String,
                               crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
     def walkerName : String = "annotateCCsvWithSVset"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -1664,11 +1694,11 @@ object SVcfWalkerUtils {
       
       def strandSwapSVstrand( ss : String ) : String = {
           if( ss == "++"){
-            "--" 
+            "--"
           } else if(ss == "+-"){
-            "+-" 
+            "+-"
           } else if(ss == "-+"){
-            "-+" 
+            "-+"
           } else {
             "++"
           }
@@ -1696,7 +1726,7 @@ object SVcfWalkerUtils {
       
       
       
-      //val avmap = 
+      //val avmap =
         //      chrA,chrB,strdir
         // Map[(String,String,String),scala.collection.immutable.TreeMap[Int,TreeMap[Int,Seq[(Int,Int,Boolean,SVcfVariantLine)]]]]
       var avmap = Map[(String,String,String),scala.collection.immutable.TreeMap[Int,scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]]]();
@@ -1724,7 +1754,7 @@ object SVcfWalkerUtils {
         } else {
           val xxmap = avmap((chrA,chrB,strdir));
           val xx = xxmap.getOrElse( posA, scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]() ).getOrElse( posB, Seq() ) :+ v
-          avmap = avmap.updated( (chrA,chrB,strdir), 
+          avmap = avmap.updated( (chrA,chrB,strdir),
                xxmap.updated(posA,
                  xxmap.getOrElse( posA, scala.collection.immutable.TreeMap[Int,Seq[SVcfVariantLine]]() ).updated(
                      posB,xx
@@ -1797,14 +1827,14 @@ object SVcfWalkerUtils {
       reportln("     readVcf() init: lines buffered, extracting header lines... ("+getDateAndTimeString+")","debug")
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
       reportln("     readVcf() init: headerlines extracted, processing header... ("+getDateAndTimeString+")","debug")
-      val header = readVcfHeader(allRawHeaderLines); 
+      val header = readVcfHeader(allRawHeaderLines);
      */
     val header : SVcfHeader = {
       reportln("Loading Indexed Reference VCF file: "+vcffile,"note")
       val bufLines = getLinesSmartUnzip(vcffile).buffered;
       val allRawHeaderLines = extractWhile(bufLines)(line => line.startsWith("#"));
       reportln("      Loading ("+vcffile+"): Header loaded." ,"note")
-      SVcfLine.readVcfHeader(allRawHeaderLines); 
+      SVcfLine.readVcfHeader(allRawHeaderLines);
     }
     //REQUIRES index!
     val htsReader = new htsjdk.variant.vcf.VCFFileReader( new java.io.File( vcffile ), true );
@@ -1822,7 +1852,7 @@ object SVcfWalkerUtils {
    */
 
   
-  class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
+  class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String,
                               crossChromWin : Int = 500,withinChromWin : Int = 500, jobID : String = "annoVCF") extends SVcfWalker {
     def walkerName : String = "annotateCCsvWithSVset"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -1844,11 +1874,11 @@ object SVcfWalkerUtils {
       
       def strandSwapSVstrand( ss : String ) : String = {
           if( ss == "++"){
-            "--" 
+            "--"
           } else if(ss == "+-"){
-            "+-" 
+            "+-"
           } else if(ss == "-+"){
-            "-+" 
+            "-+"
           } else {
             "++"
           }
@@ -1890,7 +1920,7 @@ object SVcfWalkerUtils {
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len,Number="1",Type="String",desc="The context around the variant in a window of size "+len+". Note that this uses the ref allele from the VCF. If the REF allele from the VCF is incorrect then this will also be incorrect." ));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_REF",Number="1",Type="String",desc="The sequence of the REF allele with the nearby sequence context of window "+len+". Note that the allele itself will be capitalized. Note that this uses the reference sequence from the genome itself. If the VCF is incorrect then the ref allele will not match the VCF."));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",internalUtils.VcfTool.TOP_LEVEL_VCF_TAG+tagPrefix+"seqContext"+len+"_ALT",Number="1",Type="String",desc="The sequence of the ALT allele with the nearby sequence context of window "+len+". Note that the allele itself will be capitalized."));
-      outHeader.reportAddedInfos(this) 
+      outHeader.reportAddedInfos(this)
        */
       
       def getMatches(chrA : String, chrB:String, strdir:String, posA: Int, posB:Int, bothDirections: Boolean = true) : Seq[SVcfVariantLine] = {
@@ -1987,7 +2017,7 @@ object SVcfWalkerUtils {
     }
   }
   
-  class OLD2annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
+  class OLD2annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String,
                               crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
     def walkerName : String = "annotateCCsvWithSVset"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -2008,11 +2038,11 @@ object SVcfWalkerUtils {
       
       def strandSwapSVstrand( ss : String ) : String = {
           if( ss == "++"){
-            "--" 
+            "--"
           } else if(ss == "+-"){
-            "+-" 
+            "+-"
           } else if(ss == "-+"){
-            "-+" 
+            "-+"
           } else {
             "++"
           }
@@ -2047,7 +2077,7 @@ object SVcfWalkerUtils {
         }})
       }
       
-      //val avmap = 
+      //val avmap =
         //      chrA,chrB,strdir
         // Map[(String,String,String),scala.collection.immutable.TreeMap[Int,TreeMap[Int,Seq[(Int,Int,Boolean,SVcfVariantLine)]]]]
       var avmap = Map[(String,String,String),scala.collection.immutable.TreeMap[Int,scala.collection.immutable.TreeMap[Int,Seq[VarInfoHolder]]]]();
@@ -2075,7 +2105,7 @@ object SVcfWalkerUtils {
         } else {
           val xxmap = avmap((chrA,chrB,strdir));
           val xx = xxmap.getOrElse( posA, scala.collection.immutable.TreeMap[Int,Seq[VarInfoHolder]]() ).getOrElse( posB, Seq[VarInfoHolder]() ) :+ getVIH(v)
-          avmap = avmap.updated( (chrA,chrB,strdir), 
+          avmap = avmap.updated( (chrA,chrB,strdir),
                xxmap.updated(posA,
                  xxmap.getOrElse( posA, scala.collection.immutable.TreeMap[Int,Seq[VarInfoHolder]]() ).updated(
                      posB,xx
@@ -2153,13 +2183,13 @@ object SVcfWalkerUtils {
     }
   }
   
-  def ensembleMergeSV(vcIters : Seq[Iterator[SVcfVariantLine]], 
+  def ensembleMergeSV(vcIters : Seq[Iterator[SVcfVariantLine]],
                             crossChromWin : Int = 500,
                             withinChromWin : Int = 500,
-                            headers : Seq[SVcfHeader], 
-                            inputVcfTypes : Seq[String], 
+                            headers : Seq[SVcfHeader],
+                            inputVcfTypes : Seq[String],
                             nonStrictChecking : Boolean = false,
-                            CC_ignoreSampleIds : Boolean = false //, 
+                            CC_ignoreSampleIds : Boolean = false //,
                             //CC_ignoreSampleOrder : Boolean = false //NOT IMPLEMENTED
                             ) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
     
@@ -2182,8 +2212,8 @@ object SVcfWalkerUtils {
       }
       def pairOverlaps( a2 : ChrPos, b2 : ChrPos ) : Boolean = {
         //val currwin = if( a.chr == b.chr ){ withinChromWin } else { crossChromWin }
-        a.chr == a2.chr && 
-        b.chr == b2.chr && 
+        a.chr == a2.chr &&
+        b.chr == b2.chr &&
         a.fr  <= a2.pos && a2.pos <= a.to &&
         b.fr  <= b2.pos && b2.pos <= b.to
       }
@@ -2545,7 +2575,7 @@ object SVcfWalkerUtils {
                blankGeno
              }
           }}
-          vb.genotypes.addGenotypeArray(newFmtID, 
+          vb.genotypes.addGenotypeArray(newFmtID,
               g.tail.foldLeft( g.head ){ case (soFar, curr) => {
                 soFar.zip(curr).map{ case (a,b) => { a+";"+b }}
               }})
@@ -2734,7 +2764,7 @@ object SVcfWalkerUtils {
       val totalct = scala.Array.ofDim[Int](vcfHeader.sampleCt)
 
 
-      (addIteratorCloseAction( iter = vcMap(vcIter){v => {        
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine();
         val gtidx = v.genotypes.fmt.indexOf(gtTag);
         if(gtidx >= 0){
@@ -2817,7 +2847,7 @@ object SVcfWalkerUtils {
       } else {
          out.write(titleRowStart+infoFields.mkString("\t")+( if( infoFields.length > 0) "\t" else "" )+vcfHeader.titleLine.sampleList.mkString("\t")+"\n");
       }
-      (addIteratorCloseAction( iter = vcMap(vcIter){v => {        
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine();
         //val gtidx = v.genotypes.fmt.indexOf(gtTag);
         val gtval = gtTagList.map{ gg => {
@@ -2828,7 +2858,7 @@ object SVcfWalkerUtils {
             v.genotypes.genotypeValues(gtidx)
           }
         }}
-        val ifval = infoFields.map{ ff => { 
+        val ifval = infoFields.map{ ff => {
           v.info.getOrElse(ff,None).getOrElse(".")
         }}
         //val gt = v.genotypes.genotypeValues(gtidx);
@@ -2858,17 +2888,17 @@ object SVcfWalkerUtils {
     
   class CmdConvertToStandardVcf extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "ConvertToStandardVcf", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "ConvertToStandardVcf",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "inputFileList",
@@ -3144,91 +3174,91 @@ object SVcfWalkerUtils {
 
   class CmdCreateVariantSampleTableV2 extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "CreateVariantSampleTableV2", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "CreateVariantSampleTableV2",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[String](
-                                         name = "sampleDecoder", 
-                                         arg = List("--sampleDecoder"), 
-                                         valueName = "...",  
+                                         name = "sampleDecoder",
+                                         arg = List("--sampleDecoder"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
                                         
 
                     new BinaryMonoToListArgument[String](
-                                         name = "keepVariantExpressions", 
+                                         name = "keepVariantExpressions",
                                          arg = List("--keepVariantExpressions"),
                                          valueName = "",
                                          argDesc =  ""
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "kveName", 
-                                         arg = List("--kveName"), 
-                                         valueName = "...",  
+                                         name = "kveName",
+                                         arg = List("--kveName"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "kveGeneTag", 
-                                         arg = List("--kveGeneTag"), 
-                                         valueName = "...",  
+                                         name = "kveGeneTag",
+                                         arg = List("--kveGeneTag"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "kveSubtractGeneTags", 
-                                         arg = List("--kveSubtractGeneTags"), 
-                                         valueName = "...",  
-                                         argDesc =  ""
-                                        ) ::
-                                        
-                                        
-                                        
-                    new BinaryOptionArgument[List[String]](
-                                         name = "geneList", 
-                                         arg = List("--geneList"), 
-                                         valueName = "...",  
-                                         argDesc =  ""
-                                        ) ::
-                    new BinaryOptionArgument[List[String]](
-                                         name = "decoderColumns", 
-                                         arg = List("--decoderColumns"), 
-                                         valueName = "...",  
-                                         argDesc =  ""
-                                        ) ::
-                    new BinaryOptionArgument[List[String]](
-                                         name = "decoderColumnNames", 
-                                         arg = List("--decoderColumnNames"), 
-                                         valueName = "...",  
+                                         name = "kveSubtractGeneTags",
+                                         arg = List("--kveSubtractGeneTags"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
-                    new BinaryOptionArgument[String](
-                                         name = "outfilePrefix", 
-                                         arg = List("--outfilePrefix"), 
-                                         valueName = "...",  
+                                        
+                                        
+                    new BinaryOptionArgument[List[String]](
+                                         name = "geneList",
+                                         arg = List("--geneList"),
+                                         valueName = "...",
+                                         argDesc =  ""
+                                        ) ::
+                    new BinaryOptionArgument[List[String]](
+                                         name = "decoderColumns",
+                                         arg = List("--decoderColumns"),
+                                         valueName = "...",
+                                         argDesc =  ""
+                                        ) ::
+                    new BinaryOptionArgument[List[String]](
+                                         name = "decoderColumnNames",
+                                         arg = List("--decoderColumnNames"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
                     new BinaryOptionArgument[String](
-                                         name = "gtTag", 
-                                         arg = List("--gtTag"), 
-                                         valueName = "...",  
+                                         name = "outfilePrefix",
+                                         arg = List("--outfilePrefix"),
+                                         valueName = "...",
+                                         argDesc =  ""
+                                        ) ::
+                                        
+                    new BinaryOptionArgument[String](
+                                         name = "gtTag",
+                                         arg = List("--gtTag"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "sectionBy", 
-                                         arg = List("--sectionBy"), 
-                                         valueName = "...",  
+                                         name = "sectionBy",
+                                         arg = List("--sectionBy"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "inputFileList",
@@ -3253,7 +3283,7 @@ object SVcfWalkerUtils {
        val out = parser.parseArguments(args.toList.tail);
        if(out){
          new CreateVariantSampleTable(
-                       sampleDecoder = parser.get[Option[String]]("sampleDecoder").get, 
+                       sampleDecoder = parser.get[Option[String]]("sampleDecoder").get,
                         keepVariantExpressions = parser.get[List[String]]("keepVariantExpressions"),
                         kveNames = parser.get[List[String]]("kveNames"),
                         kveGeneTag = parser.get[List[String]]("kveGeneTag"),
@@ -3280,7 +3310,7 @@ object SVcfWalkerUtils {
   }
   
 
-  case class CreateVariantSampleTable(sampleDecoder : String, 
+  case class CreateVariantSampleTable(sampleDecoder : String,
       
                                       var keepVariantExpressions : List[String],
                                       var kveNames : List[String],
@@ -3341,9 +3371,9 @@ object SVcfWalkerUtils {
             Seq[String]( "("+
                    geneTag.map{ tt => {
                      "INFO.inAnyOf:"+tt+":"+g
-                   }}.mkString(" OR ") + 
+                   }}.mkString(" OR ") +
                 ")"
-            ) ++ 
+            ) ++
             subtractGeneTags.map{ subTag => {
               " ( NOT INFO.inAnyOf:"+subTag+":"+g+" ) "
             }}
@@ -3459,12 +3489,12 @@ object SVcfWalkerUtils {
             fullGeneList.zip(geneNames).zipWithIndex.foreach{ case ((gExpr,g),k) => {
               writer.write(
                   g + "\t"+  kves.zipWithIndex.map{ case (kve,j) => {
-                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                    "" +varCtArray(i)(j)(k)+"\t"+
                         varSampCtArray(i)(j)(k)+"\t"+
                         varSampBoolArray(i)(j)(k).count{x => x}+"\t"+
                         varSampCtArrayHom(i)(j)(k)+"\t"+
                         (varSampCtArrayHom(i)(j)(k)+varSampCtArray(i)(j)(k))
-                  }}.mkString("\t") + 
+                  }}.mkString("\t") +
                   "\n"
               );
             }}
@@ -3491,12 +3521,12 @@ object SVcfWalkerUtils {
               geneNames.zipWithIndex.foreach{ case (g,k) => {
                 writer.write(
                   g + "\t"+  sampGroups.zipWithIndex.map{ case (dd,i) => {
-                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                    "" +varCtArray(i)(j)(k)+"\t"+
                         varSampCtArray(i)(j)(k)+"\t"+
                         varSampBoolArray(i)(j)(k).count{x => x}+"\t"+
                         varSampCtArrayHom(i)(j)(k)+"\t"+
                         (varSampCtArrayHom(i)(j)(k)+varSampCtArray(i)(j)(k))
-                  }}.mkString("\t") + 
+                  }}.mkString("\t") +
                   "\n"
                 );
               }}
@@ -3578,9 +3608,9 @@ object SVcfWalkerUtils {
             Seq[String]( "("+
                    geneTag.map{ tt => {
                      "INFO.inAnyOf:"+tt+":"+g
-                   }}.mkString(" OR ") + 
+                   }}.mkString(" OR ") +
                 ")"
-            ) ++ 
+            ) ++
             subtractGeneTags.map{ subTag => {
               " ( NOT INFO.inAnyOf:"+subTag+":"+g+" ) "
             }}
@@ -3681,9 +3711,9 @@ object SVcfWalkerUtils {
             fullGeneList.zip(geneNames).zipWithIndex.foreach{ case ((gExpr,g),k) => {
               writer.write(
                   g + "\t"+  kves.zipWithIndex.map{ case (kve,j) => {
-                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                    "" +varCtArray(i)(j)(k)+"\t"+
                         varSumArray(i)(j)(k)
-                  }}.mkString("\t") + 
+                  }}.mkString("\t") +
                   "\n"
               );
             }}
@@ -3731,9 +3761,9 @@ object SVcfWalkerUtils {
           Seq[String]( "("+
                  geneTag.map{ tt => {
                    "INFO.inAnyOf:"+tt+":"+g
-                 }}.mkString(" OR ") + 
+                 }}.mkString(" OR ") +
               ")"
-          ) ++ 
+          ) ++
           subtractGeneTags.getOrElse(List[String]()).map{ subTag => {
             " ( NOT INFO.inAnyOf:"+subTag+":"+g+" ) "
           }}
@@ -3749,9 +3779,9 @@ object SVcfWalkerUtils {
           Seq[String]( "("+
                  geneTag.map{ tt => {
                    "INFO.inAnyOf:"+tt+":"+geneListColons
-                 }}.mkString(" OR ") + 
+                 }}.mkString(" OR ") +
               ")"
-          ) ++ 
+          ) ++
           subtractGeneTags.getOrElse(List[String]()).map{ subTag => {
             " ( NOT INFO.inAnyOf:"+subTag+":"+geneListColons+" ) "
           }}
@@ -3781,7 +3811,7 @@ object SVcfWalkerUtils {
                 }}
               }}
             }
-          }} 
+          }}
         }
         
         /*Range(0,decoderColumns.length).foreach{ i => {
@@ -3803,9 +3833,9 @@ object SVcfWalkerUtils {
             geneNames.zipWithIndex.foreach{ case (g,k) => {
               writer.write(
                   g + "\t"+  keepVarExprNames.zipWithIndex.map{ case (kv,j) => {
-                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                    "" +varCtArray(i)(j)(k)+"\t"+
                         varSumArray(i)(j)(k)
-                  }}.mkString("\t") + 
+                  }}.mkString("\t") +
                   "\n"
               );
             }}
@@ -3824,17 +3854,17 @@ object SVcfWalkerUtils {
   
   class CmdCreateVariantSampleTable extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "CreateVariantSampleTable", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "CreateVariantSampleTable",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[String](
-                                         name = "sampleDecoder", 
-                                         arg = List("--sampleDecoder"), 
-                                         valueName = "...",  
+                                         name = "sampleDecoder",
+                                         arg = List("--sampleDecoder"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
@@ -3847,72 +3877,72 @@ object SVcfWalkerUtils {
                                        ) ::
 
                     new BinaryMonoToListArgument[String](
-                                         name = "keepVariantExpressions", 
+                                         name = "keepVariantExpressions",
                                          arg = List("--keepVariantExpressions"),
                                          valueName = "",
                                          argDesc =  ""
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "keepVarExprNames", 
-                                         arg = List("--keepVarExprNames"), 
-                                         valueName = "...",  
+                                         name = "keepVarExprNames",
+                                         arg = List("--keepVarExprNames"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "geneTag", 
-                                         arg = List("--geneTag"), 
-                                         valueName = "...",  
+                                         name = "geneTag",
+                                         arg = List("--geneTag"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "subtractGeneTags", 
-                                         arg = List("--subtractGeneTags"), 
-                                         valueName = "...",  
+                                         name = "subtractGeneTags",
+                                         arg = List("--subtractGeneTags"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
                     new BinaryOptionArgument[List[String]](
-                                         name = "geneList", 
-                                         arg = List("--geneList"), 
-                                         valueName = "...",  
+                                         name = "geneList",
+                                         arg = List("--geneList"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "decoderColumns", 
-                                         arg = List("--decoderColumns"), 
-                                         valueName = "...",  
+                                         name = "decoderColumns",
+                                         arg = List("--decoderColumns"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "decoderColumnNames", 
-                                         arg = List("--decoderColumnNames"), 
-                                         valueName = "...",  
+                                         name = "decoderColumnNames",
+                                         arg = List("--decoderColumnNames"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
                     new BinaryOptionArgument[String](
-                                         name = "outfilePrefix", 
-                                         arg = List("--outfilePrefix"), 
-                                         valueName = "...",  
+                                         name = "outfilePrefix",
+                                         arg = List("--outfilePrefix"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                                         
                     new BinaryOptionArgument[String](
-                                         name = "gtTag", 
-                                         arg = List("--gtTag"), 
-                                         valueName = "...",  
+                                         name = "gtTag",
+                                         arg = List("--gtTag"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "sectionBy", 
-                                         arg = List("--sectionBy"), 
-                                         valueName = "...",  
+                                         name = "sectionBy",
+                                         arg = List("--sectionBy"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "inputFileList",
@@ -3975,7 +4005,7 @@ object SVcfWalkerUtils {
            }
            case None => {
              new CreateVariantSampleTable_OLD(
-                           sampleDecoder = parser.get[Option[String]]("sampleDecoder").get, 
+                           sampleDecoder = parser.get[Option[String]]("sampleDecoder").get,
                             keepVariantExpressions = parser.get[List[String]]("keepVariantExpressions"),
                             geneList = parser.get[Option[List[String]]]("geneList").get,
                             decoderColumns = parser.get[Option[List[String]]]("decoderColumns").get,
@@ -4004,7 +4034,7 @@ object SVcfWalkerUtils {
   
 
   
-  case class CreateVariantSampleTable_OLD(sampleDecoder : String, 
+  case class CreateVariantSampleTable_OLD(sampleDecoder : String,
                                       keepVariantExpressions : Seq[String],
                                       geneList : Seq[String],
                                       decoderColumns : Seq[String],
@@ -4041,9 +4071,9 @@ object SVcfWalkerUtils {
           Seq[String]( "("+
                  geneTag.map{ tt => {
                    "INFO.inAnyOf:"+tt+":"+g
-                 }}.mkString(" OR ") + 
+                 }}.mkString(" OR ") +
               ")"
-          ) ++ 
+          ) ++
           subtractGeneTags.getOrElse(List[String]()).map{ subTag => {
             " ( NOT INFO.inAnyOf:"+subTag+":"+g+" ) "
           }}
@@ -4059,9 +4089,9 @@ object SVcfWalkerUtils {
           Seq[String]( "("+
                  geneTag.map{ tt => {
                    "INFO.inAnyOf:"+tt+":"+geneListColons
-                 }}.mkString(" OR ") + 
+                 }}.mkString(" OR ") +
               ")"
-          ) ++ 
+          ) ++
           subtractGeneTags.getOrElse(List[String]()).map{ subTag => {
             " ( NOT INFO.inAnyOf:"+subTag+":"+geneListColons+" ) "
           }}
@@ -4132,7 +4162,7 @@ object SVcfWalkerUtils {
             gtString.contains('1');
           }}
           val anyHom = v.genotypes.genotypeValues(gtIdx).map{ gtString => gtString == "1/1" }
-          anyAlt.zipWithIndex.withFilter{_._1}.foreach{ case (isAlt,k) => { 
+          anyAlt.zipWithIndex.withFilter{_._1}.foreach{ case (isAlt,k) => {
             keepVar.foreach{ j => {
               anyVarSampVctArray(k)(j) += 1;
             }}
@@ -4162,7 +4192,7 @@ object SVcfWalkerUtils {
                 }}
               }}
             }
-          }} 
+          }}
         }
         
         /*Range(0,decoderColumns.length).foreach{ i => {
@@ -4198,12 +4228,12 @@ object SVcfWalkerUtils {
             geneNames.zipWithIndex.foreach{ case (g,k) => {
               writer.write(
                   g + "\t"+  keepVarExprNames.zipWithIndex.map{ case (kv,j) => {
-                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                    "" +varCtArray(i)(j)(k)+"\t"+
                         varSampCtArray(i)(j)(k)+"\t"+
                         varSampBoolArray(i)(j)(k).count{x => x}+"\t"+
                         varSampCtArrayHom(i)(j)(k)+"\t"+
                         (varSampCtArrayHom(i)(j)(k)+varSampCtArray(i)(j)(k))
-                  }}.mkString("\t") + 
+                  }}.mkString("\t") +
                   "\n"
               );
             }}
@@ -4227,12 +4257,12 @@ object SVcfWalkerUtils {
               geneNames.zipWithIndex.foreach{ case (g,k) => {
                 writer.write(
                   g + "\t"+  sampGroups.zipWithIndex.map{ case (dd,i) => {
-                    "" +varCtArray(i)(j)(k)+"\t"+ 
+                    "" +varCtArray(i)(j)(k)+"\t"+
                         varSampCtArray(i)(j)(k)+"\t"+
                         varSampBoolArray(i)(j)(k).count{x => x}+"\t"+
                         varSampCtArrayHom(i)(j)(k)+"\t"+
                         (varSampCtArrayHom(i)(j)(k)+varSampCtArray(i)(j)(k))
-                  }}.mkString("\t") + 
+                  }}.mkString("\t") +
                   "\n"
                 );
               }}
@@ -4259,7 +4289,7 @@ object SVcfWalkerUtils {
       }}
       missingSamp.foreach{ s =>{
         error("Sample reordering failed! Cannot find sample: "+s);
-      }} 
+      }}
       val sampIX = if(sort){
         vcfHeader.titleLine.sampleList.zipWithIndex.sorted.toArray
       } else {
@@ -4338,7 +4368,7 @@ object SVcfWalkerUtils {
     
   }
   
-  case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], 
+  case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String],
                               refTag : Option[String] = None, altTag : Option[String] = None,
                               copyFilterToGeno : Option[String] = None,copyQualToGeno : Option[String]= None,
                               copyInfoToGeno : List[String]= List[String]()) extends SVcfWalker {
@@ -4513,7 +4543,7 @@ object SVcfWalkerUtils {
     var headerID : String = "unk"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
          ("headerLineType",headerType),
-         ("headerLineID",headerID)        
+         ("headerLineID",headerID)
     );
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -4554,7 +4584,7 @@ object SVcfWalkerUtils {
           
         vc.in_info = vc.info.filter{ case (xx,yy) => {
           infoset.contains(xx);
-        }} 
+        }}
         val (gt,gtkeepset) = vc.genotypes.fmt.zipWithIndex.filter{ case (gg,ii) => {
           fmtset.contains(gg)
         }}.unzip
@@ -4575,7 +4605,7 @@ object SVcfWalkerUtils {
     var headerID : String = "unk"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
          ("headerLineType",headerType),
-         ("headerLineID",headerID)        
+         ("headerLineID",headerID)
     );
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -4780,7 +4810,7 @@ object SVcfWalkerUtils {
       vcfHeader.infoLines.foreach{ vi => {
         if( vi.Type == "Flag" ){
            outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",vi.ID,Number="1",Type="Integer",desc="Info flag copied and converted to numeric, "+vi.desc))
-        } else {         
+        } else {
            outHeader.addFormatLine(new SVcfCompoundHeaderLine("FORMAT",vi.ID,Number=vi.Number,Type=vi.Type,desc="Info column copied, "+vi.desc))
         }
       }}
@@ -5491,11 +5521,11 @@ object SVcfWalkerUtils {
       outHeader.addWalk(this);
       var dropct = 0;
       outHeader.reportAddedInfos(this)
-      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {        
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
         if(v.ref.startsWith("<") || v.alt.exists{ a => a.startsWith("<")}){
           dropct = dropct + 1;
           notice("Dropped symbolic allele variant:\n    "+v.getSimpleVcfString(),"Dropped_Symbolic_Variant",10);
-          None          
+          None
         } else {
           Some(v);
         }
@@ -5521,7 +5551,7 @@ object SVcfWalkerUtils {
       val validAltChecker : java.util.regex.Pattern = java.util.regex.Pattern.compile("[ACTGNactgn]+?")
 
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
-        val refValid = ( v.ref.startsWith("<") && v.ref.endsWith(">") ) || 
+        val refValid = ( v.ref.startsWith("<") && v.ref.endsWith(">") ) ||
                        ( validRefChecker.matcher(v.ref).matches() )
         val altValid = ( v.alt.length == 1 && v.alt.head == ".") || ( v.alt.forall{ a => {
           a == "*" || (a.startsWith("<") && a.endsWith(">")) || validRefChecker.matcher(a).matches()
@@ -5529,7 +5559,7 @@ object SVcfWalkerUtils {
         if( ( ! refValid ) || ( ! altValid ) ){
           dropct = dropct + 1;
           notice("Dropped invalid allele variant:\n    "+v.getSimpleVcfString(),"Dropped_Invalid_Variant",10);
-          None          
+          None
         } else {
           Some(v);
         }
@@ -5554,7 +5584,7 @@ object SVcfWalkerUtils {
       outHeader.addWalk(this);
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagID,Number=".",Type="String",desc="Merge of boolean tags: "+mergeTags.mkString(",")));
       outHeader.reportAddedInfos(this)
-      (addIteratorCloseAction( iter = vcMap(vcIter){v => {        
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         val vc = v.getOutputLine();
         
         val tagListString = mergeTags.zip(tagTitles).withFilter{ case (t,tt) => {
@@ -5618,21 +5648,21 @@ object SVcfWalkerUtils {
 
    */
   
- // class generateBurdenMatrix(paramString : String, out : WriterUtil, 
- //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker { 
+ // class generateBurdenMatrix(paramString : String, out : WriterUtil,
+ //                            groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]) extends internalUtils.VcfTool.SVcfWalker {
 
   
   /*
    *             val (sampleToGroupMap,groupToSampleMap,groups) : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String]) = getGroups(groupFile, None, superGroupList);
-   * 
+   *
    */
 
      class calcBurdenCountsSetWalker( tagID : String, out : WriterUtil,
                                    geneTag : String,
                                    filterExpressionString : String,
-                                   sampGroups :  Seq[String], 
+                                   sampGroups :  Seq[String],
                                    gtTag : String,
                                    sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
                                    groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
@@ -5658,7 +5688,7 @@ object SVcfWalkerUtils {
       //if( overwriteInfos.nonEmpty ){
       //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       //}
-      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) ) 
+      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) )
       val burdenMatrix = new scala.collection.mutable.AnyRefMap[String,Array[Int]]()
       val varCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
       val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
@@ -5739,7 +5769,7 @@ object SVcfWalkerUtils {
                                    sampGroup :  Option[String], gtTag : String,
                                    sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
                                    groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
-                                   groups : Vector[String]) extends internalUtils.VcfTool.SVcfWalker { 
+                                   groups : Vector[String]) extends internalUtils.VcfTool.SVcfWalker {
     /*
     val params = paramString.split(",");
     val tagID = params(0);
@@ -5775,7 +5805,7 @@ object SVcfWalkerUtils {
       //if( overwriteInfos.nonEmpty ){
       //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       //}
-      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) ) 
+      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) )
       val burdenMatrix = new scala.collection.mutable.AnyRefMap[String,Array[Int]]()
       val varCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
       val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
@@ -5862,7 +5892,7 @@ object SVcfWalkerUtils {
                                    sampleToGroupMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
                                    groupToSampleMap : scala.collection.mutable.AnyRefMap[String,Set[String]],
                                    groups : Vector[String],
-                                   geneList : Option[Seq[String]], 
+                                   geneList : Option[Seq[String]],
                                    pathwayList : Seq[String],
                                    printFullGeneList : Boolean,
                                    countHomsTwice : Boolean = false
@@ -5890,7 +5920,7 @@ object SVcfWalkerUtils {
       //if( overwriteInfos.nonEmpty ){
       //  notice("  Walker("+this.walkerName+") overwriting "+overwriteInfos.size+" INFO fields: \n        "+overwriteInfos.toVector.sorted.mkString(","),"OVERWRITE_INFO_FIELDS",-1)
       //}
-      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) ) 
+      //defaultEntry = ( (s : String) => new Array[Int]( outHeader.titleLine.sampleList.length ) )
       val burdenMatrix = new scala.collection.mutable.AnyRefMap[String,Array[Int]]()
       val varCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
       val altCounts = new scala.collection.mutable.AnyRefMap[String,Int](defaultEntry = ( (s : String) => 0 ));
@@ -6028,10 +6058,10 @@ object SVcfWalkerUtils {
 
 
   
-  case class VcfTagFunctionParam( id : String, 
-                                  ty : String, 
-                                  req: Boolean = true, 
-                                  defval : String = "", 
+  case class VcfTagFunctionParam( id : String,
+                                  ty : String,
+                                  req: Boolean = true,
+                                  defval : String = "",
                                   dotdot : Boolean = false ,
                                   num : String = "."){
       
@@ -6098,7 +6128,7 @@ object SVcfWalkerUtils {
             ("?","?")
           }
         }}.getOrElse( ("ERROR","String") )
-        //if( TYS.contains("INFO_FLOAT") && 
+        //if( TYS.contains("INFO_FLOAT") &&
       } else if(param.toUpperCase().startsWith("GENO:")){
         if( ! TYS.exists{ ss => ss.startsWith("GENO_")} ){
           error("Fatal Error: param "+id+" is not permitted to be a GENO field! It must be one of these types: "+ty);
@@ -6309,12 +6339,12 @@ object SVcfWalkerUtils {
                   h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Number != "1") warning("Warning: running SUM function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
@@ -6365,12 +6395,12 @@ object SVcfWalkerUtils {
                   h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Number != "1") warning("Warning: running "+md.id+" function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
@@ -6423,12 +6453,12 @@ object SVcfWalkerUtils {
                   h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Number != "1") warning("Warning: running "+md.id+" function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
@@ -6583,12 +6613,12 @@ object SVcfWalkerUtils {
                   h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Number != "1") warning("Warning: running "+md.id+" function on tag: "+info.ID+", which is a list. Will go across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running "+info.ID+" function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
@@ -6654,12 +6684,12 @@ object SVcfWalkerUtils {
                   h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Number != "1") warning("Warning: running SUM function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
@@ -6711,12 +6741,12 @@ object SVcfWalkerUtils {
                   h.infoLines.find{ info => { info.ID == pp }}.map{ info => { info.Type != "Integer" }}.getOrElse( ! string2intOpt(pp).isDefined )
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Number != "1") warning("Warning: running SUM function on tag: "+info.ID+", which is a list. Will sum across all elements in each list. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
                 pv.foreach{ pp => {
-                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => { 
+                  h.infoLines.find{ info => { info.ID == pp }}.foreach{ info => {
                     if(info.Type != "Integer" && info.Type != "Float") warning("Warning: running SUM function on tag: "+info.ID+", which is of type "+info.Type+". Will attempt to coerce values to a float or a list of floats. Is this what you intended?","NUMERIC_FCN_ON_LIST",100);
                   }}
                 }}
@@ -6759,7 +6789,7 @@ object SVcfWalkerUtils {
     def run(vc : SVcfOutputVariantLine)
   }*/
   
-  class SanitizeVcf(fixInfo : Boolean = true) extends internalUtils.VcfTool.SVcfWalker { 
+  class SanitizeVcf(fixInfo : Boolean = true) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "sanitize";
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         
@@ -6776,7 +6806,7 @@ object SVcfWalkerUtils {
           val newvalue = infoValue.map{ vv => {
             vv.replace(" ","_").replace("=","&eq");
           }}
-          vb.in_info = vb.info.updated(infoTag,newvalue); 
+          vb.in_info = vb.info.updated(infoTag,newvalue);
           
         }}
         
@@ -6789,7 +6819,7 @@ object SVcfWalkerUtils {
   
   
 
-  class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+  class AddFuncTag(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "AddFuncTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
     val f : String = func.toUpperCase;
@@ -6830,7 +6860,7 @@ object SVcfWalkerUtils {
           }
         }
       }}
-      val outType = 
+      val outType =
       if(Set("TAG.TALLY.IFEXPR").contains(f)){
         if( paramTypes.lift(2).map{pp => pp == "Float"}.getOrElse(false) ){
           "Float"
@@ -6997,7 +7027,7 @@ object SVcfWalkerUtils {
             }
         } else if(f == "FLAGSET"){
           //val tags = paramTags.map{ p => { p.split("=")(0) }};
-          val tagNames = paramTags.map{ p => { 
+          val tagNames = paramTags.map{ p => {
             val cells = p.split("=");
             if(cells.length > 2){
               error("Error: each parameter in tagVariantFunction FLAGSET must be of the form: tagID or tagID=tagName. Offending param: \""+p+"\"");
@@ -7217,7 +7247,7 @@ object SVcfWalkerUtils {
 
             filterExpr.foreach{ fe =>{
               if( fe.keep(v) ){
-                warning("", newTag+":TOTAL_1",1 ) 
+                warning("", newTag+":TOTAL_1",1 )
                 val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
                 
                 if(outType == "Integer"){
@@ -7242,7 +7272,7 @@ object SVcfWalkerUtils {
                   }
                 }
               } else {
-                warning("", newTag+":TOTAL_0",1 ) 
+                warning("", newTag+":TOTAL_0",1 )
               }
             }}
             
@@ -7302,11 +7332,11 @@ object SVcfWalkerUtils {
                   tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
                 }
                 case None => {
-                  tally(newTag+":"+paramTags.head+":"+gg,vv); 
+                  tally(newTag+":"+paramTags.head+":"+gg,vv);
                 }
-              } 
+              }
               
-            }} 
+            }}
           } else {
             countMapFloat.foreach{ case (gg, vv) => {
               varcountMap.get( gg ) match {
@@ -7324,9 +7354,9 @@ object SVcfWalkerUtils {
       })),outHeader)
       
     }
-  } 
+  }
     
-  class TallyFuncTagLEGACY(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+  class TallyFuncTagLEGACY(func : String, newTag : String, paramTags : Seq[String], digits : Option[Int] = None, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "AddFuncTag."+newTag
     //keywords: tagVariantFunction tagVariantsFunction Variant Function
     val f : String = func.toUpperCase;
@@ -7353,7 +7383,7 @@ object SVcfWalkerUtils {
         }
       }}
       
-      val outType = 
+      val outType =
       if(Set("TAG.TALLY.IFEXPR").contains(f)){
         if( paramTypes.lift(2).map{pp => pp == "Float"}.getOrElse(false) ){
           "Float"
@@ -7400,7 +7430,7 @@ object SVcfWalkerUtils {
         if(f == "TAG.TALLY.IFEXPR"){
             filterExpr.foreach{ fe =>{
               if( fe.keep(v) ){
-                warning("", newTag+":TOTAL_1",1 ) 
+                warning("", newTag+":TOTAL_1",1 )
                 val g : Set[String] = v.info.get(paramTags.head).getOrElse(None).filter{ ss => ss != "." }.map{ ss => ss.split("[,|]").toSet }.getOrElse(Set[String]())
                 
                 if(outType == "Integer"){
@@ -7425,7 +7455,7 @@ object SVcfWalkerUtils {
                   }
                 }
               } else {
-                warning("", newTag+":TOTAL_0",1 ) 
+                warning("", newTag+":TOTAL_0",1 )
               }
             }}
             
@@ -7476,11 +7506,11 @@ object SVcfWalkerUtils {
                   tally(newTag+":"+paramTags.head+":"+gg,vv,vvv);
                 }
                 case None => {
-                  tally(newTag+":"+paramTags.head+":"+gg,vv); 
+                  tally(newTag+":"+paramTags.head+":"+gg,vv);
                 }
-              } 
+              }
               
-            }} 
+            }}
           } else {
             countMapFloat.foreach{ case (gg, vv) => {
               varcountMap.get( gg ) match {
@@ -7501,7 +7531,7 @@ object SVcfWalkerUtils {
   }
   
   
-  class AddRatioTag(newTag : String, nTag : String, dTag : String, digits : Int = 4, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker { 
+  class AddRatioTag(newTag : String, nTag : String, dTag : String, digits : Int = 4, desc : Option[String] = None ) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "AddRatioTag."+newTag
     
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -7546,7 +7576,7 @@ object SVcfWalkerUtils {
   }
   
   
-  class AddVariantIdx(tag : String, desc : String = "unique variant index", idxPrefix : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker { 
+  class AddVariantIdx(tag : String, desc : String = "unique variant index", idxPrefix : Option[String] = None) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "AddVariantIdx"
     
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
@@ -7624,29 +7654,29 @@ object SVcfWalkerUtils {
 
   class CmdExpandIntervar extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "CmdExtractIntervarField", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "CmdExtractIntervarField",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[String](
-                                         name = "tagPrefix", 
-                                         arg = List("--tagPrefix"), 
-                                         valueName = "...",  
+                                         name = "tagPrefix",
+                                         arg = List("--tagPrefix"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "intervarTag", 
-                                         arg = List("--intervarTag"), 
-                                         valueName = "...",  
+                                         name = "intervarTag",
+                                         arg = List("--intervarTag"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "inputFileList",
@@ -7686,14 +7716,14 @@ object SVcfWalkerUtils {
     
   }
   
-  class IntervarExtract(intervarTag : String, tagPrefix : String) extends internalUtils.VcfTool.SVcfWalker { 
+  class IntervarExtract(intervarTag : String, tagPrefix : String) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "IntervarExtractWalker"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("intervarTag",intervarTag),
         ("tagPrefix",tagPrefix)
     );
     val intervarPathStringPairs = Vector[(String,String)](
-          ("Pathogenic_","P"), 
+          ("Pathogenic_","P"),
           ("Likely_pathogenic_","LP"),
           ("Uncertain_significance_","VUS"),
           ("Likely_benign_","LB"),
@@ -7791,7 +7821,7 @@ object SVcfWalkerUtils {
   }
   
   /*
-       case class VarExtract(tagID : String, columnIx : Seq[Int], desc : String, collapseUniques : Boolean, 
+       case class VarExtract(tagID : String, columnIx : Seq[Int], desc : String, collapseUniques : Boolean,
                           tagSet : Set[String] = Set[String]("HIGH","MODERATE","LOW"),
                           listSet : Set[String] = Set[String]("ALL","onList")){
    */
@@ -7799,7 +7829,7 @@ object SVcfWalkerUtils {
   class SnpEffExtractElement(tagPrefix : String, tagPrefixOutput : Option[String],
                              fieldInfix : String,
                              columnIx : Seq[Int], desc : String , collapseUniques : Boolean,
-                             tagSet : Seq[String] = Seq[String]("HIGH","MODERATE","LOW","NS","ANY")) extends internalUtils.VcfTool.SVcfWalker { 
+                             tagSet : Seq[String] = Seq[String]("HIGH","MODERATE","LOW","NS","ANY")) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "SnpEffFieldExtract"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
            ("tagPrefix",tagPrefix),
@@ -7887,11 +7917,11 @@ object SVcfWalkerUtils {
   }
   
   /*
-  class SnpEffExtractGeneList(tagPrefix : String, 
+  class SnpEffExtractGeneList(tagPrefix : String,
                              geneListTagInfix : String,
                              fieldInfix : String,
                              columnIx : Seq[Int], desc : String , collaseUniques : Boolean,
-                             tagSet : Seq[String] = Seq[String]("HIGH","MODERATE","LOW","NS","ANY")) extends internalUtils.VcfTool.SVcfWalker { 
+                             tagSet : Seq[String] = Seq[String]("HIGH","MODERATE","LOW","NS","ANY")) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "SnpEffFieldExtract"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
            ("tagPrefix",tagPrefix),
@@ -7979,7 +8009,7 @@ object SVcfWalkerUtils {
     }
   }*/
   
-  class SnpEffInfoExtract(tagID : String = "ANN", 
+  class SnpEffInfoExtract(tagID : String = "ANN",
                           tagPrefix : String = "ANNEX_",
                           geneList : Option[List[String]] = None,
                           snpEffBiotypeKeepList : Option[List[String]] = None,
@@ -7996,7 +8026,7 @@ object SVcfWalkerUtils {
                           snpEffFields : Option[List[String]] = None,
                           snpEffGeneNameIdx : Option[Int] = None,
                           severityListSet : Option[String] = None
-                          ) extends internalUtils.VcfTool.SVcfWalker { 
+                          ) extends internalUtils.VcfTool.SVcfWalker {
     
     
     def walkerName : String = "SnpEffInfoExtract"
@@ -8010,7 +8040,7 @@ object SVcfWalkerUtils {
     //def walkerInfo : SVcfWalkerInfo = StdVcfConverter;
     
     val annidxAllele = 0
-    val annidxEffect = 1 
+    val annidxEffect = 1
     val annidxImpact = 2
     val annidxGeneName = 3
     val annidxGeneID  = snpEffGeneNameIdx.getOrElse(4)
@@ -8041,7 +8071,7 @@ object SVcfWalkerUtils {
     //val sevListSet = getSevSet(severityListSet)
     //good default keepIdx set: 1,2,3,4,7,10,15,16
     
-    //  
+    //
     //                                                0       1        2        3           4      5        6      7           8      9         10        11           12             13                14                 15     16
     val snpEffIdxDesc = snpEffFields.getOrElse(Seq("allele","effect","impact","geneName","geneID","txType","txID","txBiotype","rank","HGVS.c","HGVS.p","cDNAposition","cdsPosition","proteinPosition","distToFeature","warnings","errors"));
     val snpEffFmtDescString = "A comma delimited list with bar-delimited entries in the format: "+snpEffIdxDesc.mkString("|") +"."
@@ -8326,7 +8356,7 @@ object SVcfWalkerUtils {
     
   }
   
-  class DropSpanIndels() extends internalUtils.VcfTool.SVcfWalker { 
+  class DropSpanIndels() extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "DropSpanIndels"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
     
@@ -8353,7 +8383,7 @@ object SVcfWalkerUtils {
       })),outHeader)
     }
   }
-  class DropNs() extends internalUtils.VcfTool.SVcfWalker { 
+  class DropNs() extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "DropVariantsWithNs"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
     
@@ -8379,7 +8409,7 @@ object SVcfWalkerUtils {
   
 
   
-  class MergeSpanIndels() extends internalUtils.VcfTool.SVcfWalker { 
+  class MergeSpanIndels() extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "MergeSpanIndels"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
@@ -8483,14 +8513,14 @@ object SVcfWalkerUtils {
     //def walkerInfo : SVcfWalkerInfo = StdVcfConverter
   }*/
   
-  class StdVcfConverter(cleanHeaderLines : Boolean = true, 
-                        cleanInfoFields : Boolean = true, 
+  class StdVcfConverter(cleanHeaderLines : Boolean = true,
+                        cleanInfoFields : Boolean = true,
                         cleanMetaData : Boolean = true,
                         collapseStarAllele : Boolean = true,
                         deleteUnannotatedFields : Boolean = true,
                         thirdAlleleChar : Option[String] = None,
                         multAlleInfoTag : Option[String] = None,
-                        treatOtherAlleleAsRef : Boolean = false) extends internalUtils.VcfTool.SVcfWalker { 
+                        treatOtherAlleleAsRef : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
     def walkerName : String = "StdVcfConverter"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
       ("cleanHeaderLines",cleanHeaderLines.toString()),
@@ -8585,7 +8615,7 @@ object SVcfWalkerUtils {
       (addIteratorCloseAction( iter = vcMap(vcIter){v => {
         //val vc = v.getOutputLine()
         
-        val vc = if(cleanMetaData) { 
+        val vc = if(cleanMetaData) {
             SVcfOutputVariantLine(
              in_chrom = v.chrom,
              in_pos = v.pos,
@@ -8593,7 +8623,7 @@ object SVcfWalkerUtils {
              in_ref = v.ref,
              in_alt = v.alt.take(1),
              in_qual = v.qual,
-             in_filter = v.filter, 
+             in_filter = v.filter,
              in_info = v.info,
              in_format = v.format,
              in_genotypes = v.genotypes//,
@@ -8613,7 +8643,7 @@ object SVcfWalkerUtils {
                   vc.addInfo(tag,".");
                 } else if(infoString.contains('=') || infoString.contains(';') || infoString.contains(' ')){
                   vc.addInfo(tag,infoString.replaceAll("[=]","%3D").replaceAll("[ ]","_").replaceAll("[;]",","));
-                } 
+                }
               }
             }}
           }}
@@ -8824,7 +8854,7 @@ object SVcfWalkerUtils {
                                      groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None,
                                      restrictToGroup : Option[String] = None
                                      ) extends internalUtils.VcfTool.SVcfWalker {
-    def walkerName : String = "AddStatDistributionTags" 
+    def walkerName : String = "AddStatDistributionTags"
       val MISS : Int = 0;
       val HOMREF : Int = 1
       val HET : Int = 2
@@ -8887,55 +8917,55 @@ object SVcfWalkerUtils {
       
       /*genoClasses.zip(genoClassDesc).foreach{ case (gClass,desc) => {
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,//NEWTAGS
-                                                         outputTagPrefix+"AD_SAMPCT_"+gClass, 
-                                                         "1", 
-                                                         "Integer", 
+                                                         outputTagPrefix+"AD_SAMPCT_"+gClass,
+                                                         "1",
+                                                         "Integer",
                                                          desc)).addWalker(this)
         )
       }}*/
       
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"AD_HET_FRAC_MIN", 
-                                                         "1", 
-                                                         "Float", 
+                                                         outputTagPrefix+"AD_HET_FRAC_MIN",
+                                                         "1",
+                                                         "Float",
                                                          "The lowest ratio of REF allele depth to ALT allele depth across all HETEROZYGOUS samples. ("+hetFracTagDesc+", See also tag "+outputTagPrefix+"SAMPCT_"+"HET"+")"
                                                          )).addWalker(this))
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"AD_HET_REF", 
-                                                         "1", 
-                                                         "Integer", 
+                                                         outputTagPrefix+"AD_HET_REF",
+                                                         "1",
+                                                         "Integer",
                                                          "Sum total of the REF allele depth across all HETEROZYGOUS samples. ("+hetFracTagDesc+", See also tag "+outputTagPrefix+"SAMPCT_"+"HET"+")"
                                                          )).addWalker(this))
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"AD_HET_ALT", 
-                                                         "1", 
-                                                         "Integer", 
+                                                         outputTagPrefix+"AD_HET_ALT",
+                                                         "1",
+                                                         "Integer",
                                                          "Sum total of the REF allele depth across all HETEROZYGOUS samples. ("+hetFracTagDesc+", See also tag "+outputTagPrefix+"SAMPCT_"+"HET"+")"
                                                          )).addWalker(this))
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"AD_HET_FRAC", 
-                                                         "1", 
-                                                         "Float", 
+                                                         outputTagPrefix+"AD_HET_FRAC",
+                                                         "1",
+                                                         "Float",
                                                          "Fraction of the total depth that are ALT, across all HETEROZYGOUS samples. ("+hetFracTagDesc+", See also tag "+outputTagPrefix+"SAMPCT_"+"HET"+")"
                                                          )).addWalker(this))
         
         
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"DEPTH_MEDIAN", 
-                                                         "1", 
-                                                         "Integer", 
+                                                         outputTagPrefix+"DEPTH_MEDIAN",
+                                                         "1",
+                                                         "Integer",
                                                          "Median depth across all samples (based on tag: "+tagAD.getOrElse(".")+"/"+tagDP.getOrElse(".")+")"
                                                          )).addWalker(this))
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"DEPTH_LQ", 
-                                                         "1", 
-                                                         "Integer", 
+                                                         outputTagPrefix+"DEPTH_LQ",
+                                                         "1",
+                                                         "Integer",
                                                          "Lower Quartile depth across all samples (based on tag: "+tagAD.getOrElse(".")+"/"+tagDP.getOrElse(".")+")"
                                                          )).addWalker(this))
         outHeader.addInfoLine((new SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"DEPTH_UQ", 
-                                                         "1", 
-                                                         "Integer", 
+                                                         outputTagPrefix+"DEPTH_UQ",
+                                                         "1",
+                                                         "Integer",
                                                          "Upper Quartile depth across all samples (based on tag: "+tagAD.getOrElse(".")+"/"+tagDP.getOrElse(".")+")"
                                                          )).addWalker(this))
         depthCutoffSeq = depthCutoffs.toSeq.flatten.sorted;
@@ -8978,9 +9008,9 @@ object SVcfWalkerUtils {
       /*groupAnno.foreach{ case (grp,i,gtag,groupDesc,groupSize) => {
         genoStatExpressionInfo.foreach{ case (tagCore,descCore,expr) => {
           outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO" ,
-                                                         tagCore+gtag, 
-                                                         "1", 
-                                                         "Integer", 
+                                                         tagCore+gtag,
+                                                         "1",
+                                                         "Integer",
                                                          descCore+groupDesc
                                                          ))
         }}
@@ -9112,7 +9142,7 @@ object SVcfWalkerUtils {
             } else {
               extractSamples(v.genotypes.genotypeValues(dpIdx)).zip(ads).map{ case (d,(r,a)) => {
                 if(d == "."){
-                  0 
+                  0
                 } else {
                   string2intOpt(d).getOrElse({
                     warning("WARNING: AddStatDistrubutionWalker: Malformed DP string, falling back to sumAD (offending string: \""+d+"\" from tag \""+tagDP.get+"\")\n   VCF Line:"+vc.getSimpleVcfString() ,"MALFORMED_DP",100)
@@ -9216,9 +9246,9 @@ object SVcfWalkerUtils {
   }
   
   //vcfCodes : VCFAnnoCodes = VCFAnnoCodes(CT_INFIX = tagPrefix.getOrElse(""))
-  case class SAddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]], 
-             addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true, 
-             addAlle : Boolean= true, addHetHom : Boolean = true, 
+  case class SAddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]],
+             addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true,
+             addAlle : Boolean= true, addHetHom : Boolean = true,
              addOtherCountsCalc : Boolean = false,
              sepRef : Boolean = true, countMissing : Boolean = true,
              addMultiHet : Boolean = true,
@@ -9309,7 +9339,7 @@ object SVcfWalkerUtils {
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nAltFrq_TAG + gtag, anum, "Float", "The frequency of calls that are het or homalt"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nMisFrq_TAG + gtag, "1", "Integer", "The frequency of calls that are missing"+groupDesc  +adesc+ "."),
             new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nOthFrq_TAG + gtag, "1", "Integer", "The frequency of calls include a different allele"+groupDesc  +adesc+ "."),
-            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefFrq_TAG + gtag, "1", "Integer", "The frequency of calls include any nonref allele "+groupDesc 
+            new SVcfCompoundHeaderLine("INFO" ,vcfCodes.nNonrefFrq_TAG + gtag, "1", "Integer", "The frequency of calls include any nonref allele "+groupDesc
             
             addOtherCountsCalc
             
@@ -9346,7 +9376,7 @@ object SVcfWalkerUtils {
             )
           } else { List() })
           
-        } else { List() }) ++ 
+        } else { List() }) ++
         (if(addCounts){
           (if(addHetHom){
             List(
@@ -9429,7 +9459,7 @@ object SVcfWalkerUtils {
       
       newHeaderLines.foreach{hl => {
         outHeader.addInfoLine(hl);
-      }} 
+      }}
       outHeader.addWalk(this);
       
       val overwriteInfos = vcfHeader.infoLines.map{ii => ii.ID}.toSet.intersect( outHeader.addedInfos );
@@ -9447,7 +9477,7 @@ object SVcfWalkerUtils {
           warning("SAddGroupsInfo: Cannot find \""+splitGtTag+"\" or \""+stdGtTag+"\" in fmt line: \""+vc.genotypes.fmt.mkString(",")+"\"","WARNING_GT_TAG_NOT_FOUND",10);
         } else {
   
-          val genoData : Array[(Array[String],String,Set[String],Array[Int])] = vc.genotypes.genotypeValues(gtidx).map{_.split("/")}.zip(sampNames).map{ case (geno,sampid) => { 
+          val genoData : Array[(Array[String],String,Set[String],Array[Int])] = vc.genotypes.genotypeValues(gtidx).map{_.split("/")}.zip(sampNames).map{ case (geno,sampid) => {
             val groupSet = sampleToGroupMap(sampid);
             val groupIdx = (groups.zipWithIndex.flatMap{ case (g,i) => if(groupSet.contains(g)){ Some(i) } else None } :+ groups.length).toArray;
             (geno,sampid,groupSet,groupIdx)
@@ -9641,36 +9671,36 @@ object SVcfWalkerUtils {
   
   
   /*
-   * 
+   *
                        new BinaryOptionArgument[String](
-                                         name = "groupFile", 
-                                         arg = List("--groupFile"), 
-                                         valueName = "file.txt",  
+                                         name = "groupFile",
+                                         arg = List("--groupFile"),
+                                         valueName = "file.txt",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "GTTag", 
-                                         arg = List("--GTTag"), 
-                                         valueName = "GT",  
+                                         name = "GTTag",
+                                         arg = List("--GTTag"),
+                                         valueName = "GT",
                                          argDesc =  ".",
                                          defaultValue = Some("GT")
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "groupList", 
-                                         arg = List("--groupList"), 
-                                         valueName = "grpA,A1,A2,...;grpB,B1,...",  
+                                         name = "groupList",
+                                         arg = List("--groupList"),
+                                         valueName = "grpA,A1,A2,...;grpB,B1,...",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "n",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "n",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "superGroupList", 
-                                         arg = List("--superGroupList"), 
-                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
+                                         name = "superGroupList",
+                                         arg = List("--superGroupList"),
+                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",
                                          argDesc =  "..."
                                         ) ::
                                         
@@ -9713,7 +9743,7 @@ ALT VERSION: allows title line!
                    
    */
   
-  def getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None) 
+  def getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None)
                         : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String]) = {
@@ -9802,7 +9832,7 @@ ALT VERSION: allows title line!
      val MALLE : Int = 2;
      val OTHER : Int = -1;
      val genoClasses = Seq("Het","HomAlt","mAlleHet");
-     val overflowNote = if(printLimit.isDefined){ 
+     val overflowNote = if(printLimit.isDefined){
        "(Unless there are more than "+printLimit.get+" samples, in which case"+
           (if( noPrintLimitWarning ){
             " only "+printLimit.get+" samples will be listed)"
@@ -9848,16 +9878,16 @@ ALT VERSION: allows title line!
             
       genoClasses.zip(genoClassDesc).foreach{ case (gClass,desc) => {
         outHeader.addInfoLine((new  SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+gClass, 
-                                                         ".", 
-                                                         "String", 
+                                                         outputTagPrefix+gClass,
+                                                         ".",
+                                                         "String",
                                                          desc + "(based on genotype field "+tagGT+")")).addWalker(this)
         )
         groups.foreach( grp => {
           outHeader.addInfoLine((new  SVcfCompoundHeaderLine("INFO" ,
-                                                         outputTagPrefix+"GRP_"+grp+"_"+gClass, 
-                                                         ".", 
-                                                         "String", 
+                                                         outputTagPrefix+"GRP_"+grp+"_"+gClass,
+                                                         ".",
+                                                         "String",
                                                          "(In group "+grp+") "+desc  + "(based on genotype field "+tagGT+")")).addWalker(this)
           )
         })
@@ -9961,17 +9991,17 @@ ALT VERSION: allows title line!
     
   class CmdConvertChromNames extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "ConvertChromNames", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "ConvertChromNames",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "inputFileList",
@@ -9980,16 +10010,16 @@ ALT VERSION: allows title line!
                                                    "" // description
                                        ) ::
                     new BinaryArgument[Int](
-                                         name = "fromCol", 
-                                         arg = List("--fromCol"), 
-                                         valueName = "0",  
+                                         name = "fromCol",
+                                         arg = List("--fromCol"),
+                                         valueName = "0",
                                          argDesc =  "",
                                          defaultValue = Some(0)
                                         ) ::
                     new BinaryArgument[Int](
-                                         name = "toCol", 
-                                         arg = List("--toCol"), 
-                                         valueName = "1",  
+                                         name = "toCol",
+                                         arg = List("--toCol"),
+                                         valueName = "1",
                                          argDesc =  "",
                                          defaultValue = Some(1)
                                         ) ::
@@ -10079,7 +10109,7 @@ ALT VERSION: allows title line!
     }
   }
     
-  case class ChromosomeConverterAdv(chromDecoder : String, 
+  case class ChromosomeConverterAdv(chromDecoder : String,
                  fromToColumnNames : Option[(String,String)] = None,
                  fromToIdx : Option[(String,String)] = None,
                  skipFirstRow : Boolean = true,
@@ -10171,7 +10201,7 @@ ALT VERSION: allows title line!
   
   
 
-  case class SampleRenameAdv(decoder : String, 
+  case class SampleRenameAdv(decoder : String,
                  fromToColumnNames : Option[(String,String)] = None,
                  fromToIdx : Option[(String,String)] = None,
                  skipFirstRow : Boolean = true,
@@ -10249,66 +10279,66 @@ ALT VERSION: allows title line!
       (vcIter,outHeader)
       
     }
-  } 
+  }
   
   
   class CmdFilterTags extends CommandLineRunUtil {
      override def priority = 1;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "RemoveUnwantedFields", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "RemoveUnwantedFields",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "keepGenotypeTags", 
-                                         arg = List("--keepGenotypeTags"), 
-                                         valueName = OPTION_TAGPREFIX+"SINGLETON_ID",  
+                                         name = "keepGenotypeTags",
+                                         arg = List("--keepGenotypeTags"),
+                                         valueName = OPTION_TAGPREFIX+"SINGLETON_ID",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[List[String]](
-                                         name = "dropGenotypeTags", 
-                                         arg = List("--dropGenotypeTags"), 
-                                         valueName = "tag1,tag2,...",  
+                                         name = "dropGenotypeTags",
+                                         arg = List("--dropGenotypeTags"),
+                                         valueName = "tag1,tag2,...",
                                          argDesc =  "",
                                          defaultValue = Some(List[String]())
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "keepInfoTags", 
-                                         arg = List("--keepInfoTags"), 
-                                         valueName = OPTION_TAGPREFIX+"SINGLETON_ID",  
+                                         name = "keepInfoTags",
+                                         arg = List("--keepInfoTags"),
+                                         valueName = OPTION_TAGPREFIX+"SINGLETON_ID",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[List[String]](
-                                         name = "dropInfoTags", 
-                                         arg = List("--dropInfoTags"), 
-                                         valueName = "tag1,tag2,...",  
+                                         name = "dropInfoTags",
+                                         arg = List("--dropInfoTags"),
+                                         valueName = "tag1,tag2,...",
                                          argDesc =  "",
                                          defaultValue = Some(List[String]())
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "renameInfoTags", 
-                                         arg = List("--renameInfoTags"), 
-                                         valueName = "oldtag1:newtag1,oldtag2:newtag2,...",  
+                                         name = "renameInfoTags",
+                                         arg = List("--renameInfoTags"),
+                                         valueName = "oldtag1:newtag1,oldtag2:newtag2,...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "keepSamples", 
-                                         arg = List("--keepSamples"), 
-                                         valueName = "samp1,samp2,samp3,...",  
+                                         name = "keepSamples",
+                                         arg = List("--keepSamples"),
+                                         valueName = "samp1,samp2,samp3,...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[List[String]](
-                                         name = "dropSamples", 
-                                         arg = List("--dropSamples"), 
-                                         valueName = "samp1,samp2,samp3,...",  
+                                         name = "dropSamples",
+                                         arg = List("--dropSamples"),
+                                         valueName = "samp1,samp2,samp3,...",
                                          argDesc =  "",
                                          defaultValue = Some(List[String]())
                                         ) ::
@@ -10409,9 +10439,9 @@ ALT VERSION: allows title line!
     
   }
       
-  case class FilterTags(keepGenotypeTags : Option[List[String]] = None, 
-                        dropGenotypeTags : List[String] = List[String](), 
-                        keepInfoTags : Option[List[String]] = None, 
+  case class FilterTags(keepGenotypeTags : Option[List[String]] = None,
+                        dropGenotypeTags : List[String] = List[String](),
+                        keepInfoTags : Option[List[String]] = None,
                         dropInfoTags : List[String] = List[String](),
                         dropAsteriskAlleles : Boolean = false,
                         keepSamples : Option[List[String]] = None, dropSamples : List[String] = List[String](),
@@ -10489,9 +10519,9 @@ ALT VERSION: allows title line!
       /*
       val keepInfoSet = keepInfoTags match {
         case Some(kit) => {
-            infoTags.filter{ i => (kit.contains(i) || 
+            infoTags.filter{ i => (kit.contains(i) ||
                                        (
-                                           kirFunc.map{ kk => { kk(i) } }.getOrElse(false) || 
+                                           kirFunc.map{ kk => { kk(i) } }.getOrElse(false) ||
                                            dirFunc.map{ kk => ! kk(i)}.getOrElse(false)
                                        )
                                   ) && (! (dropInfoTags.contains(i)))}.toSet
@@ -10657,36 +10687,36 @@ ALT VERSION: allows title line!
     
   class CmdExtractSingletons extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "extractSingletons", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "extractSingletons",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "intervalBedFile", 
-                                         arg = List("--intervalBedFile"), 
-                                         valueName = "bedfile.bed",  
+                                         name = "intervalBedFile",
+                                         arg = List("--intervalBedFile"),
+                                         valueName = "bedfile.bed",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "GenoTag", 
-                                         arg = List("--GenoTag"), 
-                                         valueName = "GT",  
+                                         name = "GenoTag",
+                                         arg = List("--GenoTag"),
+                                         valueName = "GT",
                                          argDesc =  "The genotype tag used for the first file.",
                                          defaultValue = Some("GT")
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "outputTag", 
-                                         arg = List("--outputTag"), 
-                                         valueName = OPTION_TAGPREFIX+"SINGLETON_ID",  
+                                         name = "outputTag",
+                                         arg = List("--outputTag"),
+                                         valueName = OPTION_TAGPREFIX+"SINGLETON_ID",
                                          argDesc =  "",
                                          defaultValue = Some(OPTION_TAGPREFIX+"SINGLETON_ID")
                                         ) ::
@@ -10758,7 +10788,7 @@ ALT VERSION: allows title line!
           val lines = getLinesSmartUnzip(f);
           lines.map{line => line.split("\t")}.foreach(cells => {
               val (chrom,start,end,name) = (cells(0),string2int(cells(1)),string2int(cells(2)),cells(3))
-              if(start != end){ 
+              if(start != end){
                 arr.addSpan(internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', start,end),name);
               }
           })
@@ -10814,31 +10844,31 @@ ALT VERSION: allows title line!
     
   class CmdCalcGenotypeStatTable  extends CommandLineRunUtil{
      override def priority = 40;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "CalcGenotypeStatTable", 
-          quickSynopsis = "Generates stat tables for genotype statistics (eg GQ, AD)", 
-          synopsis = "", 
+          command = "CalcGenotypeStatTable",
+          quickSynopsis = "Generates stat tables for genotype statistics (eg GQ, AD)",
+          synopsis = "",
           description = "This takes a stat table for genotype statistics (such as GQ or AD). Warning: does not function on phased genotypes! " + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to "+
                                                     "these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                                         /*
                     new BinaryOptionArgument[String](
-                                         name = "sampleDecoder", 
-                                         arg = List("--sampleDecoder"), 
-                                         valueName = "sampleDecoder.txt",  
+                                         name = "sampleDecoder",
+                                         arg = List("--sampleDecoder"),
+                                         valueName = "sampleDecoder.txt",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "GenoTag1", 
-                                         arg = List("--GenoTag1"), 
-                                         valueName = "GT",  
+                                         name = "GenoTag1",
+                                         arg = List("--GenoTag1"),
+                                         valueName = "GT",
                                          argDesc =  "",
                                          defaultValue = Some("GT")
                                         ) ::
@@ -10849,9 +10879,9 @@ ALT VERSION: allows title line!
                                        ) ::*/
                                         
                     new BinaryArgument[String](
-                                         name = "GenoTag", 
-                                         arg = List("--GenoTag"), 
-                                         valueName = "GT",  
+                                         name = "GenoTag",
+                                         arg = List("--GenoTag"),
+                                         valueName = "GT",
                                          argDesc =  "The tag used to indicate genotype.",
                                          defaultValue = Some("GT")
                                         ) ::
@@ -10868,9 +10898,9 @@ ALT VERSION: allows title line!
                                                    "" // description
                                        ) ::
                     new BinaryOptionArgument[String](
-                                         name = "subFilterExpressionSets", 
-                                         arg = List("--subFilterExpressionSets"), 
-                                         valueName = "",  
+                                         name = "subFilterExpressionSets",
+                                         arg = List("--subFilterExpressionSets"),
+                                         valueName = "",
                                          argDesc =  "Placeholder: NOT YET IMPLEMENTED!"
                                         ) ::
                     new FinalArgument[String](
@@ -10993,7 +11023,7 @@ ALT VERSION: allows title line!
       val cells = line.split("\t");
       if(cells.length != 3) error("Malformed tagfile! PAIR lines must have 3 columns!")
       val tagTitles = cells.tail;
-      val tagIdxes = tagTitles.map{tt => tagSet.indexWhere{ case (tagTitle,tagID,tagFmt,arrayLabels,getIndicesFunc) => { 
+      val tagIdxes = tagTitles.map{tt => tagSet.indexWhere{ case (tagTitle,tagID,tagFmt,arrayLabels,getIndicesFunc) => {
         tagTitle == tt
       }}}
       (tagIdxes(0), tagIdxes(1))
@@ -11042,7 +11072,7 @@ ALT VERSION: allows title line!
               }}.mkString("\t");
             }}
           }}
-        }} ++ 
+        }} ++
         tagPairs.zipWithIndex.iterator.flatMap{ case ((i1,i2),i) => {
           val (tagTitle1,tagID1,tagFmt1,arrayLabels1,getIndicesFunc1) = tagSet(i1);
           val (tagTitle2,tagID2,tagFmt2,arrayLabels2,getIndicesFunc2) = tagSet(i2);
@@ -11061,7 +11091,7 @@ ALT VERSION: allows title line!
     }
     
     /*
-      val subsetList : Seq[(String,SFilterLogic[SVcfVariantLine],VariantCountSetSet)] = subFilterExpressionSets match { 
+      val subsetList : Seq[(String,SFilterLogic[SVcfVariantLine],VariantCountSetSet)] = subFilterExpressionSets match {
         case Some(sfes) => {
           val sfesSeq = sfes.split(",")
           sfesSeq.map{ sfe =>
@@ -11124,36 +11154,36 @@ ALT VERSION: allows title line!
     
   class compareVcfs extends CommandLineRunUtil {
      override def priority = 25;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "compareVcfs", 
-          quickSynopsis = "Compares two variant call builds", 
-          synopsis = "", 
+          command = "compareVcfs",
+          quickSynopsis = "Compares two variant call builds",
+          synopsis = "",
           description = "Compares two different VCFs containing different builds with overlapping sample sets." + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "sampleDecoder", 
-                                         arg = List("--sampleDecoder"), 
-                                         valueName = "sampleDecoder.txt",  
+                                         name = "sampleDecoder",
+                                         arg = List("--sampleDecoder"),
+                                         valueName = "sampleDecoder.txt",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "GenoTag1", 
-                                         arg = List("--GenoTag1"), 
-                                         valueName = "GT",  
+                                         name = "GenoTag1",
+                                         arg = List("--GenoTag1"),
+                                         valueName = "GT",
                                          argDesc =  "The genotype tag used for the first file.",
                                          defaultValue = Some("GT")
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "GenoTag2", 
-                                         arg = List("--GenoTag2"), 
-                                         valueName = "GT",  
+                                         name = "GenoTag2",
+                                         arg = List("--GenoTag2"),
+                                         valueName = "GT",
                                          argDesc =  "The genotype tag used for the second file.",
                                          defaultValue = Some("GT")
                                         ) ::
@@ -11170,21 +11200,21 @@ ALT VERSION: allows title line!
                                                    "" // description
                                        ) ::
                     new BinaryOptionArgument[String](
-                                         name = "filterExpression1", 
-                                         arg = List("--filterExpression1"), 
-                                         valueName = "filterExpr",  
+                                         name = "filterExpression1",
+                                         arg = List("--filterExpression1"),
+                                         valueName = "filterExpr",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "filterExpression2", 
-                                         arg = List("--filterExpression2"), 
-                                         valueName = "filterExpr",  
+                                         name = "filterExpression2",
+                                         arg = List("--filterExpression2"),
+                                         valueName = "filterExpr",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "bedFile", 
-                                         arg = List("--bedFile"), 
-                                         valueName = "bedFile.bed.gz",  
+                                         name = "bedFile",
+                                         arg = List("--bedFile"),
+                                         valueName = "bedFile.bed.gz",
                                          argDesc =  ""
                                         ) ::
                     new FinalArgument[String](
@@ -11196,7 +11226,7 @@ ALT VERSION: allows title line!
                                          name = "infile2",
                                          valueName = "variants2.vcf",
                                          argDesc = "input VCF file. Can be gzipped or in plaintext." // description
-                                        ) :: 
+                                        ) ::
                     new FinalArgument[String](
                                          name = "outfileprefix",
                                          valueName = "outfileprefix",
@@ -11335,7 +11365,7 @@ ALT VERSION: allows title line!
 
     val fGenoTag2 = file2tag + genoTag2;
 
-    val vcfHeaderOut = SVcfHeader(infoLines = vcfHeader1.infoLines, 
+    val vcfHeaderOut = SVcfHeader(infoLines = vcfHeader1.infoLines,
                         formatLines = vcfHeader1.formatLines ++ vcfHeader2.formatLines.map{ fl => {
                           new  SVcfCompoundHeaderLine(in_tag = fl.in_tag, ID = file2tag+fl.ID, Number = fl.Number, Type = fl.Type, desc = file2Desc + fl.desc)
                         }},
@@ -11346,9 +11376,9 @@ ALT VERSION: allows title line!
 
     
     def isFirst : Boolean = vcIter1.hasNext && (
-                        (! vcIter2.hasNext) || 
+                        (! vcIter2.hasNext) ||
                         ( vcIter1.head.chrom == vcIter2.head.chrom && vcIter1.head.pos <= vcIter2.head.pos) ||
-                        ( vcIter1.head.chrom == currChrom && vcIter2.head.chrom != currChrom ) 
+                        ( vcIter1.head.chrom == currChrom && vcIter2.head.chrom != currChrom )
                    );
     
     val outM = openWriterSmart(outfile+"shared.vcf"+outfileSuffix);
@@ -11424,7 +11454,7 @@ ALT VERSION: allows title line!
     
     def iterate(){
       val vcos = if(
-                    (vcIter1.hasNext & ! vcIter2.hasNext)  || (vcIter2.hasNext & ! vcIter1.hasNext) || 
+                    (vcIter1.hasNext & ! vcIter2.hasNext)  || (vcIter2.hasNext & ! vcIter1.hasNext) ||
                     (vcIter1.head.pos != vcIter2.head.pos) || (vcIter1.head.chrom != vcIter2.head.chrom)){
         //reportln("   Iterating Isolated position.","deepDebug");
         if(isFirst){
@@ -11589,7 +11619,7 @@ ALT VERSION: allows title line!
         case Some(bfilt) => {matchCountFunctionList_4.map{
           case (id,arr, varFcn,fcn) => {
             ("ONBED_"+id,Array.fill[Int](matchIdx.length)(0),(vc : SVcfVariantLine, vc2 : SVcfVariantLine) => {varFcn(vc,vc2) && bfilt(vc)},fcn)
-          }  
+          }
         }}
         case None => {
           Vector();
@@ -11752,7 +11782,7 @@ ALT VERSION: allows title line!
       val gt2 = vc2.genotypes;
       val fmt2 = vc2.format.map{ f => { file2tag + f }}
       val fmt = fmt1 ++ fmt2;
-      val gt = SVcfGenotypeSet(fmt, 
+      val gt = SVcfGenotypeSet(fmt,
         gt1.genotypeValues.map{ ga => { matchIdx.map{ case (samp,idx1,idx2) => {
           ga(idx1);
         }}}.toArray} ++
@@ -11807,7 +11837,7 @@ ALT VERSION: allows title line!
 
 
 
-  case class SRedoDBNSFPannotation( dbnsfpfile : String, chromStyle : String, chromList : Option[List[String]], 
+  case class SRedoDBNSFPannotation( dbnsfpfile : String, chromStyle : String, chromList : Option[List[String]],
                                    posFieldTitle : String,chromFieldTitle : String, altFieldTitle : String,
                                    singleDbFile : Boolean,
                                    dbFileDelim : String,
@@ -11906,7 +11936,7 @@ ALT VERSION: allows title line!
           return pos == currPos && chrom == currChrom;
         }
       } else {
-        reportln("Switching to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");          
+        reportln("Switching to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");
         if(singleDbFile){
           skipWhile(currIterator){ case (chr,p,alle,cells) => chr != chrom }
           if(! currIterator.hasNext){
@@ -11934,7 +11964,7 @@ ALT VERSION: allows title line!
         currPos = -1;
         currChrom = chrom;
         lastRequestedPos = -1;
-        reportln("Switched to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");          
+        reportln("Switched to chromosome: "+currChrom +" ["+ getDateAndTimeString+"]","debug");
         return shiftToPosition(chrom,pos);
       }
     }
@@ -11955,7 +11985,7 @@ ALT VERSION: allows title line!
       }
     })
     
-    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = { 
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       
       val newHeaderLines = List(
         new  SVcfCompoundHeaderLine("INFO",tagPrefix+"FoundAtPos", "1", "Integer", "Equal to 1 if and only if any dbNSFP line was found at the given position."),
@@ -12016,9 +12046,9 @@ ALT VERSION: allows title line!
     
     //def cleanInfoField(s : String) : String = {
     //  var out = s;
-    //  
+    //
     //  out = out.replaceAll("\\||\\.|;",",").replaceAll("/| |-|:","_").replaceAll("[\\(\\)\\[\\]]","").replaceAll("[_]+","_").replaceAll("[,]+",",").replaceAll("_$|,$","");
-    //  
+    //
     //  return out;
     //}
     def cleanInfoField(s : String) : String = {
@@ -12037,17 +12067,17 @@ ALT VERSION: allows title line!
 
   class CmdFixVcfInfoWhitespace extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "fixVcfInfoWhitespace", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "fixVcfInfoWhitespace",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new FinalArgument[String](
@@ -12126,23 +12156,23 @@ ALT VERSION: allows title line!
   
   class CmdAddTxBed extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "addTxBed", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "addTxBed",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[Int](
-                                         name = "bufferDist", 
-                                         arg = List("--bufferDist"), 
-                                         valueName = "k",  
+                                         name = "bufferDist",
+                                         arg = List("--bufferDist"),
+                                         valueName = "k",
                                          argDesc =  "Buffer size. If this optional parameter is used, then elements within k base-pairs from a marked span will be tagged."
                                         ) ::
                     new FinalArgument[String](
@@ -12305,7 +12335,7 @@ ALT VERSION: allows title line!
       }
     }
     
-    val bedTags : Seq[(String,String,internalUtils.commonSeqUtils.GenomicInterval => Boolean)] = 
+    val bedTags : Seq[(String,String,internalUtils.commonSeqUtils.GenomicInterval => Boolean)] =
           bt.map{b => {
             val pair : Array[String] = b.split(":");
             if(pair.length != 3) error("Each comma-delimited element of parameter addBedTags must have exactly 3 colon-delimited elements (tag:desc:filename.bed).")
@@ -12443,7 +12473,7 @@ ALT VERSION: allows title line!
         //val out = bedFunc(vb.variantIV);
         if(v.ref.length < v.alt.head.length){
           val newBase = v.ref.last;
-          val endIV = internalUtils.commonSeqUtils.GenomicInterval(v.chrom,'.', start = v.pos-1, end = v.pos + math.max(1,v.ref.length)+1); 
+          val endIV = internalUtils.commonSeqUtils.GenomicInterval(v.chrom,'.', start = v.pos-1, end = v.pos + math.max(1,v.ref.length)+1);
           val ixSteps = arr.findIntersectingSteps(endIV).filter{ case (iv,currSet) => ! currSet.isEmpty }.toVector
           if(ixSteps.nonEmpty && ixSteps.head._2.head.head == newBase){
             vb.addInfo(tag,"DEL-"+newBase);
@@ -12452,7 +12482,7 @@ ALT VERSION: allows title line!
           }
         } else {
           val newBase = v.alt.head.last;
-          val endIV = internalUtils.commonSeqUtils.GenomicInterval(v.chrom,'.', start = v.pos + math.max(1,v.ref.length), end = v.pos + math.max(1,v.ref.length)+1); 
+          val endIV = internalUtils.commonSeqUtils.GenomicInterval(v.chrom,'.', start = v.pos + math.max(1,v.ref.length), end = v.pos + math.max(1,v.ref.length)+1);
           val ixSteps = arr.findIntersectingSteps(endIV).filter{ case (iv,currSet) => ! currSet.isEmpty }.toVector
           if(ixSteps.nonEmpty && ixSteps.head._2.head.head == newBase){
             vb.addInfo(tag,"ADD-"+newBase);
@@ -12529,7 +12559,7 @@ ALT VERSION: allows title line!
             val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
             val n = if(cells.isDefinedAt(3)) cells(3) else "CE"
             (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
-          }) 
+          })
         }
     }
     
@@ -12625,11 +12655,11 @@ ALT VERSION: allows title line!
     } else if(isComplexBed){
       cellIterator.map{cells => {
         val n = if(style == "SCORE"){
-          cells.lift(4).getOrElse("."); 
+          cells.lift(4).getOrElse(".");
         } else if(style == "LABEL"){
           cells.lift(3).getOrElse("CE")
         } else {
-          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse(".");
         }
         
         (n,new internalUtils.GtfTool.InputBedLineCells(cells))
@@ -12640,11 +12670,11 @@ ALT VERSION: allows title line!
       cellIterator.map(cells => {
         val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
         val n = if(style == "SCORE"){
-          cells.lift(4).getOrElse("."); 
+          cells.lift(4).getOrElse(".");
         } else if(style == "LABEL"){
           cells.lift(3).getOrElse("CE")
         } else {
-          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse(".");
         }
         (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
       })
@@ -12789,11 +12819,11 @@ ALT VERSION: allows title line!
     } else if(isComplexBed){
       cellIterator.map{cells => {
         val n = if(style == "SCORE"){
-          cells.lift(4).getOrElse("."); 
+          cells.lift(4).getOrElse(".");
         } else if(style == "LABEL"){
           cells.lift(3).getOrElse("CE")
         } else {
-          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse(".");
         }
         
         (n,new internalUtils.GtfTool.InputBedLineCells(cells))
@@ -12804,11 +12834,11 @@ ALT VERSION: allows title line!
       cellIterator.map(cells => {
         val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
         val n = if(style == "SCORE"){
-          cells.lift(4).getOrElse("."); 
+          cells.lift(4).getOrElse(".");
         } else if(style == "LABEL"){
           cells.lift(3).getOrElse("CE")
         } else {
-          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse(".");
         }
         (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
       })
@@ -12902,7 +12932,7 @@ ALT VERSION: allows title line!
         val out1 = bedFunc(v.variantIV);
         vb.addInfo(tag+"_A",out1);
         
-        v.getSVbnd() match { 
+        v.getSVbnd() match {
           case Some(bnd) => {
             val bndiv = internalUtils.commonSeqUtils.GenomicInterval(bnd.getChrom,'.',start=bnd.getPos-1,end=bnd.getPos)
             val out2 = bedFunc(bndiv);
@@ -12965,11 +12995,11 @@ ALT VERSION: allows title line!
     } else if(isComplexBed){
       cellIterator.map{cells => {
         val n = if(style == "SCORE"){
-          cells.lift(4).getOrElse("."); 
+          cells.lift(4).getOrElse(".");
         } else if(style == "LABEL"){
           cells.lift(3).getOrElse("CE")
         } else {
-          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse(".");
         }
         
         (n,new internalUtils.GtfTool.InputBedLineCells(cells))
@@ -12980,11 +13010,11 @@ ALT VERSION: allows title line!
       cellIterator.map(cells => {
         val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
         val n = if(style == "SCORE"){
-          cells.lift(4).getOrElse("."); 
+          cells.lift(4).getOrElse(".");
         } else if(style == "LABEL"){
           cells.lift(3).getOrElse("CE")
         } else {
-          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse(".");
         }
         (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
       })
@@ -13085,7 +13115,7 @@ ALT VERSION: allows title line!
             Seq(v.variantIV,internalUtils.commonSeqUtils.GenomicInterval(bnd.getChrom,'.',start=bnd.getPos-1,end=bnd.getPos))
           }
         }
-        //internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length)); 
+        //internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length));
         val out = bedFunc(ivs);
         vb.addInfo(tag,out);
         vb
@@ -13116,7 +13146,7 @@ ALT VERSION: allows title line!
       }
     }
     //tag, desc, booleanFunction, :
-    val bedTags : Seq[(String,String,internalUtils.commonSeqUtils.GenomicInterval => Boolean)] = 
+    val bedTags : Seq[(String,String,internalUtils.commonSeqUtils.GenomicInterval => Boolean)] =
           bt.map{b => {
             val pair : Array[String] = b.split(":");
             if(pair.length != 3) error("Each comma-delimited element of parameter addBedTags must have exactly 3 colon-delimited elements (tag:desc:filename.bed).")
@@ -13180,23 +13210,23 @@ ALT VERSION: allows title line!
   
   class VcfParserTest extends CommandLineRunUtil {
      override def priority = 10;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "VcfParserTest", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "VcfParserTest",
+          quickSynopsis = "",
+          synopsis = "",
           description = "This utility adds an array of new VCF tags with information about the transcriptional changes caused by each variant. "+BETA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "infileListInfix", 
-                                         arg = List("--infileListInfix"), 
-                                         valueName = "infileList.txt",  
+                                         name = "infileListInfix",
+                                         arg = List("--infileListInfix"),
+                                         valueName = "infileList.txt",
                                          argDesc =  ""+
                                                     ""
                                         ) ::
@@ -13216,9 +13246,9 @@ ALT VERSION: allows title line!
                                                    "" // description
                                        ) ::
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "If this parameter is set, then the utility will stop after reading in N variant lines."
                                         ) ::
                     new FinalArgument[String](
@@ -13235,7 +13265,7 @@ ALT VERSION: allows title line!
 
      def run(args : Array[String]) {
        val out = parser.parseArguments(args.toList.tail);
-       if(out){ 
+       if(out){
          val infile = parser.get[String]("infile");
          val outfile = parser.get[String]("outfile");
          val chromList = parser.get[Option[List[String]]]("chromList")
@@ -13276,7 +13306,7 @@ ALT VERSION: allows title line!
            } else {
              Seq();
            }
-        ) ++ params 
+        ) ++ params
     def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;
       outHeader.addWalk(this);
@@ -13598,23 +13628,23 @@ ALT VERSION: allows title line!
   
   class GenerateTxAnnotation extends CommandLineRunUtil {
      override def priority = 10;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "GenerateTranscriptAnnotation", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "GenerateTranscriptAnnotation",
+          quickSynopsis = "",
+          synopsis = "",
           description = "This utility ... "+BETA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "debugFile", 
-                                         arg = List("--debugFile"), 
-                                         valueName = "debugfile.txt.gz",  
+                                         name = "debugFile",
+                                         arg = List("--debugFile"),
+                                         valueName = "debugfile.txt.gz",
                                          argDesc =  "..."
                                         ) ::
                     new UnaryArgument( name = "cdsRegionContainsStop",
@@ -13624,9 +13654,9 @@ ALT VERSION: allows title line!
                                        ) ::
                                        
                     new BinaryOptionArgument[List[String]](
-                                         name = "bioTypes", 
-                                         arg = List("--bioTypes"), 
-                                         valueName = "output only these biotypes",  
+                                         name = "bioTypes",
+                                         arg = List("--bioTypes"),
+                                         valueName = "output only these biotypes",
                                          argDesc =  "..."
                                         ) ::
                                         
@@ -13649,7 +13679,7 @@ ALT VERSION: allows title line!
 
      def run(args : Array[String]) {
        val out = parser.parseArguments(args.toList.tail);
-       if(out){ 
+       if(out){
          
          loadAndWriteTranscriptAnnotation(genomeFA = parser.get[String]("genomeFA"),
                                           gtffile = parser.get[String]("gtffile"),
@@ -13693,9 +13723,9 @@ ALT VERSION: allows title line!
       }
   }
   
-  case class AddTxAnnoSVcfWalker(gtffile : Option[String], 
-                genomeFA : Option[String], 
-                //outfile : String, 
+  case class AddTxAnnoSVcfWalker(gtffile : Option[String],
+                genomeFA : Option[String],
+                //outfile : String,
                 //summaryFile : Option[String],
                 summaryWriter : Option[WriterUtil],
                 txInfoFile : Option[String],
@@ -13705,7 +13735,7 @@ ALT VERSION: allows title line!
                 geneVariantsOnly : Boolean,
                 chromList : Option[List[String]],
                 txToGeneFile : Option[String],
-                bufferSize : Int = 32, 
+                bufferSize : Int = 32,
                 addBedTags : Option[List[String]],
                 vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
                 geneList : Option[List[String]] = None,
@@ -13812,7 +13842,7 @@ ALT VERSION: allows title line!
                "                      (Note: "+TXSeqRaw.count{case (txID,tx) => {tx.isValidFullLenTX && tx.extendedStopCodon}}+" did not include the stop codon, but a valid stop codon was found)"+
                (if(txTypes.isDefined){
              "\n                      "+TXSeqRaw.count{case (txID,tx) => {tx.isValidFullLenTX && keepTxTypeFunc(tx)}}+"/"+TXSeqRaw.count{case (txID,tx) => {keepTxTypeFunc(tx)}}+" of types: ("+txTypes.map(_.mkString(",")).getOrElse(".")+")\n"+
-               "                      (Note: "+TXSeqRaw.count{case (txID,tx) => {tx.isValidFullLenTX && keepTxTypeFunc(tx) && tx.extendedStopCodon}}+" did not include the stop codon, but a valid stop codon was found)"               
+               "                      (Note: "+TXSeqRaw.count{case (txID,tx) => {tx.isValidFullLenTX && keepTxTypeFunc(tx) && tx.extendedStopCodon}}+" did not include the stop codon, but a valid stop codon was found)"
                } else {""})+
                "","debug");
       
@@ -13897,7 +13927,7 @@ ALT VERSION: allows title line!
     
     val rightAligner = genomeFA.map{ gfa => new internalUtils.GatkPublicCopy.RightAligner(genomeFa = gfa) }
     
-    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val newHeaderLines = List(
             new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.txList_TAG, ".", "String", "List of known transcripts found to overlap with the variant."),
             new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.vType_TAG, "A", "String", "For each allele, a |-delimited list indicating the deletion type for each overlapping transcript (see "+vcfCodes.txList_TAG+" for the transcripts and "+vcfCodes.vMutLVL_TAG+" for info on the type description)"),
@@ -13911,7 +13941,7 @@ ALT VERSION: allows title line!
             new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.vTypeShort_TAG, "A", "String", "For each allele, the worst amino acid change type found over all transcripts."),
             new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.vMutPShort_TAG, "A", "String", "For each allele, one of the protein changes for the worst variant type found over all transcripts"),
             new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.vMutINFO_TAG, "A", "String", "Raw variant info for each allele."),
-            new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.vMutLVL_TAG, "A", "String", 
+            new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.vMutLVL_TAG, "A", "String",
                                        "For each allele, the rough deliteriousness level of the variant, over all transcripts. Possible values, in order of deliteriousness "+
                                        "SYNON (synonymous mutation), "+
                                        "PSYNON (Probably-synonymous, indicates that the variant is within a transcript's introns or near a genes endpoints), "+
@@ -13921,7 +13951,7 @@ ALT VERSION: allows title line!
                                        "LLOF (likely loss of function, includes frameshift indels and variants that add early stop codons")
       ) ++ ( if(txToGeneFile.isEmpty) List() else {
         List(
-          new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.geneIDs, ".", "String", "Gene Symbol for each tx.")    
+          new SVcfCompoundHeaderLine(in_tag = "INFO",vcfCodes.geneIDs, ".", "String", "Gene Symbol for each tx.")
         )
       }) ++ bedTags.map{ case (tagString,descString,bedFunction) => {
           new SVcfCompoundHeaderLine(in_tag = "INFO",tagString, "1", "Integer", "Variant is found on bed file "+descString)
@@ -13961,7 +13991,7 @@ ALT VERSION: allows title line!
             (cells(0),cells(1));
           }).toMap
           Some(((s : String) => txToGeneMap.getOrElse(s,s)));
-        } 
+        }
         case None => {
           None;
         }
@@ -14293,7 +14323,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
             vMutPshortRgt = vMutPshortRgt :+ mutPshortrgt;
             vTypeListShortRgt = vTypeListShortRgt :+ typeShortrgt;
             vLevelRgt = vLevelRgt :+ vLvlrgt;
-           * 
+           *
            */
           
         }}
@@ -14319,23 +14349,23 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
   
   class testTXSeqUtil extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "VcfUtilTests", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = "Test utility.",   
-          argList = 
+          command = "VcfUtilTests",
+          quickSynopsis = "",
+          synopsis = "",
+          description = "Test utility.",
+          argList =
 
                     new BinaryArgument[String](name = "subCommand",
-                                            arg = List("--cmd"),  
-                                            valueName = "cmd", 
+                                            arg = List("--cmd"),
+                                            valueName = "cmd",
                                             argDesc = "The sub-command. This utility serves many separate functions."+
                                                       ""+
                                                       ""+
-                                                      "", 
+                                                      "",
                                             defaultValue = Some("stdtests")
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "cdsRegionContainsStop",
                                          arg = List("--cdsRegionContainsStop"), // name of value
                                          argDesc = ""+
@@ -14444,13 +14474,13 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
   
   class ConvertGenoPosToCPos extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "ConvertGtoC", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = "Test utility.",   
-          argList = 
+          command = "ConvertGtoC",
+          quickSynopsis = "",
+          synopsis = "",
+          description = "Test utility.",
+          argList =
                     new FinalArgument[String](
                                          name = "infile",
                                          valueName = "infile.txt",
@@ -14509,43 +14539,43 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
 
   class ConvertAminoRangeToGenoRange extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "ConvertAminoRangeToGenoRange", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = " " + ALPHA_WARNING,   
-          argList = 
+          command = "ConvertAminoRangeToGenoRange",
+          quickSynopsis = "",
+          synopsis = "",
+          description = " " + ALPHA_WARNING,
+          argList =
                     new BinaryArgument[Int](   name = "txCol",
-                                               arg = List("--txCol"),  
-                                               valueName = "0", 
-                                               argDesc = "", 
+                                               arg = List("--txCol"),
+                                               valueName = "0",
+                                               argDesc = "",
                                                defaultValue = Some(0)
                                            ) ::
                     new BinaryArgument[Int](   name = "startCol",
-                                               arg = List("--startCol"),  
-                                               valueName = "1", 
-                                               argDesc = "", 
+                                               arg = List("--startCol"),
+                                               valueName = "1",
+                                               argDesc = "",
                                                defaultValue = Some(1)
                                            ) ::
                     new BinaryArgument[Int](   name = "endCol",
-                                               arg = List("--endCol"),  
-                                               valueName = "2", 
-                                               argDesc = "", 
+                                               arg = List("--endCol"),
+                                               valueName = "2",
+                                               argDesc = "",
                                                defaultValue = Some(2)
                                            ) ::
                     new BinaryOptionArgument[String](
-                                         name = "badSpanFile", 
-                                         arg = List("--badSpanFile"), 
-                                         valueName = "file.txt",  
+                                         name = "badSpanFile",
+                                         arg = List("--badSpanFile"),
+                                         valueName = "file.txt",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "unkTxFile", 
-                                         arg = List("--unkTxFile"), 
-                                         valueName = "file.txt",  
+                                         name = "unkTxFile",
+                                         arg = List("--unkTxFile"),
+                                         valueName = "file.txt",
                                          argDesc =  "..."
-                                        ) ::     
+                                        ) ::
                     new FinalArgument[String](
                                          name = "infile",
                                          valueName = "infile.txt",
@@ -14583,7 +14613,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
   
   
   def ConvertAminoRangeToGenoRange(infile : String, txdataFile : String, outfile : String,
-                                   txIdx : Int = 0, startIdx : Int = 1, endIdx : Int = 2, 
+                                   txIdx : Int = 0, startIdx : Int = 1, endIdx : Int = 2,
                                    badSpanFile : Option[String] = None,
                                    unkTxFile : Option[String] = None){
     //val TXSeq : scala.collection.mutable.Map[String,TXUtil] = buildTXUtilsFromAnnotation(gtffile,genomeFA);
@@ -14642,7 +14672,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                   writer.write(tx.chrom+"\t"+s+"\t"+e+"\t"+line+"\t"+txLenAA+"\t"+tx.gStart+"\t"+tx.gEnd+"\t"+uid+"\n");
                 }}
               } else {
-                badSpanSet = badSpanSet + ((tx.chrom,tx.gStart,tx.gEnd,txid)); 
+                badSpanSet = badSpanSet + ((tx.chrom,tx.gStart,tx.gEnd,txid));
               }
             }
             case None => {
@@ -14693,85 +14723,85 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
   
   class AddGroupSummaries extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "addGroupSummaries", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "addGroupSummaries",
+          quickSynopsis = "",
+          synopsis = "",
           description = " " + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "groupFile", 
-                                         arg = List("--groupFile"), 
-                                         valueName = "file.txt",  
+                                         name = "groupFile",
+                                         arg = List("--groupFile"),
+                                         valueName = "file.txt",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryArgument[String](
-                                         name = "GTTag", 
-                                         arg = List("--GTTag"), 
-                                         valueName = "GT",  
+                                         name = "GTTag",
+                                         arg = List("--GTTag"),
+                                         valueName = "GT",
                                          argDesc =  ".",
                                          defaultValue = Some("GT")
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "groupList", 
-                                         arg = List("--groupList"), 
-                                         valueName = "grpA,A1,A2,...;grpB,B1,...",  
+                                         name = "groupList",
+                                         arg = List("--groupList"),
+                                         valueName = "grpA,A1,A2,...;grpB,B1,...",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "n",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "n",
                                          argDesc =  "..."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "superGroupList", 
-                                         arg = List("--superGroupList"), 
-                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",  
+                                         name = "superGroupList",
+                                         arg = List("--superGroupList"),
+                                         valueName = "sup1,grpA,grpB,...;sup2,grpC,grpD,...",
                                          argDesc =  "..."
                                         ) ::
                     new UnaryArgument( name = "noCts",
                                          arg = List("--noCts"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "noFrq",
                                          arg = List("--noFrq"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "noAlle",
                                          arg = List("--noAlle"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) ::     
+                                       ) ::
                     new UnaryArgument( name = "noGeno",
                                          arg = List("--noGeno"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "noMiss",
                                          arg = List("--noMiss"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "noMultiAllelics",
                                          arg = List("--noMultiAllelics"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "fallbackParser",
                                          arg = List("--fallbackParser"), // name of value
                                          argDesc = ""+
                                                    "" // description
-                                       ) :: 
+                                       ) ::
                     new FinalArgument[String](
                                          name = "invcf",
                                          valueName = "variants.vcf",
@@ -14786,7 +14816,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
           
   def run(args : Array[String]) {
      val out = parser.parseArguments(args.toList.tail);
-     if(out){ 
+     if(out){
        if(parser.get[Boolean]("fallbackParser")){
        
        LegacyVcfWalkers.AddGroupInfoAnno(groupFile = parser.get[Option[String]]("groupFile"),
@@ -14800,7 +14830,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                             addHetHom = ! parser.get[Boolean]("noGeno"),
                             noMultiAllelics = parser.get[Boolean]("noMultiAllelics")
                           ).walkVCFFile(
-                              parser.get[String]("invcf"), 
+                              parser.get[String]("invcf"),
                               parser.get[String]("outvcf"),
                               chromList = parser.get[Option[List[String]]]("chromList")
                           );
@@ -14817,7 +14847,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                             noMultiAllelics = parser.get[Boolean]("noMultiAllelics"),
                             GTTag = parser.get[String]("GTTag")
                           ).walkVCFFile(
-                              parser.get[String]("invcf"), 
+                              parser.get[String]("invcf"),
                               parser.get[String]("outvcf"),
                               chromList = parser.get[Option[List[String]]]("chromList"),
                               numLinesRead = parser.get[Option[Int]]("numLinesRead")
@@ -14833,20 +14863,20 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
                             addFreq   = ! parser.get[Boolean]("noFrq"),
                             addMiss   = ! parser.get[Boolean]("noMiss"),
                             addAlle   = ! parser.get[Boolean]("noAlle"),
-                            addHetHom = ! parser.get[Boolean]("noGeno")                            
+                            addHetHom = ! parser.get[Boolean]("noGeno")
            )*/
      }
   }
   }
   
   /*def runAddGroupInfoAnno(infile : String, outfile : String, groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String],
-                          chromList : Option[List[String]], 
-                          addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true, 
-                          addAlle : Boolean= true, addHetHom : Boolean = true, 
+                          chromList : Option[List[String]],
+                          addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true,
+                          addAlle : Boolean= true, addHetHom : Boolean = true,
                           sepRef : Boolean = true, countMissing : Boolean = true,
                           vcfCodes : VCFAnnoCodes = VCFAnnoCodes()){
      
-    val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfIterator(infile, 
+    val (vcIter,vcfHeader) = internalUtils.VcfTool.getVcfIterator(infile,
                                        chromList = chromList,
                                        vcfCodes = vcfCodes);
         
@@ -14866,9 +14896,9 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
   
 
   /*
-  case class SAddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]], 
-             addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true, 
-             addAlle : Boolean= true, addHetHom : Boolean = true, 
+  case class SAddGroupInfoAnno(groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String], chromList : Option[List[String]],
+             addCounts : Boolean = true, addFreq : Boolean = true, addMiss : Boolean = true,
+             addAlle : Boolean= true, addHetHom : Boolean = true,
              sepRef : Boolean = true, countMissing : Boolean = true,
              noMultiAllelics : Boolean = false,
              vcfCodes : VCFAnnoCodes = VCFAnnoCodes()) extends internalUtils.VcfTool.SVcfWalker {
@@ -15151,7 +15181,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
     ssa.annotateInit(dummyIter);
     
-    //HACK HACK HACK: 
+    //HACK HACK HACK:
     //      Force SnpSift to process the header so I can access the header info.
     //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
     val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummyIter,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
@@ -15159,7 +15189,7 @@ OPTION_TAGPREFIX+"tx_WARN_typeChange", "A", "String", "Flag. Equals 1 iff the va
     
     reportln("    SnpSiftAnno: snpSiftHeader has the following info fields: [\""+dummyIter.getVcfHeader().getVcfHeaderInfo().asScala.map{h => h.getId()}.toVector.padTo(1,".").mkString("\",\"")+"\"]","debug");
     
-    val newHeaderLines : Seq[(String,String,SVcfCompoundHeaderLine)] = 
+    val newHeaderLines : Seq[(String,String,SVcfCompoundHeaderLine)] =
       Vector[(String,String,SVcfCompoundHeaderLine)](
             (("ANN",
                 tagPrefix+"ANN",
@@ -15260,7 +15290,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     )
 
     val argSeq = cmdTriples.map{ case (cmdId, cmd) => {
-      val args = cmd.split("\\s+") 
+      val args = cmd.split("\\s+")
       notice("Attempting SnpSift annotation with cmdId="+cmdId+"\n   "+args.mkString("\n   ")+"\n","SNPSIFT_ANNOTATE",-1);
       args
     }}
@@ -15310,12 +15340,12 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     
     
     
-    //HACK HACK HACK: 
+    //HACK HACK HACK:
     //      Force SnpSift to process the header so I can access the header info.
     //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
     val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummySeq.head._1,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
     ssaSeq.foreach{ssa => {
-      ssa.annotate(initilizerExampleVariant)      
+      ssa.annotate(initilizerExampleVariant)
     }}
     ssaSeq.zip(dummySeq).foreach{ case (ssa,(dummyIter,snpSiftHeader)) => {
       reportln("    SnpSiftAnno: snpSiftHeader has the following info fields: [\""+dummyIter.getVcfHeader().getVcfHeaderInfo().asScala.map{h => h.getId()}.toVector.padTo(1,".").mkString("\",\"")+"\"]","debug");
@@ -15347,7 +15377,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     newHeaderLinesSeq.zipWithIndex.foreach{ case (newHeaderLines,i) => {
       reportln("    SnpSiftAnno: For annotation set: "+i,"debug");
       reportln("       SnpSiftAnno: extracting infolines: [\""+newHeaderLines.map{_._1}.padTo(1,".").mkString("\",\"")+"\"]","debug");
-      reportln("       SnpSiftAnno: adding infolines: [\""+newHeaderLines.map{_._2}.padTo(1,".").mkString("\",\"")+"\"]","debug");  
+      reportln("       SnpSiftAnno: adding infolines: [\""+newHeaderLines.map{_._2}.padTo(1,".").mkString("\",\"")+"\"]","debug");
     }}
 
 
@@ -15357,7 +15387,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       newHeaderLinesSeq.foreach{ newHeaderLines => {
         newHeaderLines.foreach{ case (tag,outTag,hl) => {
           newHeader.addInfoLine(hl);
-        }}  
+        }}
       }}
       var neverAddedAnno = true;
       newHeader.reportAddedInfos(this)
@@ -15416,7 +15446,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
     ssa.annotateInit(dummyIter);
     
-    //HACK HACK HACK: 
+    //HACK HACK HACK:
     //      Force SnpSift to process the header so I can access the header info.
     //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
     val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummyIter,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
@@ -15519,7 +15549,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     //ssa.init()
     val (dummyIter,snpSiftHeader) = SVcfVariantLine.getDummyIterator();
     ssa.annotateInit(dummyIter);
-    //HACK HACK HACK: 
+    //HACK HACK HACK:
     //      Force SnpSift to process the header so I can access the header info.
     //      Can't directly invoke the parseHeader commands because they're all private or protected methods.
     val initilizerExampleVariant = new org.snpeff.vcf.VcfEntry( dummyIter,  "chr???\t100\t.\tA\tC\t20\t.\tTESTSNPEFFDUMMYVAR=BLAH;", 1, true);
@@ -15594,11 +15624,11 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   
   val multiAllelicIndexStream = Iterator.from(0).toStream.map(i => {
     Range(0,i).flatMap(k => Range(k,i).map(z => (k,z)))
-  }) 
+  })
   val NUMREPORTBADLEN=5;
   
-  case class SSplitMultiAllelics(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(), 
-                                 clinVarVariants : Boolean = false, 
+  case class SSplitMultiAllelics(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
+                                 clinVarVariants : Boolean = false,
                                  fmtKeySumIntAlts : Seq[String] = Seq[String]("AD","AO"),
                                  fmtKeyIgnoreAlts : Seq[String] = Seq[String](),
                                  fmtKeyGenotypeStyle : Seq[String] = Seq[String]("GT"),
@@ -15796,7 +15826,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       /*
       rawPrefix.toSeq.flatMap{rawpre => (fmtKeyGenotypeStyle ++ fmtKeySumIntAlts).flatMap{gtTag => {
              vcfHeader.formatLines.find{ fl => fl.ID == gtTag }.map{ fl => {
-               new SVcfCompoundHeaderLine("FORMAT",rawpre+fl.ID, ".", "String", "(Raw, before allele splitting) "+fl.desc) 
+               new SVcfCompoundHeaderLine("FORMAT",rawpre+fl.ID, ".", "String", "(Raw, before allele splitting) "+fl.desc)
              }}
            }}
       }.toSeq.foreach{ hl => {
@@ -15897,7 +15927,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                       (if(internalUtils.optionHolder.OPTION_DEBUGMODE) "\n   "+vc.getVcfStringNoGenotypes else ""),
                       "INFO_LENGTH_WRONG_"+key,NUMREPORTBADLEN);
                   warningSet = warningSet + ("INFO_LENGTH_WRONG_A."+key)
-                  tagWarningMap(key) += 1; 
+                  tagWarningMap(key) += 1;
                   repToSeq(atr.mkString(","),numAlle - 1);
               } else {
                 atr.toSeq;
@@ -16225,11 +16255,11 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                       //if(adsCells.length == 2){
                       //  vb.genotypes.addGenotypeArray(singleCallerAlleFixPrefix+adField,ads.clone());
                       //} else {
-                      //  warning("Marformed AD-type string (" +adField+") alt="+alt+", alles=["+alles.mkString(",")+"], 
+                      //  warning("Marformed AD-type string (" +adField+") alt="+alt+", alles=["+alles.mkString(",")+"],
                       //  vb.genotypes.addGenotypeArray(singleCallerAlleFixPrefix+adField,adsCells.map{ac => "."});
                      // }
                     } else {
-                      val outStrings = adsCells.map{ ac => { 
+                      val outStrings = adsCells.map{ ac => {
                         if(ac.forall(a => a == ".")){
                           "."
                         } else if(ac.length != alles.length){
@@ -16292,7 +16322,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   
   
   
-  case class SSplitMultiAllelics2(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(), 
+  case class SSplitMultiAllelics2(vcfCodes : VCFAnnoCodes = VCFAnnoCodes(),
                                   treatOtherAsRef : Boolean = true,
                                  fmtKeySumIntAlts : Seq[String] = Seq[String]("AD","AO"),
                                  fmtKeyIgnoreAlts : Seq[String] = Seq[String](),
@@ -16480,7 +16510,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       /*
       rawPrefix.toSeq.flatMap{rawpre => (fmtKeyGenotypeStyle ++ fmtKeySumIntAlts).flatMap{gtTag => {
              vcfHeader.formatLines.find{ fl => fl.ID == gtTag }.map{ fl => {
-               new SVcfCompoundHeaderLine("FORMAT",rawpre+fl.ID, ".", "String", "(Raw, before allele splitting) "+fl.desc) 
+               new SVcfCompoundHeaderLine("FORMAT",rawpre+fl.ID, ".", "String", "(Raw, before allele splitting) "+fl.desc)
              }}
            }}
       }.toSeq.foreach{ hl => {
@@ -16592,7 +16622,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                       (if(internalUtils.optionHolder.OPTION_DEBUGMODE) "\n   "+vc.getVcfStringNoGenotypes else ""),
                       "INFO_LENGTH_WRONG_"+key,NUMREPORTBADLEN);
                   warningSet = warningSet + ("INFO_LENGTH_WRONG_A."+key)
-                  tagWarningMap(key) += 1; 
+                  tagWarningMap(key) += 1;
                   repToSeq(atr.mkString(","),numAlle - 1);
               } else {
                 atr.toSeq;
@@ -16860,19 +16890,19 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   
   class CmdRecodeClinVarCLN extends CommandLineRunUtil {
      override def priority = 100;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "RecodeClinVarCLN", 
-          quickSynopsis = "", 
-          synopsis = "", 
-          description = " " + ALPHA_WARNING,   
-          argList = 
+          command = "RecodeClinVarCLN",
+          quickSynopsis = "",
+          synopsis = "",
+          description = " " + ALPHA_WARNING,
+          argList =
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "..."
-                                        ) ::                     
+                                        ) ::
                     new FinalArgument[String](
                                          name = "invcf",
                                          valueName = "variants.vcf",
@@ -16896,7 +16926,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                    outfile   = parser.get[String]("outvcf"),
                    chromList = parser.get[Option[List[String]]]("chromList")
                    )
-     }   
+     }
     }
   }
   
@@ -16919,7 +16949,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       val (keepOldLines,oldClnLines) = oldHeaderLines.partition(headerline => {
         headerline match {
           case h : VCFInfoHeaderLine => {
-            ! infoCLNALL.contains(h.getID()); 
+            ! infoCLNALL.contains(h.getID());
           }
           case _ => true;
         }
@@ -16945,7 +16975,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       val newHeader = internalUtils.VcfTool.replaceHeaderLines(vcfHeader,replacementHeaderLines);
       
       reportln("Walking input VCF...","note")
-      return ( 
+      return (
       addIteratorCloseAction(vcIter.map(v => {
         runRecodeClinVarCLN(v);
       }), closeAction = () => {
@@ -17028,7 +17058,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       
       val newHeaderLines = List(
-            new SVcfCompoundHeaderLine("INFO",vcfCodes.CLNVAR_SUMSIG,     "1", "Integer", "Summary clinical significance level, from CLNSIG tag. Collapsed multiple reports into a single reported significance level.")      
+            new SVcfCompoundHeaderLine("INFO",vcfCodes.CLNVAR_SUMSIG,     "1", "Integer", "Summary clinical significance level, from CLNSIG tag. Collapsed multiple reports into a single reported significance level.")
       );
       
       val newHeader = vcfHeader.copyHeader;
@@ -17078,8 +17108,8 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   val DEFAULT_CMDADDCANONICALINFO_TXTAG = DefaultVCFAnnoCodes.txList_TAG
   
   
-  case class SAddCanonicalInfo(canonicalTxFile : String, 
-                               tagList : String = DEFAULT_CMDADDCANONICALINFO_TAGLIST, 
+  case class SAddCanonicalInfo(canonicalTxFile : String,
+                               tagList : String = DEFAULT_CMDADDCANONICALINFO_TAGLIST,
                                txTag : String = DEFAULT_CMDADDCANONICALINFO_TXTAG,
                                canonSuffix : String = "_CANON",
                                canonDescPrefix : String = "(For the canonical transcript(s) only) ") extends internalUtils.VcfTool.SVcfWalker {
@@ -17127,7 +17157,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
         }
       }}.filter(_._1 != txTag).toVector
       
-      val newHeader = vcfHeader.copyHeader 
+      val newHeader = vcfHeader.copyHeader
       //internalUtils.VcfTool.addHeaderLines(vcfHeader, addedHeaderLines.toVector);
       addedHeaderLines.foreach{ hl => {
         newHeader.addInfoLine(hl);
@@ -17187,23 +17217,23 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   
   class CmdSummarizeGenotypeStats extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "summarizeGenotypeStats", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "summarizeGenotypeStats",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "Limit file read to the first N lines"
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new FinalArgument[String](
@@ -17228,12 +17258,12 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
        if(out){
          SummarizeGenotypeStats(
              summarizeStatList = parser.get[List[String]]("summarizeStatList")
-         ).walkVCFFile( 
+         ).walkVCFFile(
              infile = parser.get[String]("infile"),
              outfile = parser.get[String]("outfile"),
              chromList = parser.get[Option[List[String]]]("chromList"),
              numLinesRead = parser.get[Option[Int]]("numLinesRead")
-         ) 
+         )
        }
      }
   }
@@ -17244,7 +17274,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
         ("summarizeStatList","\""+summarizeStatList.toString+"\"")
     )
     val statCommandPairs = summarizeStatList.map(a => {
-      val arr = a.split(":"); 
+      val arr = a.split(":");
       (arr(0),arr(1))
     })
     
@@ -17269,49 +17299,49 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   
   class CmdFilterGenotypesByStat extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "filterGenotypesByStat", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "filterGenotypesByStat",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "Limit file read to the first N lines"
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryArgument[String](name = "GTTag",
-                                            arg = List("--GTTag"),  
-                                            valueName = "GT", 
+                                            arg = List("--GTTag"),
+                                            valueName = "GT",
                                             argDesc = "",
                                             defaultValue = Some("GT")
-                                       ) :: 
+                                       ) ::
                     new BinaryArgument[String](name = "newGTTag",
-                                            arg = List("--newGTTag"),  
-                                            valueName = "GT", 
+                                            arg = List("--newGTTag"),
+                                            valueName = "GT",
                                             argDesc = "",
                                             defaultValue = Some("GT")
-                                       ) :: 
+                                       ) ::
                     new BinaryArgument[String](name = "oldGTTag",
-                                            arg = List("--oldGTTag"),  
-                                            valueName = "RAW_GT", 
+                                            arg = List("--oldGTTag"),
+                                            valueName = "RAW_GT",
                                             argDesc = "",
                                             defaultValue = Some("RAW_GT")
-                                       ) :: 
+                                       ) ::
                     new BinaryArgument[String](name = "filtTag",
-                                            arg = List("--filtTag"),  
-                                            valueName = OPTION_TAGPREFIX+"GTFILT", 
+                                            arg = List("--filtTag"),
+                                            valueName = OPTION_TAGPREFIX+"GTFILT",
                                             argDesc = "",
                                             defaultValue = Some(OPTION_TAGPREFIX+"GTFILT")
-                                       ) :: 
+                                       ) ::
                     new UnaryArgument( name = "noRawGT",
                                          arg = List("--noRawGT"), // name of value
                                          argDesc = ""+
@@ -17356,7 +17386,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   
   
   
-  case class FilterGenotypesByStat(filter : String, filterTag : String = OPTION_TAGPREFIX+"GTFILT", gtTag : String, 
+  case class FilterGenotypesByStat(filter : String, filterTag : String = OPTION_TAGPREFIX+"GTFILT", gtTag : String,
                                    rawGtTag : String, noRawGt : Boolean, newGTTag : String,
                                    groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList  : Option[String] = None) extends SVcfWalker {
     def walkerName : String = "FilterGenotypesByStat"
@@ -17372,7 +17402,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     /*
      groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]
       
-     getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None) 
+     getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None)
                         : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String])
@@ -17390,8 +17420,8 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       val sampList = vcfHeader.titleLine.sampleList.toList
       val sampCt   = vcfHeader.sampleCt;
       val outHeader = vcfHeader.copyHeader;
-      val filterLine = new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = filterTag, Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the genotype was filtered due to post-caller quality filters. ("+filter+")") 
-      val rawgtLine = new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = rawGtTag, Number = "1", Type = "String", desc = "The original GT genotype, prior to genotype-level filtering.",subType=Some(VcfTool.subtype_GtStyleUnsplit)) 
+      val filterLine = new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = filterTag, Number = "1", Type = "Integer", desc = "Equal to 1 if and only if the genotype was filtered due to post-caller quality filters. ("+filter+")")
+      val rawgtLine = new SVcfCompoundHeaderLine(in_tag = "FORMAT",ID = rawGtTag, Number = "1", Type = "String", desc = "The original GT genotype, prior to genotype-level filtering.",subType=Some(VcfTool.subtype_GtStyleUnsplit))
       outHeader.addFormatLine(filterLine, walker = Some(this));
       if(!noRawGt) outHeader.addFormatLine(rawgtLine);
       vcfHeader.formatLines.find( fline => fline.ID == newGTTag) match {
@@ -17456,7 +17486,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     /*
      groupFile : Option[String], groupList : Option[String], superGroupList  : Option[String]
       
-     getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None) 
+     getGroups(groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None)
                         : (scala.collection.mutable.AnyRefMap[String,Set[String]],
                            scala.collection.mutable.AnyRefMap[String,Set[String]],
                            Vector[String])
@@ -17604,7 +17634,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       
       VariantCountSetSet(varCt = makeVariantCountSet(ct),
                                   singCt  = makeVariantCountSet(ct),
-                                  indelCt  = makeVariantCountSet(ct), 
+                                  indelCt  = makeVariantCountSet(ct),
                                   indelSingCt  = makeVariantCountSet(ct),
                                   snvCt  = makeVariantCountSet(ct),
                                   snvSingCt  = makeVariantCountSet(ct),
@@ -17653,7 +17683,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       //val snvSingCtBySwap_P1 : Map[String,VariantCountSet] = SNVVARIANT_BASESWAP_LIST.map{ case ((a1,b1),(a2,b2)) => (a1+b1,makeVariantCountSet(sampleCt)) }.toMap
       //val snvSingCtBySwap : Map[String,VariantCountSet] = snvSingCtBySwap_P1 ++ SNVVARIANT_BASESWAP_LIST.map{ case ((a1,b1),(a2,b2)) => (a2+b2,snvSingCtBySwap_P1(a1+b1)) }.toMap;
       
-      val subsetList : Seq[(String,SFilterLogic[SVcfVariantLine],VariantCountSetSet)] = subFilterExpressionSets match { 
+      val subsetList : Seq[(String,SFilterLogic[SVcfVariantLine],VariantCountSetSet)] = subFilterExpressionSets match {
         case Some(sfes) => {
           val sfesSeq = sfes.split(",")
           sfesSeq.map{ sfe =>
@@ -17723,7 +17753,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       
       val writer = openWriterSmart(outfile);
       writer.write("sample.ID\t"+
-                   (setList.map{ case (sfName,filter,countSetSet) => { 
+                   (setList.map{ case (sfName,filter,countSetSet) => {
                         sfName+"numCalled\t"+
                         sfName+"numMiss\t"+
                         allTitles.map(t => sfName+"" + t).mkString("\t")+"\t"+
@@ -17741,7 +17771,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
       Range(0,sampleCt).foreach(i => {
         writer.write(
             vcfHeader.titleLine.sampleList(i) + "\t"+
-        (subsetList.map{ case (sfName,filter,css) => { 
+        (subsetList.map{ case (sfName,filter,css) => {
               (Seq(
                   css.varCt.getNcalled(i).toString(),
                   css.varCt.ctMis(i),
@@ -17751,8 +17781,8 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                   css.singCt.getAlt(i),
                   css.snvSingCt.getAlt(i),
                   css.indelSingCt.getAlt(i)
-                  ) ++ 
-                  (if(bySwapCounts){Seq(                
+                  ) ++
+                  (if(bySwapCounts){Seq(
                     swapList.map{ swap => { css.snvCtBySwap(swap).getAll(i) }}.mkString("\t"),
                     swapList.map{ swap => { css.snvSingCtBySwap(swap).getAlt(i) }}.mkString("\t")
                   )} else Seq())
@@ -17766,17 +17796,17 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
 
   class RunCalcVariantCountSummary extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "CalcVariantCountSummary", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "CalcVariantCountSummary",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryArgument[String](
-                                         name = "genotypeTag", 
-                                         arg = List("--genotypeTag"), 
-                                         valueName = "GT",  
+                                         name = "genotypeTag",
+                                         arg = List("--genotypeTag"),
+                                         valueName = "GT",
                                          argDesc =  ".",
                                          defaultValue = Some("GT")
                                         ) ::
@@ -17786,21 +17816,21 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                                                    "" // description
                                        ) ::
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "Limit file read to the first N lines"
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "subFilterExpressionSets", 
-                                         arg = List("--subFilterExpressionSets"), 
-                                         valueName = "",  
+                                         name = "subFilterExpressionSets",
+                                         arg = List("--subFilterExpressionSets"),
+                                         valueName = "",
                                          argDesc =  ""
                                         ) ::
                     new FinalArgument[String](
@@ -17836,49 +17866,49 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
   /*
   class RedoEnsemblMerge extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "RedoEnsemblMerge", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "RedoEnsemblMerge",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new UnaryArgument( name = "singleDbFile",
                                          arg = List("--singleDbFile"), // name of value
                                          argDesc = "NOT CURRENTLY SUPPORTED"+
                                                    "" // description
                                        ) ::
                     new BinaryArgument[String](
-                                         name = "chromStyle", 
-                                         arg = List("--chromStyle"), 
-                                         valueName = "hg19",  
+                                         name = "chromStyle",
+                                         arg = List("--chromStyle"),
+                                         valueName = "hg19",
                                          argDesc =  ".",
                                          defaultValue = Some("hg19")
                                         ) ::
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "Limit file read to the first N lines"
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "masterCaller", 
-                                         arg = List("--masterCaller"), 
-                                         valueName = "hc",  
+                                         name = "masterCaller",
+                                         arg = List("--masterCaller"),
+                                         valueName = "hc",
                                          argDesc =  "A caller from which to import ALL info tags."
-                                        ) :: 
+                                        ) ::
                     new BinaryOptionArgument[String](
-                                         name = "summaryFile", 
-                                         arg = List("--summaryFile"), 
-                                         valueName = "summaryData.txt",  
+                                         name = "summaryFile",
+                                         arg = List("--summaryFile"),
+                                         valueName = "summaryData.txt",
                                          argDesc =  ""
-                                        ) :: 
+                                        ) ::
                     new FinalArgument[String](
                                          name = "infile",
                                          valueName = "variants.vcf",
@@ -17950,7 +17980,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
               reportln("    Looping back to start of VCF file: " +inputVCF+" "+getDateAndTimeString,"note");
               altReader = SVcfLine.readVcf(getLinesSmartUnzip(inputVCF), withProgress = false)._2.buffered;
               return getForPosition(chrom=chrom,pos=pos,loopBack = false);
-            } else {                             
+            } else {
               warning("    Cannot find chromosome: \""+chrom+"\" in VCF file: " +inputVCF+" "+getDateAndTimeString,"CHROM_NOT_FOUND",10);
               if(failOnBadChrom) error("    Cannot find chromosome: \""+chrom+"\" in VCF file: " +inputVCF+" "+getDateAndTimeString);
               missingChrom += chrom;
@@ -17967,7 +17997,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
     }
     
     
-    /*val newFmtTags = 
+    /*val newFmtTags =
       altHeader.formatLines.map{ fhl => {
            val ct = if(fhl.ID == "AD"){
              "R"
@@ -18072,7 +18102,7 @@ case class SnpSiftAnnotaterMulti(cmdTriples : Seq[(String,String)]) extends inte
                   "DUPLICATE_SECONDARY_VCF_LINES",10
             );
 
-          } 
+          }
           if(matchVc.length >= 1){
            // val (avc,avcAlleIdx) = matchVc.head;
             notice("FOUND_MATCH: "+inputVcfTag,"MATCH_"+inputVcfTag+"_1",5);
@@ -18446,8 +18476,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   }
   
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /*def multiSampleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
-                            headers : Seq[SVcfHeader], 
+  /*def multiSampleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]],
+                            headers : Seq[SVcfHeader],
                             inputVcfTypes : Seq[String], genomeFA : Option[String],
                             windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
     val vcfCodes = VCFAnnoCodes();
@@ -18734,7 +18764,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
           }
           vbg
         }}
-      }}, closeAction = (() => { 
+      }}, closeAction = (() => {
         //do nothing
       })),outHeader)
     }
@@ -18770,7 +18800,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = groupBySpan(vcIter.buffered){ v => { (v.chrom,v.pos) } }.flatMap{vg => {
         val swaps = vg.map{ v => (v.ref,v.alt.head)}.distinct.sorted
-        swaps.map{ case (r,a) => {          
+        swaps.map{ case (r,a) => {
           val vbgRAW = vg.filter{ v => v.ref == r && v.alt.head == a }
           val vbMAP = vbgRAW.map{ v => v.info.getOrElse(sampField,None) }.zip(vbgRAW).filter{ case (ss,vv) => {
             ss.isDefined
@@ -18806,7 +18836,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
           }
           vb
         }}
-      }}, closeAction = (() => { 
+      }}, closeAction = (() => {
         //do nothing
       })),outHeader)
     }
@@ -18864,19 +18894,19 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
           }
           vbg*/
         }}
-      }}, closeAction = (() => { 
+      }}, closeAction = (() => {
         //do nothing
       })),outHeader)
     }
   }
   
 
-  def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
-                            headers : Seq[SVcfHeader], 
-                            inputVcfTypes : Seq[String], 
+  def ensembleMergeVariants(vcIters : Seq[Iterator[SVcfVariantLine]],
+                            headers : Seq[SVcfHeader],
+                            inputVcfTypes : Seq[String],
                             //genomeFA : Option[String],
-                            //windowSize : Int = 200, 
-                            CC_ignoreSampleIds : Boolean = false, CC_ignoreSampleOrder : Boolean = false, 
+                            //windowSize : Int = 200,
+                            CC_ignoreSampleIds : Boolean = false, CC_ignoreSampleOrder : Boolean = false,
                             singleCallerPriority : Seq[String]
                                // CC_ignoreSampleIds,   CC_ignoreSampleOrder
                             ) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
@@ -18999,7 +19029,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         (singleCallerPriorityFull(pi),None)
       } else if(CC_ignoreSampleOrder){
         val currsamps = f.titleLine.sampleList;
-        val currset : Set[String] = currsamps.toSet; 
+        val currset : Set[String] = currsamps.toSet;
         if( currset.size != f.titleLine.sampleList.length ){
           error("FORMATTING ERROR in VCF["+singleCallerPriorityFull(pi)+"]: sample IDs are not unique!")
         }
@@ -19231,8 +19261,8 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   }
   
 //INCOMPLETE!!!
-  def mergeCompareVariants(vcIters : Seq[Iterator[SVcfVariantLine]], 
-                            headers : Seq[SVcfHeader], 
+  def mergeCompareVariants(vcIters : Seq[Iterator[SVcfVariantLine]],
+                            headers : Seq[SVcfHeader],
                             inputVcfTypes : Seq[String], //genomeFA : Option[String],
                             windowSize : Int = 200) :  (Iterator[SVcfVariantLine],SVcfHeader) = {
     val vcfCodes = VCFAnnoCodes();
@@ -19464,23 +19494,23 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   
   class CommandFilterVCF extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "FilterVCF", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "FilterVCF",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "Limit file read to the first N lines"
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new UnaryArgument( name = "infileList",
@@ -19525,35 +19555,35 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
 
   class CommandVcfToMatrix extends CommandLineRunUtil {
      override def priority = 20;
-     val parser : CommandLineArgParser = 
+     val parser : CommandLineArgParser =
        new CommandLineArgParser(
-          command = "VcfToMatrix", 
-          quickSynopsis = "", 
-          synopsis = "", 
+          command = "VcfToMatrix",
+          quickSynopsis = "",
+          synopsis = "",
           description = "" + ALPHA_WARNING,
-          argList = 
+          argList =
                     new BinaryOptionArgument[Int](
-                                         name = "numLinesRead", 
-                                         arg = List("--numLinesRead"), 
-                                         valueName = "N",  
+                                         name = "numLinesRead",
+                                         arg = List("--numLinesRead"),
+                                         valueName = "N",
                                          argDesc =  "Limit file read to the first N lines"
                                         ) ::
                     new BinaryOptionArgument[List[String]](
-                                         name = "chromList", 
-                                         arg = List("--chromList"), 
-                                         valueName = "chr1,chr2,...",  
+                                         name = "chromList",
+                                         arg = List("--chromList"),
+                                         valueName = "chr1,chr2,...",
                                          argDesc =  "List of chromosomes. If supplied, then all analysis will be restricted to these chromosomes. All other chromosomes wil be ignored."
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "variantFile", 
-                                         arg = List("--variantFile"), 
-                                         valueName = "varfile.txt",  
+                                         name = "variantFile",
+                                         arg = List("--variantFile"),
+                                         valueName = "varfile.txt",
                                          argDesc =  ""
                                         ) ::
                     new BinaryOptionArgument[String](
-                                         name = "variantFilterExpression", 
-                                         arg = List("--variantFilterExpression"), 
-                                         valueName = "...",  
+                                         name = "variantFilterExpression",
+                                         arg = List("--variantFilterExpression"),
+                                         valueName = "...",
                                          argDesc =  "Variant-level filter expression."
                                         ) ::
                     new UnaryArgument( name = "variantsAsRows",
@@ -19587,58 +19617,58 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
                                                    "" // description
                                        ) ::
                     new BinaryArgument[String](name = "naString",
-                                           arg = List("--naString"),  
-                                           valueName = "NA", 
-                                           argDesc = "", 
+                                           arg = List("--naString"),
+                                           valueName = "NA",
+                                           argDesc = "",
                                            defaultValue = Some("NA")
-                                           ) :: 
+                                           ) ::
                     new BinaryArgument[String](name = "otherString",
-                                           arg = List("--otherString"),  
-                                           valueName = "NA", 
-                                           argDesc = "", 
+                                           arg = List("--otherString"),
+                                           valueName = "NA",
+                                           argDesc = "",
                                            defaultValue = Some("NA")
-                                           ) :: 
+                                           ) ::
                     new BinaryArgument[List[String]](name = "includeVariantTags",
-                                           arg = List("--includeVariantTags"),  
-                                           valueName = "Tag1,Tag2,...", 
-                                           argDesc = "", 
+                                           arg = List("--includeVariantTags"),
+                                           valueName = "Tag1,Tag2,...",
+                                           argDesc = "",
                                            defaultValue = Some(List[String]())
-                                           ) :: 
+                                           ) ::
                     new BinaryArgument[List[String]](name = "dropSamples",
-                                           arg = List("--dropSamples"),  
-                                           valueName = "samp1,samp2,...", 
-                                           argDesc = "", 
+                                           arg = List("--dropSamples"),
+                                           valueName = "samp1,samp2,...",
+                                           argDesc = "",
                                            defaultValue = Some(List[String]())
-                                           ) :: 
+                                           ) ::
                     new BinaryOptionArgument[String](name = "dropSampleFile",
-                                           arg = List("--dropSampleFile"),  
-                                           valueName = "dropSampFile.txt", 
+                                           arg = List("--dropSampleFile"),
+                                           valueName = "dropSampFile.txt",
                                            argDesc = ""
-                                           ) :: 
+                                           ) ::
                     new BinaryOptionArgument[String](
-                                         name = "gtAnnoFilePrefix", 
-                                         arg = List("--gtAnnoFilePrefix"), 
-                                         valueName = "...",  
+                                         name = "gtAnnoFilePrefix",
+                                         arg = List("--gtAnnoFilePrefix"),
+                                         valueName = "...",
                                          argDesc =  ""
                                         ) ::
                     new BinaryArgument[List[String]](name = "gtAnnoTags",
-                                           arg = List("--gtAnnoTags"),  
-                                           valueName = "Tag1,Tag2,...", 
-                                           argDesc = "", 
+                                           arg = List("--gtAnnoTags"),
+                                           valueName = "Tag1,Tag2,...",
+                                           argDesc = "",
                                            defaultValue = Some(List[String]())
-                                           ) :: 
+                                           ) ::
                     new BinaryArgument[String](name = "delimString",
-                                           arg = List("--delimString"),  
-                                           valueName = "\\t", 
-                                           argDesc = "", 
+                                           arg = List("--delimString"),
+                                           valueName = "\\t",
+                                           argDesc = "",
                                            defaultValue = Some("\t")
-                                           ) :: 
+                                           ) ::
                     new BinaryArgument[String](name = "gtTagString",
-                                           arg = List("--gtTagString"),  
-                                           valueName = "\\t", 
-                                           argDesc = "", 
+                                           arg = List("--gtTagString"),
+                                           valueName = "\\t",
+                                           argDesc = "",
                                            defaultValue = Some("GT")
-                                           ) ::   
+                                           ) ::
                                            
                     new FinalArgument[String](
                                          name = "infile",
@@ -19683,7 +19713,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
   }
   
   
-  case class VcfToMatrix(variantsAsRows : Boolean = false, columnDelim : String = "\t", 
+  case class VcfToMatrix(variantsAsRows : Boolean = false, columnDelim : String = "\t",
                          naString : String = "NA", multiAlleString : String = "NA",
                          writeHeader : Boolean = false, writeTitleColumn : Boolean = false,
                          variantFile : Option[String] = None,
@@ -19730,7 +19760,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       }
     }
     
-    def walkVCFFile(infile : String, outfile : String, 
+    def walkVCFFile(infile : String, outfile : String,
                     variantFilterExpression : Option[String] = None,
                     chromList : Option[List[String]],numLinesRead : Option[Int],
                     allowVcfList : Boolean = true){
@@ -19756,7 +19786,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         val chromSet = chromList.get.toSet;
         val (vh,vi) = SVcfLine.readVcf(indata,withProgress = true)
         (vh,vi.filter(line => { chromSet.contains(line.chrom) }))
-      } 
+      }
       
       
       val (vcIter2,vcfHeader2) = variantFilterExpression match {
@@ -19874,7 +19904,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
           Iterator[String]();
         } else {
           reportln("Writing "+genoArray.length+" variants, "+genoArray(0).length+" samples.","note");
-          if(writeHeader){ 
+          if(writeHeader){
             writeVar((Seq("chrom","pos","id","ref","alt","qual","filter") ++ includeVariantTags).mkString("\t") + "\n");
           }
           varArray.foreach{v => {
@@ -19959,7 +19989,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
         ("explainFile","\""+explainFile.getOrElse("None")+"\"")
     )
     val filterTitle : String = filterID.map{ x => "_"+x }.getOrElse("");
-    val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser; 
+    val parser : SFilterLogicParser[SVcfVariantLine] = internalUtils.VcfTool.sVcfFilterLogicParser;
     val filter : SFilterLogic[SVcfVariantLine] = parser.parseString(filterExpr);
     //val parser = internalUtils.VcfTool.SVcfFilterLogicParser();
     //val filter = parser.parseString(filterExpr);
@@ -20002,7 +20032,7 @@ class EnsembleMergeMetaDataWalker(inputVcfTypes : Seq[String],
       "Integer"
     } else if(style == "GTFRAC" || style == "GTPCT"){
       "Float"
-    } else { 
+    } else {
       "String"
     }
     //if(!Set("GTCT","GTPCT","GTFRAC","GTTAG").contains(style)){

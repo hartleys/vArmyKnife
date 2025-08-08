@@ -1,4 +1,4 @@
-> Version 3.4.24 (Updated Thu Jun 12 09:39:07 EDT 2025)
+> Version 3.4.27 (Updated Tue Jun 24 09:32:02 EDT 2025)
 
 # vArmyKnife: 
 
@@ -1094,6 +1094,13 @@ This utility performs a series of transformations on an input VCF file and adds 
     skipFirstRow: If this parameter is set, then this tool will skip the first line on the decoder 
         file. This is useful if you are specifying the columns using column numbers but the file also 
         has a title line.(Flag)
+
+### sortGTfield
+
+>  This function moves the GT FORMAT field, if any, to the first FORMAT field position\. This is required in the VCF format specification\.
+
+
+    (This function takes no parameters)
 
 ### sampleReorder
 
