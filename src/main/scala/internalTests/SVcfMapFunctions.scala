@@ -811,8 +811,9 @@ object SVcfMapFunctions {
                COMMON_PARAMS("genomeFA")
          )),category = "Structural Variant Tools"
        ),
-       ParamStrSet("dropInvalidSVBND" ,  desc = "....", 
+       ParamStrSet("dropInvalidSVBND" ,  desc = "This tests whether lines are structural variants of type BND and are valid according to the VCF specification v4.2. Invalid BND lines and lines that are not of TYPE BND will be dropped.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+             ParamStr(id = "tallyReasons",synon=Seq(),ty="Flag",valueString=".",desc="If this flag is raised, tally and report the reasons for each variant line being dropped.",req=false),
               
          )),category = "Structural Variant Tools"
        ),
@@ -1699,7 +1700,7 @@ object SVcfMapFunctions {
                      renameGenoTags = renameGeno
                   ))
              } else if(mapType == "keepVariants"){
-                Some(VcfExpressionFilter(filterExpr = params("expr")))
+                Some(VcfExpressionFilter(filterExpr = params("expr"), filterID = Some(params("mapID")) ))
              } else if(mapType == "extractRegion"){
                 Some(VcfExtractRegionFromSorted(region = params("region"), windowSize = params.get("windowSize").map{ string2int(_)}  ))
              } else if(mapType == "removeUnannotatedFields"){
@@ -2000,7 +2001,8 @@ object SVcfMapFunctions {
        ),
                 */
              } else if(mapType == "dropInvalidSVBND"){
-               Some(new dropInvalidBNDSV() )
+             
+               Some(new dropInvalidBNDSV(walkID = params("mapID"), reportReasons = params.isSet("tallyReasons")) )
              } else if(mapType == "calcSVflankingHomology"){
                Some( new calcSVflankingHomology( genomeFa = params("genomeFA") , insertionField = params.get("insertionInfoField"), debug=params.isSet("debugMode")))
              } else if(mapType == "dropReverseSVbreakends"){

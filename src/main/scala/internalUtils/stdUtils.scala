@@ -104,7 +104,9 @@ object stdUtils {
     var initParamsLeft = allInitParams;
     var rawParams = sc.zipWithIndex.map{ case (cell,cix) => {
        val x= cell.split(innerDelim,2).map{ _.trim() }
-       if( x.head.contains(parenDelim.head) || ( x.length == 1 && paramMap.get(x.head).map{ xx => xx.ty != "Flag" }.getOrElse(false)  ) ){
+       //Coding mystery: what is parenDelim for? It doesn't appear to do anything.       
+       //if( x.head.contains(parenDelim.head) || ( x.length == 1 && paramMap.get(x.head).map{ xx => xx.ty != "Flag" }.getOrElse(false)  ) ){
+       if( ( x.length == 1 && paramMap.get(x.head).map{ xx => xx.ty != "Flag" }.getOrElse(true)  ) ){
          if(initParamsLeft.length == 0){
            error("ERROR: unnamed parameter in position "+cix+"="+cell+"!\nThis function does not accept an unnamed parameter at this position! Parameter must be named in form paramID=paramValue!");
          }

@@ -1181,7 +1181,7 @@ object SVcfWalkerUtils {
             "???"
           }*/
   
-  class dropInvalidBNDSV() extends SVcfWalker {
+  class dropInvalidBNDSV(walkID : String = "", reportReasons:Boolean = false ) extends SVcfWalker {
     def walkerName : String = "dropInvalidBNDSV"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
 
@@ -1194,14 +1194,53 @@ object SVcfWalkerUtils {
       var dropct = 0;
       outHeader.reportAddedInfos(this)
       (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
-        val vc = v.getOutputLine();
-        if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
-          v.getSVbnd() match {
-            case Some(svbnd) => Some(v);
-            case None => None
-          }
+        //val vc = v.getOutputLine();
+        if( reportReasons) {
+            val bndStatus = v.info.getOrElse("SVTYPE",None);
+            if( v.alt.length == 0){
+              dropct = dropct + 1;
+              tally("dropInvalidBNDSV."+walkID+".DROP:No ALT alleles",1);
+              None
+            } else if( v.alt.length > 1 ){
+              dropct = dropct + 1;
+              tally("dropInvalidBNDSV."+walkID+".DROP:2+ ALT alleles",1);
+              None        
+            } else if( bndStatus.isEmpty ){
+              dropct = dropct + 1;
+              tally("dropInvalidBNDSV."+walkID+".DROP:No TYPE field",1);
+              None
+            } else if(bndStatus.getOrElse(".") != "BND" ){
+              dropct = dropct + 1;
+              tally("dropInvalidBNDSV."+walkID+".DROP:TYPE not BND",1);
+              None
+            } else {
+              v.getSVbnd() match {
+                case Some(svbnd) => {
+                  tally("dropInvalidBNDSV."+walkID+".KEEP",1);
+                  Some(v);
+                }
+                case None => {
+                  val invalidReasons = SVbnd( v.alt.head ).invalidIssue.mkString("/")
+                  tally("dropInvalidBNDSV."+walkID+".DROP",1);
+                  tally("dropInvalidBNDSV."+walkID+".DROP:"+invalidReasons,1);
+                  dropct = dropct + 1;
+                  None
+                }
+              }
+            }
         } else {
-          None
+            if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
+              v.getSVbnd() match {
+                case Some(svbnd) => Some(v);
+                case None => {
+                  dropct = dropct + 1;
+                  None
+                }
+              }
+            } else {
+              dropct = dropct + 1;
+              None
+            }
         }
       }}, closeAction = (() => {
         reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.4.21 (Updated Tue Jun 10 10:26:03 EDT 2025)
+> Version 3.4.24 (Updated Thu Jun 12 09:39:07 EDT 2025)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -221,10 +221,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### dropInvalidSVBND
 
->  \.\.\.\.
+>  This tests whether lines are structural variants of type BND and are valid according to the VCF specification v4\.2\. Invalid BND lines and lines that are not of TYPE BND will be dropped\.
 
 
-    (This function takes no parameters)
+    tallyReasons: If this flag is raised, tally and report the reasons for each variant line being 
+        dropped.(Flag)
 
 ### dropReverseSVbreakends
 

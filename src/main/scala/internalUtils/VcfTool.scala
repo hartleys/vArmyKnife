@@ -2023,13 +2023,15 @@ object VcfTool {
       val ccb = alt.split("\\]",-1);
       if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) xx = xx :+ "Bracket Count";
       val cxx = alt.split("[\\[\\]]",-1)
-      val cmx = cxx(1)
-      val cx  = cmx.split(":",-1);
-      if( cx.length != 2 ) xx = xx :+ "position isn't two elements" ;
-      if( string2intOpt(cx(1)).isEmpty ) xx = xx :+ "position POS isn't an integer" ;
-      if( ! (( cxx(0) == "" && cxx(2) != "" ) || ( cxx(0) != "" && cxx(2) == "" )) ) xx = xx :+ "bases not only on one side"
-      val cbp = if(cxx(0) == ""){ cxx(2) } else { cxx(0) }
-      if( ! PATTERN_BASES_ONLY.matcher(cbp).matches() ) xx = xx :+ "Bases arent ACTGN"
+      if( cxx.length == 3 ){
+        val cmx = cxx(1);
+        val cx  = cmx.split(":",-1);
+        if( cx.length != 2 ) xx = xx :+ "position isn't two elements" ;
+        if( string2intOpt(cx.lift(1).getOrElse(".")).isEmpty ) xx = xx :+ "position POS isn't an integer" ;
+        if( ! (( cxx(0) == "" && cxx(2) != "" ) || ( cxx(0) != "" && cxx(2) == "" )) ) xx = xx :+ "bases not only on one side"
+        val cbp = if(cxx(0) == ""){ cxx(2) } else { cxx(0) }
+        if( ! PATTERN_BASES_ONLY.matcher(cbp).matches() ) xx = xx :+ "Bases arent ACTGN"
+      }
       xx;
     }
     def validate : Option[SVbnd] = if(isValid){ Some(this) } else { None }

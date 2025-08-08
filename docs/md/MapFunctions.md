@@ -71,10 +71,11 @@
 
 ### dropInvalidSVBND
 
->  \.\.\.\.
+>  This tests whether lines are structural variants of type BND and are valid according to the VCF specification v4\.2\. Invalid BND lines and lines that are not of TYPE BND will be dropped\.
 
 
-    (This function takes no parameters)
+    tallyReasons: If this flag is raised, tally and report the reasons for each variant line being 
+        dropped.(Flag)
 
 ### dropReverseSVbreakends
 

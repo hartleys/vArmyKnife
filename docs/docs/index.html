@@ -28,7 +28,7 @@
 
 <section>
 <blockquote>
-  <p>Version 3.4.21 (Updated Tue Jun 10 10:26:03 EDT 2025)</p>
+  <p>Version 3.4.24 (Updated Thu Jun 12 09:39:07 EDT 2025)</p>
 </blockquote>
 
 </section> <h1>vArmyKnife:</h1> <section>
@@ -300,10 +300,11 @@ genomeFA: The genome fasta file containing the reference genome. This will be us
 <h3>dropInvalidSVBND</h3>
 
 <blockquote>
-  <p>....</p>
+  <p>This tests whether lines are structural variants of type BND and are valid according to the VCF specification v4.2. Invalid BND lines and lines that are not of TYPE BND will be dropped.</p>
 </blockquote>
 
-<pre><code>(This function takes no parameters)
+<pre><code>tallyReasons: If this flag is raised, tally and report the reasons for each variant line being 
+    dropped.(Flag)
 </code></pre>
 
 <h3>dropReverseSVbreakends</h3>
