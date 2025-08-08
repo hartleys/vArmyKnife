@@ -347,15 +347,15 @@ object SVcfWalkerUtils {
           
           //out.write("eventID\tsvCount\tchromList\tsvList\n");
           if(! debug){
-                      out.write(Seq("eventID","lineCt","chroms","numSV",
+                      out.write((Seq("eventID","lineCt","chroms","numSV",
                                     "isSimpleUnbal","isMultibreakComplex","isOther","isSimpleBal",
-                                    "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons",
-                                    "info").mkString("\t")+"\n");
+                                    "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons"
+                                    ) ++ infoFields).mkString("\t")+"\n");
           } else {
-                      out.write(Seq("eventID","lineCt","chroms","numSV",
+                      out.write((Seq("eventID","lineCt","chroms","numSV",
                                     "isSimpleUnbal","isMultibreakComplex","isOther","isSimpleBal",
-                                    "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons","debug.posPM",
-                                    "info").mkString("\t")+"\n");
+                                    "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons","debug.posPM"
+                                    ) ++ infoFields ).mkString("\t")+"\n");
           }
           
           eventSV.foreach{ case (eventID,svlist) => {
@@ -418,9 +418,11 @@ object SVcfWalkerUtils {
                 
               }
               binf;
-            } else {
+            } else { 
               Map[String,String]()
             }
+            
+            val sortedSvList = svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }
             
             out.write(eventID + "\t" + svlist.length + "\t" + 
                       svlist.toSet.flatMap( (xx : SVcfVariantLine) => Set(xx.chrom,xx.getSVbnd().get.bndBreakEnd._1) ).toSeq.sorted.mkString(",")+"\t"+
@@ -442,9 +444,15 @@ object SVcfWalkerUtils {
                       ( if(debug){
                         balInfo.getOrElse("debug.posPM",".")+"\t"
                       }else{""} )+
-                      svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }.map{ xx => {
-                        xx.chrom+":"+xx.pos+";"+xx.getSVbnd().get.bndBreakEnd._1+":"+xx.getSVbnd().get.bndBreakEnd._2+";"+infoFields.map{ ff => { xx.info.getOrElse(ff,None).getOrElse(".") }}.mkString(";")
-                      }}.mkString("|")+
+                      infoFields.map{ ff => {
+                        sortedSvList.map{ xx => {
+                          xx.info.getOrElse(ff,None).getOrElse(".")
+                        }}.mkString(";")
+                      }}.mkString("\t")+
+                      
+                      //svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }.map{ xx => {
+                      //  xx.chrom+":"+xx.pos+";"+xx.getSVbnd().get.bndBreakEnd._1+":"+xx.getSVbnd().get.bndBreakEnd._2+";"+infoFields.map{ ff => { xx.info.getOrElse(ff,None).getOrElse(".") }}.mkString(";")
+                      //}}.mkString("|")+
                       "\n"
                       )
           }}
