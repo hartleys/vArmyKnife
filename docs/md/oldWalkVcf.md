@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.4.14 (Updated Wed May  7 14:54:06 EDT 2025)
+> Version 3.4.15 (Updated Thu May 15 11:37:07 EDT 2025)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1415,6 +1415,14 @@ This utility performs a series of transformations on an input VCF file and adds 
     old (CONST:String) 
     new (CONST:String) 
     info (INFO:String) 
+
+### extractIDX\(x,i\)
+
+>  Extracts the i\-th element of the array x\. i can be an integer constant starting from zero, or i can be another info field specified as "INFO:infoFieldName"\.
+
+
+    x (INFO:String|CONST:String) 
+    i (CONST:Int|INFO:Int) 
 
 ### EXPR\(expr\)
 

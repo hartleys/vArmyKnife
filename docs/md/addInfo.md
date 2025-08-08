@@ -167,6 +167,14 @@
     new (CONST:String) 
     info (INFO:String) 
 
+### extractIDX\(x,i\)
+
+>  Extracts the i\-th element of the array x\. i can be an integer constant starting from zero, or i can be another info field specified as "INFO:infoFieldName"\.
+
+
+    x (INFO:String|CONST:String) 
+    i (CONST:Int|INFO:Int) 
+
 ### EXPR\(expr\)
 
 >  The new field will be an integer field which will be equal to 1 if and only if the expression is TRUE, and 0 otherwise\. See the expression format definition for more information on how the logical expression syntax works\.

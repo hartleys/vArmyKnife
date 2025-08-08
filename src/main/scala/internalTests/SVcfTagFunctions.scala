@@ -2880,7 +2880,48 @@ object SVcfTagFunctions {
             }
           }
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "extractIDX",synon = Seq(),
+              shortDesc = "Extract an element from a list.",
+              desc = "Extracts the i-th element of the array x. i can be an integer constant starting from zero, or i can be another info field specified as \"INFO:infoFieldName\".",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "INFO:String|CONST:String",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "i", ty = "CONST:Int|INFO:Int",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h).toVector
+              
+                //reportln("SETS.UNION.run: ","deepDebug");
+                //reportln("  SETS.UNION.typeInfo: ","deepDebug");
+                //typeInfo.foreach{ case (tt,tp,pp,pv) => {
+                //   reportln("  ["+tt+","+tp+","+pp.id+"/"+pp.ty+","+pv+"] ","deepDebug");
+                //}}
 
+              override val outType = "String" ;
+              override val outNum = "1";
+              val dx : VcfTagFunctionParamReader[Vector[String]] = VcfTagFunctionParamReaderStringSeq(typeInfo.head)
+              val di : VcfTagFunctionParamReader[Int] = VcfTagFunctionParamReaderInt(typeInfo.last)
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                di.get(vc).foreach{ ii => {
+                  dx.get(vc).foreach{ xx => {
+                    writeString(vout,xx.lift(ii).getOrElse("."));
+                  }}
+                }}
+                
+                //reportln("SETS.UNION.run:"+out,"deepDebug");
+
+                //writeString(vout,out)
+              }
+            }
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
               id = "LEN",synon = Seq(),
