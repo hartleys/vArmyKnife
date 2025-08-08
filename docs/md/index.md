@@ -1,4 +1,4 @@
-> Version 3.3.137 (Updated Thu Mar 14 17:45:32 EDT 2024)
+> Version 3.3.140 (Updated Mon Mar 25 16:17:55 EDT 2024)
 
 # vArmyKnife: 
 
@@ -534,7 +534,10 @@ This utility performs a series of transformations on an input VCF file and adds 
         variable that will equal 1 if and only if the variant intersects with one or more BED lines 
         (including buffer, noted above). For - the opposite is true. For LABEL, the new tag will be a 
         String variable with the title of the element(s) that intersect with the variant, comma 
-        delimited. Note that for LABEL style the BED file must have a 4th column.(String, default=+)
+        delimited. For SCORE, the new tag with be a comma delimited list of scores for matching 
+        intervals. For LABEL/SCORE, the new tag will be a comma delimited list of LABEL and SCORE 
+        values separated by a slash. Note that for LABEL styles the BED file must have at least 4 
+        columns and for SCORE styles the BED file must have at least 5 columns.(String, default=+)
 
 ### snpSiftAnno
 

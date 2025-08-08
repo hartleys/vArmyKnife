@@ -4342,7 +4342,7 @@ object SVcfWalkerUtils {
         ("wigFile", wigFile)
     );
     
-    var wigparser = new internalUtils.genomicAnnoUtils.SimpleEfficientWiggleParser(wigFile);
+    var wigparser = new internalUtils.genomicAnnoUtils.SimpleEfficientGappedWiggleParser(wigFile);
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
@@ -11882,13 +11882,29 @@ ALT VERSION: allows title line!
         (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),"CE")
       })
     } else if(isComplexBed){
-      cellIterator.map{cells => new internalUtils.GtfTool.InputBedLineCells(cells)}.flatMap(b => {
-        b.getIVs.map{ iv => (iv,b.name.get) }
-      })
+      cellIterator.map{cells => {
+        val n = if(style == "SCORE"){
+          cells.lift(4).getOrElse("."); 
+        } else if(style == "LABEL"){
+          cells.lift(3).getOrElse("CE")
+        } else {
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+        }
+        
+        (n,new internalUtils.GtfTool.InputBedLineCells(cells))
+      }}.flatMap{ case (n,b) => {
+        b.getIVs.map{ iv => (iv,n) }
+      }}
     } else {
       cellIterator.map(cells => {
         val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
-        val n = if(cells.isDefinedAt(3)) cells(3) else "CE"
+        val n = if(style == "SCORE"){
+          cells.lift(4).getOrElse("."); 
+        } else if(style == "LABEL"){
+          cells.lift(3).getOrElse("CE")
+        } else {
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+        }
         (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
       })
     }
@@ -11908,15 +11924,28 @@ ALT VERSION: allows title line!
               (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
                 if(arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }) "0" else "1"
               }
+    } else if(style == "SCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL/SCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }  
     } else {
-              (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+      error("Unrecognized style tag for addBedTag function: Must be one of '+', '-', 'LABEL', 'SCORE', or 'LABEL/SCORE'");
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
                 arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
               }
     }
 
     def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
       val newHeader = vcfHeader.copyHeader
-      if(style == "s"){
+      if(style != "+" && style != "-"){
         newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = ".", Type = "String", desc = desc));
       } else {
         newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = "1", Type = "Integer", desc = desc));

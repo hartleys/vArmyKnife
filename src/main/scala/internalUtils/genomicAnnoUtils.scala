@@ -100,7 +100,103 @@ object genomicAnnoUtils {
     }
   }
   
-  
+  class SimpleEfficientGappedWiggleParser(infile : String) extends EfficientWiggleParser {
+    var currChrom = "";
+    var currPos = 0;
+    var buffer = "";
+    var chromList : Vector[String] = Vector[String]();
+    var iter = getLinesSmartUnzip(infile).buffered;
+    var headerLine = "";
+    var windowSize = 1;
+    
+    def skipToNextChrom(){
+      while( iter.hasNext && (! iter.head.startsWith("fixedStep"))){
+        iter.next;
+      }
+      //if(! iter.hasNext){
+        //chromosome not found!
+      //}
+    }
+    def skipGap(){
+      while( iter.hasNext && ((! iter.head.startsWith("fixedStep")))){
+            iter.next;
+      }
+      headerLine = iter.next;
+      windowSize = headerLine.trim().split("\\s+").find(_.startsWith("step")).getOrElse("step=1").split("=")(1).toInt
+      currChrom = headerLine.trim().split("\\s+").find(_.startsWith("chrom")).getOrElse{
+        error("Error: fixedStep line does not list chrom");
+        "NA"
+      }.split("=")(1)
+      currPos = headerLine.trim().split("\\s+").find(_.startsWith("start")).getOrElse("start=0").split("=")(1).toInt
+      buffer = iter.next;
+    }
+    def findChromosome(c : String){
+        val cix = chromList.indexOf(c)
+        if( c == currChrom){
+          
+        } else if(cix == -1 || chromList.indexOf(currChrom) < cix){
+           notice("scanning for chromosome: "+c,"CHROM_SCAN_FWD",-1);
+           var keepGoing = true;
+           while( iter.hasNext && keepGoing){
+            if(iter.head.startsWith("fixedStep")){
+              headerLine = iter.next;
+              val cc = headerLine.trim().split("\\s+").find(_.startsWith("chrom")).getOrElse({error("fixedStep line found with no chrom tag: \""+iter.head+"\"");"?NO CHROM FOUND?"}).split("=")(1);
+              if( ! chromList.contains(cc)){
+                notice("    Found chrom: \""+cc+"\" ["+getDateAndTimeString+"]","CHROM_OBS",-1);
+                //notice("          chromlist before:["+chromList.mkString(",")+"]","CHROM_OBS_note1",-1);
+                chromList = chromList :+ cc;
+                //notice("          chromlist after: ["+chromList.mkString(",")+"]","CHROM_OBS_note2",-1);
+              }
+              if(cc == c){
+                keepGoing = false;
+              } else if( currChrom != cc ){
+                notice("        Skipping chrom: \""+cc+"\" (searching for: \""+c+"\") ["+getDateAndTimeString+"]","CHROM_OBS",-1);
+              }
+              currChrom = cc;
+            } else {
+              iter.next;
+            }
+          }
+        } else {
+          notice("Skipping back to top and scanning for chromosome: "+c+" ["+getDateAndTimeString+"]","CHROM_SCAN_BACK",-1);
+          iter = getLinesSmartUnzip(infile).buffered;
+          while( iter.hasNext && ((! iter.head.startsWith("fixedStep")) || 
+               ( iter.head.trim().split("\\s+").find(_.startsWith("chrom")).getOrElse({error("fixedStep line found with no chrom tag: \""+iter.head+"\"");"?NO CHROM FOUND?"}).split("=")(1) != c ))){
+            iter.next;
+          }
+          headerLine = iter.next;
+        }
+        if(! iter.hasNext){
+          error("Failed to find chromosome: \""+c+"\"");
+        }
+        windowSize = headerLine.trim().split("\\s+").find(_.startsWith("step")).getOrElse("step=1").split("=")(1).toInt
+        currChrom = c;
+        currPos = headerLine.trim().split("\\s+").find(_.startsWith("start")).getOrElse("start=0").split("=")(1).toInt
+        buffer = iter.next;
+    }
+    
+    def getValueAtPos(c : String, p : Int): String = {
+        if(c != currChrom){
+          findChromosome(c)
+        }
+        if(p < currPos){
+          //error("ERROR: back-access of wig file! Is vcf sorted?");
+          "0";
+        } else {
+          while(iter.hasNext && currPos+windowSize < p && (! iter.head.startsWith("fixedStep"))){
+            currPos = currPos + windowSize;
+            buffer = iter.next
+          }
+          if( currPos+windowSize < p ){
+            warning("Attempt to access beyond block end, moving to next block.","WIGGLE_ACCESS_BEYOND_CHROMEND",10)
+            skipGap();    
+            getValueAtPos(c,p);
+          } else {
+            buffer;
+          }
+        }
+    }
+  }
   
   /*
    * Useful classes:
