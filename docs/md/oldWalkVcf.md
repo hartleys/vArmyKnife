@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.119 (Updated Thu Nov 16 11:57:29 EST 2023)
+> Version 3.3.121 (Updated Tue Dec  5 11:56:40 EST 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -340,6 +340,9 @@ This utility performs a series of transformations on an input VCF file and adds 
         See the --groupFile parameter of walkVcf.(String)
     expr: The variant expression, which is a true/false expression using the variant expression 
         syntax.(String)
+    noPrintLimitWarning: If this is set, then the sample list columns will not include a warning when 
+        the print limit is exceeded. Does nothing if the samplePrintLimit parameter is not also 
+        set.(Flag)
 
 ### depthStats
 
@@ -379,6 +382,9 @@ This utility performs a series of transformations on an input VCF file and adds 
     samplePrintLimit: This limits the number of samples that will be listed in the SAMPLIST fields. 
         This can be useful to reduce file sizes and prevent problems when importing into excel due to 
         overly long fields.(String)
+    noPrintLimitWarning: If this is set, then the sample list columns will not include a warning when 
+        the print limit is exceeded. Does nothing if the samplePrintLimit parameter is not also 
+        set.(Flag)
     noDepthStats: If this is set, depth statistic fields (including total depth, depth quantiles, and 
         hetAB stats) will not be created.(Flag)
     noSampleLists: If this is set, then SAMPLIST fields will not be generated.(Flag)

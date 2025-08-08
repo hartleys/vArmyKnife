@@ -320,8 +320,8 @@ object SVcfMapFunctions {
            ParamStr(id = "samplePrintLimit",synon=Seq(),ty="String",valueString="",desc="",req=false),
            COMMON_PARAMS("groupFile"),COMMON_PARAMS("superGroupList"),
            ParamStr(id = "expr",synon=Seq(),ty="String",valueString="expr",desc="The variant expression, which is a "+
-                                                  "true/false expression using the variant expression syntax.",req=false,defaultValue=None)
-
+                                                  "true/false expression using the variant expression syntax.",req=false,defaultValue=None),
+           ParamStr(id = "noPrintLimitWarning",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then the sample list columns will not include a warning when the print limit is exceeded. Does nothing if the samplePrintLimit parameter is not also set.",req=false)
            )), category = "General-Purpose Tools"
        ),
        ParamStrSet("depthStats" ,  desc = "This function calculates various statistics on total read depth and hetAB.", 
@@ -352,6 +352,7 @@ object SVcfMapFunctions {
            ParamStr(id = "addOtherCountsCalc",synon=Seq(),ty="Flag",valueString="",desc="If this is set, additional optional counts will be added.",req=false),
            
            ParamStr(id = "samplePrintLimit",synon=Seq(),ty="String",valueString="",desc="This limits the number of samples that will be listed in the SAMPLIST fields. This can be useful to reduce file sizes and prevent problems when importing into excel due to overly long fields.",req=false),
+           ParamStr(id = "noPrintLimitWarning",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then the sample list columns will not include a warning when the print limit is exceeded. Does nothing if the samplePrintLimit parameter is not also set.",req=false),
 
            ParamStr(id = "noDepthStats",synon=Seq(),ty="Flag",valueString="",desc="If this is set, depth statistic fields (including total depth, depth quantiles, and hetAB stats) will not be created.",req=false),
            ParamStr(id = "noSampleLists",synon=Seq(),ty="Flag",valueString="",desc="If this is set, then SAMPLIST fields will not be generated.",req=false),
@@ -1564,7 +1565,8 @@ object SVcfMapFunctions {
                              outputTagPrefix = params("mapID")+"_SAMPLIST_" ,
                              printLimit = params.get("samplePrintLimit").map{ string2int(_) },
                              groupFile = params.get("groupFile"), groupList = None, superGroupList = params.get("superGroupList"),
-                             expr = params.get("expr")
+                             expr = params.get("expr"),
+                             noPrintLimitWarning = params.isSet("noPrintLimitWarning")
                             ))
                }).toSeq ++
                (if(params.isSet("noSampleCounts")){

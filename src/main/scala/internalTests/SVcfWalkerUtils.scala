@@ -8752,7 +8752,8 @@ ALT VERSION: allows title line!
                              outputTagPrefix : String = OPTION_TAGPREFIX+"SAMPLIST_",
                              printLimit : Option[Int] = None,
                              groupFile : Option[String] = None, groupList : Option[String] = None, superGroupList : Option[String] = None,
-                             expr : Option[String] = None
+                             expr : Option[String] = None,
+                             noPrintLimitWarning : Boolean = false
                             ) extends internalUtils.VcfTool.SVcfWalker {
      def walkerName : String = "AddAltSampLists"
      val HET : Int = 0
@@ -8760,9 +8761,17 @@ ALT VERSION: allows title line!
      val MALLE : Int = 2;
      val OTHER : Int = -1;
      val genoClasses = Seq("Het","HomAlt","mAlleHet");
-     val genoClassDesc = Seq("List of samples with the HET genotype unless there are more than "+printLimit+" such  samples.",
-                             "List of samples with the Homozygous Alt genotype unless there are more than "+printLimit+" such  samples.",
-                             "List of samples with a multiallelic heterozygous genotype unless there are more than "+printLimit+" such samples.");
+     val overflowNote = if(printLimit.isDefined){ 
+       "(Unless there are more than "+printLimit.get+" samples, in which case"+
+          (if( noPrintLimitWarning ){
+            " only "+printLimit.get+" samples will be listed)"
+          } else {
+            " only "+printLimit.get+" samples will be listed, along with a warning indicating that some have been omitted)"
+          })
+     } else { "" }
+     val genoClassDesc = Seq("List of samples with the HET genotype. "+overflowNote,
+                             "List of samples with the Homozygous Alt genotype. "+overflowNote,
+                             "List of samples with a multiallelic heterozygous genotype "+overflowNote);
      
     val (sampleToGroupMap,groupToSampleMap,groups) = getGroups(groupFile,groupList,superGroupList);
       
@@ -8772,7 +8781,11 @@ ALT VERSION: allows title line!
       }
      
     var samps : Seq[String] = null;
-    def walkerParams : Seq[(String,String)] = Seq[(String,String)](("tagGT",tagGT),("outputTagPrefix",outputTagPrefix),("printLimit",printLimit.toString))
+    def walkerParams : Seq[(String,String)] = Seq[(String,String)](
+        ("tagGT",tagGT),("outputTagPrefix",outputTagPrefix),
+        ("printLimit",printLimit.toString),
+        ("noPrintLimitWarning",noPrintLimitWarning.toString)
+        )
     
     val addInfoTagSet : Set[String] = genoClasses.zip(genoClassDesc).flatMap{ case (gClass,desc) => {
       Vector( outputTagPrefix+gClass ) ++ groups.toVector.map( grp => {
@@ -8868,13 +8881,22 @@ ALT VERSION: allows title line!
                   }
                 })
               } else {
-                vc.addInfo(outputTagPrefix+""+gClass,"TOO_MANY_TO_PRINT,"+s.length+","+s.take(printLim).mkString(","));
+                if(noPrintLimitWarning){
+                  vc.addInfo(outputTagPrefix+""+gClass,s.take(printLim).mkString(","));
+                } else {
+                  vc.addInfo(outputTagPrefix+""+gClass,"TOO_MANY_TO_PRINT,"+s.length+","+s.take(printLim).mkString(","));
+                }
+                
                 groups.foreach( grp => {
                   val tag = outputTagPrefix+"GRP_"+grp+"_"+gClass
                   val groupSet = groupToSampleMap(grp);
                   val gss = s.filter{ss => groupSet.contains(ss)}
                   if(gss.length > printLim){
-                    vc.addInfo(tag,"TOO_MANY_TO_PRINT,"+gss.length+","+gss.take(printLim).mkString(","));
+                    if(noPrintLimitWarning){
+                       vc.addInfo(tag,gss.take(printLim).mkString(","));
+                    } else {
+                      vc.addInfo(tag,"TOO_MANY_TO_PRINT,"+gss.length+","+gss.take(printLim).mkString(","));
+                    }
                   } else {
                     vc.addInfo(tag,gss.mkString(","));
                   }
