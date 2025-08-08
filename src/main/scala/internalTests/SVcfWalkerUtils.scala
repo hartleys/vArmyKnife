@@ -258,7 +258,7 @@ object SVcfWalkerUtils {
     
     
     
-  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String]) extends SVcfWalker {
+  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String], dsbWindow : Int = 200 ) extends SVcfWalker {
     def walkerName : String = "SVBreaksToEventSet"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
 
@@ -333,14 +333,97 @@ object SVcfWalkerUtils {
         reportln("Starting table write...","debug")
         tableWriter.foreach{ out => {
           reportln("Writing main table","debug")
-          out.write("eventID\tsvCount\tchromList\tsvList\n");
+          
+          
+          
+          //out.write("eventID\tsvCount\tchromList\tsvList\n");
+                      out.write(Seq("eventID","lineCt","chroms","numSV",
+                                    "isSimpleUnbal","isMultibreakComplex","isOther","isSimpleBal",
+                                    "pos.A1","pos.B1","pos.A2","pos.B2","strands.A","strands.B","diff1","diff2","warnings","other.reasons",
+                                    "info").mkString("\t")+"\n");
+          
           eventSV.foreach{ case (eventID,svlist) => {
+            
+            val (fwdSV,revSV) = svlist.partition{ sv => { sv.getSVdirOrDie() == ">" }}
+            val numSV = scala.math.max(fwdSV.length, revSV.length)
+            val isSimpleUnbal = numSV == 1;
+            val isMultibreakComplex = numSV > 2;
+            val balInfo : Map[String,String] = if( numSV == 2 ){
+              var binf =  Map[String,String]()
+              val (sa,sb) = if( fwdSV.length == 2 ){
+                (fwdSV.head,fwdSV.last)
+              } else {
+                (revSV.head,revSV.last)
+              }
+              val (sva,svb) = ( sa.getSVbnd().get, sb.getSVbnd().get )
+              binf = binf + (("svtype","simpleBalanced"))
+              if( fwdSV.length != revSV.length ){
+                binf = binf + (("warnings",(binf.get("warnings").toSeq ++ Seq("fwdrev.lenMismatch")).mkString(",")  ))
+              }
+              if( sa.chrom != sb.chrom ||  scala.math.min(sa.pos,sb.pos) + dsbWindow < scala.math.max(sa.pos,sb.pos) || 
+                  sva.bndBreakEnd._1 != svb.bndBreakEnd._1 || 
+                  scala.math.min(sva.bndBreakEnd._2,svb.bndBreakEnd._2) + dsbWindow < scala.math.max(sva.bndBreakEnd._2,svb.bndBreakEnd._2) ){
+                binf = binf + (("svtype","other"))
+                binf = binf + (("other.reasons",(binf.get("other.reasons").toSeq ++ Seq("breakEndPos.mismatch")).mkString(",")  ))
+              }
+              val (stra,strb) = (sva.strands,svb.strands)
+              binf = binf + (("strands.A",stra))
+              binf = binf + (("strands.B",strb))
+              binf = binf + (("pos.A1", sa.chrom+":"+sa.pos ))
+              binf = binf + (("pos.B1", sa.chrom+":"+sa.pos ))
+              binf = binf + (("pos.A2", sva.bndBreakEnd._1+":"+sva.bndBreakEnd._2 ))
+              binf = binf + (("pos.B2", svb.bndBreakEnd._1+":"+svb.bndBreakEnd._2 ))
+              
+              if( ! (
+                      ( stra == "++" && strb == "--" ) || 
+                      ( stra == "+-" && strb == "-+" ) || 
+                      ( stra == "-+" && strb == "+-" ) ||
+                      ( stra == "--" && strb == "++" )
+                    )){
+                binf = binf + (("svtype","other"))
+                binf = binf + (("other.reasons",(binf.get("other.reasons").toSeq ++ Seq("breakEndStr.mismatch")).mkString(",")  ))
+              }
+              
+              if( binf("svtype") == "simpleBalanced"){
+                val (sp,svp) = if( sva.strands.head == '+' ){ (sa,sva) } else { (sb,svb) }
+                val (sm,svm) = if( sva.strands.head == '+' ){ (sb,svb) } else { (sa,sva) }
+                val (posp1,posm1) = (sp.pos,sm.pos)
+                val (posp2,posm2) = (svp.bndBreakEnd._2, svm.bndBreakEnd._2)
+                val diff1 = posp1 - posm1;
+                val diff2 = if( svp.strands.last == '+' ){
+                  posm2 - posp2
+                } else {
+                  posp2 - posm2
+                }
+                binf = binf + (("diff1",""+diff1))
+                binf = binf + (("diff2",""+diff2))
+              }
+              binf;
+            } else {
+              Map[String,String]()
+            }
             
             out.write(eventID + "\t" + svlist.length + "\t" + 
                       svlist.toSet.flatMap( (xx : SVcfVariantLine) => Set(xx.chrom,xx.getSVbnd().get.bndBreakEnd._1) ).toSeq.sorted.mkString(",")+"\t"+
+                      numSV+"\t"+
+                      (if(isSimpleUnbal){"1"}else{"0"})+"\t"+
+                      (if(isMultibreakComplex){"1"}else{"0"})+"\t"+
+                      (if(balInfo.getOrElse("svtype","") == "other"){"1"}else{"0"})+"\t"+
+                      (if(balInfo.getOrElse("svtype","") == "simpleBalanced"){"1"}else{"0"})+"\t"+
+                      balInfo.getOrElse("pos.A1",".")+"\t"+
+                      balInfo.getOrElse("pos.B1",".")+"\t"+
+                      balInfo.getOrElse("pos.A2",".")+"\t"+
+                      balInfo.getOrElse("pos.B2",".")+"\t"+
+                      balInfo.getOrElse("strands.A",".")+"\t"+
+                      balInfo.getOrElse("strands.B",".")+"\t"+
+                      balInfo.getOrElse("diff1",".")+"\t"+
+                      balInfo.getOrElse("diff2",".")+"\t"+
+                      balInfo.getOrElse("warnings",".")+"\t"+
+                      balInfo.getOrElse("other.reasons",".")+"\t"+
                       svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }.map{ xx => {
                         xx.chrom+":"+xx.pos+";"+xx.getSVbnd().get.bndBreakEnd._1+":"+xx.getSVbnd().get.bndBreakEnd._2+";"+infoFields.map{ ff => { xx.info.getOrElse(ff,None).getOrElse(".") }}.mkString(";")
-                      }}.mkString("|")+"\n"
+                      }}.mkString("|")+
+                      "\n"
                       )
           }}
           out.close()
@@ -368,6 +451,9 @@ object SVcfWalkerUtils {
              }}
              out.close()
           }}
+          
+          
+          
           
       })),outHeader)
       
