@@ -1407,7 +1407,9 @@ object SVcfWalkerUtils {
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;
-      
+     
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"liftOver_OK",Number="1",Type="Integer",desc="Equal to 1 if and only if both sides of the SV lifted over successfully"));
+
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"POSlift_OK",Number="1",Type="Integer",desc="Equal to 1 if and only if the CHROM and POS columns lifted over successfully"));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"POSlift_chromChange",Number="1",Type="Integer",desc="Equal to 1 if and only if the CHROM column changed"));
       outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"POSlift_dist",Number="1",Type="Integer",desc="Position change for the POS column. Missing if chromChange or lift failed"));
@@ -1444,10 +1446,12 @@ object SVcfWalkerUtils {
                    }
                    vc.in_chrom = np.getContig();
                    vc.in_pos = np.getStart();
+                   vc.addInfo(infoPrefix+"POSlift_OK","1")
                  }
                  case None => {
                    notice("POSlift.NO ["+vc.in_chrom+":"+vc.in_pos+"] => null","POSlift.NO",10);
                    vc.addInfo(infoPrefix+"POSlift_OK","0")
+                   vc.addInfo(infoPrefix+"liftOver_OK","0");
                    vc.in_chrom = "."
                    vc.in_pos = 0;
                  }
@@ -1475,6 +1479,9 @@ object SVcfWalkerUtils {
                        vc.addInfo(infoPrefix+"SVlift_chromChange","1");
                      }
                      vc.in_alt = Seq( SVbnd.makeSVbnd( sviv.getContig(), sviv.getStart(), sv.bases, sv.strands ).svalt )
+                     if(newPos.isDefined){
+                       vc.addInfo(infoPrefix+"liftOver_OK","1");
+                     }
                    }
                    case None => {
                      notice("SVlift.NO ["+sv.getChrom+":"+sv.getPos+"] => null","SVlift.NO",10);
@@ -1482,9 +1489,11 @@ object SVcfWalkerUtils {
                        notice("BOTHlift.NO","BOTHlift.NO",10);
                      }
                      vc.addInfo(infoPrefix+"SVlift_OK","0")
+                     vc.addInfo(infoPrefix+"liftOver_OK","0");
                      vc.in_alt = Seq(".");
                    }
                  }
+                 
                }
 
                
