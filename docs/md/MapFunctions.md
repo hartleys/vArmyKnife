@@ -233,7 +233,7 @@
 
 
     biallelicOnly: If this flag is used, only biallelic variants will be split, not larger 
-        variants.(flag)
+        variants.(Flag)
     sortBufferWindowSize: (String, default=5000)
 
 ### markDup
@@ -583,9 +583,9 @@
         are priority, prioritySkipMissing, and majority_priorityOnTies. Default is simple 
         priority.(String)
     ignoreSampleIds: If this flag is set, then sample IDs will be ignored and each VCF will be 
-        assumed to have the exact same samples in the exact same order. Use at your own risk.(flag)
+        assumed to have the exact same samples in the exact same order. Use at your own risk.(Flag)
     ignoreSampleOrder: If this flag is set, then the sample IDs will be used to match up the 
-        different VCFs, and the samples may be in different orders in the different files.(flag)
+        different VCFs, and the samples may be in different orders in the different files.(Flag)
 
 ### concordanceCallerSV
 
@@ -596,7 +596,7 @@
         of the output GT fields. By default, callers will simply be named C1,C2,...(String)
     ignoreSampleIds: If this flag is set, then sample IDs will be ignored and each VCF will be 
         assumed to have the exact same samples in the exact same order, regardless of how they are 
-        labelled. The sample labels from the first caller will be used for the output.(flag)
+        labelled. The sample labels from the first caller will be used for the output.(Flag)
     withinChromWindow: Sets the size of the window around each SV endpoint within which near-similar 
         SVs will be merged. This window only applies to SVs where both endpoints are on the same 
         chromosome.(Int, default=500)
@@ -827,8 +827,8 @@
     inputGT: (String)
     geneList: (String)
     geneListFile: (String)
-    printFullGeneList: (flag)
-    countHomsTwice: (flag)
+    printFullGeneList: (Flag)
+    countHomsTwice: (Flag)
     pathwayList: (String)
     groupFile: A tab-delimited file containing sample ID's and a list of group IDs for each sample. 
         See the --groupFile parameter of walkVcf.(String)

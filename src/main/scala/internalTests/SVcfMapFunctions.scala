@@ -615,7 +615,7 @@ object SVcfMapFunctions {
                                                             ""+
                                                             "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-               ParamStr(id = "biallelicOnly",synon=Seq(),ty="flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
+               ParamStr(id = "biallelicOnly",synon=Seq(),ty="Flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
                ParamStr(id = "sortBufferWindowSize",synon=Seq(),ty="String",valueString="int",desc="",req=false, defaultValue = Some("5000"))
                //sortBufferWindowSize
          )),category = "General-Purpose Tools"
@@ -697,8 +697,8 @@ object SVcfMapFunctions {
               
               ParamStr(id = "geneList",synon=Seq(),ty="String",valueString="k",desc="",req=false),
               ParamStr(id = "geneListFile",synon=Seq(),ty="String",valueString="k",desc="",req=false),
-              ParamStr(id = "printFullGeneList",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
-              ParamStr(id = "countHomsTwice",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
+              ParamStr(id = "printFullGeneList",synon=Seq(),ty="Flag",valueString="k",desc="",req=false),
+              ParamStr(id = "countHomsTwice",synon=Seq(),ty="Flag",valueString="k",desc="",req=false),
 
               ParamStr(id = "pathwayList",synon=Seq(),ty="String",valueString="A:a,b,c,d;B:c,d,e,f;...",desc="",req=false),
               
@@ -727,9 +727,9 @@ object SVcfMapFunctions {
                                                     ""+
                                                     "",req=false),
                                                     //gtDecisionMethod
-              ParamStr(id = "ignoreSampleIds",synon=Seq(),ty="flag",valueString="k",desc="If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the "+
+              ParamStr(id = "ignoreSampleIds",synon=Seq(),ty="Flag",valueString="k",desc="If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the "+
                                                                                          "exact same samples in the exact same order. Use at your own risk.",req=false),
-              ParamStr(id = "ignoreSampleOrder",synon=Seq(),ty="flag",valueString="k",desc="If this flag is set, then the sample IDs will be used to match up the "+
+              ParamStr(id = "ignoreSampleOrder",synon=Seq(),ty="Flag",valueString="k",desc="If this flag is set, then the sample IDs will be used to match up the "+
                                                                                            "different VCFs, and the samples may be in different orders in the different files.",req=false),
               //TODO:
               ParamStr(id = "mergeGenotypeField_ADstyle",synon=Seq(),ty="String",valueString="k",
@@ -757,7 +757,7 @@ object SVcfMapFunctions {
                                                     "By default, callers will simply be named C1,C2,..."+
                                                     "",req=false),
                                                     //gtDecisionMethod
-              ParamStr(id = "ignoreSampleIds",synon=Seq(),ty="flag",valueString="k",desc="If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the "+
+              ParamStr(id = "ignoreSampleIds",synon=Seq(),ty="Flag",valueString="k",desc="If this flag is set, then sample IDs will be ignored and each VCF will be assumed to have the "+
                                                                                          "exact same samples in the exact same order, regardless of how they are labelled. The sample labels from the first caller will be used for the output.",req=false),
               ParamStr(id = "withinChromWindow",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the window around each SV endpoint within which near-similar SVs will be merged. This window only applies to SVs where both endpoints are on the same chromosome.",req=false,defaultValue = Some("500")),
               ParamStr(id = "crossChromWindow",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the window around each SV endpoint within which near-similar SVs will be merged. This window only applies to SVs where the endpoints are on DIFFERENT chromosomes.",req=false,defaultValue = Some("500"))
@@ -1558,7 +1558,7 @@ object SVcfMapFunctions {
                                                             ""+
                                                             "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-               ParamStr(id = "biallelicOnly",synon=Seq(),ty="flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
+               ParamStr(id = "biallelicOnly",synon=Seq(),ty="Flag",valueString="k",desc="If this flag is used, only biallelic variants will be split, not larger variants.",req=false),
          )),category = "General-Purpose Tools"
                 */
              } else if(mapType == "splitMultiNucleotideVariants"){
@@ -1735,7 +1735,7 @@ object SVcfMapFunctions {
                //error("NOT YET IMPLEMENTED!")
                
               //ParamStr(id = "geneListFile",synon=Seq(),ty="String",valueString="k",desc="",req=false),
-              //ParamStr(id = "printFullGeneList",synon=Seq(),ty="flag",valueString="k",desc="",req=false),
+              //ParamStr(id = "printFullGeneList",synon=Seq(),ty="Flag",valueString="k",desc="",req=false),
               val geneList  = params.get("geneList").map{ g => {
                 Some( g.split("[,]").toSeq ++ params.get("geneListFile").map{ gf => {
                   getLinesSmartUnzip(gf).toSeq
