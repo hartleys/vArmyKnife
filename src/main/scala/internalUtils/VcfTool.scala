@@ -1535,6 +1535,8 @@ object VcfTool {
 
   }
   
+  val safeReplacementsForCompoundHeaderLine : Map[String,String] = Map[String,String]( ("=","&#61"),("<","&#60"),(">","&#62"),(",","&#44") )
+  
   case class SVcfSStatLine(stats : Map[String,String] = Map[String,String]()) extends SVcfHeaderLine("SVCFSTATS", 
                                                                                         Seq("<",
                                                                                             (stats.map{ case (a,b) => a +"="+b }).mkString(","),
@@ -1571,6 +1573,8 @@ object VcfTool {
   val subtype_MapList = "MapList:";
   val subtype_AlleleList = "AlleleList"
   val subtype_AlleleListSubMap = "AlleleList|SubMapList:"
+  // addQuoteIfNeededAndMakeSafe( s : String, replacements : Map[String,String])
+  
   
   class SVcfCompoundHeaderLine(val in_tag : String, val ID : String, val Number : String, val Type : String, val desc : String, 
                                val vakUtil : Option[String] = None, val vakStepNum : Option[String] = None, val vakVer : Option[String] = None,val subType : Option[String] = None,
@@ -1579,7 +1583,7 @@ object VcfTool {
                   (Seq(Some(addQuotesIfNeeded(desc)),subType,vakUtil,vakStepNum,vakVer).zip(Seq("Description","subType","vakUtil","vakStepNum","vakVer")).flatMap{ case (v,t) => {
                     v match {
                       case Some(vv) => {
-                        Some(t+"="+addQuotesIfNeeded(vv));
+                        Some(t+"="+addQuoteIfNeededAndMakeSafe(vv,safeReplacementsForCompoundHeaderLine));
                       }
                       case None => None;
                     }

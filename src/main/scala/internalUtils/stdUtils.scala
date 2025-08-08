@@ -363,6 +363,21 @@ object stdUtils {
     }
   }
   
+  def addQuoteIfNeededAndMakeSafe( s : String, replacements : Map[String,String]) : String = {
+    if(s.length == 0){
+      return "\"\""
+    } else if(s.head == '\"' && s.last == '\"' && s.length > 1){
+      return "\"" + replacements.foldLeft(s.init.tail){ case (soFar,(oldStr,newStr)) => {
+       soFar.replaceAll( java.util.regex.Pattern.quote(oldStr), newStr );
+      }}+ "\""
+    } else {
+      return "\"" + replacements.foldLeft(s){ case (soFar,(oldStr,newStr)) => {
+       soFar.replaceAll( java.util.regex.Pattern.quote(oldStr), newStr );
+      }} + "\"";
+    }
+     
+  }
+  
   
   def trimBrackets(s : String) : String = {
     var out = s;
