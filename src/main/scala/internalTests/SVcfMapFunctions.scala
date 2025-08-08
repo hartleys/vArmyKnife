@@ -204,6 +204,17 @@ object SVcfMapFunctions {
            ParamStr(id = "style",synon=Seq(),ty="String",valueString="Either +, -, or LABEL",desc="This determines the type of INFO tag. For +, the new tag will be a dichotomous 0/1 numeric variable that will equal 1 if and only if the variant intersects with one or more BED lines (including buffer, noted above). For - the opposite is true. For LABEL, the new tag will be a String variable with the title of the element(s) that intersect with the variant, comma delimited. For SCORE, the new tag with be a comma delimited list of scores for matching intervals. For LABEL/SCORE, the new tag will be a comma delimited list of LABEL and SCORE values separated by a slash.  Note that for LABEL styles the BED file must have at least 4 columns and for SCORE styles the BED file must have at least 5 columns.",req=false,defaultValue=Some("+"))
          )), category = "File/Database Annotation",
        ),
+       ParamStrSet("tagBedFileSV" ,  desc = "This function takes a BED file (which can be gzipped if desired) and creates a new INFO field based on whether the variant start locus or breakend locus overlaps with a "+
+                                          "genomic region in the BED file. The new fields will be fcnID_A and fcnID_B and can be set to be either an integer that is equal to 1 if there is overlap and 0 otherwise (which is the default behavior) "+
+                                          "Or, alternatively, it can copy in the title field from the bed file. NOTE: this function only uses the first 3 to 5 fields of the BED file, it does not "+
+                                          "implement the optional fields 10-12 which can specify intron/exon blocks.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="mybed.bed.gz",desc="",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="The description for the new INFO line.",req=false,defaultValue = Some("No desc provided")),
+           ParamStr(id = "buffer",synon=Seq(),ty="Integer",valueString="x",desc="The additional buffer to add around each BED element.",req=false, defaultValue=Some("0")),
+           ParamStr(id = "style",synon=Seq(),ty="String",valueString="Either +, -, or LABEL",desc="This determines the type of INFO tag. For +, the new tag will be a dichotomous 0/1 numeric variable that will equal 1 if and only if the variant intersects with one or more BED lines (including buffer, noted above). For - the opposite is true. For LABEL, the new tag will be a String variable with the title of the element(s) that intersect with the variant, comma delimited. For SCORE, the new tag with be a comma delimited list of scores for matching intervals. For LABEL/SCORE, the new tag will be a comma delimited list of LABEL and SCORE values separated by a slash.  Note that for LABEL styles the BED file must have at least 4 columns and for SCORE styles the BED file must have at least 5 columns.",req=false,defaultValue=Some("+"))
+         )), category = "File/Database Annotation",
+       ),
        ParamStrSet("convertSampleNames" ,  desc = "This function converts the sample IDs of the VCF file according to a decoder file that you supply. "+
                                                   "Your decoder should be a tab-delimited text file with at least 2 columns. One column should specify the FROM sample names "+
                                                   "as they currently appear in the VCF, and one should specify the new sample names you want them converted TO. "+
@@ -1550,7 +1561,23 @@ object SVcfMapFunctions {
                    chromList = chromList,
                    style = params("style")
                ))
-               
+             } else if(mapType == "tagBedFileSV"){
+               //AddTxBedFile(bedFile = bedFile, tag =t, bufferDist = string2int(bufferDist), desc =desc, chromList = chromList,style=style);
+/*
+ *            (DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="mybed.bed.gz",desc="",req=true),
+           ParamStr(id = "desc",synon=Seq(),ty="String",valueString="",desc="",req=false,defaultValue = Some("No desc provided")),
+           ParamStr(id = "buffer",synon=Seq(),ty="Integer",valueString="x",desc="",req=false),
+           ParamStr(id = "style",synon=Seq(),ty="String",valueString="Either +, -, or s",desc="",req=false)
+ */
+               Some( AddTxBedFileSV(
+                   bedFile = params("file"),
+                   tag = params("mapID"),
+                   bufferDist = string2int(params("buffer")),
+                   desc = params("desc"),
+                   chromList = chromList,
+                   style = params("style")
+               ))
              } else if(mapType == "sampleCounts"){
                 val vcfCodes : VCFAnnoCodes = VCFAnnoCodes(CT_INFIX = params("tagPrefix")+"_")
                 Some( SAddGroupInfoAnno(groupFile = params.get("groupFile"),

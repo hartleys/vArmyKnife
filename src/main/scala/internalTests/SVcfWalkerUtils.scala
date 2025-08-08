@@ -12689,7 +12689,357 @@ ALT VERSION: allows title line!
         //if(out == "1"){
           
         //}
-        vb.addInfo(tag,bedFunc(vb.variantIV));
+        vb.addInfo(tag,out);
+        vb
+      }},newHeader)
+   }
+    
+  }
+  
+
+  case class AddTxBedFileSV(bedFile : String, tag : String, bufferDist : Int, desc : String, chromList : Option[List[String]], style : String = "+") extends SVcfWalker {
+    def walkerName : String = "AddTxBedSV."+tag;
+    
+    def walkerParams : Seq[(String,String)]=  Seq[(String,String)](
+          ("bedFile","\""+bedFile+"\""),
+          ("chromList",fmtOptionList(chromList)),
+          ("bufferDist",bufferDist.toString),
+          ("tag",tag),
+          ("style",style),
+          ("desc",desc)
+     )
+    
+    val chromFunc : (String => Boolean) = chromList match {
+      case Some(cl) => {
+        val chromSet = cl.toSet;
+        ((chr : String) => chromSet.contains(chr))
+      }
+      case None =>{
+        ((chr : String) => true)
+      }
+    }
+    val arr : internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String] = internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String](false);
+    reportln("   Beginning bed file read: "+bedFile+" ("+getDateAndTimeString+")","debug");
+    val reader = getLinesSmartUnzip(bedFile).buffered
+    skipWhile(reader)(_.startsWith("#"));
+    val lines : BufferedIterator[String] = internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[String](reader,
+                   internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[String](
+                        elementTitle = "lines", lineSec = 60,
+                        reportFunction  = ((vc : String, i : Int) => " " + vc.split("\t").head +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                   )
+                 ).buffered;
+    val isGtf = bedFile.toUpperCase().endsWith(".GTF") || bedFile.toUpperCase().endsWith(".GTF.GZ") || bedFile.toUpperCase().endsWith(".GTF.ZIP");
+    val isComplexBed = (! isGtf) && (lines.head.split("\t").length >= 12);
+      
+    val cellIterator : Iterator[Array[String]] = lines.map{line => line.split("\t")}.withFilter{cells => { chromFunc(cells(0)) }}
+    val ivIterator : Iterator[(internalUtils.commonSeqUtils.GenomicInterval,String)] = if(isGtf){
+      cellIterator.map(cells => {
+        val (chrom,start,end) = (cells(0),string2int(cells(3))-1,string2int(cells(4)))
+        
+        (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),"CE")
+      })
+    } else if(isComplexBed){
+      cellIterator.map{cells => {
+        val n = if(style == "SCORE"){
+          cells.lift(4).getOrElse("."); 
+        } else if(style == "LABEL"){
+          cells.lift(3).getOrElse("CE")
+        } else {
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+        }
+        
+        (n,new internalUtils.GtfTool.InputBedLineCells(cells))
+      }}.flatMap{ case (n,b) => {
+        b.getIVs.map{ iv => (iv,n) }
+      }}
+    } else {
+      cellIterator.map(cells => {
+        val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
+        val n = if(style == "SCORE"){
+          cells.lift(4).getOrElse("."); 
+        } else if(style == "LABEL"){
+          cells.lift(3).getOrElse("CE")
+        } else {
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+        }
+        (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
+      })
+    }
+    ivIterator.foreach{ case (iv,n) =>{
+      arr.addSpan(iv, n);
+    }}
+    arr.finalizeStepVectors;
+    reportln("   Finished bed file read: "+bedFile+" ("+getDateAndTimeString+")","debug");
+    val bedFunc : (internalUtils.commonSeqUtils.GenomicInterval => String) = if(style == "+"){
+              (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                //! arr.findIntersectingSteps(iv).foldLeft(Set[String]()){case (soFar,(iv,currSet)) => {
+                //  soFar ++ currSet;
+                //}}.isEmpty
+                if(arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }) "1" else "0"
+              }
+    } else if(style == "-"){
+              (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                if(arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }) "0" else "1"
+              }
+    } else if(style == "SCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL/SCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL/MAXSCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                val entries = arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct
+                if(entries.length <= 1){
+                  entries.padTo(1,".").head
+                } else {
+                  val maxEntry = entries.tail.map{ x => x.split("/") }.foldLeft{ entries.head.split("/") }{ case (soFar,xx) => {
+                    val s1 = string2int( soFar(1) );
+                    val s2 = string2int( xx(1) );
+                    if( s2 > s1 ){
+                      xx
+                    } else {
+                      soFar
+                    }
+                  }}
+                  maxEntry.mkString("/");
+                }
+              }
+    } else if(style == "LABEL/MINSCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                val entries = arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct
+                if(entries.length <= 1){
+                  entries.padTo(1,".").head
+                } else {
+                  val minEntry = entries.tail.map{ x => x.split("/") }.foldLeft{ entries.head.split("/") }{ case (soFar,xx) => {
+                    val s1 = string2int( soFar(1) );
+                    val s2 = string2int( xx(1) );
+                    if( s2 < s1 ){
+                      xx
+                    } else {
+                      soFar
+                    }
+                  }}
+                  minEntry.mkString("/");
+                }
+              }
+    } else {
+      error("Unrecognized style tag for addBedTag function: Must be one of '+', '-', 'LABEL', 'SCORE', or 'LABEL/SCORE'");
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    }
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val newHeader = vcfHeader.copyHeader
+      if(style != "+" && style != "-"){
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag+"_A", Number = ".", Type = "String", desc = desc));
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag+"_B", Number = ".", Type = "String", desc = desc));
+      } else {
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag+"_A", Number = "1", Type = "Integer", desc = desc));
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag+"_B", Number = "1", Type = "Integer", desc = desc));
+      }
+      newHeader.addWalk(this);
+      
+      (vcMap(vcIter){v => {
+        var vb = v.getLazyOutputLine()
+        val out1 = bedFunc(v.variantIV);
+        vb.addInfo(tag+"_A",out1);
+        
+        v.getSVbnd() match { 
+          case Some(bnd) => {
+            val bndiv = internalUtils.commonSeqUtils.GenomicInterval(bnd.getChrom,'.',start=bnd.getPos-1,end=bnd.getPos)
+            val out2 = bedFunc(bndiv);
+            vb.addInfo(tag+"_B",out2);
+          }
+          case None => {
+            //do nothing
+          }
+        }
+        //if(out == "1"){
+          
+        //}
+        vb
+      }},newHeader)
+   }
+    
+  }
+  
+  case class AddTxBedFileSV_draft(bedFile : String, tag : String, bufferDist : Int, desc : String, chromList : Option[List[String]], style : String = "+") extends SVcfWalker {
+    def walkerName : String = "AddTxBed."+tag;
+    
+    def walkerParams : Seq[(String,String)]=  Seq[(String,String)](
+          ("bedFile","\""+bedFile+"\""),
+          ("chromList",fmtOptionList(chromList)),
+          ("bufferDist",bufferDist.toString),
+          ("tag",tag),
+          ("style",style),
+          ("desc",desc)
+     )
+    
+    val chromFunc : (String => Boolean) = chromList match {
+      case Some(cl) => {
+        val chromSet = cl.toSet;
+        ((chr : String) => chromSet.contains(chr))
+      }
+      case None =>{
+        ((chr : String) => true)
+      }
+    }
+    val arr : internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String] = internalUtils.genomicAnnoUtils.GenomicArrayOfSets[String](false);
+    reportln("   Beginning bed file read: "+bedFile+" ("+getDateAndTimeString+")","debug");
+    val reader = getLinesSmartUnzip(bedFile).buffered
+    skipWhile(reader)(_.startsWith("#"));
+    val lines : BufferedIterator[String] = internalUtils.stdUtils.wrapIteratorWithAdvancedProgressReporter[String](reader,
+                   internalUtils.stdUtils.AdvancedIteratorProgressReporter_ThreeLevelAuto[String](
+                        elementTitle = "lines", lineSec = 60,
+                        reportFunction  = ((vc : String, i : Int) => " " + vc.split("\t").head +" "+ internalUtils.stdUtils.MemoryUtil.memInfo )
+                   )
+                 ).buffered;
+    val isGtf = bedFile.toUpperCase().endsWith(".GTF") || bedFile.toUpperCase().endsWith(".GTF.GZ") || bedFile.toUpperCase().endsWith(".GTF.ZIP");
+    val isComplexBed = (! isGtf) && (lines.head.split("\t").length >= 12);
+      
+    val cellIterator : Iterator[Array[String]] = lines.map{line => line.split("\t")}.withFilter{cells => { chromFunc(cells(0)) }}
+    val ivIterator : Iterator[(internalUtils.commonSeqUtils.GenomicInterval,String)] = if(isGtf){
+      cellIterator.map(cells => {
+        val (chrom,start,end) = (cells(0),string2int(cells(3))-1,string2int(cells(4)))
+        
+        (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),"CE")
+      })
+    } else if(isComplexBed){
+      cellIterator.map{cells => {
+        val n = if(style == "SCORE"){
+          cells.lift(4).getOrElse("."); 
+        } else if(style == "LABEL"){
+          cells.lift(3).getOrElse("CE")
+        } else {
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+        }
+        
+        (n,new internalUtils.GtfTool.InputBedLineCells(cells))
+      }}.flatMap{ case (n,b) => {
+        b.getIVs.map{ iv => (iv,n) }
+      }}
+    } else {
+      cellIterator.map(cells => {
+        val (chrom,start,end) = (cells(0),string2int(cells(1)),string2int(cells(2)))
+        val n = if(style == "SCORE"){
+          cells.lift(4).getOrElse("."); 
+        } else if(style == "LABEL"){
+          cells.lift(3).getOrElse("CE")
+        } else {
+          cells.lift(3).getOrElse("CE")+"/"+cells.lift(4).getOrElse("."); 
+        }
+        (internalUtils.commonSeqUtils.GenomicInterval(chrom, '.', math.max(start-bufferDist,0),end+bufferDist),n)
+      })
+    }
+    ivIterator.foreach{ case (iv,n) =>{
+      arr.addSpan(iv, n);
+    }}
+    arr.finalizeStepVectors;
+    reportln("   Finished bed file read: "+bedFile+" ("+getDateAndTimeString+")","debug");
+    val bedFunc : (Seq[internalUtils.commonSeqUtils.GenomicInterval] => String) = if(style == "+"){
+              (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                //! arr.findIntersectingSteps(iv).foldLeft(Set[String]()){case (soFar,(iv,currSet)) => {
+                //  soFar ++ currSet;
+                //}}.isEmpty
+                if( ivs.exists{ iv => arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty } } ) "1" else "0"
+                //                if(arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }) "1" else "0"
+              }
+    } else if(style == "-"){
+              (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                if( ivs.exists{ iv => arr.findIntersectingSteps(iv).exists{ case (iv,currSet) => ! currSet.isEmpty }}) "0" else "1"
+              }
+    } else if(style == "SCORE"){
+      (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                ivs.flatMap{ iv => arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet } }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL"){
+      (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                ivs.flatMap{ iv => arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet } }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL/SCORE"){
+      (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                ivs.flatMap{ iv => arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet } }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    } else if(style == "LABEL/MAXSCORE"){
+      (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                val entries = ivs.flatMap{ iv => arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }}.toVector.distinct
+                if(entries.length <= 1){
+                  entries.padTo(1,".").head
+                } else {
+                  val maxEntry = entries.tail.map{ x => x.split("/") }.foldLeft{ entries.head.split("/") }{ case (soFar,xx) => {
+                    val s1 = string2int( soFar(1) );
+                    val s2 = string2int( xx(1) );
+                    if( s2 > s1 ){
+                      xx
+                    } else {
+                      soFar
+                    }
+                  }}
+                  maxEntry.mkString("/");
+                }
+              }
+    } else if(style == "LABEL/MINSCORE"){
+      (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                val entries = ivs.flatMap{ iv => arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }}.toVector.distinct
+                if(entries.length <= 1){
+                  entries.padTo(1,".").head
+                } else {
+                  val minEntry = entries.tail.map{ x => x.split("/") }.foldLeft{ entries.head.split("/") }{ case (soFar,xx) => {
+                    val s1 = string2int( soFar(1) );
+                    val s2 = string2int( xx(1) );
+                    if( s2 < s1 ){
+                      xx
+                    } else {
+                      soFar
+                    }
+                  }}
+                  minEntry.mkString("/");
+                }
+              }
+    } else {
+      error("Unrecognized style tag for addBedTag function: Must be one of '+', '-', 'LABEL', 'SCORE', or 'LABEL/SCORE'");
+      (ivs : Seq[internalUtils.commonSeqUtils.GenomicInterval]) => {
+                 ivs.flatMap{ iv => arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet } }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+              }
+    }
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      val newHeader = vcfHeader.copyHeader
+      if(style != "+" && style != "-"){
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = ".", Type = "String", desc = desc));
+      } else {
+        newHeader.addInfoLine(new  SVcfCompoundHeaderLine(in_tag = "INFO", ID = tag, Number = "1", Type = "Integer", desc = desc));
+      }
+      newHeader.addWalk(this);
+      
+      (vcMap(vcIter){v => {
+        var vb = v.getLazyOutputLine()
+        val ivs = v.getSVbnd() match {
+          case None => {
+            Seq(v.variantIV)
+          }
+          case Some(bnd) => {
+            Seq(v.variantIV,internalUtils.commonSeqUtils.GenomicInterval(bnd.getChrom,'.',start=bnd.getPos-1,end=bnd.getPos))
+          }
+        }
+        //internalUtils.commonSeqUtils.GenomicInterval(chrom,'.', start = pos - 1, end = pos + math.max(1,ref.length)); 
+        val out = bedFunc(ivs);
+        vb.addInfo(tag,out);
         vb
       }},newHeader)
    }
