@@ -1,5 +1,5 @@
 <blockquote>
-  <p>Version 3.4.7 (Updated Tue Apr  1 14:57:41 EDT 2025)</p>
+  <p>Version 3.4.10 (Updated Wed Apr  2 11:36:13 EDT 2025)</p>
 </blockquote>
 
 <h1>vArmyKnife:</h1>
@@ -261,6 +261,7 @@ infile.vcf.gz outfile.vcf.gz
 
 <pre><code>debugMode: If this flag is included, several additional fields will be added to help test, 
     verify, and visualize the flanking homology.(Flag)
+insertionInfoField: .(String)
 genomeFA: The genome fasta file containing the reference genome. This will be used by various 
     functions that require genomic information. Note that some functions that call the GATK 
     library will also require that the fasta be indexed. Note: Chromosome names must 
@@ -310,7 +311,16 @@ genomeFA: The genome fasta file containing the reference genome. This will be us
   <p>....</p>
 </blockquote>
 
-<pre><code>genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+<pre><code>dellyFormat: If this flag is included, DEL and DUP type SVs will be parsed in a slightly 
+    different way. The default behavior, which matches the output of manta, assumes that when a 
+    DEL is specified, the END field indicates the location where the undeleted sequence starts up 
+    again. Delly assumes that the END field indicates the last deleted base. Similarly when 
+    specifying DUP SVs (ie duplications), the output from Delly is offset by 1 compared with 
+    manta. If using manta, do not use this flag. If using delly, use this flag. If using another 
+    caller that outputs DUP and DEL formatted SVs you may need to manually test both options to 
+    find the one that matches your caller. Note: The VCF 4.2 specification is ambiguous on these 
+    points. It could be read either way.(Flag)
+genomeFA: The genome fasta file containing the reference genome. This will be used by various 
     functions that require genomic information. Note that some functions that call the GATK 
     library will also require that the fasta be indexed. Note: Chromosome names must 
     match.(String, required)

@@ -635,7 +635,7 @@ object SVcfWalkerUtils {
     }
   }
   
-  class calcSVflankingHomology( genomeFa : String , windowSize : Option[Int] = Some(100) , debug : Boolean = true) extends SVcfWalker {
+  class calcSVflankingHomology( genomeFa : String , windowSize : Option[Int] = Some(100) , insertionField : Option[String] = None, debug : Boolean = true) extends SVcfWalker {
     val window : Int = windowSize.getOrElse(100);
     def walkerName : String = "calcSVflankingHomology"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
@@ -875,6 +875,177 @@ object SVcfWalkerUtils {
        }
     }
     
+    def getFlankingHomologyWithInsertion(insertionSeq : String, chr1 : String, pos1 : Int, chr2 : String, pos2: Int, strands : String, win : Int  ) : Seq[(String,String)] = {
+       val debugRange = 10;
+       
+       val seq_start_1 = if( strands.head == '+' ){
+         getBasesForIv(chr1,pos1 + 1, pos1+win )
+       } else {
+         reverseComplementString( getBasesForIv(chr1,pos1 - win, pos1 - 1 ) )
+       }
+       val seq_start_2 = if(strands.last == '+' ){
+         getBasesForIv(chr2,pos2,pos2+win-1);
+       } else {
+         reverseComplementString( getBasesForIv(chr2,pos2-win+1,pos2) )
+       }
+       
+       
+       val seq_back_1 = if(strands.head == '+' ){
+         reverseComplementString( getBasesForIv(chr1,pos1 - win + 1, pos1 ) )
+       } else {
+         getBasesForIv(chr1,pos1,pos1+win-1);
+       }
+       val seq_back_2 = if(strands.last == '+' ){
+         reverseComplementString( getBasesForIv(chr2,pos2-win,pos2-1) )
+       } else {
+         getBasesForIv(chr2,pos2+1,pos2+win)
+       }
+       
+       val out = Seq( ( "flankHom_startSeq","." ),
+                   ( "flankHom_startLen",""+0 ),
+                   ( "flankHom_backSeq","."),
+                   ( "flankHom_backLen",""+0),
+                   ( "flankHom_posArange",pos1+","+pos1),
+                   ( "flankHom_posBrange",pos2+","+pos2)
+                 );
+       if( debug ){
+          
+          val a_debug = if( strands == "++" ) {
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = rc(p2--,p2)
+             */
+              reverseComplementString( seq_back_1.slice(0, debugRange) ).toLowerCase   + ">"+
+              insertionSeq+ "<" + 
+              seq_start_2.slice(0, debugRange)  
+            // reverseComplement( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase   + "-"+
+            // reverseComplement(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
+            // seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+          } else if( strands == "+-" ){
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = fw(p2,p2++)
+             */
+            reverseComplementString( seq_back_1.slice(0, debugRange) ).toLowerCase  + ">"+
+            insertionSeq+ "<" + 
+            seq_start_2.slice(0, debugRange)  
+          } else if(strands == "-+" ){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = rc(p2--,p2)
+             */
+            reverseComplementString(seq_start_2.slice(0,debugRange)) + ">" +
+            insertionSeq+ "<" + 
+            seq_back_1.slice(0,debugRange).toLowerCase
+          } else if(strands == "--"){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = fw(p2,p2++)
+             */
+            
+            reverseComplementString(seq_start_2.slice(0,debugRange)) + ">" +
+            insertionSeq+ "<" + 
+            seq_back_1.slice(0,debugRange).toLowerCase            
+          } else {
+            null;
+          }
+          
+          
+          val b_debug = if( strands == "++" ) {
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = rc(p2--,p2)
+             */
+              reverseComplementString(seq_back_1.slice(0,debugRange)) + ">" +
+             insertionSeq+ "<" + 
+              seq_start_2.slice(0,debugRange).toLowerCase  
+          } else if( strands == "+-" ){
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = fw(p2,p2++)
+             */
+            reverseComplementString( seq_start_2.slice(0,debugRange) ).toLowerCase  + ">"+
+            insertionSeq+ "<" + 
+            seq_back_1.slice(0,debugRange)  
+          } else if(strands == "-+" ){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = rc(p2--,p2)
+             */
+            reverseComplementString(seq_back_1.slice(0,debugRange)) + ">" +
+            insertionSeq+ "<" + 
+            seq_start_2.slice(0,debugRange).toLowerCase 
+          } else if(strands == "--"){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = fw(p2,p2++)
+             */
+            reverseComplementString( seq_start_2.slice(0,debugRange) ).toLowerCase  + ">"+
+            insertionSeq+ "<" +  
+            seq_back_1.slice(0,debugRange)             
+          } else {
+            null;
+          }
+         
+         
+  
+       val seq_start_1_desc = if( strands.head == '+' ){
+         "fwd("+chr1+","+(pos1 + 1)+","+ (pos1+win)+")"
+       } else {
+         "rev("+chr1+","+(pos1 - win)+","+ (pos1 - 1) +")"
+       }
+       val seq_start_2_desc = if(strands.last == '+' ){
+         "fwd("+chr2+","+pos2+","+(pos2+win-1)+")"
+       } else {
+         "rev("+chr2+","+(pos2-win+1)+","+(pos2) +")"
+       }
+       
+       val seq_back_1_desc = if(strands.head == '+' ){
+         "rev("+chr1+","+(pos1 - win + 1)+","+ (pos1) +")"
+       } else {
+         "fwd("+chr1+","+(pos1)+","+(pos1+win-1) +")";
+       }
+       val seq_back_2_desc = if(strands.last == '+' ){
+         "rev("+chr2+","+(pos2-win)+","+(pos2-1)+")"
+       } else {
+         "fwd("+chr2+","+(pos2+1)+","+(pos2+win)+")"
+       }
+          val debugOut = Seq(
+              ("flankHom_debug_A",a_debug),
+              ("flankHom_debug_B",b_debug),
+              ("flankHom_debug_strand",strands),
+              ("flankHom_debug_S1",seq_start_1.take(debugRange)),
+              ("flankHom_debug_S2",seq_start_2.take(debugRange)),
+              ("flankHom_debug_B1",seq_back_1.take(debugRange)),
+              ("flankHom_debug_B2",seq_back_2.take(debugRange)),
+              ("flankHom_debug_S1iv",seq_start_1_desc),
+              ("flankHom_debug_S2iv",seq_start_2_desc),
+              ("flankHom_debug_B1iv",seq_back_1_desc),
+              ("flankHom_debug_B2iv",seq_back_2_desc),
+            )   
+          return out ++ debugOut;
+       } else {
+         return out;
+       }
+    }
+    
+    
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;
 
@@ -913,7 +1084,20 @@ object SVcfWalkerUtils {
         if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
           v.getSVbnd() match {
             case Some(sv) => {
-              val xx = getFlankingHomology(v.chrom,v.pos,sv.getChrom,sv.getPos,sv.strands,window);
+              val insSeq = insertionField match {
+                case Some(insInfo) => {
+                  v.info.getOrElse(insInfo,None).getOrElse("").replaceAll("[.]","");
+                }
+                case None => {
+                  ""
+                }
+              }
+              
+              val xx = if( insSeq == "") {
+                getFlankingHomology(v.chrom,v.pos,sv.getChrom,sv.getPos,sv.strands,window);
+              } else {
+                getFlankingHomologyWithInsertion(insSeq,v.chrom,v.pos,sv.getChrom,sv.getPos,sv.strands,window);
+              }
               xx.foreach{ case (k,v) => {
                 vc.addInfo(k,v);
               }}

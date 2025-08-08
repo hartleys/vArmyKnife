@@ -795,6 +795,8 @@ object SVcfMapFunctions {
        ParamStrSet("calcSVflankingHomology" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
                ParamStr(id = "debugMode",synon=Seq(),ty="Flag",valueString=".",desc="If this flag is included, several additional fields will be added to help test, verify, and visualize the flanking homology.",req=false),
+               ParamStr(id = "insertionInfoField",synon=Seq(),ty="String",valueString="INFO_FIELD",desc=".",req=false),
+               //insertionInfoField
                COMMON_PARAMS("genomeFA")
          )),category = "Structural Variant Tools"
        ),
@@ -821,6 +823,16 @@ object SVcfMapFunctions {
        ),
        ParamStrSet("convertSVtoBND" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "dellyFormat",synon=Seq(),ty="Flag",valueString=".",desc=
+                   "If this flag is included, DEL and DUP type SVs will be parsed in a slightly different way. The default behavior, which matches the output of manta, "+
+                   "assumes that when a DEL is specified, the END field indicates the location where the undeleted sequence starts up again. Delly assumes that the END "+
+                   "field indicates the last deleted base. "+
+                   "Similarly when specifying DUP SVs (ie duplications), the output from Delly is offset by 1 compared with manta. If using manta, do not use this flag. "+
+                   "If using delly, use this flag. If using another caller that outputs DUP and DEL formatted SVs you may need to manually test both options to find the one "+
+                   "that matches your caller. " +
+                   "Note: The VCF 4.2 specification is ambiguous on these points. It could be read either way."+
+                   "",req=false),
+               //dellyFormat
               COMMON_PARAMS("genomeFA")
          )),category = "Structural Variant Tools"
        ),
@@ -1963,13 +1975,13 @@ object SVcfMapFunctions {
              } else if(mapType == "dropInvalidSVBND"){
                Some(new dropInvalidBNDSV() )
              } else if(mapType == "calcSVflankingHomology"){
-               Some( new calcSVflankingHomology( genomeFa = params("genomeFA"), debug=params.isSet("debugMode")) )
+               Some( new calcSVflankingHomology( genomeFa = params("genomeFA") , insertionField = params.get("insertionInfoField"), debug=params.isSet("debugMode")))
              } else if(mapType == "dropReverseSVbreakends"){
                Some(new dropBackwardsSvLine())
              } else if(mapType == "addReverseSVbreakends"){
                Some(new addBackwardsSvLine())
              } else if(mapType == "convertSVtoBND"){
-               Some(new convertSVtoBND(genomeFa = params("genomeFA")))
+               Some(new convertSVtoBND(genomeFa = params("genomeFA"), dellyFormat=params.isSet("dellyFormat")))
              } else if(mapType == "leftAlignAndTrim"){
                Some( internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = params("genomeFA"),windowSize =  string2int( params.getOrElse("windowSize","200")) , useGatkLibCall = false) )
              } else if(mapType == "fixSwappedRefAlt"){
