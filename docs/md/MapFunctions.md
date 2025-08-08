@@ -61,6 +61,8 @@
 >  \.\.\.\.
 
 
+    debugMode: If this flag is included, several additional fields will be added to help test, 
+        verify, and visualize the flanking homology.(Flag)
     genomeFA: The genome fasta file containing the reference genome. This will be used by various 
         functions that require genomic information. Note that some functions that call the GATK 
         library will also require that the fasta be indexed. Note: Chromosome names must 
@@ -1044,7 +1046,7 @@
     Type: (String)
     Number: (String)
     desc: (String)
-    removeMeta: (Flag)
+    dropMetadata: (Flag)
 
 ### fixFormatFieldMetadata
 

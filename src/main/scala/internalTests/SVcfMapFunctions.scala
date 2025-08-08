@@ -794,6 +794,7 @@ object SVcfMapFunctions {
        ),*/
        ParamStrSet("calcSVflankingHomology" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "debugMode",synon=Seq(),ty="Flag",valueString=".",desc="If this flag is included, several additional fields will be added to help test, verify, and visualize the flanking homology.",req=false),
                COMMON_PARAMS("genomeFA")
          )),category = "Structural Variant Tools"
        ),
@@ -1042,7 +1043,7 @@ object SVcfMapFunctions {
                  ParamStr(id = "Type",synon=Seq("TYPE","type"),ty="String",valueString=".",desc="",req=false),
                  ParamStr(id = "Number",synon=Seq("number","NUMBER"),ty="String",valueString=".",desc="",req=false),
                  ParamStr(id = "desc",synon=Seq("Desc","DESC"),ty="String",valueString=".",desc="",req=false),
-                 ParamStr(id = "removeMeta",synon=Seq(),ty="Flag",valueString=".",desc="",req=false)
+                 ParamStr(id = "dropMetadata",synon=Seq(),ty="Flag",valueString=".",desc="",req=false)
            )), category = "File Formatting/Conversion"
        ),
        ParamStrSet("fixFormatFieldMetadata" ,  desc = "This function swaps out fields from an INFO header line, allowing you to change the Number, desc, etc. This can be useful when a field has invalid metadata, or for adding descriptions and documentation to your fields.",
@@ -1962,7 +1963,7 @@ object SVcfMapFunctions {
              } else if(mapType == "dropInvalidSVBND"){
                Some(new dropInvalidBNDSV() )
              } else if(mapType == "calcSVflankingHomology"){
-               Some( new calcSVflankingHomology( genomeFa = params("genomeFA") ) )
+               Some( new calcSVflankingHomology( genomeFa = params("genomeFA"), debug=params.isSet("debugMode")) )
              } else if(mapType == "dropReverseSVbreakends"){
                Some(new dropBackwardsSvLine())
              } else if(mapType == "addReverseSVbreakends"){

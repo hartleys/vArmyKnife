@@ -19,7 +19,7 @@
 <div class="wrapper">
 
 <div><blockquote>
-  <p>Version 3.3.169 (Updated Mon Mar 31 14:21:29 EDT 2025)</p>
+  <p>Version 3.3.173 (Updated Tue Apr  1 08:57:28 EDT 2025)</p>
 </blockquote>
 
 <h1>vArmyKnife:</h1>
@@ -279,7 +279,9 @@ infile.vcf.gz outfile.vcf.gz
   <p>....</p>
 </blockquote>
 
-<pre><code>genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+<pre><code>debugMode: If this flag is included, several additional fields will be added to help test, 
+    verify, and visualize the flanking homology.(Flag)
+genomeFA: The genome fasta file containing the reference genome. This will be used by various 
     functions that require genomic information. Note that some functions that call the GATK 
     library will also require that the fasta be indexed. Note: Chromosome names must 
     match.(String, required)
@@ -1426,7 +1428,7 @@ desc: (String)
 Type: (String)
 Number: (String)
 desc: (String)
-removeMeta: (Flag)
+dropMetadata: (Flag)
 </code></pre>
 
 <h3>fixFormatFieldMetadata</h3>
