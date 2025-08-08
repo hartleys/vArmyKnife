@@ -716,12 +716,12 @@ object SVcfWalkerUtils {
                 if(end == -1){
                   Some(vc);
                 } else {
-                  vc.in_alt = Seq( vc.ref + "[" +v.chrom+":"+ end +"[" )
+                  vc.in_alt = Seq( "]" +v.chrom+":"+ end +"]" + vc.ref )
                   vc.addInfo("SVTYPE","BND");
                   val vc2 = vc.getOutputLineCopy();
                   vc2.addInfo("SVTYPE","BND");
                   vc2.in_pos = end;
-                  vc2.in_alt = Seq( "]"+v.chrom+":"+v.pos+"]"+v.ref );
+                  vc2.in_alt = Seq( v.ref+"["+v.chrom+":"+v.pos+"[" );
                   Seq(vc,vc2);
                 }
               //} else if( a.startsWith("<DUP:TANDEM")){
