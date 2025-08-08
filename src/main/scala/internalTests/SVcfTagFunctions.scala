@@ -1307,6 +1307,90 @@ object SVcfTagFunctions {
         },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         new VcfTagFcnFactory(){
           val mmd =  new VcfTagFcnMetadata(
+              id = "DIFF",synon = Seq(),
+              shortDesc = "result of x minus y.",
+              desc = "Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). "+
+                     "Output field will be the difference of the inputs. Any missing values result in a missing result.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = "Float";
+              override val outNum = "1";
+              val ddx = VcfTagFunctionGenoParamReaderFloatSeq(typeInfo.head);
+              val ddy = VcfTagFunctionGenoParamReaderFloatSeq(typeInfo(1));
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                    //val v = ddf.map{ d => d.get(vc) }.filter{ d => d.isDefined }.map{ d => d.get }
+                val vx = ddx.get(vc)
+                val vy = ddy.get(vc);
+                
+                if( vx.isDefined && vy.isDefined ){
+                  val arr = vx.get.zip(vy.get).map{ case (x,y) => {
+                    if( x.isDefined && y.isDefined ){
+                      (x.get - y.get).toString;
+                    } else {
+                      "."
+                    }
+                  }}.toArray
+                  vout.genotypes.addGenotypeArray( newTag, arr );
+                }
+              }
+            }
+
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
+              id = "MULT",synon = Seq(),
+              shortDesc = "result of multiplying x and y.",
+              desc = "Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). "+
+                     "Output field will be the product of the inputs. Any missing values result in a missing result.",
+              params = Seq[VcfTagFunctionParam](
+                  VcfTagFunctionParam( id = "x", ty = "GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float",req=true,dotdot=false ),
+                  VcfTagFunctionParam( id = "y", ty = "GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float",req=true,dotdot=false )
+              )
+          );
+          def metadata = mmd;
+          def gen(paramValues : Seq[String], outHeader: SVcfHeader, newTag : String, digits : Option[Int] = None) : VcfTagFcn = {
+            new VcfTagFcn(){
+              def h = outHeader; def pv : Seq[String] = paramValues; def dgts : Option[Int] = digits; def md : VcfTagFcnMetadata = mmd; def tag = newTag;
+              def init : Boolean = true;
+              val typeInfo = getTypeInfo(md.params,pv,h)
+              override val outType = "Float";
+              override val outNum = "1";
+              val ddx = VcfTagFunctionGenoParamReaderFloatSeq(typeInfo.head);
+              val ddy = VcfTagFunctionGenoParamReaderFloatSeq(typeInfo(1));
+              
+              def run(vc : SVcfVariantLine, vout : SVcfOutputVariantLine){
+                    //val v = ddf.map{ d => d.get(vc) }.filter{ d => d.isDefined }.map{ d => d.get }
+                val vx = ddx.get(vc)
+                val vy = ddy.get(vc);
+                
+                if( vx.isDefined && vy.isDefined ){
+                  val arr = vx.get.zip(vy.get).map{ case (x,y) => {
+                    if( x.isDefined && y.isDefined ){
+                      (x.get * y.get).toString;
+                    } else {
+                      "."
+                    }
+                  }}.toArray
+                  vout.genotypes.addGenotypeArray( newTag, arr );
+                }
+              }
+            }
+
+          }
+        },/////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
+        new VcfTagFcnFactory(){
+          val mmd =  new VcfTagFcnMetadata(
               id = "DIV",synon = Seq(),
               shortDesc = "result of dividing x and y.",
               desc = "Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). "+

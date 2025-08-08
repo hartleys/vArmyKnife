@@ -260,11 +260,64 @@ object SVcfWalkerUtils {
     
   class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], 
                            infoFields : Seq[String], infoFieldsForVcfTable : Seq[String], dsbWindow : Int = 200,
+                           genomeFaOpt : Option[String] = None,
                            debug : Boolean = true
                            ) extends SVcfWalker {
     def walkerName : String = "SVBreaksToEventSet"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
 
+    val refFile = genomeFaOpt.map{ genomeFa => new File(genomeFa) }
+    val refSeqFile : Option[htsjdk.samtools.reference.ReferenceSequenceFile] = 
+                     refFile.map{ rf => {
+                        htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(rf);
+                     }}
+    
+    def hasRefSeq() : Boolean = refSeqFile.isDefined;
+    val refDataSource = refFile.map{ rf => {
+      new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(rf);
+    }}
+    val genLocParser = refSeqFile.map{ rsf => {
+      new org.broadinstitute.gatk.utils.GenomeLocParser(rsf)
+    }}
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      refSeqFile match {
+        case Some(rsf) => {
+          if(pos < 1 || pos > rsf.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+            return "N";
+          } else {
+            rsf.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+          }          
+        }
+        case None => {
+          error("INTERNAL ERROR: Attempting to get genome fasta bases but no genome fasta is specified!");
+          ""
+        }
+      }
+    }
+    def getBasesForIv(chrom : String, start : Int, end : Int) : String = {
+      refSeqFile match {
+        case Some(rsf) => {
+            if(end < 1){
+              return ("N" * (end - start))
+            } else if(start < 1){
+              return ("N" * (1-start))+getBasesForIv(chrom=chrom,start=1,end=end);
+            } else if( start >= rsf.getSequenceDictionary.getSequence(chrom).getSequenceLength ){
+              return ("N" * (end - start))
+            } else if(end > rsf.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+              val e = rsf.getSequenceDictionary.getSequence(chrom).getSequenceLength;
+              return getBasesForIv(chrom=chrom,start=start,end=e) + ("N" * (end - e))
+            } else {
+              rsf.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
+            }      
+        }
+        case None => {
+          error("INTERNAL ERROR: Attempting to get genome fasta bases but no genome fasta is specified!");
+          ""
+        }
+      }
+    }
+    
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader;
       val tableWriter = eventOutputTable.map{ outfile => openWriter(outfile+".eventTable.txt") }
@@ -413,6 +466,11 @@ object SVcfWalkerUtils {
                 }
                 binf = binf + (("diff1",""+diff1))
                 binf = binf + (("diff2",""+diff2))
+                
+                //add more her stuff to do with microhomology
+                if( hasRefSeq() ){
+                  
+                }
                 
                 binf = binf + (("debug.posPM","posp1:"+posp1+",posp2:"+posp2+",posm1:"+posm1+",posm2:"+posm2))
                 

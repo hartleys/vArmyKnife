@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.3.147 (Updated Thu Apr 18 15:08:42 EDT 2024)</p>
+  <p>Version 3.3.148 (Updated Thu Feb  6 13:52:50 EST 2025)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -1847,6 +1847,26 @@ infile.vcf.gz outfile.vcf.gz
 <h6>End Example</h6>
 
 </section> <h2>Available Functions:</h2> <section>
+
+<h3>MULT(x,y)</h3>
+
+<blockquote>
+  <p>Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). Output field will be the product of the inputs. Any missing values result in a missing result.</p>
+</blockquote>
+
+<pre><code>x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+y (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+</code></pre>
+
+<h3>DIFF(x,y)</h3>
+
+<blockquote>
+  <p>Input should be a set of format tags and/or numeric constants (which must be specified as CONST:n) or info tags (which must be specified as INFO:n). Output field will be the difference of the inputs. Any missing values result in a missing result.</p>
+</blockquote>
+
+<pre><code>x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+y (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float)
+</code></pre>
 
 <h3>convertBPtoGT(x,delim)</h3>
 

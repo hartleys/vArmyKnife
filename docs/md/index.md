@@ -1,4 +1,4 @@
-> Version 3.3.147 (Updated Thu Apr 18 15:08:42 EDT 2024)
+> Version 3.3.148 (Updated Thu Feb  6 13:52:50 EST 2025)
 
 # vArmyKnife: 
 
@@ -1543,6 +1543,22 @@ This utility performs a series of transformations on an input VCF file and adds 
 ## Available Functions:
 
     
+
+### MULT\(x,y\)
+
+>  Input should be a set of format tags and/or numeric constants \(which must be specified as CONST:n\) or info tags \(which must be specified as INFO:n\)\. Output field will be the product of the inputs\. Any missing values result in a missing result\.
+
+
+    x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+    y (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+
+### DIFF\(x,y\)
+
+>  Input should be a set of format tags and/or numeric constants \(which must be specified as CONST:n\) or info tags \(which must be specified as INFO:n\)\. Output field will be the difference of the inputs\. Any missing values result in a missing result\.
+
+
+    x (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
+    y (GENO:Int|GENO:Float|INFO:Int|INFO:Float|CONST:Int|CONST:Float) 
 
 ### convertBPtoGT\(x,delim\)
 

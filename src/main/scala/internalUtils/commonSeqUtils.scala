@@ -95,7 +95,12 @@ object commonSeqUtils {
   def complementString(s : String) : String = {
     complementSequenceString(s.toSeq).mkString("")
   }
-  
+  def reverseComplementSequenceString(s : Seq[Char]) : Seq[Char] = {
+    s.map(reverseBaseCharMap(_)).reverse
+  }
+  def reverseComplementString(s : String) : String = {
+    reverseComplementSequenceString(s.toSeq).mkString("")
+  }
   
   /******************************************************************************************************
    * Amino Acid Translation:
