@@ -33,7 +33,7 @@
     (Param Types: String,String,...)
     CHROM.inAnyOf(chrX,...)
     TRUE iff the variant is one one of the given chromosomes
-    (Param Types: String,String,...)
+    (Param Types: String,...)
     FALSE()
     Never TRUE
     (Param Types: )

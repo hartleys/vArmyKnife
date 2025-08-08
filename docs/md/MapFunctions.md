@@ -63,6 +63,14 @@
 
     (This function takes no parameters)
 
+### liftOverSV
+
+>  A liftover tool that will also lift over VCFv4\.2 formatted BND\-type structural variations\. Will generate a series of INFO fields with stats concerning the liftover\. NOTE: will also sometimes generate VCF lines with MISSING chrom name and pos equal to 0\.
+
+
+    chainFile: The UCSC chain formatted liftover chain file mapping the old build to the new.(String, 
+        required)
+
 ### addReverseSVbreakends
 
 >  \.\.\.\.

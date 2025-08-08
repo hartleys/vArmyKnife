@@ -4251,7 +4251,7 @@ object VcfTool {
                           }
                         }
                       ),
-        FilterFunction(funcName="CHROM.inAnyOf",numParam = -1,desc="TRUE iff the variant is one one of the given chromosomes",paramNames=Seq("chrX","..."),paramTypes=Seq("String","String"),
+        FilterFunction(funcName="CHROM.inAnyOf",numParam = -1,desc="TRUE iff the variant is one one of the given chromosomes",paramNames=Seq("chrX","..."),paramTypes=Seq("String"),
                         (params : Seq[String]) => {
                           //val tag = params(0);
                           val v = params.toSet;

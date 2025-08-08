@@ -1,7 +1,7 @@
 <h1>vArmyKnife</h1>
 
 <blockquote>
-  <p>Version 3.3.99 (Updated Thu Oct 12 14:00:56 EDT 2023)</p>
+  <p>Version 3.3.107 (Updated Mon Oct 16 14:37:36 EDT 2023)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -228,6 +228,16 @@ infile.vcf.gz outfile.vcf.gz
 </blockquote>
 
 <pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>liftOverSV</h3>
+
+<blockquote>
+  <p>A liftover tool that will also lift over VCFv4.2 formatted BND-type structural variations. Will generate a series of INFO fields with stats concerning the liftover. NOTE: will also sometimes generate VCF lines with MISSING chrom name and pos equal to 0.</p>
+</blockquote>
+
+<pre><code>chainFile: The UCSC chain formatted liftover chain file mapping the old build to the new.(String, 
+    required)
 </code></pre>
 
 <h3>addReverseSVbreakends</h3>
@@ -1950,10 +1960,6 @@ between).</p>
 <blockquote>
   <p>TRUE iff the variant is one one of the given chromosomes</p>
 </blockquote>
-
-<pre><code>chrX: String
-...: String
-</code></pre>
 
 <h4>FALSE</h4>
 

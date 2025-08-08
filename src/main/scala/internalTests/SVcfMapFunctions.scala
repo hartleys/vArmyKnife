@@ -413,6 +413,8 @@ object SVcfMapFunctions {
              "          infile.vcf.gz outfile.vcf.gz\n"),
          )
        ),
+
+       
        ParamStrSet("snpSiftAnno" ,  desc = "This function runs a SnpSift anno command. SnpSift's java library has been packaged internally within vArmyKnife and is called directly, producing results identical to a separate snpSift command.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "cmd",synon=Seq(),ty="String",valueString="cmd",desc="A valid SnpSift command. In general you should specify the -info and -name options followed by a VCF file to annotate with. ",req=false)
@@ -773,6 +775,12 @@ object SVcfMapFunctions {
        ParamStrSet("dropReverseSVbreakends" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               
+         )),category = "Structural Variant Tools"
+       ),
+       //       //               Some( new liftOverSV( params("chainFile"), params("mapID") )
+       ParamStrSet("liftOverSV" ,  desc = "A liftover tool that will also lift over VCFv4.2 formatted BND-type structural variations. Will generate a series of INFO fields with stats concerning the liftover. NOTE: will also sometimes generate VCF lines with MISSING chrom name and pos equal to 0.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "chainFile",synon=Seq("file"),ty="String",valueString="myChromDecoder.txt",desc="The UCSC chain formatted liftover chain file mapping the old build to the new.",req=true)
          )),category = "Structural Variant Tools"
        ),
        ParamStrSet("addReverseSVbreakends" ,  desc = "....", 
@@ -1649,6 +1657,10 @@ object SVcfMapFunctions {
                 Some(SnpEffAnnotater(params("mapID"),params("cmd"),params("mapID")))
              } else if(mapType == "homopolymerRunStats"){
                Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
+             } else if(mapType == "liftOverSV"){               
+               Some( new liftOverSV( params("chainFile"), params("mapID") ) )
+               //  class liftOverSV( liftOverChainFile : String, infoPrefix : String ) extends SVcfWalker {
+
              } else if(mapType == "addContextBases"){
                Some(AddContextBases(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), len = params("windowSize").toInt))
              } else if(mapType == "addTrinucleotideComplexity"){

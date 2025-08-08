@@ -445,6 +445,203 @@ object SVcfWalkerUtils {
     }
   }
   
+  class liftOverSV( liftOverChainFile : String, infoPrefix : String ) extends SVcfWalker {
+    def walkerName : String = "annotateCCsvWithSVset"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
+        ("liftOverChainFile",liftOverChainFile),
+        ("infoPrefix",infoPrefix)
+    )
+    val lifter : htsjdk.samtools.liftover.LiftOver = new htsjdk.samtools.liftover.LiftOver( new File( liftOverChainFile ) );
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"POSlift_OK",Number="1",Type="Integer",desc="Equal to 1 if and only if the CHROM and POS columns lifted over successfully"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"POSlift_chromChange",Number="1",Type="Integer",desc="Equal to 1 if and only if the CHROM column changed"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"POSlift_dist",Number="1",Type="Integer",desc="Position change for the POS column. Missing if chromChange or lift failed"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"SVlift_OK",Number="1",Type="Integer",desc="Equal to 1 if and only if the SV in the ALT column lifted over successfully"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"SVlift_chromChange",Number="1",Type="Integer",desc="Equal to 1 if and only if the SV/ALT chrom changed"));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"SVlift_dist",Number="1",Type="Integer",desc="Position change for the SV/ALT column. Missing if chromChange or lift failed"));
+
+            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"oldCHRPOS",Number="1",Type="Integer",desc="The original chrom:pos columns prior to liftover"));
+            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"sv_oldCHRPOS",Number="1",Type="Integer",desc="The original chrom:pos contained in the SV ALT column prior to liftover"));
+            outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",infoPrefix+"sv_oldALT",Number="1",Type="Integer",desc="The original ALT column prior to liftover"));
+
+      
+      //      outHeader.addInfoLine(new SVcfCompoundHeaderLine("INFO",tagid("STAT"),Number="1",Type="String",desc="Homopolymer run warning status (homopolymer runs defined as length >="+lenThreshold+")"));
+      outHeader.reportAddedInfos(this)      
+      /*
+         
+       */
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+               val vc = v.getOutputLine();
+               vc.addInfo(infoPrefix+"oldCHRPOS",vc.chrom+":"+vc.pos.toString )
+               
+               
+               val posInterval : htsjdk.samtools.util.Interval = new htsjdk.samtools.util.Interval(vc.chrom,vc.pos,vc.pos)
+               val newPos = Option(lifter.liftOver( posInterval ))
+               newPos match {
+                 case Some(np) => {
+                   notice("POSlift.OK ["+vc.in_chrom+":"+vc.in_pos+"] => ["+np.getContig()+":"+np.getStart()+"]","POSlift.OK",10);
+                   if( np.getContig() == vc.chrom ){  
+                     vc.addInfo(infoPrefix+"POSlift_chromChange","0")
+                     vc.addInfo(infoPrefix+"POSlift_dist",( vc.in_pos  - np.getStart() ).toString())
+                   } else {
+                     vc.addInfo(infoPrefix+"POSlift_chromChange","1")
+                   }
+                   vc.in_chrom = np.getContig();
+                   vc.in_pos = np.getStart();
+                 }
+                 case None => {
+                   notice("POSlift.NO ["+vc.in_chrom+":"+vc.in_pos+"] => null","POSlift.NO",10);
+                   vc.addInfo(infoPrefix+"POSlift_OK","0")
+                   vc.in_chrom = "."
+                   vc.in_pos = 0;
+                 }
+               }
+               
+               if( vc.is_BND ){
+                 notice("isBND.forLiftover","isBND.forLiftover",10);
+                 val sv = v.getSVbnd().get;
+                 val svInterval : htsjdk.samtools.util.Interval = new htsjdk.samtools.util.Interval(sv.getChrom,sv.getPos,sv.getPos)
+                 vc.addInfo(infoPrefix+"sv_oldCHRPOS",sv.getChrom+":"+sv.getPos )
+                 vc.addInfo(infoPrefix+"sv_oldALT",v.alt.head )
+                 val svivOpt = Option( lifter.liftOver( svInterval ) );
+                 
+                 svivOpt match { 
+                   case Some(sviv) => {
+                     if(newPos.isDefined){
+                       notice("BOTHlift.OK","BOTHlift.OK",10);
+                     }
+                     notice("SVlift.OK ["+sv.getChrom+":"+sv.getPos+"] => ["+sviv.getContig()+":"+sviv.getStart()+"]","SVlift.OK",10);
+                     vc.addInfo(infoPrefix+"SVlift_OK","1")
+                     if(sviv.getContig() == vc.chrom){
+                       vc.addInfo(infoPrefix+"SVlift_chromChange","0");
+                       vc.addInfo(infoPrefix+"SVlift_dist",( sv.getPos  - sviv.getStart() ).toString())
+                     } else {
+                       vc.addInfo(infoPrefix+"SVlift_chromChange","1");
+                     }
+                     vc.in_alt = Seq( SVbnd.makeSVbnd( sviv.getContig(), sviv.getStart(), sv.bases, sv.strands ).svalt )
+                   }
+                   case None => {
+                     notice("SVlift.NO ["+sv.getChrom+":"+sv.getPos+"] => null","SVlift.NO",10);
+                     if(newPos.isEmpty){
+                       notice("BOTHlift.NO","BOTHlift.NO",10);
+                     }
+                     vc.addInfo(infoPrefix+"SVlift_OK","0")
+                     vc.in_alt = Seq(".");
+                   }
+                 }
+               }
+
+               
+               vc;
+            }}, closeAction = (() => {
+              reportln("","note");
+            })),outHeader)
+    
+    }
+
+  }
+  
+  
+
+  case class ChromosomeConverterSV(chromDecoder : String, 
+                 fromToColumnNames : Option[(String,String)] = None,
+                 fromToIdx : Option[(String,String)] = None,
+                 skipFirstRow : Boolean = true,
+                       quiet : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "ConvertChromosomeName"
+    val rawcelllist = getLinesSmartUnzip(chromDecoder).map{ line => line.split("\t") }.toVector;
+    val celllist = if(skipFirstRow){
+      rawcelllist.tail
+    } else {
+      rawcelllist
+    }
+    
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](("chromDecoder",chromDecoder.toString),
+                                                                    ("fromToColumnNames",fromToColumnNames.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("fromToIdx",fromToIdx.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("skipFirstRow",skipFirstRow.toString),
+                                                                    ("quiet",quiet.toString)
+                                                                    );
+    
+    val chromMap : Map[String,String] = fromToColumnNames.map{ case (f,t) => {
+      val headerLine = celllist.head;
+      val fromIDX = celllist.indexOf(f);
+      val toIDX = celllist.indexOf(t);
+      if(fromIDX == -1){
+        error("Error in ConvertChromosomeName: Cannot find column named \""+f+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      if(toIDX == -1){
+        error("Error in ConvertChromosomeName: Cannot find column named \""+t+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      celllist.tail.map{ cells => {
+        ( cells(fromIDX), cells(toIDX) )
+      }}.toMap
+    }}.getOrElse({
+      fromToIdx.map{ case (f,t) => {
+        val fromIDX = string2intOpt(f);
+        val toIDX = string2intOpt(t);
+        if( fromIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+f+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        if( toIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+t+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        celllist.map{ cells => {
+          ( cells(fromIDX.get), cells(toIDX.get) )
+        }}.toMap
+      }}.getOrElse({
+          error("ConvertChromosomeName must specify which columns to convert to/from, using either the columnNames or columnIdx parameters.");
+          null;
+      })
+    })
+    def translateChrom(c : String) : String = {
+      chromMap.get(c) match {
+        case Some(tc) => {
+          tc
+        }
+        case None => {
+          if(! quiet) warning("Could not find chrom: "+c,"CHROM_NOT_FOUND",100);
+          c;
+        }
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
+      val samps = outHeader.getSampleList
+      outHeader.otherHeaderLines = outHeader.otherHeaderLines.map{ hl => {
+        if(hl.tag == "contig"){
+          val chl = hl.convertToContigHeaderLine().get;
+          SVcfContigHeaderLine(translateChrom(chl.ID),chl.length);
+        } else {
+          hl
+        }
+      }}
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcIter.flatMap{v => {
+        val vc = v.getOutputLine()
+        vc.in_chrom = translateChrom(vc.in_chrom);
+        //if(vc.is_BND){
+          val svb = vc.getSVbnd().get
+          //SVbnd.makeSVbnd( svb.getChrom, svb.getPos,svb.bases,svb.strand);
+          vc.in_alt = Seq( SVbnd.makeSVbnd( translateChrom(svb.getChrom), svb.getPos,svb.bases,svb.strands).svalt )
+        //}
+        
+        Some(vc)
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
   
   class annotateCCsvWithSVset(annotateVCF : String, copyOverInfoTags : Seq[String], copyInfoPrefix : String, 
                               crossChromWin : Int = 500,withinChromWin : Int = 500) extends SVcfWalker {
@@ -8446,101 +8643,6 @@ ALT VERSION: allows title line!
     }
   }
   
-  case class ChromosomeConverterSV(chromDecoder : String, 
-                 fromToColumnNames : Option[(String,String)] = None,
-                 fromToIdx : Option[(String,String)] = None,
-                 skipFirstRow : Boolean = true,
-                       quiet : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
-    def walkerName : String = "ConvertChromosomeName"
-    val rawcelllist = getLinesSmartUnzip(chromDecoder).map{ line => line.split("\t") }.toVector;
-    val celllist = if(skipFirstRow){
-      rawcelllist.tail
-    } else {
-      rawcelllist
-    }
-    
-    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](("chromDecoder",chromDecoder.toString),
-                                                                    ("fromToColumnNames",fromToColumnNames.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
-                                                                    ("fromToIdx",fromToIdx.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
-                                                                    ("skipFirstRow",skipFirstRow.toString),
-                                                                    ("quiet",quiet.toString)
-                                                                    );
-    
-    val chromMap : Map[String,String] = fromToColumnNames.map{ case (f,t) => {
-      val headerLine = celllist.head;
-      val fromIDX = celllist.indexOf(f);
-      val toIDX = celllist.indexOf(t);
-      if(fromIDX == -1){
-        error("Error in ConvertChromosomeName: Cannot find column named \""+f+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
-      }
-      if(toIDX == -1){
-        error("Error in ConvertChromosomeName: Cannot find column named \""+t+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
-      }
-      celllist.tail.map{ cells => {
-        ( cells(fromIDX), cells(toIDX) )
-      }}.toMap
-    }}.getOrElse({
-      fromToIdx.map{ case (f,t) => {
-        val fromIDX = string2intOpt(f);
-        val toIDX = string2intOpt(t);
-        if( fromIDX.isEmpty ){
-          error("Error in ConvertChromosomeName: column IDX \""+f+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
-        }
-        if( toIDX.isEmpty ){
-          error("Error in ConvertChromosomeName: column IDX \""+t+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
-        }
-        celllist.map{ cells => {
-          ( cells(fromIDX.get), cells(toIDX.get) )
-        }}.toMap
-      }}.getOrElse({
-          error("ConvertChromosomeName must specify which columns to convert to/from, using either the columnNames or columnIdx parameters.");
-          null;
-      })
-    })
-    def translateChrom(c : String) : String = {
-      chromMap.get(c) match {
-        case Some(tc) => {
-          tc
-        }
-        case None => {
-          if(! quiet) warning("Could not find chrom: "+c,"CHROM_NOT_FOUND",100);
-          c;
-        }
-      }
-    }
-    
-    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
-      var errCt = 0;
-      
-      val outHeader = vcfHeader.copyHeader
-      outHeader.addWalk(this);
-      //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
-      val samps = outHeader.getSampleList
-      outHeader.otherHeaderLines = outHeader.otherHeaderLines.map{ hl => {
-        if(hl.tag == "contig"){
-          val chl = hl.convertToContigHeaderLine().get;
-          SVcfContigHeaderLine(translateChrom(chl.ID),chl.length);
-        } else {
-          hl
-        }
-      }}
-      outHeader.reportAddedInfos(this)
-      (addIteratorCloseAction( iter = vcIter.flatMap{v => {
-        val vc = v.getOutputLine()
-        vc.in_chrom = translateChrom(vc.in_chrom);
-        //if(vc.is_BND){
-          val svb = vc.getSVbnd().get
-          //SVbnd.makeSVbnd( svb.getChrom, svb.getPos,svb.bases,svb.strand);
-          vc.in_alt = Seq( SVbnd.makeSVbnd( translateChrom(svb.getChrom), svb.getPos,svb.bases,svb.strands).svalt )
-        //}
-        
-        Some(vc)
-      }}, closeAction = (() => {
-        //do nothing
-      })),outHeader)
-      
-    }
-  }
   
 
   case class SampleRenameAdv(decoder : String, 
