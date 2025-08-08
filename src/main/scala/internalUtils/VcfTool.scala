@@ -383,13 +383,40 @@ object VcfTool {
     def query( chrom : String, start: Int, end : Int ) : Iterator[SVcfVariantLine] = {
       val vcxIter = htsReader.query(chrom,start,end);
       vcxIter.asScala.map{ vcx => {
-        SVcfInputVariantLine( vcx.toString() )
+        convertVarContextToSVcfVariantLineNoGenotypes(vcx)
       }}
       
     }
+    
+    
+
+    
   }
   
-  
+   def convertVarContextToSVcfVariantLineNoGenotypes(vc : VariantContext) : SVcfOutputVariantLine = {
+     val alt = Seq[String](vc.getAlternateAllele(0).toString())
+     
+      SVcfOutputVariantLine(
+       in_chrom = vc.getContig(),
+       in_pos = vc.getStart(),
+       in_id = vc.getID(),
+       in_ref = vc.getReference().getBaseString(),
+       in_alt = alt,
+       in_qual = vc.getPhredScaledQual().toString() ,
+       in_filter = vc.getFilters().asScala.toSeq.mkString(";"), 
+       in_info = vc.getAttributes().asScala.toSeq.map{ case (k,v) => { ( k, Some(v.toString()) ) }}.toMap, 
+       in_format = Seq[String](),
+       in_genotypes = SVcfGenotypeSet( Seq(), Array() )
+      )
+      
+      /*
+       * var in_info : Map[String,Option[String]],
+       * in_format : Seq[String]
+       SVcfGenotypeSet(var fmt : Seq[String],
+                             var genotypeValues : Array[Array[String]])
+       * 
+       */
+  }
   
   trait VCFWalker{
     def walkVCF(vcIter : Iterator[VariantContext], vcfHeader : VCFHeader, verbose : Boolean = true) : (Iterator[VariantContext],VCFHeader);
