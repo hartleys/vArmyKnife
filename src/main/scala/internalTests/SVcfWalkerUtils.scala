@@ -3653,7 +3653,42 @@ object SVcfWalkerUtils {
                Some( CopyAllGenoToInfo( prefix = params("mapID") ) );
    */
   
-  
+  case class CopyInfoToColumn(columnName : String, infoField : String) extends SVcfWalker {
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        val infoval = vc.info.getOrElse(infoField,None).getOrElse(".");
+        if(columnName == "ID"){
+          vc.in_id = infoval
+        } else if(columnName == "QUAL"){
+          vc.in_qual = infoval
+        } else if(columnName == "FILTER"){
+          vc.in_filter = infoval;
+        } else if(columnName == "ALT"){
+          vc.in_alt = Seq(infoval);
+        } else if(columnName == "REF"){
+          vc.in_ref = infoval;
+        } else if(columnName == "POS"){
+          vc.in_pos = string2int( infoval );
+        } else if(columnName == "CHROM"){
+          vc.in_chrom = infoval;
+        } else {
+          error("CopyInfoToColumn currently only supports ID, QUAL, FILTER, ALT, REF, POS, and CHROM.");
+        }
+        vc;
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+    }
+    
+    def walkerName : String = "CopyInfoToColumn";
+    def walkerParams : Seq[(String,String)] = Seq(("columnName",columnName),("infoField",infoField));
+    
+  }
   
   case class CopyFieldsToInfo(qualTag : Option[String], filterTag : Option[String], idTag : Option[String], 
                               refTag : Option[String] = None, altTag : Option[String] = None,

@@ -984,11 +984,11 @@ object SVcfMapFunctions {
                ParamStr(id = "columnID",synon=Seq(),ty="String",valueString="FILTER|ID|REF|ALT|etc",desc="",req=true)
          )), category = "File Formatting/Conversion"
        ),
-       ParamStrSet("copyInfoToColumn" ,  desc = "This utility copies the contents of an INFO field to one of the the other VCF columns.",
+       ParamStrSet("copyInfoToColumn" ,  desc = "This utility copies the contents of an INFO field to one of the the other VCF columns. Currently only supports ID, QUAL, FILTER, ALT, REF, POS, and CHROM.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-               ParamStr(id = "infoColumn",synon=Seq(),ty="String",valueString="myInfoColumn",desc="",req=true),
-               ParamStr(id = "columnID",synon=Seq(),ty="String",valueString="FILTER|ID|REF|ALT|POS|CHROM|QUAL|etc",desc="",req=true)
+               ParamStr(id = "infoField",synon=Seq("infoColumn"),ty="String",valueString="The info column to copy over.",desc="",req=true),
+               ParamStr(id = "columnName",synon=Seq("columnID"),ty="String",valueString="FILTER|ID|QUAL",desc="",req=true)
          )), category = "File Formatting/Conversion"
        ),
        ParamStrSet("copyInfoToGeno" ,  desc = "This utility copies the contents of one of the INFO fields into the genotype level.",
@@ -1911,6 +1911,8 @@ object SVcfMapFunctions {
              } else if(mapType == "SVBreaksToEventSet"){
                //SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String])
                Some( new SVBreaksToEventSet( eventWindow = string2int(params.getOrElse("windowSize","1000000")), eventOutputTable = Some(params("mapID")), infoFields = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()), infoFieldsForVcfTable = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()) , dsbWindow=string2int(params.getOrElse("windowSize","1000000"))  ) )
+               
+               
              } else if(mapType == "addFirstBaseWhenMissing"){
                // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
                Some(internalUtils.GatkPublicCopy.AddFirstBase(genomeFa = params("genomeFA"),windowSize = 200));
@@ -2071,6 +2073,11 @@ object SVcfMapFunctions {
            )), category = "File Formatting/Conversion"
        ),
                 */
+             } else if(mapType == "copyInfoToColumn"){
+               val infoField = params("infoField");
+               val columnName = params("columnName");
+               
+               Some(CopyInfoToColumn(columnName,infoField))
                
              } else if(mapType == "fixInfoFieldMetadata"){
                

@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.149 (Updated Thu Feb 20 10:42:15 EST 2025)
+> Version 3.3.151 (Updated Tue Mar  4 12:50:48 EST 2025)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -1141,11 +1141,11 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### copyInfoToColumn
 
->  This utility copies the contents of an INFO field to one of the the other VCF columns\.
+>  This utility copies the contents of an INFO field to one of the the other VCF columns\. Currently only supports ID, QUAL, FILTER, ALT, REF, POS, and CHROM\.
 
 
-    infoColumn: (String, required)
-    columnID: (String, required)
+    infoField: (String, required)
+    columnName: (String, required)
 
 ### copyInfoToGeno
 

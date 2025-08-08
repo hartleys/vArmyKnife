@@ -991,11 +991,11 @@
 
 ### copyInfoToColumn
 
->  This utility copies the contents of an INFO field to one of the the other VCF columns\.
+>  This utility copies the contents of an INFO field to one of the the other VCF columns\. Currently only supports ID, QUAL, FILTER, ALT, REF, POS, and CHROM\.
 
 
-    infoColumn: (String, required)
-    columnID: (String, required)
+    infoField: (String, required)
+    columnName: (String, required)
 
 ### copyInfoToGeno
 

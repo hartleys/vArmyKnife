@@ -1145,11 +1145,11 @@ FORMAT.rename: This is used to rename FORMAT fields. This should be set to a com
 <h3>copyInfoToColumn</h3>
 
 <blockquote>
-  <p>This utility copies the contents of an INFO field to one of the the other VCF columns.</p>
+  <p>This utility copies the contents of an INFO field to one of the the other VCF columns. Currently only supports ID, QUAL, FILTER, ALT, REF, POS, and CHROM.</p>
 </blockquote>
 
-<pre><code>infoColumn: (String, required)
-columnID: (String, required)
+<pre><code>infoField: (String, required)
+columnName: (String, required)
 </code></pre>
 
 <h3>copyInfoToGeno</h3>
