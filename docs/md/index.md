@@ -1,4 +1,4 @@
-> Version 3.3.152 (Updated Mon Mar 10 19:10:00 EDT 2025)
+> Version 3.3.156 (Updated Tue Mar 25 11:13:04 EDT 2025)
 
 # vArmyKnife: 
 
@@ -179,8 +179,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 >  Requires that the input VCF be SVTYPE BND structural variants formatted as per the VCF 4\.2 file specification\. Takes a second SV VCF \(all variants must also be SVTYPE BND structural variants, file must be sorted and indexed\) and copies over INFO fields from this SV file when matches are detected \(both ends of the SV must be within the given window\)\. Can be used to test true/false positives, compare methods, apply a Panel of Normals, etc\. See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets \(ie: you want the union of the SVs in both in addition to the overlap\. 
 
 
-    annofile: The file to annotate with. Must be relatively small, as all the data will be loaded 
-        into memory.(String, required)
+    annofile: The file to annotate with.(String, required)
     copyOverInfoTags: A list of INFO tags from the annofile that you want copied over.(String)
     copyInfoPrefix: A prefix that will be prepended to every copied INFO tag in 
         copyOverInfoTags.(String)

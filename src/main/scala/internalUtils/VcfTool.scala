@@ -379,12 +379,22 @@ object VcfTool {
     val htsReader = new htsjdk.variant.vcf.VCFFileReader( new java.io.File( vcffile ), true );
     
     reportln("      Loading ("+vcffile+"): htsReader Generated." ,"note")
-    
     def query( chrom : String, start: Int, end : Int ) : Iterator[SVcfVariantLine] = {
-      val vcxIter = htsReader.query(chrom,start,end);
-      vcxIter.asScala.map{ vcx => {
-        convertVarContextToSVcfVariantLineNoGenotypes(vcx)
-      }}
+      if( end < start | start < 0 ){
+        warning("IndexedSVcfFileIterator Malformed query: \""+chrom+":"+start+"-"+end+"\"","IndexedSVcfFileIterator_MALFORMED_QUERY",100);
+            //         warning("VCF header line malformed? Found multiple header rows that do not start with \"##\""+ nonTagLines.map{line => "        \""+line+"\""}.mkString("\n"),"MALFORMED_VCF_HEADER_LINE",100);
+      }
+      try {
+        val vcxIter = htsReader.query(chrom,start,end);
+        return vcxIter.asScala.map{ vcx => {
+          convertVarContextToSVcfVariantLineNoGenotypes(vcx)
+        }}
+      } catch {
+        case e => {
+          warning("error: IndexedSVcfFileIterator query threw an error! \""+chrom+":"+start+"-"+end+"\"","IndexedSVcfFileIterator_QUERY_EXCEPTION",100);
+          throw e;
+        }
+      }
       
     }
     

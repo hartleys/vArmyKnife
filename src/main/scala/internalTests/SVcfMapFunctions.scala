@@ -408,7 +408,7 @@ object SVcfMapFunctions {
                                              "See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets (ie: you want the union of the SVs in both in addition to the overlap. "+
                                              "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-           ParamStr(id = "annofile",synon=Seq(),ty="String",valueString="vcffile.vcf.gz",desc="The file to annotate with. Must be relatively small, as all the data will be loaded into memory.",req=true,initParam = true),
+           ParamStr(id = "annofile",synon=Seq(),ty="String",valueString="vcffile.vcf.gz",desc="The file to annotate with.",req=true,initParam = true),
            ParamStr(id = "copyOverInfoTags",synon=Seq(),ty="String",valueString="tag1,tag2,...",desc="A list of INFO tags from the annofile that you want copied over.",req=false,initParam = false),
            ParamStr(id = "copyInfoPrefix",synon=Seq(),ty="String",valueString="inPrefix_",desc="A prefix that will be prepended to every copied INFO tag in copyOverInfoTags.",req=false,initParam = false),
            ParamStr(id = "crossChromWin",synon=Seq(),ty="Int",valueString="500",desc="For cross-chromosome SVs, the window within which to register a match.",req=false,initParam = false),
@@ -778,6 +778,20 @@ object SVcfMapFunctions {
               
          )),category = "Concordance Caller"
        ),
+       /*ParamStrSet("annotateSVwithSVvcf" ,  desc = "Annotates the current SVs using an external SV VCF file. The external file must be indexed and must contain only valid BND-type variant lines.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+              ParamStr(id = "file",synon=Seq(),ty="String",valueString="vcffile.vcf.gz",
+                                               desc="Must be a bgzipped, tabix-indexed vcf file containing only BND type variant lines. Note that chrom names must match (see the convertChromNamesSV function to convert the chromosome naming of an SV file)."+
+                                                    "",req=true),
+              ParamStr(id = "infoFields",synon=Seq(),ty="String",valueString="field1,field2,...",
+                                               desc="Comma delimited list of INFO fields to copy over from the external VCF. New info fields will have the form FCNNAME_field1,FCNNAME_field2,..."+
+                                                    "",req=false),
+                                                    //gtDecisionMethod
+              ParamStr(id = "bpWindow",synon=Seq(),ty="Int",valueString="k",desc="Sets the size of the window around each SV endpoint within which near-similar SVs will be matched. "+
+                      "SV breakends in the analysis file that match directionality and in which both ends are within this distance (in base-pairs) will be considered matches.",req=false,defaultValue = Some("500"))
+              
+         )),category = "File/Database Annotation"
+       ),*/
        ParamStrSet("dropInvalidSVBND" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               

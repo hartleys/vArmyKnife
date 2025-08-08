@@ -804,7 +804,7 @@ object SVcfWalkerUtils {
   }
   
   class liftOverSV( liftOverChainFile : String, infoPrefix : String ) extends SVcfWalker {
-    def walkerName : String = "annotateCCsvWithSVset"
+    def walkerName : String = "liftOverSV"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)](
         ("liftOverChainFile",liftOverChainFile),
         ("infoPrefix",infoPrefix)
@@ -1255,12 +1255,12 @@ object SVcfWalkerUtils {
         val currwin = if(chrA==chrB){ withinChromWin } else { crossChromWin };
         val swapstrdir = strdirSwapSVstrand(strdir);
         
-        val fwdMatches = avReader.query(chrA,posA-currwin,posA+currwin).filter{ vx => {
+        val fwdMatches = avReader.query(chrA,math.max(posA-currwin,1),posA+currwin).filter{ vx => {
            val (chrVX,posVX) = vx.getSVbnd().get.bndBreakEnd;
            val strdirVX = vx.getSVstrdirOrDie();
            chrVX == chrB && posVX - currwin < posB && posVX + currwin > posB && strdirVX == strdir;
         }}
-        val revMatches = avReader.query(chrB,posB-currwin,posB+currwin).filter{ vx => {
+        val revMatches = avReader.query(chrB,math.max(posB-currwin,1),posB+currwin).filter{ vx => {
            val (chrVX,posVX) = vx.getSVbnd().get.bndBreakEnd;
            val strdirVX = vx.getSVstrdirSwapOrDie();
            chrVX == chrA && posVX - currwin < posA && posVX + currwin > posA && strdirVX == swapstrdir;
