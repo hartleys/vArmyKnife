@@ -8782,7 +8782,7 @@ ALT VERSION: allows title line!
           outHeader.formatLines = outHeader.formatLines.map{ f => {
             rmap.get(f.ID) match {
               case Some(newid) => {
-                new  SVcfCompoundHeaderLine("INFO",ID=newid,Number = f.Number, Type = f.Type,desc = f.desc);
+                new  SVcfCompoundHeaderLine("FORMAT",ID=newid,Number = f.Number, Type = f.Type,desc = f.desc);
               }
               case None => f;
             }
