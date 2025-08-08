@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.173 (Updated Tue Apr  1 08:57:28 EDT 2025)
+> Version 3.4.7 (Updated Tue Apr  1 14:57:41 EDT 2025)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -252,7 +252,10 @@ This utility performs a series of transformations on an input VCF file and adds 
 >  \.\.\.\.
 
 
-    (This function takes no parameters)
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
 
 ### convertChromNamesSV
 

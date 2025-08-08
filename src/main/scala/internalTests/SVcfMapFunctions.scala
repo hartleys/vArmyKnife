@@ -821,7 +821,7 @@ object SVcfMapFunctions {
        ),
        ParamStrSet("convertSVtoBND" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
-              
+              COMMON_PARAMS("genomeFA")
          )),category = "Structural Variant Tools"
        ),
        ParamStrSet("convertChromNamesSV" ,  desc = "This function takes a file and translates chromosome names into a different format. "+
@@ -1969,7 +1969,7 @@ object SVcfMapFunctions {
              } else if(mapType == "addReverseSVbreakends"){
                Some(new addBackwardsSvLine())
              } else if(mapType == "convertSVtoBND"){
-               Some(new convertSVtoBND())
+               Some(new convertSVtoBND(genomeFa = params("genomeFA")))
              } else if(mapType == "leftAlignAndTrim"){
                Some( internalUtils.GatkPublicCopy.LeftAlignAndTrimWalker(genomeFa = params("genomeFA"),windowSize =  string2int( params.getOrElse("windowSize","200")) , useGatkLibCall = false) )
              } else if(mapType == "fixSwappedRefAlt"){

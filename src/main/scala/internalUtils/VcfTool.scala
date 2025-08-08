@@ -390,12 +390,11 @@ object VcfTool {
           convertVarContextToSVcfVariantLineNoGenotypes(vcx)
         }}
       } catch {
-        case e => {
+        case e : Throwable => {
           warning("error: IndexedSVcfFileIterator query threw an error! \""+chrom+":"+start+"-"+end+"\"","IndexedSVcfFileIterator_QUERY_EXCEPTION",100);
           throw e;
         }
       }
-      
     }
     
     

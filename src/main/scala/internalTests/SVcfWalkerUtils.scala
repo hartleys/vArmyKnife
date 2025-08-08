@@ -231,7 +231,7 @@ object SVcfWalkerUtils {
           if( x.e < r.s ){
             NumRangeSet(Seq[NumRange]( x ) ++ ranges );
           } else if( x.s < r.e & r.s < x.e ){
-            NumRangeSet( Seq(NumRange( Math.min(x.s,r.s), Math.max(x.e,r.e) )) )
+            NumRangeSet( Seq(NumRange( math.min(x.s,r.s), math.max(x.e,r.e) )) )
           } else {
             NumRangeSet(ranges ++ Seq[NumRange]( x ) );
           }
@@ -242,8 +242,8 @@ object SVcfWalkerUtils {
           if( ixSet.isEmpty ){
             NumRangeSet( beforeSet ++  Seq[NumRange]( x ) ++ afterSet);
           } else {
-            val outS = Math.min(ixSet.map{ r => r.s }.min,x.s);
-            val outE = Math.max(ixSet.map{ r => r.e}.max,x.e);
+            val outS = math.min(ixSet.map{ r => r.s }.min,x.s);
+            val outE = math.max(ixSet.map{ r => r.e}.max,x.e);
             NumRangeSet( beforeSet ++  Seq[NumRange]( NumRange(outS,outE) ) ++ afterSet);
           }
         }
@@ -655,7 +655,10 @@ object SVcfWalkerUtils {
       }
     }
     def getBasesForIv(chrom : String, start : Int, end : Int) : String = {
-      if(end < 1){
+      if( refSeqFile.getSequenceDictionary.getSequenceIndex(chrom) == -1 ) {
+        warning("calcSVflankingHomology: WARNING: genome fasta does not contain chromosome: \""+chrom+"\"","calcSVflankingHomology_genome_missing_chrom",100);
+        return ("N" * (end-start))
+      } else if(end < 1){
         return ("N" * (end - start))
       } else if(start < 1){
         return ("N" * (1-start))+this.getBasesForIv(chrom=chrom,start=1,end=end);
@@ -825,7 +828,7 @@ object SVcfWalkerUtils {
              */
             reverseComplementString( seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange) ).toLowerCase  + "-"+
             reverseComplementString( matchSeq_start ).toLowerCase + "|" + matchSeq_back.toLowerCase + "-" + 
-            seq_back_2.slice(matchSeq_back.length,matchSeq_back.length + debugRange)             
+            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange)             
           } else {
             null;
           }
@@ -1022,10 +1025,38 @@ object SVcfWalkerUtils {
     }
   }
     
-  class convertSVtoBND() extends SVcfWalker {
+  class convertSVtoBND(genomeFa : String, dellyFormat : Boolean = false) extends SVcfWalker {
     def walkerName : String = "convertSVtoBND"
     
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
+    def getBasesForIv(chrom : String, start : Int, end : Int) : String = {
+      if(end < 1){
+        return ("N" * (end - start))
+      } else if(start < 1){
+        return ("N" * (1-start))+this.getBasesForIv(chrom=chrom,start=1,end=end);
+      } else if( start >= refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength ){
+        return ("N" * (end - start))
+      } else if(end > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        val e = refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength;
+        return this.getBasesForIv(chrom=chrom,start=start,end=e) + ("N" * (end - e))
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
+      }
+    }
     
     def isAltSV(a : String) : Boolean = a.startsWith("<INS") || a.startsWith("<DEL") || a.startsWith("<DUP") || a.startsWith("<INV") || a.startsWith("<CNV");
     
@@ -1072,12 +1103,19 @@ object SVcfWalkerUtils {
                 if(end == -1){
                   Some(vc);
                 } else {
-                  vc.in_alt = Seq( vc.ref + "[" +v.chrom+":"+ end +"[" )
-                  vc.addInfo("SVTYPE","BND");
                   val vc2 = vc.getOutputLineCopy();
+                  vc.addInfo("SVTYPE","BND");
                   vc2.addInfo("SVTYPE","BND");
-                  vc2.in_pos = end;
-                  vc2.in_alt = Seq( "]"+v.chrom+":"+v.pos+"]"+v.ref );
+                  
+                  if( dellyFormat ){
+                    vc.in_alt = Seq( vc.ref + "[" +v.chrom+":"+ (end) +"[" )
+                    vc2.in_pos = (end);
+                  } else {
+                    vc.in_alt = Seq( vc.ref + "[" +v.chrom+":"+ (end+1) +"[" )
+                    vc2.in_pos = (end+1);
+                  }
+                  vc2.in_ref = getBaseAtPos(vc2.in_chrom,vc2.in_pos)
+                  vc2.in_alt = Seq( "]"+v.chrom+":"+v.pos+"]"+vc2.in_ref );
                   Seq(vc,vc2);
                 }
               } else if( a.startsWith("<INV")){
@@ -1104,13 +1142,16 @@ object SVcfWalkerUtils {
                   vc.addInfo("SVTYPE","BND");
                   val vc2 = vc.getOutputLineCopy();
                   vc2.in_pos = end;
-                  vc2.in_alt = Seq( v.ref+"]"+v.chrom+":"+v.pos+"]" );
+                  vc2.in_ref = getBaseAtPos(vc2.in_chrom,vc2.in_pos)
+                  vc2.in_alt = Seq(vc2.in_ref  +"]"+v.chrom+":"+v.pos+"]" );
                   val vc3 = vc.getOutputLineCopy();
                   vc3.in_pos = v.pos+1;
-                  vc3.in_alt = Seq( "["+v.chrom+":"+(end+1)+"["+v.ref );
+                  vc2.in_ref = getBaseAtPos(vc3.in_chrom,vc3.in_pos)
+                  vc3.in_alt = Seq( "["+v.chrom+":"+(end+1)+"["+vc3.in_ref );
                   val vc4 = vc.getOutputLineCopy();
                   vc4.in_pos = end+1;
-                  vc4.in_alt = Seq( "["+v.chrom+":"+(v.pos+1)+"["+v.ref );
+                  vc4.in_ref = getBaseAtPos(vc4.in_chrom,vc4.in_pos)
+                  vc4.in_alt = Seq( "["+v.chrom+":"+(v.pos+1)+"["+vc4.in_ref );
                   Seq(vc,vc2,vc3,vc4);
                 }
               } else if( a.startsWith("<DUP")){
@@ -1133,12 +1174,22 @@ object SVcfWalkerUtils {
                 if(end == -1){
                   Some(vc);
                 } else {
-                  vc.in_alt = Seq( "]" +v.chrom+":"+ end +"]" + vc.ref )
-                  vc.addInfo("SVTYPE","BND");
+                  // vc.in_alt = Seq( "]" +v.chrom+":"+ end +"]" + vc.ref )                  
                   val vc2 = vc.getOutputLineCopy();
+                  vc.addInfo("SVTYPE","BND");
                   vc2.addInfo("SVTYPE","BND");
                   vc2.in_pos = end;
-                  vc2.in_alt = Seq( v.ref+"["+v.chrom+":"+v.pos+"[" );
+                  vc2.in_ref = getBaseAtPos(vc2.in_chrom,vc2.in_pos);
+                  
+                  if(dellyFormat){                  
+                    vc2.in_alt = Seq( vc2.in_ref+"["+v.chrom+":"+(v.pos)+"[" );
+                  } else {
+                    vc.in_pos = vc.in_pos + 1; //added line UPDATE: corrected off-by-one in manta SV calls. Specification is unclear!
+                    vc.in_ref = getBaseAtPos(vc.in_chrom,vc.in_pos);
+                    vc2.in_alt = Seq( vc2.in_ref+"["+v.chrom+":"+(v.pos+1)+"[" );
+                  }
+                  vc.in_alt = Seq( "]" +v.chrom+":"+ end +"]" + vc.in_ref)
+                  
                   Seq(vc,vc2);
                 }
               //} else if( a.startsWith("<DUP:TANDEM")){
