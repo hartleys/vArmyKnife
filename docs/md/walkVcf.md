@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.116 (Updated Wed Nov 15 10:12:00 EST 2023)
+> Version 3.3.119 (Updated Thu Nov 16 11:57:29 EST 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -141,7 +141,7 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 ### annotateSVset
 
->  Requires that the inputs be structural variants annotated as per the VCF 4\.2 file specification\. Takes a second \(small\) SV set and add it to this SV file when matches are found\. Can be used to test true/false positives, compare methods, etc\. See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets, or if both SV sets are large\. 
+>  Requires that the input VCF be SVTYPE BND structural variants formatted as per the VCF 4\.2 file specification\. Takes a second SV VCF \(all variants must also be SVTYPE BND structural variants, file must be sorted and indexed\) and copies over INFO fields from this SV file when matches are detected \(both ends of the SV must be within the given window\)\. Can be used to test true/false positives, compare methods, apply a Panel of Normals, etc\. See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets \(ie: you want the union of the SVs in both in addition to the overlap\. 
 
 
     annofile: The file to annotate with. Must be relatively small, as all the data will be loaded 
@@ -1105,6 +1105,21 @@ This utility performs a series of transformations on an input VCF file and adds 
 ### copyAllInfoToGeno
 
 >  This utility copies the contents of ALL info fields plus the FILTER column into the genotype FORMAT columns\. This can be useful for preserving sample\-level information stored in the INFO column of a single\-sample VCF prior to merging across multiple samples\.
+
+
+    (This function takes no parameters)
+
+### copyGenoToInfo
+
+>  This utility copies the contents of one of the GENO fields into the INFO\. If there are multiple samples or genotype columns then the entries will be comma delimited\. The fcnName will be the new INFO field name\.
+
+
+    geno: (String, required)
+    desc: (String)
+
+### copyAllGenoToInfo
+
+>  This utility copies the contents of ALL genotype columns into the INFO field\.
 
 
     (This function takes no parameters)

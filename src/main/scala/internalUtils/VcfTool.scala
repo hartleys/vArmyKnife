@@ -404,7 +404,7 @@ object VcfTool {
        in_alt = alt,
        in_qual = vc.getPhredScaledQual().toString() ,
        in_filter = vc.getFilters().asScala.toSeq.mkString(";"), 
-       in_info = vc.getAttributes().asScala.toSeq.map{ case (k,v) => { ( k, Some(v.toString()) ) }}.toMap, 
+       in_info = vc.getAttributes().asScala.toSeq.map{ case (k,v) => { ( k, Some(v.toString().filterNot( cc => cc.isWhitespace || cc == ';' || cc == '=' ) ) ) }}.toMap, 
        in_format = Seq[String](),
        in_genotypes = SVcfGenotypeSet( Seq(), Array() )
       )

@@ -393,8 +393,9 @@ object SVcfMapFunctions {
            ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="0",desc="The size of the window around the genomic region to extract.",req=false,initParam = true)
          )), category = "Filtering"
        ),
-       ParamStrSet("annotateSVset" ,  desc = "Requires that the inputs be structural variants annotated as per the VCF 4.2 file specification. Takes a second (small) SV set and add it to this SV file when matches are found. Can be used to test true/false positives, compare methods, etc. "+
-                                             "See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets, or if both SV sets are large. "+
+       ParamStrSet("annotateSVset" ,  desc = "Requires that the input VCF be SVTYPE BND structural variants formatted as per the VCF 4.2 file specification. Takes a second SV VCF (all variants must also be SVTYPE BND structural variants, file must be sorted and indexed) and copies over INFO fields from this SV file when matches are detected (both ends of the SV must be within the given window)."+
+                                             " Can be used to test true/false positives, compare methods, apply a Panel of Normals, etc. "+
+                                             "See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets (ie: you want the union of the SVs in both in addition to the overlap. "+
                                              "", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "annofile",synon=Seq(),ty="String",valueString="vcffile.vcf.gz",desc="The file to annotate with. Must be relatively small, as all the data will be loaded into memory.",req=true,initParam = true),
@@ -987,6 +988,19 @@ object SVcfMapFunctions {
            )), category = "File Formatting/Conversion"
        ),
        ParamStrSet("copyAllInfoToGeno" ,  desc = "This utility copies the contents of ALL info fields plus the FILTER column into the genotype FORMAT columns. This can be useful for preserving sample-level information stored in the INFO column of a single-sample VCF prior to merging across multiple samples.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+
+           )), category = "File Formatting/Conversion"
+       ),
+       ParamStrSet("copyGenoToInfo" ,  desc = "This utility copies the contents of one of the GENO fields into the INFO. If there are multiple samples or genotype columns then the entries will be comma delimited. The fcnName will be the new INFO field name.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "geno",synon=Seq(),ty="String",valueString="genoFieldToCopy",desc="",req=true,initParam=true),
+               ParamStr(id = "desc",synon=Seq(),ty="String",valueString="Info field desc",desc="",req=false,initParam=false)
+           )), category = "File Formatting/Conversion"
+       ),
+       ParamStrSet("copyAllGenoToInfo" ,  desc = "This utility copies the contents of ALL genotype columns into the INFO field.",
                   synon = Seq(),
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
 
@@ -2024,6 +2038,26 @@ object SVcfMapFunctions {
                val info = params("info");
                
                Some( CopyInfoToGeno(info=info,geno=geno) );
+             } else if(mapType == "copyGenoToInfo"){
+               Some( CopyGenoToInfo( geno = params("geno"), info = params("mapID"), desc = params.get("desc") ) )
+             } else if(mapType == "copyAllGenoToInfo"){
+               Some( CopyAllGenoToInfo( prefix = params("mapID") ) );
+               /*
+                       ParamStrSet("copyGenoToInfo" ,  desc = "This utility copies the contents of one of the GENO fields into the INFO. If there are multiple samples or genotype columns then the entries will be comma delimited. The fcnName will be the new INFO field name.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               ParamStr(id = "info",synon=Seq(),ty="String",valueString="genoFieldToCopy",desc="",req=true,initParam=true),
+               ParamStr(id = "desc",synon=Seq(),ty="String",valueString="Info field desc",desc="",req=false,initParam=false)
+           )), category = "File Formatting/Conversion"
+       ),
+       ParamStrSet("copyAllGenoToInfo" ,  desc = "This utility copies the contents of ALL genotype columns into the INFO field.",
+                  synon = Seq(),
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+
+           )), category = "File Formatting/Conversion"
+       ),
+                */
+               
              } else if(mapType == "fixInfoFieldMetadata"){
                
                val field = params("field");
