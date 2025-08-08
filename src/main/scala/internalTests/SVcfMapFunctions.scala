@@ -394,6 +394,15 @@ object SVcfMapFunctions {
            ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="0",desc="The size of the window around the genomic region to extract.",req=false,initParam = true)
          )), category = "Filtering"
        ),
+       //               Some( new SVBreaksToEventSet( eventWindow = params.getOrElse("windowSize",1000000), file = Some(params("mapID")), infoFields = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()), infoFieldsForVcfTable = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()) ) )
+       ParamStrSet("SVBreaksToEventSet" ,  desc = "Generates several external tables that merge structural variants into discrete events by proximity, collapsing complex chains of SVs into discrete events.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "windowSize",synon=Seq(),ty="Int",valueString="0",desc="The size of the window used to merge SVs into discrete events.",req=false,initParam = false),
+           ParamStr(id = "infoFields",synon=Seq(),ty="String",valueString="field1,field2",desc="Useful/revelant Info fields to include in various tables.",req=false,initParam = true)
+         )), category = "Structural Variants"
+       ),
+       
+       
        ParamStrSet("annotateSVset" ,  desc = "Requires that the input VCF be SVTYPE BND structural variants formatted as per the VCF 4.2 file specification. Takes a second SV VCF (all variants must also be SVTYPE BND structural variants, file must be sorted and indexed) and copies over INFO fields from this SV file when matches are detected (both ends of the SV must be within the given window)."+
                                              " Can be used to test true/false positives, compare methods, apply a Panel of Normals, etc. "+
                                              "See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets (ie: you want the union of the SVs in both in addition to the overlap. "+
@@ -1899,6 +1908,9 @@ object SVcfMapFunctions {
                // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
                Some(internalUtils.GatkPublicCopy.FixFirstBaseMismatch(genomeFa = params("genomeFA"),windowSize = string2int( params.getOrElse("windowSize","200"))));
                
+             } else if(mapType == "SVBreaksToEventSet"){
+               //SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String])
+               Some( new SVBreaksToEventSet( eventWindow = string2int(params.getOrElse("windowSize","1000000")), eventOutputTable = Some(params("mapID")), infoFields = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()), infoFieldsForVcfTable = params.get("infoFields").map{_.split(",").toSeq}.getOrElse(Seq()) ) )
              } else if(mapType == "addFirstBaseWhenMissing"){
                // Some(HomopolymerRunStats(tagPrefix=params("tagPrefix"),genomeFa=params("genomeFA"), lenThreshold = params("runSize").toInt))
                Some(internalUtils.GatkPublicCopy.AddFirstBase(genomeFa = params("genomeFA"),windowSize = 200));

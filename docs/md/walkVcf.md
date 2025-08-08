@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.121 (Updated Tue Dec  5 11:56:40 EST 2023)
+> Version 3.3.127 (Updated Fri Feb 23 17:07:05 EST 2024)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -138,6 +138,14 @@ This utility performs a series of transformations on an input VCF file and adds 
 ##### Structural Variants
 
 
+
+### SVBreaksToEventSet
+
+>  Generates several external tables that merge structural variants into discrete events by proximity, collapsing complex chains of SVs into discrete events\.
+
+
+    windowSize: The size of the window used to merge SVs into discrete events.(Int)
+    infoFields: Useful/revelant Info fields to include in various tables.(String)
 
 ### annotateSVset
 

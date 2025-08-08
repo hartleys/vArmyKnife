@@ -190,6 +190,190 @@ object SVcfWalkerUtils {
       
     }
   }*/
+    case class NumRange( s : Int, e : Int ) extends Ordered[NumRange] {
+      def compare(that : NumRange) = if( this.s == that.s){
+        this.e - that.e
+      } else {
+        this.s - that.s
+      }
+      def isValid : Boolean = s < e
+    }
+    case class NumRangeSet( ranges : Seq[NumRange] = Seq[NumRange]() ){
+      def getRanges : Seq[NumRange] = ranges;
+      def hasIntersect( x : Int ) : Boolean = {
+        ranges.exists{ case NumRange(s,e) => {
+          x < e & x >= s
+        }}
+      }
+      def isValid : Boolean = {
+        if(ranges.isEmpty){
+          return true;
+        } else if( ranges.exists{ r => ! r.isValid } ){
+          return false;
+        } else {
+          if( ranges.length == 1 ){
+            return true;
+          } else {
+            return ! ranges.init.zip(ranges.tail).exists{ case (r1,r2) => {
+              r1.e >= r2.s;
+            }}
+          }
+        }
+      }
+      
+      def addRange( x : NumRange ) : NumRangeSet = {
+        //add the range
+        //collapse intersections
+        val out : NumRangeSet = if( ranges.isEmpty ){
+          NumRangeSet(Seq[NumRange]( x ) );
+        } else if( ranges.length == 1 ){
+          val r = ranges.head;
+          if( x.e < r.s ){
+            NumRangeSet(Seq[NumRange]( x ) ++ ranges );
+          } else if( x.s < r.e & r.s < x.e ){
+            NumRangeSet( Seq(NumRange( Math.min(x.s,r.s), Math.max(x.e,r.e) )) )
+          } else {
+            NumRangeSet(ranges ++ Seq[NumRange]( x ) );
+          }
+        } else {
+          val beforeSet = ranges.filter{ r => { r.e < x.s }}
+          val ixSet = ranges.filter{ r => { x.s <= r.e && x.e >= r.s }}
+          val afterSet = ranges.filter{ r => r.s > x.e }
+          if( ixSet.isEmpty ){
+            NumRangeSet( beforeSet ++  Seq[NumRange]( x ) ++ afterSet);
+          } else {
+            val outS = Math.min(ixSet.map{ r => r.s }.min,x.s);
+            val outE = Math.max(ixSet.map{ r => r.e}.max,x.e);
+            NumRangeSet( beforeSet ++  Seq[NumRange]( NumRange(outS,outE) ) ++ afterSet);
+          }
+        }
+        if( ! out.isValid ){
+            error("Impossible State: Created invalid NumRangeSet. This is a bug, and should never happen.")
+        }
+        
+        return out;
+      }
+      
+    }
+    
+    
+    
+  class SVBreaksToEventSet(eventWindow : Int = 1000000, eventOutputTable : Option[String], infoFields : Seq[String], infoFieldsForVcfTable : Seq[String]) extends SVcfWalker {
+    def walkerName : String = "SVBreaksToEventSet"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+      val tableWriter = eventOutputTable.map{ outfile => openWriter(outfile+".eventTable.txt") }
+      val arrayWriter = eventOutputTable.map{ outfile => openWriter(outfile+".eventGenomicArray.txt") }
+      val linesWriter = eventOutputTable.map{ outfile => openWriter(outfile+".svLinesAssignment.txt") }
+      
+      val win = eventWindow;
+      //var eventSet : Map[Int, (Map[String,NumRangeSet],Seq[SVcfVariantLine])] = Map[Int,(Map[String,NumRangeSet],Seq[SVcfVariantLine])]()
+      var eventArray : internalUtils.genomicAnnoUtils.LiveGenomicArrayOfSetsUnstranded[Int] = new internalUtils.genomicAnnoUtils.LiveGenomicArrayOfSetsUnstranded[Int]()
+      var eventIdMap : Map[Int,Int] = Map[Int,Int]();
+      var eventSV : Map[Int,Seq[SVcfVariantLine]] = Map[Int,Seq[SVcfVariantLine]]();
+      var maxEventId = 0;
+      outHeader.addWalk(this);
+      outHeader.reportAddedInfos(this)
+      
+      def findEventId( id : Int ) : Int = {
+        var out = id;
+        while( eventIdMap.contains(out) ){
+          out = eventIdMap(out);
+        }
+        out;
+      }
+      
+      (addIteratorCloseAction( iter = vcMap(vcIter){v => {
+        //do stuff!
+        v.getSVbnd().foreach{ sv => {
+          val c1 = v.chrom;
+          val c2 = sv.bndBreakEnd._1;
+          val p1 = v.pos
+          val p2 = sv.bndBreakEnd._2;
+          val iv1 = GenomicInterval(c1,'.',p1-win,p1+win)
+          val iv2 = GenomicInterval(c2,'.',p2-win,p2+win)
+          reportln("===> adding: "+c1+":"+p1+" "+sv.strands+" "+c2+":"+p2+"","debug");
+          val rawEventSet = eventArray.findIntersectingSet(iv1) ++ eventArray.findIntersectingSet(iv2);
+          val eventSet = rawEventSet.map{ x => findEventId(x) }
+          val eventId = if(eventSet.size > 1 || eventSet.size == 0){
+            maxEventId = maxEventId + 1;
+            reportln("   NEW EVENT: "+maxEventId,"debug");
+            maxEventId;
+          } else {
+            reportln("   Added to event: "+eventSet.head,"debug");
+            eventSet.head;
+          }
+          if(eventSet.size > 1){
+            reportln("   MERGING EVENTS: "+eventSet.toSeq.sorted.mkString(",")+" -> "+eventId,"debug");
+            eventArray.updateSetTo( eventSet,eventId );
+            val svlist = eventSet.map{ ee => eventSV(ee) }.toSeq.flatten :+ v;
+            eventSV = eventSV -- eventSet;
+            eventSV = eventSV + ((eventId,svlist))
+            eventSet.foreach{ ev => {
+              eventIdMap = eventIdMap + ((ev,eventId))
+            }}
+          } else if(eventSet.size == 0){
+            eventSV = eventSV + ((eventId,Seq(v)))
+          } else if(eventSet.size == 1){
+            eventSV = eventSV + ((eventId,eventSV(eventId) :+ v))
+          }
+          eventArray.addSpan( iv1, eventId );
+          eventArray.addSpan( iv2, eventId );
+          
+          
+          
+        }}
+        v;
+      }}, closeAction = (() => {
+        //reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+        //do stuff!
+        reportln("","debug");
+        reportln("Starting table write...","debug")
+        tableWriter.foreach{ out => {
+          reportln("Writing main table","debug")
+          out.write("eventID\tsvCount\tchromList\tsvList\n");
+          eventSV.foreach{ case (eventID,svlist) => {
+            
+            out.write(eventID + "\t" + svlist.length + "\t" + 
+                      svlist.toSet.flatMap( (xx : SVcfVariantLine) => Set(xx.chrom,xx.getSVbnd().get.bndBreakEnd._1) ).toSeq.sorted.mkString(",")+"\t"+
+                      svlist.toSeq.sortBy{ (xx : SVcfVariantLine) => ( xx.chrom,xx.pos,xx.getSVbnd().get.bndBreakEnd._1,xx.getSVbnd().get.bndBreakEnd._2 ) }.map{ xx => {
+                        xx.chrom+":"+xx.pos+";"+xx.getSVbnd().get.bndBreakEnd._1+":"+xx.getSVbnd().get.bndBreakEnd._2+";"+infoFields.map{ ff => { xx.info.getOrElse(ff,None).getOrElse(".") }}.mkString(";")
+                      }}.mkString("|")+"\n"
+                      )
+          }}
+          out.close()
+        }}
+          arrayWriter.foreach{ out => {
+            out.write("chrom\tstart\tend\tevents\n")
+            eventArray.getAllSteps().toSeq.sortBy{ case (chr,isv) => Chrom(chr) }.foreach{ case (chr,isv) => {
+              var prev = 0;
+              isv.foreach{ case (end,eventSet) => {
+                out.write(chr+"\t"+prev+"\t"+end+"\t"+eventSet.toSeq.sorted.mkString(",")+"\n")
+              }}
+            }}
+            out.close();
+          }}
+          linesWriter.foreach{ out => {
+             out.write("eventID\tpos1\tpos2\tALT\t"+infoFieldsForVcfTable.mkString("\t")+"\t"+"VCFLINE"+"\n");
+             eventSV.toSeq.sortBy{ case (eventID,svlist) => eventID }.foreach{ case (eventID,svlist) => {
+               svlist.foreach{ sv => {
+                 out.write(eventID+"\t"+sv.chrom+":"+sv.pos+"\t"+
+                           sv.getSVbnd().get.bndBreakEnd._1+":"+sv.getSVbnd().get.bndBreakEnd._2+"\t"+
+                           sv.alt.head+"\t"+infoFieldsForVcfTable.map{ infox => {
+                             sv.info.getOrElse(infox,None).getOrElse(".")
+                           }}.mkString("\t")+"\t"+sv.getVcfString+"\n")
+               }}
+             }}
+             out.close()
+          }}
+          
+      })),outHeader)
+      
+    }
+  }
+    
   class dropBackwardsSvLine() extends SVcfWalker {
     def walkerName : String = "dropBackwardsSvLine"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();

@@ -24,6 +24,14 @@
 
 
 
+### SVBreaksToEventSet
+
+>  Generates several external tables that merge structural variants into discrete events by proximity, collapsing complex chains of SVs into discrete events\.
+
+
+    windowSize: The size of the window used to merge SVs into discrete events.(Int)
+    infoFields: Useful/revelant Info fields to include in various tables.(String)
+
 ### annotateSVset
 
 >  Requires that the input VCF be SVTYPE BND structural variants formatted as per the VCF 4\.2 file specification\. Takes a second SV VCF \(all variants must also be SVTYPE BND structural variants, file must be sorted and indexed\) and copies over INFO fields from this SV file when matches are detected \(both ends of the SV must be within the given window\)\. Can be used to test true/false positives, compare methods, apply a Panel of Normals, etc\. See also concordanceCallerSV which performs a similar function but is better suited for circumstances where you want to MERGE two SV sets \(ie: you want the union of the SVs in both in addition to the overlap\. 

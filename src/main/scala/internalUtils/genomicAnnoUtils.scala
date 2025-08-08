@@ -868,6 +868,73 @@ object genomicAnnoUtils {
     }
   }
 
+  class LiveGenomicArrayOfSetsUnstranded[B] {
+    private var isvMap : Map[String,InternalStepVector[B]] = Map[String,InternalStepVector[B]]();
+    private var valueSet : Set[B] = Set[B]();
+    def getValueSet : Set[B] = valueSet;
+    def hasChrom( chromName : String) : Boolean = {
+      isvMap.contains(chromName);
+    }
+    def isStranded : Boolean = false
+    def isFinalized : Boolean = true;
+    def addChrom( chromName : String) {
+      isvMap = isvMap + (( chromName, InternalStepVector[B]() ))
+      //new GenomicStepVector[B](chromName , strand , isv)
+    }
+    def finalizeStepVectors : LiveGenomicArrayOfSetsUnstranded[B] = this;
+    def addSpan(iv : GenomicInterval, element : B){
+      isvMap.get(iv.chromName) match {
+        case Some(isv : InternalStepVector[B]) => {
+          isvMap = isvMap + (( iv.chromName, isv.addInterval(iv.start,iv.end,element)  ));
+        }
+        case None => {
+          isvMap = isvMap + (( iv.chromName,  InternalStepVector[B]().addInterval(iv.start,iv.end,element)  ));
+        }
+      }
+      valueSet = valueSet + element;
+    }
+    def findWhollyContainedSet(iv : GenomicInterval) : Set[B] = {
+      isvMap.get(iv.chromName) match {
+            case Some(isv : InternalStepVector[B]) => {
+              isv.findWhollyContainedSteps(iv.start,iv.end).map{ case (iv,x) => x }.flatten.toSet
+            }
+            case None => return Set[B]();
+          }
+    }
+    
+    def updateSetTo( oldset : Set[B], nx : B ){
+      for( chr <- isvMap.map{ case (c,isv) => c }.toSeq ){
+        isvMap = isvMap + ((chr,InternalStepVector( isvMap(chr).steps.map{ case (e,xx) => ((e,{
+          if( oldset.exists{ ss => xx.contains(ss) } ){
+            xx.diff(oldset) + nx
+          } else {
+            xx;
+          }
+        })) } )))
+      }
+    }
+    
+    def findIntersectingSet(iv : GenomicInterval) : Set[B] = {
+      isvMap.get(iv.chromName) match {
+            case Some(isv : InternalStepVector[B]) => {
+              isv.findIntersectingSteps(iv.start,iv.end).map{ case (iv,x) => x }.flatten.toSet
+            }
+            case None => return Set[B]();
+          }
+    }
+    def findSetAtPosition(chromName : String, pos : Int) : Set[B] = {
+       isvMap.get(chromName) match {
+            case Some(isv : InternalStepVector[B]) => {
+              isv.findIntersectingSteps(pos,pos+1).map{ case (iv,x) => x }.flatten.toSet
+            }
+            case None => return Set[B]();
+          }
+    }
+    
+    def getAllSteps() : Map[String,TreeMap[Int,Set[B]]] = isvMap.map{ case (c,isv) => (c,isv.steps) }
+    
+  }
+  
   class GenomicArrayOfSets_Unstranded[B] extends GenomicArrayOfSets[B] {
     private val internalArray = new GenomicArrayOfSets_Stranded[B];
     
