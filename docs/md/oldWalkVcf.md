@@ -1,5 +1,5 @@
 # vArmyKnife
-> Version 3.3.97 (Updated Mon Oct  2 09:02:10 EDT 2023)
+> Version 3.3.99 (Updated Thu Oct 12 14:00:56 EDT 2023)
 
 > ([back to main](../index.html)) ([back to java-utility help](index.html))
 
@@ -226,6 +226,22 @@ This utility performs a series of transformations on an input VCF file and adds 
 
 
     (This function takes no parameters)
+
+### convertChromNamesSV
+
+>  This function takes a file and translates chromosome names into a different format\. This is most often used to convert between the chr1,chr2,\.\.\. format and the 1,2,\.\.\. format\. This version will convert BND type SVs, which also have chrom names in the ALT column\.
+
+
+    file: A tab delimited file with the from/to chromosome names.(String, required)
+    columnNames: The column titles for the old chrom names and the new chrom names, in that order. If 
+        this parameter is used, the decoder file must have a title line.(String)
+    columnIdx: The column number of the current chromosome names then the new chromosome names, in 
+        that order. Column indices start counting from 0. If you use this parameter to set the 
+        columns, and if the file has a title line, then you should use skipFirstRow or else it will 
+        be read in as if it were a chromosome.(Integer)
+    skipFirstRow: If this parameter is set, then this tool will skip the first line on the decoder 
+        file. This is useful if you are specifying the columns using column numbers but the file also 
+        has a title line.(Flag)
 
 ##### General\-Purpose Tools
 

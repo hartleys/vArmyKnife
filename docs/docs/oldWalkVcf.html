@@ -30,7 +30,7 @@
 </section> <h1>vArmyKnife</h1> <section>
 
 <blockquote>
-  <p>Version 3.3.97 (Updated Mon Oct  2 09:02:10 EDT 2023)</p>
+  <p>Version 3.3.99 (Updated Thu Oct 12 14:00:56 EDT 2023)</p>
 
 <p>(<a href="../index.html">back to main</a>) (<a href="index.html">back to java-utility help</a>)</p>
 </blockquote>
@@ -332,6 +332,24 @@ infile.vcf.gz outfile.vcf.gz
 </blockquote>
 
 <pre><code>(This function takes no parameters)
+</code></pre>
+
+<h3>convertChromNamesSV</h3>
+
+<blockquote>
+  <p>This function takes a file and translates chromosome names into a different format. This is most often used to convert between the chr1,chr2,... format and the 1,2,... format. This version will convert BND type SVs, which also have chrom names in the ALT column.</p>
+</blockquote>
+
+<pre><code>file: A tab delimited file with the from/to chromosome names.(String, required)
+columnNames: The column titles for the old chrom names and the new chrom names, in that order. If 
+    this parameter is used, the decoder file must have a title line.(String)
+columnIdx: The column number of the current chromosome names then the new chromosome names, in 
+    that order. Column indices start counting from 0. If you use this parameter to set the 
+    columns, and if the file has a title line, then you should use skipFirstRow or else it will 
+    be read in as if it were a chromosome.(Integer)
+skipFirstRow: If this parameter is set, then this tool will skip the first line on the decoder 
+    file. This is useful if you are specifying the columns using column numbers but the file also 
+    has a title line.(Flag)
 </code></pre>
 
 <h5>General-Purpose Tools</h5>

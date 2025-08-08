@@ -231,7 +231,8 @@ object SVcfMapFunctions {
            ParamStr(id = "skipFirstRow",synon=Seq(),ty="Flag",valueString="",desc="If this parameter is set, then this tool will skip "+
                                                   "the first line on the decoder file. This is useful if you are specifying the columns using column numbers but the file also has a title line.",req=false)
          )), category = "File Formatting/Conversion"
-       ),
+       ),  
+
        ParamStrSet("sampleReorder" ,  desc = "This function allows you to reorder the sample columns in your VCF. Set ONE of the parameters below to specify the desired ordering.", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
            ParamStr(id = "sampleOrdering",synon=Seq(),ty="String",valueString="samp1,samp2,...",desc="A simple list of all the samples, in the desired order.",req=false),
@@ -784,6 +785,20 @@ object SVcfMapFunctions {
               
          )),category = "Structural Variant Tools"
        ),
+       ParamStrSet("convertChromNamesSV" ,  desc = "This function takes a file and translates chromosome names into a different format. "+
+                                                 "This is most often used to convert between the chr1,chr2,... "+
+                                                  "format and the 1,2,... format. This version will convert BND type SVs, which also have chrom names in the ALT column.", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+           ParamStr(id = "file",synon=Seq(),ty="String",valueString="myChromDecoder.txt",desc="A tab delimited file with the from/to chromosome names.",req=true),
+           ParamStr(id = "columnNames",synon=Seq(),ty="String",valueString="fromCol,toCol",desc="The column titles for the old chrom names and the new chrom names, "+
+                                                  "in that order. If this parameter is used, the decoder file must have a title line.",req=false),
+           ParamStr(id = "columnIdx",synon=Seq(),ty="Integer",valueString="fromColNum,toColNum",desc="The column number of the current chromosome names "+
+                                                  "then the new chromosome names, in that order. Column indices start counting from 0. If you use this parameter to set the columns, and if the file has a title line, then you should use skipFirstRow or else it will be read in as if it were a chromosome.",req=false),
+           ParamStr(id = "skipFirstRow",synon=Seq(),ty="Flag",valueString="",desc="If this parameter is set, then this tool will skip "+
+                                                  "the first line on the decoder file. This is useful if you are specifying the columns using column numbers but the file also has a title line.",req=false)
+         )),category = "Structural Variant Tools"
+       ),
+       
        /*
         * UNTESTED:
         */
@@ -1654,6 +1669,20 @@ object SVcfMapFunctions {
                                            fromToColumnNames = params.get("columnNames").map{ s => (s.split(",")(0),s.split(",")(1)) },
                                            fromToIdx = params.get("columnIdx").map{ s => (s.split(",")(0),s.split(",")(1)) },
                                            skipFirstRow = params.isSet("skipFirstRow")));
+             } else if(mapType == "convertChromNamesSV"){
+               //Seq[SVcfWalker](ChromosomeConverter(chromDecoder = icd, fromCol= inputChromDecoderFromCol, toCol = inputChromDecoderToCol))
+               /*
+                ChromosomeConverterAdv(chromDecoder : String, 
+                 fromToColumnNames : Option[(String,String)] = None,
+                 fromToIdx : Option[(String,String)] = None,
+                 hasTitleColumn : Boolean = true,
+                       quiet : Boolean = false)
+                */
+               Some(ChromosomeConverterSV(chromDecoder = params("file"),
+                                           fromToColumnNames = params.get("columnNames").map{ s => (s.split(",")(0),s.split(",")(1)) },
+                                           fromToIdx = params.get("columnIdx").map{ s => (s.split(",")(0),s.split(",")(1)) },
+                                           skipFirstRow = params.isSet("skipFirstRow")));
+
              } else if(mapType == "convertSampleNames"){
                Some(SampleRenameAdv(decoder = params("file"),
                                            fromToColumnNames = params.get("columnNames").map{ s => (s.split(",")(0),s.split(",")(1)) },

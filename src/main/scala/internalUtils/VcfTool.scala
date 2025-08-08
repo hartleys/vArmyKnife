@@ -1920,6 +1920,8 @@ object VcfTool {
       }
     }
     
+    
+    //SVbnd.makeSVbnd( svb.getChrom, svb.getPos,svb.bases,svb.strand);
   }
   
   case class SVbnd( in_alt : String ) {
@@ -1954,6 +1956,34 @@ object VcfTool {
       return xx;
     }
     def validate : Option[SVbnd] = if(isValid){ Some(this) } else { None }
+    
+    def getChrom : String = {
+      if( ! isValid){
+        error("attempted to get SV chrom from invalid BND alt allele");
+      }
+      var xx : Seq[String] = Seq();
+      val cca = alt.split("\\[",-1)
+      val ccb = alt.split("\\]",-1);
+      if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) xx = xx :+ "Bracket Count";
+      val cxx = alt.split("[\\[\\]]",-1)
+      val cmx = cxx(1)
+      val cx  = cmx.split(":",-1);      
+      cx(0)
+    } 
+    def getPos : Int = {
+      if( ! isValid){
+        error("attempted to get SV chrom from invalid BND alt allele");
+      }
+      var xx : Seq[String] = Seq();
+      val cca = alt.split("\\[",-1)
+      val ccb = alt.split("\\]",-1);
+      if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) xx = xx :+ "Bracket Count";
+      val cxx = alt.split("[\\[\\]]",-1)
+      val cmx = cxx(1)
+      val cx  = cmx.split(":",-1);      
+      string2int( cx(1) )
+    }
+    
     
     lazy val alt : String = in_alt;
     lazy val bracket : Char = alt.replaceAll("[^\\[\\]]","").head;

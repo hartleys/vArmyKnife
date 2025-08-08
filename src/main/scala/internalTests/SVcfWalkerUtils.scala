@@ -8445,6 +8445,103 @@ ALT VERSION: allows title line!
       
     }
   }
+  
+  case class ChromosomeConverterSV(chromDecoder : String, 
+                 fromToColumnNames : Option[(String,String)] = None,
+                 fromToIdx : Option[(String,String)] = None,
+                 skipFirstRow : Boolean = true,
+                       quiet : Boolean = false) extends internalUtils.VcfTool.SVcfWalker {
+    def walkerName : String = "ConvertChromosomeName"
+    val rawcelllist = getLinesSmartUnzip(chromDecoder).map{ line => line.split("\t") }.toVector;
+    val celllist = if(skipFirstRow){
+      rawcelllist.tail
+    } else {
+      rawcelllist
+    }
+    
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)](("chromDecoder",chromDecoder.toString),
+                                                                    ("fromToColumnNames",fromToColumnNames.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("fromToIdx",fromToIdx.map{ case (a,b) => a+"_to_"+b}.getOrElse("None")),
+                                                                    ("skipFirstRow",skipFirstRow.toString),
+                                                                    ("quiet",quiet.toString)
+                                                                    );
+    
+    val chromMap : Map[String,String] = fromToColumnNames.map{ case (f,t) => {
+      val headerLine = celllist.head;
+      val fromIDX = celllist.indexOf(f);
+      val toIDX = celllist.indexOf(t);
+      if(fromIDX == -1){
+        error("Error in ConvertChromosomeName: Cannot find column named \""+f+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      if(toIDX == -1){
+        error("Error in ConvertChromosomeName: Cannot find column named \""+t+"\""+" in file: \""+chromDecoder+"\"\nColumns found are:[\""+ headerLine.mkString( "\",\"" ) +"\"");
+      }
+      celllist.tail.map{ cells => {
+        ( cells(fromIDX), cells(toIDX) )
+      }}.toMap
+    }}.getOrElse({
+      fromToIdx.map{ case (f,t) => {
+        val fromIDX = string2intOpt(f);
+        val toIDX = string2intOpt(t);
+        if( fromIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+f+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        if( toIDX.isEmpty ){
+          error("Error in ConvertChromosomeName: column IDX \""+t+"\" is not an integer! to identify a column via a title line, use the columnNames parameter!")
+        }
+        celllist.map{ cells => {
+          ( cells(fromIDX.get), cells(toIDX.get) )
+        }}.toMap
+      }}.getOrElse({
+          error("ConvertChromosomeName must specify which columns to convert to/from, using either the columnNames or columnIdx parameters.");
+          null;
+      })
+    })
+    def translateChrom(c : String) : String = {
+      chromMap.get(c) match {
+        case Some(tc) => {
+          tc
+        }
+        case None => {
+          if(! quiet) warning("Could not find chrom: "+c,"CHROM_NOT_FOUND",100);
+          c;
+        }
+      }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine],vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine],SVcfHeader) = {
+      var errCt = 0;
+      
+      val outHeader = vcfHeader.copyHeader
+      outHeader.addWalk(this);
+      //outHeader.addInfoLine(new  SVcfCompoundHeaderLine("INFO" ,infoTag, "1", "String", "If the variant is a singleton, then this will be the ID of the sample that has the variant."))
+      val samps = outHeader.getSampleList
+      outHeader.otherHeaderLines = outHeader.otherHeaderLines.map{ hl => {
+        if(hl.tag == "contig"){
+          val chl = hl.convertToContigHeaderLine().get;
+          SVcfContigHeaderLine(translateChrom(chl.ID),chl.length);
+        } else {
+          hl
+        }
+      }}
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcIter.flatMap{v => {
+        val vc = v.getOutputLine()
+        vc.in_chrom = translateChrom(vc.in_chrom);
+        //if(vc.is_BND){
+          val svb = vc.getSVbnd().get
+          //SVbnd.makeSVbnd( svb.getChrom, svb.getPos,svb.bases,svb.strand);
+          vc.in_alt = Seq( SVbnd.makeSVbnd( translateChrom(svb.getChrom), svb.getPos,svb.bases,svb.strands).svalt )
+        //}
+        
+        Some(vc)
+      }}, closeAction = (() => {
+        //do nothing
+      })),outHeader)
+      
+    }
+  }
+  
 
   case class SampleRenameAdv(decoder : String, 
                  fromToColumnNames : Option[(String,String)] = None,
