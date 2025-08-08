@@ -4342,7 +4342,7 @@ object SVcfWalkerUtils {
         ("wigFile", wigFile)
     );
     
-    var wigparser = new internalUtils.genomicAnnoUtils.SimpleEfficientGappedWiggleParser(wigFile);
+    var wigparser = new internalUtils.genomicAnnoUtils.SimpleEfficientWiggleParser(wigFile);
     
     def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
       val outHeader = vcfHeader.copyHeader
@@ -11935,7 +11935,45 @@ ALT VERSION: allows title line!
     } else if(style == "LABEL/SCORE"){
       (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
                 arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
-              }  
+              }
+    } else if(style == "LABEL/MAXSCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                val entries = arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct
+                if(entries.length <= 1){
+                  entries.padTo(1,".").head
+                } else {
+                  val maxEntry = entries.tail.map{ x => x.split("/") }.foldLeft{ entries.head.split("/") }{ case (soFar,xx) => {
+                    val s1 = string2int( soFar(1) );
+                    val s2 = string2int( xx(1) );
+                    if( s2 > s1 ){
+                      xx
+                    } else {
+                      soFar
+                    }
+                  }}
+                  maxEntry.mkString("/");
+                }
+              }
+    } else if(style == "LABEL/MINSCORE"){
+      (iv : internalUtils.commonSeqUtils.GenomicInterval) => {
+                //arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct.sorted.padTo(1,".").mkString(",")
+                val entries = arr.findIntersectingSteps(iv).flatMap{ case (iv,currSet) => currSet }.toVector.distinct
+                if(entries.length <= 1){
+                  entries.padTo(1,".").head
+                } else {
+                  val minEntry = entries.tail.map{ x => x.split("/") }.foldLeft{ entries.head.split("/") }{ case (soFar,xx) => {
+                    val s1 = string2int( soFar(1) );
+                    val s2 = string2int( xx(1) );
+                    if( s2 < s1 ){
+                      xx
+                    } else {
+                      soFar
+                    }
+                  }}
+                  minEntry.mkString("/");
+                }
+              }
     } else {
       error("Unrecognized style tag for addBedTag function: Must be one of '+', '-', 'LABEL', 'SCORE', or 'LABEL/SCORE'");
       (iv : internalUtils.commonSeqUtils.GenomicInterval) => {

@@ -29,6 +29,7 @@ object genomicAnnoUtils {
     var iter = getLinesSmartUnzip(infile).buffered;
     var headerLine = "";
     var windowSize = 1;
+    var gapEnd = -1;
     
     def skipToNextChrom(){
       while( iter.hasNext && (! iter.head.startsWith("fixedStep"))){
@@ -85,14 +86,14 @@ object genomicAnnoUtils {
           findChromosome(c)
         }
         if(p < currPos){
-          error("ERROR: back-access of wig file! Is vcf sorted?");
+          error("ERROR: back-access of wig file! Is vcf sorted? Attempting to get value at: "+c+":"+p);
         }
         while(iter.hasNext && currPos+windowSize < p && (! iter.head.startsWith("fixedStep"))){
           currPos = currPos + windowSize;
           buffer = iter.next
         }
         if( currPos+windowSize < p ){
-          warning("Attempt to access beyond chromosome end!","WIGGLE_ACCESS_BEYOND_CHROMEND",-1)
+          warning("Attempt to access beyond chromosome end! Attempting to get value at: "+c+":"+p,"WIGGLE_ACCESS_BEYOND_CHROMEND",-1)
           "0";
         } else {
           buffer;
