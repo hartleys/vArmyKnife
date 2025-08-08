@@ -792,6 +792,11 @@ object SVcfMapFunctions {
               
          )),category = "File/Database Annotation"
        ),*/
+       ParamStrSet("calcSVflankingHomology" ,  desc = "....", 
+           pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
+               COMMON_PARAMS("genomeFA")
+         )),category = "Structural Variant Tools"
+       ),
        ParamStrSet("dropInvalidSVBND" ,  desc = "....", 
            pp=(DEFAULT_MAP_PARAMS ++ Seq[ParamStr](
               
@@ -1956,6 +1961,8 @@ object SVcfMapFunctions {
                 */
              } else if(mapType == "dropInvalidSVBND"){
                Some(new dropInvalidBNDSV() )
+             } else if(mapType == "calcSVflankingHomology"){
+               Some( new calcSVflankingHomology( genomeFa = params("genomeFA") ) )
              } else if(mapType == "dropReverseSVbreakends"){
                Some(new dropBackwardsSvLine())
              } else if(mapType == "addReverseSVbreakends"){

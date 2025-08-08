@@ -56,6 +56,16 @@
 
 
 
+### calcSVflankingHomology
+
+>  \.\.\.\.
+
+
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
+
 ### dropInvalidSVBND
 
 >  \.\.\.\.

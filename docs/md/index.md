@@ -1,4 +1,4 @@
-> Version 3.3.156 (Updated Tue Mar 25 11:13:04 EDT 2025)
+> Version 3.3.169 (Updated Mon Mar 31 14:21:29 EDT 2025)
 
 # vArmyKnife: 
 
@@ -197,6 +197,16 @@ This utility performs a series of transformations on an input VCF file and adds 
 ##### Structural Variant Tools
 
 
+
+### calcSVflankingHomology
+
+>  \.\.\.\.
+
+
+    genomeFA: The genome fasta file containing the reference genome. This will be used by various 
+        functions that require genomic information. Note that some functions that call the GATK 
+        library will also require that the fasta be indexed. Note: Chromosome names must 
+        match.(String, required)
 
 ### dropInvalidSVBND
 

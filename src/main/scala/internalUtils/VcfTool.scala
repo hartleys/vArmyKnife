@@ -2000,8 +2000,10 @@ object VcfTool {
   }
   
   case class SVbnd( in_alt : String ) {
-    def svalt : String = in_alt;
-    def isValid : Boolean = {
+    val svalt : String = in_alt;
+
+    
+    def determineIsValid : Boolean = {
       val cca = alt.split("\\[",-1)
       val ccb = alt.split("\\]",-1);
       if( ! ( ( cca.length == 1 && ccb.length == 3 ) || ( cca.length == 3 && ccb.length == 1 ) ) ) return false;
@@ -2015,7 +2017,8 @@ object VcfTool {
       if( ! PATTERN_BASES_ONLY.matcher(cbp).matches() ) return false;
       return true;
     }
-    def invalidIssue : Seq[String] = {
+    lazy val isValid : Boolean = determineIsValid;
+    lazy val invalidIssue : Seq[String] = {
       var xx : Seq[String] = Seq();
       val cca = alt.split("\\[",-1)
       val ccb = alt.split("\\]",-1);
@@ -2028,11 +2031,11 @@ object VcfTool {
       if( ! (( cxx(0) == "" && cxx(2) != "" ) || ( cxx(0) != "" && cxx(2) == "" )) ) xx = xx :+ "bases not only on one side"
       val cbp = if(cxx(0) == ""){ cxx(2) } else { cxx(0) }
       if( ! PATTERN_BASES_ONLY.matcher(cbp).matches() ) xx = xx :+ "Bases arent ACTGN"
-      return xx;
+      xx;
     }
     def validate : Option[SVbnd] = if(isValid){ Some(this) } else { None }
     
-    def getChrom : String = {
+    lazy val getChrom : String = {
       if( ! isValid){
         error("attempted to get SV chrom from invalid BND alt allele");
       }
@@ -2045,7 +2048,7 @@ object VcfTool {
       val cx  = cmx.split(":",-1);      
       cx(0)
     } 
-    def getPos : Int = {
+    lazy val getPos : Int = {
       if( ! isValid){
         error("attempted to get SV chrom from invalid BND alt allele");
       }
@@ -2073,20 +2076,20 @@ object VcfTool {
     lazy val bndBreakEndString : String = {
       alt.split("[\\[\\]]",-1)(1)
     }
-    def bndBreakEnd : (String,Int) = {
+    lazy val bndBreakEnd : (String,Int) = {
       val cells = bndBreakEndString.split(":")
       (cells(0),string2int(cells(1)));
     }
-    def basesBefore : Boolean = {
+    lazy val basesBefore : Boolean = {
       val x = alt.split("[\\[\\]]",-1)
       x.head != "";
     }
     def basesAfter : Boolean = ! basesBefore;
     def bracketOpensRight : Boolean = bracket == '['
-    def strands : String = {
+    lazy val strands : String = {
       ( if( basesBefore ){ "+" } else { "-" } ) + ( if( bracket == '[' ){ "+" } else { "-" } )
     }
-    def strandswap : String = {
+    lazy val strandswap : String = {
       val ss = strands;
       if( ss == "++"){
         "--" 

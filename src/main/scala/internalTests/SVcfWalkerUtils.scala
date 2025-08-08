@@ -635,6 +635,319 @@ object SVcfWalkerUtils {
     }
   }
   
+  class calcSVflankingHomology( genomeFa : String , windowSize : Option[Int] = Some(100) , debug : Boolean = true) extends SVcfWalker {
+    val window : Int = windowSize.getOrElse(100);
+    def walkerName : String = "calcSVflankingHomology"
+    def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
+    
+
+    val refFile = new File(genomeFa)
+    val refSeqFile : htsjdk.samtools.reference.ReferenceSequenceFile = 
+                     htsjdk.samtools.reference.ReferenceSequenceFileFactory.getReferenceSequenceFile(refFile);
+    val refDataSource = new org.broadinstitute.gatk.engine.datasources.reference.ReferenceDataSource(refFile);
+    val genLocParser = new org.broadinstitute.gatk.utils.GenomeLocParser(refSeqFile)
+    
+    def getBaseAtPos(chrom : String, pos : Int) : String = {
+      if(pos < 1 || pos > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        return "N";
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,pos,pos).getBaseString.toUpperCase
+      }
+    }
+    def getBasesForIv(chrom : String, start : Int, end : Int) : String = {
+      if(end < 1){
+        return ("N" * (end - start))
+      } else if(start < 1){
+        return ("N" * (1-start))+this.getBasesForIv(chrom=chrom,start=1,end=end);
+      } else if( start >= refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength ){
+        return ("N" * (end - start))
+      } else if(end > refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength){
+        val e = refSeqFile.getSequenceDictionary.getSequence(chrom).getSequenceLength;
+        return this.getBasesForIv(chrom=chrom,start=start,end=e) + ("N" * (end - e))
+      } else {
+        refSeqFile.getSubsequenceAt(chrom,start,end).getBaseString.toUpperCase
+      }
+    }
+    //internalUtils.commonSeqUtils.reverseComplementString(x)
+    
+    def getFlankingHomology(chr1 : String, pos1 : Int, chr2 : String, pos2: Int, strands : String, win : Int  ) : Seq[(String,String)] = {
+       val debugRange = 10;
+       
+       val seq_start_1 = if( strands.head == '+' ){
+         getBasesForIv(chr1,pos1 + 1, pos1+win )
+       } else {
+         reverseComplementString( getBasesForIv(chr1,pos1 - win, pos1 - 1 ) )
+       }
+       val seq_start_2 = if(strands.last == '+' ){
+         getBasesForIv(chr2,pos2,pos2+win-1);
+       } else {
+         reverseComplementString( getBasesForIv(chr2,pos2-win+1,pos2) )
+       }
+       val matchSeq_start = seq_start_1.zip(seq_start_2).takeWhile{ case (a,b) => a == b }.map{ case (a,b) => a }.mkString("");
+       val matchSeq_start_str = if(matchSeq_start.length() == 0){
+          "."
+       } else {
+          matchSeq_start;
+       }
+       if( matchSeq_start.length == win ){
+         warning("calcSVflankingHomology: Flanking homology larger than window ("+window+"), expanding window to: "+(win*4) +" ("+chr1+":"+pos1+">"+strands+">"+chr2+":"+pos2+"). If this happens often, consider increasing the starting window." ,"calcSVflankingHomology_EXPAND_WIN",100)
+         return getFlankingHomology(chr1,pos1,chr2,pos2,strands,win*4);
+       }
+       
+       
+       val seq_back_1 = if(strands.head == '+' ){
+         reverseComplementString( getBasesForIv(chr1,pos1 - win + 1, pos1 ) )
+       } else {
+         getBasesForIv(chr1,pos1,pos1+win-1);
+       }
+       val seq_back_2 = if(strands.last == '+' ){
+         reverseComplementString( getBasesForIv(chr2,pos2-win,pos2-1) )
+       } else {
+         getBasesForIv(chr2,pos2+1,pos2+win)
+       }
+       val matchSeq_back = seq_back_1.zip(seq_back_2).takeWhile{ case (a,b) => a == b }.map{ case (a,b) => a }.mkString("");
+       val matchSeq_back_str = if(matchSeq_back.length() == 0){
+          "."
+       } else {
+          matchSeq_back;
+       }
+       if( matchSeq_back.length == win ){
+         warning("calcSVflankingHomology: Flanking homology larger than window ("+window+"), expanding window to: "+(win*4) +" ("+chr1+":"+pos1+">"+strands+">"+chr2+":"+pos2+"). If this happens often, consider increasing the starting window." ,"calcSVflankingHomology_EXPAND_WIN",100)
+         return getFlankingHomology(chr1,pos1,chr2,pos2,strands,win*4);
+       }
+       val (a1,a2) = if(strands.head == '+'){
+         (pos1 - matchSeq_back.length(),pos1 + matchSeq_start.length()-1)
+       } else {
+         (pos1 - matchSeq_start.length()+1,pos1 + matchSeq_back.length())         
+       }
+       val (b1,b2) = if(strands.last == '+'){
+         (pos2 - matchSeq_back.length()+1,pos2 + matchSeq_start.length())
+       } else {
+         (pos2 - matchSeq_start.length(),pos2 + matchSeq_back.length()-1)
+       }
+       
+
+       
+       val out = Seq( ( "flankHom_startSeq",matchSeq_start_str ),
+                   ( "flankHom_startLen",""+matchSeq_start.length() ),
+                   ( "flankHom_backSeq",matchSeq_back_str),
+                   ( "flankHom_backLen",""+matchSeq_back.length()),
+                   ( "flankHom_posArange",a1+","+a2),
+                   ( "flankHom_posBrange",b1+","+b2)
+                 );
+       if( debug ){
+          
+          val a_debug = if( strands == "++" ) {
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = rc(p2--,p2)
+             */
+              reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase   + "-"+
+              reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
+              seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+            // reverseComplement( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ).toLowerCase   + "-"+
+            // reverseComplement(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
+            // seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange)  
+          } else if( strands == "+-" ){
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = fw(p2,p2++)
+             */
+            reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ) + "-"+
+            reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
+            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange).toLowerCase   
+          } else if(strands == "-+" ){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = rc(p2--,p2)
+             */
+            reverseComplementString(seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange)) + "-" +
+            reverseComplementString(matchSeq_start).toLowerCase +"|"+matchSeq_back.toLowerCase+"-"+
+            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange)
+          } else if(strands == "--"){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = fw(p2,p2++)
+             */
+            
+            reverseComplementString(seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange)) + "-" +
+            reverseComplementString(matchSeq_start).toLowerCase +"|"+matchSeq_back.toLowerCase+"-"+
+            seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange)            
+          } else {
+            null;
+          }
+          
+          
+          val b_debug = if( strands == "++" ) {
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = rc(p2--,p2)
+             */
+              reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) )   + "-"+
+              reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
+              seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange).toLowerCase  
+          } else if( strands == "+-" ){
+            /*
+              seq_start_1 = fw(p1,p1++)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = rc(p1--,p1)
+              seq_back_2  = fw(p2,p2++)
+             */
+            reverseComplementString( seq_back_1.slice(matchSeq_back.length,matchSeq_back.length + debugRange) ) + "-"+
+            reverseComplementString(matchSeq_back).toLowerCase + "|" + matchSeq_start.toLowerCase + "-" + 
+            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length + debugRange).toLowerCase   
+          } else if(strands == "-+" ){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = fw(p2,p2++)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = rc(p2--,p2)
+             */
+            reverseComplementString(seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange)) + "-" +
+            reverseComplementString(matchSeq_back).toLowerCase +"|"+matchSeq_start.toLowerCase+"-"+
+            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange)
+          } else if(strands == "--"){
+            /*
+              seq_start_1 = rc(p1--,p1)
+              seq_start_2 = rc(p2--,p2)
+              seq_back_1  = fw(p1,p1++)
+              seq_back_2  = fw(p2,p2++)
+             */
+            reverseComplementString(seq_back_1.slice(matchSeq_back.length,matchSeq_back.length+debugRange)) + "-" +
+            reverseComplementString(matchSeq_back).toLowerCase +"|"+matchSeq_start.toLowerCase+"-"+
+            seq_start_2.slice(matchSeq_start.length,matchSeq_start.length+debugRange)            
+          } else {
+            null;
+          }
+         
+         
+         
+          val p1_debug = if( strands == "++" ) {
+             val sa1 = getBasesForIv(chr1,a1 - debugRange,a1-1).toLowerCase() 
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr1,a1,a2).toLowerCase();
+             }
+             val sa3 = getBasesForIv(chr2,b2+1,b2+debugRange)
+             sa1+"-"+sa2+"-"+sa3
+          } else if( strands == "+-" ){
+             val sa1 = getBasesForIv(chr1,a1 - debugRange,a1-1).toLowerCase()
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr1,a1,a2).toLowerCase();
+             }
+             val sa3 = reverseComplementString( getBasesForIv(chr2,b1-debugRange,b1-1) )
+             sa1+"-"+sa2+"-"+sa3
+          } else if( strands == "-+" ){
+             val sa1 = getBasesForIv(chr2,b2+1,b2+debugRange).reverse
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr1,a1,a2).toLowerCase();
+             }
+             val sa3 =  getBasesForIv(chr1,a2+1,a2+debugRange).toLowerCase();
+             sa1+"-"+sa2+"-"+sa3
+          } else if( strands == "--"){
+             val sa1 = reverseComplementString(getBasesForIv(chr2,b1-debugRange,b1-1))
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr1,a1,a2).toLowerCase();
+             }
+             val sa3 =  getBasesForIv(chr1,a2+1,a2+debugRange).toLowerCase();
+             sa1+"-"+sa2+"-"+sa3
+          } else {
+            warning("calcSVflankingHomology: Impossible state! strands is not a legal value!","impossible_state_calcSVflankingHomology",10);
+            "???"
+          }
+          val p2_debug = if( strands == "++" ) {
+             val sa1 = reverseComplementString(getBasesForIv(chr1,a1 - debugRange,a1-1))
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr2,b1,b2).toLowerCase();
+             }
+             val sa3 = getBasesForIv(chr2,b2+1,b2+debugRange).toLowerCase()
+             sa1+"-"+sa2+"-"+sa3
+          } else if( strands == "+-" ){
+             val sa1 = getBasesForIv(chr2,b1 - debugRange,b1-1).toLowerCase()
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr2,b1,b2).toLowerCase();
+             }
+             val sa3 = reverseComplementString( getBasesForIv(chr1,a1-debugRange,a1-1) )
+             sa1+"-"+sa2+"-"+sa3
+          } else if( strands == "-+" ){
+             val sa1 = getBasesForIv(chr1,a2+1,a2+debugRange).reverse
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr2,b1,b2).toLowerCase();
+             }
+             val sa3 =  getBasesForIv(chr2,b2+1,b2+debugRange).toLowerCase();
+             sa1+"-"+sa2+"-"+sa3
+          } else if( strands == "--"){
+             val sa1 = getBasesForIv(chr2,b1-debugRange,b1-1).toLowerCase();
+             val sa2 = if( a1 == a2 ){ "" } else {
+               getBasesForIv(chr2,b1,b2).toLowerCase();
+             }
+             val sa3 =  getBasesForIv(chr1,a2+1,a2+debugRange);
+             sa1+"-"+sa2+"-"+sa3
+          } else {
+            warning("calcSVflankingHomology: Impossible state! strands is not a legal value!","impossible_state_calcSVflankingHomology",10);
+            "???"
+          }
+          val debugOut = Seq(
+              ("flankHom_debug_A",a_debug),
+              ("flankHom_debug_B",b_debug),
+              ("flankHom_debug_strand",strands)
+            )
+          return out ++ debugOut;
+       } else {
+         return out;
+       }
+    }
+    
+    def walkVCF(vcIter : Iterator[SVcfVariantLine], vcfHeader : SVcfHeader, verbose : Boolean = true) : (Iterator[SVcfVariantLine], SVcfHeader) = {
+      val outHeader = vcfHeader.copyHeader;
+
+      if(debug){ 
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_debug_A",Number="1",Type="String",desc="..."),Some(this));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_debug_B",Number="1",Type="String",desc="..."),Some(this));
+        outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_debug_strand",Number="1",Type="String",desc="..."),Some(this));
+      }
+
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_startSeq",Number="1",Type="String",desc="..."),Some(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_startLen",Number="1",Type="Integer",desc="..."),Some(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_backSeq",Number="1",Type="String",desc="..."),Some(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_backLen",Number="1",Type="Integer",desc="..."),Some(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_posArange",Number="1",Type="Integer",desc="..."),Some(this));
+      outHeader.addInfoLine(new SVcfCompoundHeaderLine(in_tag="INFO",ID="flankHom_posBrange",Number="1",Type="Integer",desc="..."),Some(this));
+      
+      outHeader.addWalk(this);
+      var dropct = 0;
+      outHeader.reportAddedInfos(this)
+      (addIteratorCloseAction( iter = vcFlatMap(vcIter){v => {
+        val vc = v.getOutputLine();
+        if( v.alt.length == 1 && v.info.getOrElse("SVTYPE",None).getOrElse(".") == "BND"){
+          v.getSVbnd() match {
+            case Some(sv) => {
+              val xx = getFlankingHomology(v.chrom,v.pos,sv.getChrom,sv.getPos,sv.strands,window);
+              xx.foreach{ case (k,v) => {
+                vc.addInfo(k,v);
+              }}
+              Some(vc)
+            }
+            case None => Some(vc)
+          }
+        } else {
+          Some(vc)
+        }
+      }}, closeAction = (() => {
+        reportln("Dropped "+dropct+" variant/allele lines due to the presence of symbolic alleles","note");
+      })),outHeader)
+    }
+  }
+  
   class dropInvalidBNDSV() extends SVcfWalker {
     def walkerName : String = "dropInvalidBNDSV"
     def walkerParams : Seq[(String,String)] =  Seq[(String,String)]();
@@ -1827,7 +2140,13 @@ object SVcfWalkerUtils {
          vss.length
       }}
       vb.addInfo("CCsv_callerSet",callerSupport.mkString(","));
-      vb.addInfo("CCsv_duplicateCt",callerSupport.mkString(","));
+      //vb.addInfo("CCsv_duplicateCt",callerSupport.zip(callerVarCt).map{ case (s,ct) => {
+      //  s+":"+ct;
+      //} }.mkString(","));
+      val dupCountMap = callerSupport.zip(callerVarCt).toMap.withDefaultValue( 0 )
+      vb.addInfo("CCsv_duplicateCt",inputVcfTypes.map{ s => {
+        ""+dupCountMap(s)
+      } }.mkString(","));
       vb.addInfo("CCsv_hasDupSV",if(callerVarCt.max > 1){ "1" } else { "0" });
       
       vb.addInfo("CCsv_chrA", vb.chrom);
